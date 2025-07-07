@@ -1,6 +1,9 @@
-const fs = require('fs-extra');
-const path = require('path');
-const glob = require('glob');
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs-extra';
+import glob from 'glob';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 console.log('Copying public assets to build directory...');
 

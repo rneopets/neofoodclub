@@ -1,0 +1,17 @@
+# Build outputs
+build/
+dist/
+node_modules/
+
+# Automation directory
+automation/
+automation/**/*
+
+# GitHub Actions
+.github/
+
+# Other common files to ignore
+.git/
+.DS_Store
+*.log
+.eslintrc.cjs

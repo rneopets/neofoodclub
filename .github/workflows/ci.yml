@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Test & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Lint & Type Check
+      continue-on-error: true
+      run: |
+        npm run lint
+        npm run typecheck
+
+    - name: Unit Tests with Coverage
+      run: npm run test:coverage
+
+    - name: Build
+      run: npm run build
+
+    - name: Install Playwright
+      run: npx playwright install --with-deps chromium
+
+    - name: E2E Tests
+      run: npx playwright test --project=chromium
+
+    - name: Upload Coverage
+      if: github.event_name == 'pull_request'
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage/lcov.info
+        fail_ci_if_error: false
+
+    - name: Coverage Comment
+      if: github.event_name == 'pull_request'
+      uses: romeovs/lcov-reporter-action@v0.3.1
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        lcov-file: ./coverage/lcov.info
+        delete-old-comments: true
+
+    - name: Upload Test Artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          playwright-report/
+          test-results/
+        retention-days: 7
