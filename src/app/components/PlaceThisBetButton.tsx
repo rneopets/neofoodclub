@@ -99,7 +99,7 @@ const PlaceThisBetButton = React.memo(
       <BetButton
         rightIcon={<ExternalLinkIcon />}
         onClick={handleClick}
-        colorScheme={clicked ? '' : 'green'}
+        colorScheme={clicked ? 'gray' : 'green'}
       >
         {clicked ? 'Bet placed!' : 'Place bet!'}
       </BetButton>
