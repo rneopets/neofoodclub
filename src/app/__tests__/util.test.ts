@@ -401,20 +401,20 @@ describe('Utility Functions', () => {
   describe('makeBetURL', () => {
     it('creates URL with round number only', () => {
       const result = makeBetURL(8500);
-      expect(result).toBe('#round=8500');
+      expect(result).toBe('/#round=8500');
     });
 
     it('creates URL with bets', () => {
       const bets: Bet = new Map([[1, [1, 2, 0, 0, 0]]]);
       const result = makeBetURL(8500, bets);
-      expect(result).toContain('#round=8500&b=');
+      expect(result).toContain('/#round=8500&b=');
     });
 
     it('creates URL with bets and amounts', () => {
       const bets: Bet = new Map([[1, [1, 2, 0, 0, 0]]]);
       const betAmounts: BetAmount = new Map([[1, 1000]]);
       const result = makeBetURL(8500, bets, betAmounts, true);
-      expect(result).toContain('#round=8500&b=');
+      expect(result).toContain('/#round=8500&b=');
       expect(result).toContain('&a=');
     });
 
@@ -422,14 +422,14 @@ describe('Utility Functions', () => {
       const bets: Bet = new Map([[1, [1, 2, 0, 0, 0]]]);
       const betAmounts: BetAmount = new Map([[1, 1000]]);
       const result = makeBetURL(8500, bets, betAmounts, false);
-      expect(result).toContain('#round=8500&b=');
+      expect(result).toContain('/#round=8500&b=');
       expect(result).not.toContain('&a=');
     });
 
     it('does not include bet data when no bets exist', () => {
       const bets: Bet = new Map([[1, [0, 0, 0, 0, 0]]]);
       const result = makeBetURL(8500, bets);
-      expect(result).toBe('#round=8500');
+      expect(result).toBe('/#round=8500');
     });
   });
 
