@@ -571,7 +571,18 @@ describe('Utility Functions', () => {
 
   describe('getMaxBet', () => {
     it('calculates max bet with valid base max bet', () => {
-      mockGetCookie.mockReturnValue(10000);
+      mockGetCookie.mockImplementation(key => {
+        if (key === 'baseMaxBet') {
+          return 10000;
+        }
+        if (key === 'maxBetLocked') {
+          return false;
+        }
+        if (key === 'lockedMaxBet') {
+          return undefined;
+        }
+        return undefined;
+      });
 
       const result = getMaxBet(8500);
       // baseMaxBet (10000) + 2 * round (8500) = 27000
@@ -580,23 +591,42 @@ describe('Utility Functions', () => {
     });
 
     it('returns -1000 when calculated value is too low', () => {
-      // For the value to be < 50, we need baseMaxBet + 2 * 8500 < 50
-      // So baseMaxBet < 50 - 17000 = -16950
-      mockGetCookie.mockReturnValue(-20000); // Very low base that will result in value < 50
+      mockGetCookie.mockImplementation(key => {
+        if (key === 'maxBetLocked') {
+          return false;
+        }
+        if (key === 'baseMaxBet') {
+          return -20000;
+        }
+        return undefined;
+      });
 
       const result = getMaxBet(8500);
       expect(result).toBe(-1000);
     });
 
     it('caps max bet at 500,000', () => {
-      mockGetCookie.mockReturnValue(1000000); // Very high base
+      mockGetCookie.mockImplementation(key => {
+        if (key === 'maxBetLocked') {
+          return false;
+        }
+        if (key === 'baseMaxBet') {
+          return 1000000;
+        }
+        return undefined;
+      });
 
       const result = getMaxBet(8500);
       expect(result).toBe(500000);
     });
 
     it('returns -1000 when no cookie is set (undefined)', () => {
-      mockGetCookie.mockReturnValue(undefined);
+      mockGetCookie.mockImplementation(key => {
+        if (key === 'maxBetLocked') {
+          return false;
+        }
+        return undefined;
+      });
 
       const result = getMaxBet(8500);
       // When no cookie is set, should return -1000 (no max bet)
@@ -604,7 +634,15 @@ describe('Utility Functions', () => {
     });
 
     it('returns -1000 when no cookie is set (null)', () => {
-      mockGetCookie.mockReturnValue(null);
+      mockGetCookie.mockImplementation(key => {
+        if (key === 'maxBetLocked') {
+          return false;
+        }
+        if (key === 'baseMaxBet') {
+          return null;
+        }
+        return undefined;
+      });
 
       const result = getMaxBet(8500);
       // When no cookie is set, should return -1000 (no max bet)
