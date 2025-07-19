@@ -1,5 +1,11 @@
 import { useColorModeValue } from '@chakra-ui/react';
-import { format, addDays, formatDistanceToNow, formatDistanceStrict, formatRelative } from 'date-fns';
+import {
+  format,
+  addDays,
+  formatDistanceToNow,
+  formatDistanceStrict,
+  formatRelative,
+} from 'date-fns';
 import { toZonedTime, format as formatTz } from 'date-fns-tz';
 import { useMemo } from 'react';
 import Cookies from 'universal-cookie';
@@ -187,6 +193,20 @@ export function calculateBaseMaxBet(maxBet: number, round: number): number {
 
 export function getMaxBet(currentSelectedRound: number): number {
   const cookies = new Cookies();
+  const isLocked = getMaxBetLocked();
+
+  if (isLocked) {
+    // When locked, use the stored locked value
+    const lockedMaxBet = cookies.get('lockedMaxBet');
+    if (lockedMaxBet !== undefined && lockedMaxBet !== null) {
+      const value = parseInt(lockedMaxBet);
+      if (value >= 1) {
+        return Math.min(500_000, value);
+      }
+    }
+  }
+
+  // When unlocked or no locked value, use the base calculation
   const baseMaxBet = cookies.get('baseMaxBet');
 
   // If no cookie is set, return -1000 (no max bet)
@@ -240,6 +260,12 @@ export function getOddsTimelineMode(): boolean {
 export function getUseWebDomain(): boolean {
   const cookies = new Cookies();
   return cookies.get('useWebDomain');
+}
+
+export function getMaxBetLocked(): boolean {
+  const cookies = new Cookies();
+  const locked = cookies.get('maxBetLocked');
+  return locked !== undefined ? locked : false; // Default to false (unlocked) if not set
 }
 
 export function getUseLogitModel(): boolean {
