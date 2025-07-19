@@ -305,7 +305,7 @@ export function makeBetURL(
   betAmounts?: BetAmount,
   includeBetAmounts: boolean = false,
 ): string {
-  let url = `#round=${roundNumber}`;
+  let url = `/#round=${roundNumber}`;
   const anyBets = anyBetsExist(bets);
 
   if (anyBets && bets) {
