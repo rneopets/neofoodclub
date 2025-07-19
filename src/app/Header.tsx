@@ -10,6 +10,7 @@ import {
   Icon,
   InputGroup,
   InputLeftAddon,
+  InputRightElement,
   SkeletonText,
   Spacer,
   StackDivider,
@@ -31,11 +32,12 @@ import Cookies from 'universal-cookie';
 
 import DateFormatter from './components/DateFormatter';
 import GlowCard from './components/GlowCard';
+import MaxBetLockToggle from './components/MaxBetLockToggle';
 import RoundInput from './components/RoundInput';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
 import { useRoundDataStore, useTimestampValue, useLastChange, useHasRoundWinners } from './stores';
-import { calculateBaseMaxBet, getMaxBet } from './util';
+import { calculateBaseMaxBet, getMaxBet, getMaxBetLocked } from './util';
 
 const PreviousRoundInfo: React.FC = React.memo(() => {
   const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
@@ -256,11 +258,20 @@ const MaxBetInput: React.FC = () => {
       // Save to cookie if changed
       if (value !== currentValue) {
         const cookies = new Cookies();
-        const baseMaxBet = calculateBaseMaxBet(value, currentSelectedRound);
+        const isLocked = getMaxBetLocked();
 
-        cookies.set('baseMaxBet', baseMaxBet, {
-          expires: addYears(new Date(), 100),
-        });
+        if (isLocked) {
+          // When locked, save the actual max bet value
+          cookies.set('lockedMaxBet', value, {
+            expires: addYears(new Date(), 100),
+          });
+        } else {
+          // When unlocked, save the base max bet for round calculations
+          const baseMaxBet = calculateBaseMaxBet(value, currentSelectedRound);
+          cookies.set('baseMaxBet', baseMaxBet, {
+            expires: addYears(new Date(), 100),
+          });
+        }
 
         setIsAnimating(true);
         setTimeout(() => setIsAnimating(false), 600);
@@ -288,6 +299,9 @@ const MaxBetInput: React.FC = () => {
         })}
         transition="all 0.3s ease"
       />
+      <InputRightElement width="24px" pr={1}>
+        <MaxBetLockToggle />
+      </InputRightElement>
     </InputGroup>
   );
 };
@@ -440,7 +454,7 @@ const HeaderContent: React.FC = () => {
         <Spacer display={{ base: 'none', md: 'block' }} />
         <GlowCard p={2} maxW="lg" animate={isGlowing} mx="auto">
           <Flex h="100%" gap={2} align="center">
-            <VStack spacing={1} maxW="140px">
+            <VStack spacing={1} maxW="160px">
               <RoundInput />
               <MaxBetInput />
             </VStack>
