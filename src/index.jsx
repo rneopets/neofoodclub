@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ChakraProvider, ColorModeScript } from '@chakra-ui/react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -14,13 +15,15 @@ window.ENV = {
   REACT_APP_VERCEL_GIT_COMMIT_SHA: import.meta.env.REACT_APP_VERCEL_GIT_COMMIT_SHA,
 };
 
-// Register service worker with automatic updates
+// Register service worker without automatic updates
 if ('serviceWorker' in navigator) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
-      // Automatically apply the update without user notification
-      updateSW(true);
+      // Log that a new version is available, but don't force refresh
+      console.log('New app version available. Will be applied on next page refresh.');
+      // updateSW(true);
     },
     onOfflineReady() {
       console.log('App ready to work offline');
