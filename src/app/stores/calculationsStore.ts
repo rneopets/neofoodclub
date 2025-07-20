@@ -96,13 +96,16 @@ export const useCalculationsStore = create<CalculationsStore>()(
         customProbsHash = JSON.stringify(roundState.customProbs);
       }
 
+      // Include winners data in the hash to ensure recalculation when round ends
+      const winnersHash = JSON.stringify(roundState.roundData.winners || []);
+
       let calculationKey: string;
       if (!hasAnyBets) {
-        calculationKey = `empty-${roundNumber}-${selectedRound}-${customOddsMode}-${useLogitModel}`;
+        calculationKey = `empty-${roundNumber}-${selectedRound}-${customOddsMode}-${useLogitModel}-${winnersHash}`;
       } else {
         const betHash = JSON.stringify(Array.from(currentBets.entries()));
         const amountHash = JSON.stringify(Array.from(currentBetAmounts.entries()));
-        calculationKey = `${roundNumber}-${selectedRound}-${betHash}-${amountHash}-${customOddsHash}-${customProbsHash}`;
+        calculationKey = `${roundNumber}-${selectedRound}-${betHash}-${amountHash}-${customOddsHash}-${customProbsHash}-${winnersHash}`;
       }
 
       // Skip if already calculated
@@ -126,7 +129,7 @@ export const useCalculationsStore = create<CalculationsStore>()(
       // Check cache for empty calculations
       if (!hasAnyBets) {
         const cache = get().emptyCalculationsCache;
-        const cacheKey = `${roundNumber}-${selectedRound}-${customOddsMode}-${useLogitModel}`;
+        const cacheKey = `${roundNumber}-${selectedRound}-${customOddsMode}-${useLogitModel}-${winnersHash}`;
 
         if (cache.has(cacheKey)) {
           const cachedResult = cache.get(cacheKey);
