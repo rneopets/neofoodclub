@@ -1,17 +1,18 @@
-import { Radio, RadioProps } from '@chakra-ui/react';
 import React, { useCallback, useMemo } from 'react';
 
 import { useIsPirateSelected, useUpdateSinglePirate } from '../stores';
 import { memoizedCalculations } from '../stores/calculationsStore';
 
-interface BetRadioProps extends Omit<RadioProps, 'onChange'> {
+import { Radio, RadioGroup } from '@/components/ui/radio';
+
+interface BetRadioProps {
   betIndex: number;
   arenaIndex: number;
   pirateIndex: number;
 }
 
 const BetRadio = React.memo(
-  ({ betIndex, arenaIndex, pirateIndex, ...rest }: BetRadioProps): React.ReactElement => {
+  ({ betIndex, arenaIndex, pirateIndex }: BetRadioProps): React.ReactElement => {
     const isSelected = useIsPirateSelected(betIndex, arenaIndex, pirateIndex);
     const updateSinglePirate = useUpdateSinglePirate();
 
@@ -28,13 +29,17 @@ const BetRadio = React.memo(
       () => ({
         value: pirateIndex.toString(),
         name: `bet-${betIndex}-arena-${arenaIndex}`,
-        isChecked: isSelected,
+        checked: isSelected,
         onChange: handleChange,
       }),
       [betIndex, arenaIndex, pirateIndex, isSelected, handleChange],
     );
 
-    return <Radio {...radioProps} {...rest} />;
+    return (
+      <RadioGroup>
+        <Radio {...radioProps} />
+      </RadioGroup>
+    );
   },
   (prevProps, nextProps) =>
     prevProps.betIndex === nextProps.betIndex &&
@@ -62,13 +67,17 @@ export const ClearRadio = React.memo(
       () => ({
         value: '0',
         name: `bet-${betIndex}-arena-${arenaIndex}`,
-        isChecked: isClearSelected,
+        checked: isClearSelected,
         onChange: handleChange,
       }),
       [betIndex, arenaIndex, isClearSelected, handleChange],
     );
 
-    return <Radio {...radioProps} />;
+    return (
+      <RadioGroup>
+        <Radio {...radioProps} />
+      </RadioGroup>
+    );
   },
   (prevProps, nextProps) =>
     prevProps.betIndex === nextProps.betIndex && prevProps.arenaIndex === nextProps.arenaIndex,

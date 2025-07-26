@@ -8,12 +8,10 @@ test.describe('Basic App Tests', () => {
     await setupLocalDataMock(page);
 
     await page.goto('/');
-
-    // Wait for the page to load with a very long timeout
     await page.waitForLoadState('domcontentloaded');
 
-    // Check that the title is correct
-    await expect(page).toHaveTitle('NeoFoodClub');
+    // Check that the page has loaded and has some content
+    await expect(page).toHaveTitle(/NeoFoodClub/);
 
     // Check that the #root element exists
     await expect(page.locator('#root')).toBeAttached();

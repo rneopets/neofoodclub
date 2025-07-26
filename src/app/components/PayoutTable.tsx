@@ -1,18 +1,6 @@
-import { ArrowDownIcon, ArrowUpIcon } from '@chakra-ui/icons';
-import {
-  Box,
-  HStack,
-  IconButton,
-  Skeleton,
-  Spacer,
-  Table,
-  Tbody,
-  Text,
-  Th,
-  Thead,
-  Tr,
-} from '@chakra-ui/react';
+import { Box, HStack, IconButton, Skeleton, Spacer, Table, Text } from '@chakra-ui/react';
 import React, { useCallback, useMemo } from 'react';
+import { FaArrowDown, FaArrowUp } from 'react-icons/fa6';
 
 import { PIRATE_NAMES } from '../constants';
 import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
@@ -48,14 +36,13 @@ import { displayAsPercent, useTableColors } from '../util';
 import BetAmountInput from './BetAmountInput';
 import Pd from './Pd';
 import PlaceThisBetButton from './PlaceThisBetButton';
-import Td from './Td';
 import TextTooltip from './TextTooltip';
 
 // this element is the colorful and informative table full of your bet data
 
 const MemoizedTextTooltip = React.memo(
   ({ text, label }: { text: React.ReactNode; label?: string }) => (
-    <TextTooltip text={text} {...(label && { label })} />
+    <TextTooltip text={text} {...(label && { content: label })} />
   ),
 );
 MemoizedTextTooltip.displayName = 'MemoizedTextTooltip';
@@ -80,7 +67,7 @@ const PirateNameCell = React.memo(
       }
     }
 
-    return <Td backgroundColor={bgColor}>{pirateName}</Td>;
+    return <Table.Cell backgroundColor={bgColor}>{pirateName}</Table.Cell>;
   },
 );
 
@@ -180,7 +167,7 @@ const PayoutTableRow = React.memo(
     }
 
     return (
-      <Tr key={betKey}>
+      <Table.Row key={betKey}>
         <Pd backgroundColor={betNumBgColor}>
           <HStack px={2} gap={1}>
             <Spacer />
@@ -189,23 +176,25 @@ const PayoutTableRow = React.memo(
             {viewMode === false && (
               <>
                 <Spacer />
-                <HStack spacing="1px">
+                <HStack gap={1}>
                   <IconButton
                     size="xs"
                     height="20px"
-                    icon={<ArrowUpIcon />}
                     onClick={handleSwapUp}
-                    isDisabled={betIndex === 0}
+                    disabled={betIndex === 0}
                     aria-label="Move bet up"
-                  />
+                  >
+                    <FaArrowUp />
+                  </IconButton>
                   <IconButton
                     size="xs"
                     height="20px"
-                    icon={<ArrowDownIcon />}
                     onClick={handleSwapDown}
-                    isDisabled={betIndex === amountOfBets - 1}
+                    disabled={betIndex === amountOfBets - 1}
                     aria-label="Move bet down"
-                  />
+                  >
+                    <FaArrowDown />
+                  </IconButton>
                 </HStack>
               </>
             )}
@@ -215,30 +204,30 @@ const PayoutTableRow = React.memo(
         <Pd>
           <BetAmountInput
             betIndex={betIndex + 1}
-            isInvalid={baBg !== 'transparent'}
-            errorBorderColor={baBg}
+            invalid={baBg !== 'transparent'}
+            errorColor={baBg}
           />
         </Pd>
-        <Td isNumeric>
+        <Table.Cell style={{ textAlign: 'end' }}>
           {odds?.toLocaleString() ?? '0'}
           :1
-        </Td>
-        <Td isNumeric>{payoffs?.toLocaleString() ?? '0'}</Td>
-        <Td isNumeric>
+        </Table.Cell>
+        <Table.Cell style={{ textAlign: 'end' }}>{payoffs?.toLocaleString() ?? '0'}</Table.Cell>
+        <Table.Cell style={{ textAlign: 'end' }}>
           <MemoizedTextTooltip text={probabilityTooltip.text} label={probabilityTooltip.label} />
-        </Td>
-        <Td isNumeric backgroundColor={erBg}>
+        </Table.Cell>
+        <Table.Cell style={{ textAlign: 'end', backgroundColor: erBg }}>
           <MemoizedTextTooltip
             text={expectedRatioTooltip.text}
             label={expectedRatioTooltip.label}
           />
-        </Td>
-        <Td isNumeric backgroundColor={neBg}>
+        </Table.Cell>
+        <Table.Cell style={{ textAlign: 'end', backgroundColor: neBg }}>
           <MemoizedTextTooltip text={netExpectedTooltip.text} label={netExpectedTooltip.label} />
-        </Td>
-        <Td isNumeric backgroundColor={mbBg}>
+        </Table.Cell>
+        <Table.Cell style={{ textAlign: 'end', backgroundColor: mbBg }}>
           {maxBets?.toLocaleString() ?? '0'}
-        </Td>
+        </Table.Cell>
         {[0, 1, 2, 3, 4].map(arenaIndex => {
           const pirateIndex = currentBetLine[arenaIndex] as number;
           return (
@@ -249,10 +238,10 @@ const PayoutTableRow = React.memo(
             />
           );
         })}
-        <Td>
+        <Table.Cell>
           <PlaceThisBetButton bet={currentBetLine} betNum={betIndex + 1} />
-        </Td>
-      </Tr>
+        </Table.Cell>
+      </Table.Row>
     );
   },
 );
@@ -328,90 +317,92 @@ const PayoutTable = React.memo((): React.ReactElement => {
   );
 
   return (
-    <Table size="sm" width="auto">
-      <Thead>
-        <Tr>
-          <Th>Bet #</Th>
-          <Th>Amount</Th>
-          <Th>Odds</Th>
-          <Th>Payoff</Th>
-          <Th>
-            <TextTooltip text="Prob." label="Probability" />
-          </Th>
-          <Th>
-            <TextTooltip text="E.R." label="Expected Ratio" />
-          </Th>
-          <Th>
-            <TextTooltip text="N.E." label="Net Expected" />
-          </Th>
-          <Th>Maxbet</Th>
-          <Th>Shipwreck</Th>
-          <Th>Lagoon</Th>
-          <Th>Treasure</Th>
-          <Th>Hidden</Th>
-          <Th>Harpoon</Th>
-          <Th>Submit</Th>
-        </Tr>
-      </Thead>
+    <Table.Root size="sm" width="auto">
+      <Table.Header>
+        <Table.Row>
+          <Table.ColumnHeader>Bet #</Table.ColumnHeader>
+          <Table.ColumnHeader>Amount</Table.ColumnHeader>
+          <Table.ColumnHeader>Odds</Table.ColumnHeader>
+          <Table.ColumnHeader>Payoff</Table.ColumnHeader>
+          <Table.ColumnHeader>
+            <TextTooltip text="Prob." content="Probability" />
+          </Table.ColumnHeader>
+          <Table.ColumnHeader>
+            <TextTooltip text="E.R." content="Expected Ratio" />
+          </Table.ColumnHeader>
+          <Table.ColumnHeader>
+            <TextTooltip text="N.E." content="Net Expected" />
+          </Table.ColumnHeader>
+          <Table.ColumnHeader>Maxbet</Table.ColumnHeader>
+          <Table.ColumnHeader>Shipwreck</Table.ColumnHeader>
+          <Table.ColumnHeader>Lagoon</Table.ColumnHeader>
+          <Table.ColumnHeader>Treasure</Table.ColumnHeader>
+          <Table.ColumnHeader>Hidden</Table.ColumnHeader>
+          <Table.ColumnHeader>Harpoon</Table.ColumnHeader>
+          <Table.ColumnHeader>Submit</Table.ColumnHeader>
+        </Table.Row>
+      </Table.Header>
 
       {hasRoundData && calculated ? (
         <>
-          <Tbody>{tableRows}</Tbody>
-          <Tbody>
-            <Tr>
-              <Th isNumeric>Total:</Th>
-              <Th isNumeric>{totalBetAmounts.toLocaleString()}</Th>
-              <Th isNumeric>
+          <Table.Body>{tableRows}</Table.Body>
+          <Table.Body>
+            <Table.Row>
+              <Table.ColumnHeader style={{ textAlign: 'end' }}>Total:</Table.ColumnHeader>
+              <Table.ColumnHeader style={{ textAlign: 'end' }}>
+                {totalBetAmounts.toLocaleString()}
+              </Table.ColumnHeader>
+              <Table.ColumnHeader style={{ textAlign: 'end' }}>
                 {winningBetBinary > 0 && (
                   <Text>
                     {totalWinningOdds.toLocaleString()}:{totalEnabledBets}
                   </Text>
                 )}
-              </Th>
-              <Th isNumeric>
+              </Table.ColumnHeader>
+              <Table.ColumnHeader style={{ textAlign: 'end' }}>
                 {winningBetBinary > 0 && <Text>{totalWinningPayoff.toLocaleString()}</Text>}
-              </Th>
-              <Th />
-              <Th isNumeric>
+              </Table.ColumnHeader>
+              <Table.ColumnHeader style={{ textAlign: 'end' }} />
+              <Table.ColumnHeader style={{ textAlign: 'end' }}>
                 <MemoizedTextTooltip
                   text={totalExpectedRatioTooltip.text}
                   label={totalExpectedRatioTooltip.label}
                 />
-              </Th>
-              <Th isNumeric>
+              </Table.ColumnHeader>
+              <Table.ColumnHeader style={{ textAlign: 'end' }}>
                 <MemoizedTextTooltip
                   text={totalNetExpectedTooltip.text}
                   label={totalNetExpectedTooltip.label}
                 />
-              </Th>
-              <Th />
-              <Th />
-              <Th />
-              <Th />
-              <Th />
-              <Th />
-              <Th />
-            </Tr>
-          </Tbody>
+              </Table.ColumnHeader>
+              <Table.ColumnHeader />
+              <Table.ColumnHeader />
+              <Table.ColumnHeader />
+              <Table.ColumnHeader />
+              <Table.ColumnHeader />
+              <Table.ColumnHeader />
+              <Table.ColumnHeader />
+            </Table.Row>
+          </Table.Body>
         </>
       ) : (
-        <Tbody>
+        <Table.Body>
           {[...Array(amountOfBets)].map((_, index) => {
             // Create a stable key for skeleton rows that doesn't use array index
             const skeletonKey = `skeleton-${currentBet}-${index + 1}`;
             return (
-              <Tr key={skeletonKey}>
-                <Td colSpan={14}>
+              <Table.Row key={skeletonKey}>
+                <Table.Cell colSpan={14}>
                   <Skeleton height="30px">
                     <Box>&nbsp;</Box>
                   </Skeleton>
-                </Td>
-              </Tr>
+                </Table.Cell>
+              </Table.Row>
             );
           })}
-        </Tbody>
+        </Table.Body>
       )}
-    </Table>
+    </Table.Root>
   );
 });
 

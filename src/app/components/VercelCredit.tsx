@@ -13,10 +13,10 @@ export function VercelCredit(): React.ReactElement {
       py="2"
       rounded="lg"
     >
-      Deployed by{' '}
+      Deployed by
       <span role="img" aria-label="Vercel logo">
         ▲
-      </span>{' '}
+      </span>
       Vercel
     </Box>
   );

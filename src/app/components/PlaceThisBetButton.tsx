@@ -1,6 +1,6 @@
-import { ExternalLinkIcon } from '@chakra-ui/icons';
 import { Button, ButtonProps } from '@chakra-ui/react';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { FaExternalLinkAlt } from 'react-icons/fa';
 
 import {
   useBetOdds,
@@ -31,7 +31,7 @@ const ErrorBetButton: React.FC<BetButtonProps> = props => {
   const { children, ...rest } = props;
 
   return (
-    <BetButton colorScheme="red" isDisabled {...rest}>
+    <BetButton colorPalette="red" disabled {...rest}>
       {children}
     </BetButton>
   );
@@ -96,12 +96,8 @@ const PlaceThisBetButton = React.memo(
     }
 
     return (
-      <BetButton
-        rightIcon={<ExternalLinkIcon />}
-        onClick={handleClick}
-        colorScheme={clicked ? 'gray' : 'green'}
-      >
-        {clicked ? 'Bet placed!' : 'Place bet!'}
+      <BetButton onClick={handleClick} colorPalette={clicked ? 'gray' : 'green'}>
+        {clicked ? 'Bet placed!' : 'Place bet!'} <FaExternalLinkAlt />
       </BetButton>
     );
   },

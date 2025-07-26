@@ -1,21 +1,12 @@
-import {
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberInputProps,
-} from '@chakra-ui/react';
-import React, { memo } from 'react';
-
 import { useCustomValueInput } from '../hooks/useCustomValueInput';
 import { useRoundDataStore, useCustomOddsValue } from '../stores';
 
-// this element is the number input for custom odds
+import { NumberInputRoot, NumberInputField } from '@/components/ui/number-input';
 
-interface CustomOddsInputProps extends Omit<NumberInputProps, 'onChange'> {
+interface CustomOddsInputProps {
   arenaIndex: number;
   pirateIndex: number;
+  [key: string]: unknown;
 }
 
 // Completely isolated component that manages its own state
@@ -41,12 +32,10 @@ const CustomOddsInput = function CustomOddsInput(props: CustomOddsInputProps): R
   });
 
   return (
-    <NumberInput
+    <NumberInputRoot
       {...rest}
       value={inputValue}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      onFocus={handleFocus}
+      onValueChange={handleChange}
       size="xs"
       min={2}
       max={13}
@@ -54,29 +43,17 @@ const CustomOddsInput = function CustomOddsInput(props: CustomOddsInputProps): R
       width="80px"
       keepWithinRange={true}
       clampValueOnBlur={true}
-      inputMode="numeric"
       name={`custom-odds-input-${arenaIndex}-${pirateIndex}`}
       data-testid={`custom-odds-input-${arenaIndex}-${pirateIndex}`}
     >
       <NumberInputField
+        onBlur={handleBlur}
+        onFocus={handleFocus}
         name={`custom-odds-input-field-${arenaIndex}-${pirateIndex}`}
         data-testid={`custom-odds-input-field-${arenaIndex}-${pirateIndex}`}
       />
-      <NumberInputStepper width="16px">
-        <NumberIncrementStepper
-          data-testid={`custom-odds-input-increment-${arenaIndex}-${pirateIndex}`}
-        />
-        <NumberDecrementStepper
-          data-testid={`custom-odds-input-decrement-${arenaIndex}-${pirateIndex}`}
-        />
-      </NumberInputStepper>
-    </NumberInput>
+    </NumberInputRoot>
   );
 };
 
-export default memo(
-  CustomOddsInput,
-  (prevProps, nextProps) =>
-    prevProps.arenaIndex === nextProps.arenaIndex &&
-    prevProps.pirateIndex === nextProps.pirateIndex,
-);
+export default CustomOddsInput;

@@ -2,47 +2,83 @@ import {
   Box,
   Button,
   Center,
-  CircularProgress,
-  CircularProgressLabel,
+  ProgressCircle,
+  Image,
   Flex,
   Heading,
   HStack,
-  Icon,
-  InputGroup,
-  InputLeftAddon,
-  InputRightElement,
   SkeletonText,
   Spacer,
-  StackDivider,
+  Separator,
   Text,
-  Tooltip,
-  useColorModeValue,
   VStack,
   BoxProps,
   ButtonProps,
-  Input,
   IconButton,
-  useColorMode,
+  Show,
+  AbsoluteCenter,
 } from '@chakra-ui/react';
 import { addYears, differenceInMilliseconds } from 'date-fns';
-import { useScroll } from 'framer-motion';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { FaRotate, FaClockRotateLeft, FaPlay, FaMoon, FaSun } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
+import { useColorMode, useColorModeValue } from '../components/ui/color-mode';
+
 import DateFormatter from './components/DateFormatter';
 import GlowCard from './components/GlowCard';
-import MaxBetLockToggle from './components/MaxBetLockToggle';
 import RoundInput from './components/RoundInput';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
 import { useRoundDataStore, useTimestampValue, useLastChange, useHasRoundWinners } from './stores';
 import { calculateBaseMaxBet, getMaxBet, getMaxBetLocked } from './util';
 
+import {
+  NumberInputField,
+  NumberInputRoot,
+  NumberInputValueChangeDetails,
+} from '@/components/ui/number-input';
+import { Tooltip } from '@/components/ui/tooltip';
+
+// Add a new selector for error state
+const useErrorState = (): string | null => useRoundDataStore(state => state.error);
+
+interface GoToCurrentRoundButtonProps {
+  testId?: string;
+}
+
+const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo(
+  ({ testId = 'go-to-current-round' }) => {
+    const currentRound = useRoundDataStore(state => state.roundState.currentRound);
+    const updateSelectedRound = useRoundDataStore(state => state.updateSelectedRound);
+
+    const handleGoToCurrent = useCallback(() => {
+      updateSelectedRound(currentRound);
+    }, [updateSelectedRound, currentRound]);
+
+    return (
+      <Tooltip label={`Go to current round (${currentRound})`} placement="top">
+        <Button
+          size="xs"
+          variant="ghost"
+          colorPalette="blue"
+          onClick={handleGoToCurrent}
+          fontSize="xs"
+          height="auto"
+          minH="auto"
+          p={1}
+          data-testid={testId}
+        >
+          <FaPlay style={{ fontSize: '8px' }} />
+          Go to current round
+        </Button>
+      </Tooltip>
+    );
+  },
+);
+
 const PreviousRoundInfo: React.FC = React.memo(() => {
   const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
-  const currentRound = useRoundDataStore(state => state.roundState.currentRound);
-  const updateSelectedRound = useRoundDataStore(state => state.updateSelectedRound);
   const timestamp = useTimestampValue();
 
   const formattedDate = useMemo(() => {
@@ -63,31 +99,35 @@ const PreviousRoundInfo: React.FC = React.memo(() => {
     );
   }, [timestamp]);
 
-  const handleGoToCurrent = useCallback(() => {
-    updateSelectedRound(currentRound);
-  }, [updateSelectedRound, currentRound]);
+  return (
+    <Text as={Box} fontSize="xs">
+      <VStack gap={0}>
+        <>Round {currentSelectedRound} ended</>
+        <>{formattedDate}</>
+        <GoToCurrentRoundButton testId="go-to-current-round" />
+      </VStack>
+    </Text>
+  );
+});
+
+const ErrorRoundInfo: React.FC = React.memo(() => {
+  const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
+  const error = useErrorState();
+
+  const isNotFoundError = useMemo(
+    () => error && (error.includes('404') || error.includes('not found')),
+    [error],
+  );
 
   return (
     <Text as={Box} fontSize="xs">
-      <VStack spacing={0}>
-        <>Round {currentSelectedRound} ended</>
-        <>{formattedDate}</>
-        <Tooltip label={`Go to current round (${currentRound})`} placement="top">
-          <Button
-            leftIcon={<Icon as={FaPlay} boxSize={2} />}
-            size="xs"
-            variant="link"
-            colorScheme="blue"
-            onClick={handleGoToCurrent}
-            fontSize="xs"
-            height="auto"
-            minH="auto"
-            p={0}
-            data-testid="go-to-current-round"
-          >
-            Go to current round
-          </Button>
-        </Tooltip>
+      <VStack gap={0}>
+        <>
+          {isNotFoundError
+            ? `No data for round ${currentSelectedRound}`
+            : `Error loading round ${currentSelectedRound}`}
+        </>
+        <GoToCurrentRoundButton testId="go-to-current-round-error" />
       </VStack>
     </Text>
   );
@@ -105,11 +145,22 @@ const CurrentRoundProgress = React.memo((): React.ReactElement | null => {
   return (
     <>
       {roundPercentOver === 100 ? (
-        <CircularProgress size="38px" isIndeterminate capIsRound />
+        <ProgressCircle.Root value={null} size="md">
+          <ProgressCircle.Circle>
+            <ProgressCircle.Track />
+            <ProgressCircle.Range strokeLinecap="round" />
+          </ProgressCircle.Circle>
+        </ProgressCircle.Root>
       ) : (
-        <CircularProgress size="38px" value={roundPercentOver} capIsRound>
-          <CircularProgressLabel>{Math.floor(roundPercentOver)}%</CircularProgressLabel>
-        </CircularProgress>
+        <ProgressCircle.Root value={roundPercentOver} size="md">
+          <ProgressCircle.Circle>
+            <ProgressCircle.Track />
+            <ProgressCircle.Range strokeLinecap="round" />
+          </ProgressCircle.Circle>
+          <AbsoluteCenter>
+            <ProgressCircle.ValueText />
+          </AbsoluteCenter>
+        </ProgressCircle.Root>
       )}
     </>
   );
@@ -158,14 +209,14 @@ const CurrentRoundInfo: React.FC = React.memo(() => {
   ) : null;
 
   return (
-    <VStack divider={<StackDivider />} spacing={1} minW={{ sm: '140px' }} overflow="hidden">
+    <VStack separator={<Separator />} gap={1} minW={{ sm: '140px' }} overflow="hidden">
       <HStack>
         <Tooltip label="Last Update">
           <div>
-            <Icon as={FaRotate} />
+            <FaRotate />
           </div>
         </Tooltip>
-        <Text fontSize="xs" as={element} minW={{ base: 'auto', sm: '100px' }} isTruncated>
+        <Text fontSize="xs" as={element} minW={{ base: 'auto', sm: '100px' }} truncate>
           {formattedLastUpdate}
         </Text>
       </HStack>
@@ -173,10 +224,10 @@ const CurrentRoundInfo: React.FC = React.memo(() => {
         <HStack>
           <Tooltip label="Last Change">
             <div>
-              <Icon as={FaClockRotateLeft} />
+              <FaClockRotateLeft />
             </div>
           </Tooltip>
-          <Text fontSize="xs" minW={{ base: 'auto', sm: '100px' }} isTruncated>
+          <Text fontSize="xs" minW={{ base: 'auto', sm: '100px' }} truncate>
             {formattedLastChange}
           </Text>
         </HStack>
@@ -192,117 +243,95 @@ interface RoundInfoProps {
 const RoundInfo: React.FC<RoundInfoProps> = React.memo(({ display = 'block' }: RoundInfoProps) => {
   const winners = useRoundDataStore(state => state.roundState.roundData.winners);
   const timestamp = useTimestampValue();
+  const error = useErrorState();
 
   const element = useMemo(() => {
-    if ((winners?.[0] ?? 0) > 0) {
+    if (error) {
+      return <ErrorRoundInfo />;
+    } else if ((winners?.[0] ?? 0) > 0) {
       return <PreviousRoundInfo />;
     } else if (timestamp) {
       return <CurrentRoundInfo />;
     }
     return null;
-  }, [winners, timestamp]);
+  }, [winners, timestamp, error]);
 
   return <Box display={display}>{element}</Box>;
 });
 
 const MaxBetInput: React.FC = () => {
   const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
-  const [hasFocus, setHasFocus] = useState<boolean>(false);
-  const [inputValue, setInputValue] = useState<string>('');
+  const [tempValue, setTempValue] = useState<string>(() =>
+    getMaxBet(currentSelectedRound).toString(),
+  );
+
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Always sync with cookie when not focused
+  // Update temp value when round changes only
   useEffect(() => {
-    if (!hasFocus) {
-      const cookieValue = getMaxBet(currentSelectedRound);
-      const valueStr = cookieValue.toString();
-      setInputValue(valueStr);
+    const cookieValue = getMaxBet(currentSelectedRound);
+    setTempValue(cookieValue.toString());
+  }, [currentSelectedRound]);
 
-      // Force the HTML input to show the correct value
-      if (inputRef.current) {
-        inputRef.current.value = valueStr;
-      }
-    }
-  }, [currentSelectedRound, hasFocus]);
-
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>): void => {
-    setInputValue(e.target.value);
+  const handleChange = useCallback((details: NumberInputValueChangeDetails): void => {
+    setTempValue(details.value);
   }, []);
 
   const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement>): void => {
-    setHasFocus(true);
     e.target.select();
   }, []);
 
-  const handleBlur = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>): void => {
-      setHasFocus(false);
+  const handleBlur = useCallback((): void => {
+    let numValue = parseInt(tempValue) || -1000;
+    if (numValue < 1) {
+      numValue = -1000;
+    }
 
-      const rawValue = e.target.value;
-      const currentValue = getMaxBet(currentSelectedRound);
+    const currentMaxBet = getMaxBet(currentSelectedRound);
 
-      let value = parseInt(rawValue);
-      if (isNaN(value) || value < 1) {
-        value = -1000;
+    // Always update tempValue to the processed value
+    const processedValue = numValue.toString();
+    setTempValue(processedValue);
+
+    if (numValue !== currentMaxBet) {
+      const cookies = new Cookies();
+      const isLocked = getMaxBetLocked();
+
+      if (isLocked) {
+        cookies.set('lockedMaxBet', numValue, {
+          expires: addYears(new Date(), 100),
+        });
+      } else {
+        const baseMaxBet = calculateBaseMaxBet(numValue, currentSelectedRound);
+        cookies.set('baseMaxBet', baseMaxBet, {
+          expires: addYears(new Date(), 100),
+        });
       }
-      value = Math.min(value, 500_000);
 
-      // Always update input to processed value
-      const valueStr = value.toString();
-      setInputValue(valueStr);
-      if (inputRef.current) {
-        inputRef.current.value = valueStr;
-      }
-
-      // Save to cookie if changed
-      if (value !== currentValue) {
-        const cookies = new Cookies();
-        const isLocked = getMaxBetLocked();
-
-        if (isLocked) {
-          // When locked, save the actual max bet value
-          cookies.set('lockedMaxBet', value, {
-            expires: addYears(new Date(), 100),
-          });
-        } else {
-          // When unlocked, save the base max bet for round calculations
-          const baseMaxBet = calculateBaseMaxBet(value, currentSelectedRound);
-          cookies.set('baseMaxBet', baseMaxBet, {
-            expires: addYears(new Date(), 100),
-          });
-        }
-
-        setIsAnimating(true);
-        setTimeout(() => setIsAnimating(false), 600);
-      }
-    },
-    [currentSelectedRound],
-  );
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 600);
+    }
+  }, [tempValue, currentSelectedRound]);
 
   return (
-    <InputGroup size="xs" w="100%">
-      <InputLeftAddon children="Max Bet" />
-      <Input
-        ref={inputRef}
-        value={inputValue}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        onFocus={handleFocus}
-        type="number"
-        min={-1000}
-        max={500000}
-        data-testid="max-bet-input-field"
-        {...(isAnimating && {
-          borderColor: 'green.400',
-          boxShadow: '0 0 0 1px var(--chakra-colors-green-400)',
-        })}
-        transition="all 0.3s ease"
-      />
-      <InputRightElement width="24px" pr={1}>
-        <MaxBetLockToggle />
-      </InputRightElement>
-    </InputGroup>
+    <NumberInputRoot
+      data-testid="max-bet-input-field"
+      size="xs"
+      value={tempValue}
+      onValueChange={handleChange}
+      min={-1000}
+      max={500000}
+      formatOnBlur={false}
+      clampValueOnBlur={false}
+      allowMouseWheel={false}
+      {...(isAnimating && {
+        borderColor: 'green.400',
+        boxShadow: '0 0 0 1px var(--chakra-colors-green-400)',
+      })}
+      transition="all 0.3s ease"
+    >
+      <NumberInputField onBlur={handleBlur} onFocus={handleFocus} />
+    </NumberInputRoot>
   );
 };
 
@@ -345,13 +374,14 @@ const TitleHeading: React.FC<TitleHeadingProps> = props => {
       >
         <Center>
           <Box
-            as="img"
-            src={NeopointIcon}
+            asChild
             height="1.5em"
             width="1.5em"
             display={{ base: 'none', md: 'inline-block' }}
             mr={2}
-          />
+          >
+            <Image src={NeopointIcon} alt="Neopoint Icon" height="1.5em" width="1.5em" />
+          </Box>
           <Heading
             as={'h1'}
             fontFamily="heading"
@@ -391,19 +421,16 @@ const ColorModeToggle: React.FC = () => {
   }, [colorMode, setColorMode, cookies]);
 
   return (
-    <Tooltip
-      label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
-      placement="bottom"
+    <IconButton
+      aria-label="Toggle color mode"
+      onClick={toggleColorMode}
+      variant="ghost"
+      size="md"
+      data-testid="color-mode-toggle"
+      title={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
     >
-      <IconButton
-        aria-label="Toggle color mode"
-        icon={<Icon as={colorMode === 'light' ? FaMoon : FaSun} />}
-        onClick={toggleColorMode}
-        variant="ghost"
-        size="md"
-        data-testid="color-mode-toggle"
-      />
-    </Tooltip>
+      {colorMode === 'light' ? <FaMoon /> : <FaSun />}
+    </IconButton>
   );
 };
 
@@ -412,6 +439,7 @@ const HeaderContent: React.FC = () => {
   const prevTimestampRef = useRef<string | undefined>(undefined);
   const hasWinners = useHasRoundWinners();
   const timestamp = useTimestampValue();
+  const error = useErrorState();
   const isRoundSwitching = useRoundDataStore(state => state.isRoundSwitching);
   const roundData = useRoundDataStore(state => state.roundState.roundData);
   const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
@@ -449,21 +477,21 @@ const HeaderContent: React.FC = () => {
 
   return (
     <>
-      <HStack p={4} spacing={4} as={Flex}>
+      <HStack p={4} gap={4} as={Flex}>
         <TitleHeading />
         <Spacer display={{ base: 'none', md: 'block' }} />
         <GlowCard p={2} maxW="lg" animate={isGlowing} mx="auto">
           <Flex h="100%" gap={2} align="center">
-            <VStack spacing={1} maxW="160px">
+            <VStack gap={1} maxW="160px">
               <RoundInput />
               <MaxBetInput />
             </VStack>
-            <SkeletonText isLoaded={!isRoundSwitching && hasValidData} minW="140px">
+            <Show when={hasValidData || error} fallback={<SkeletonText minW="140px" />}>
               <Flex align="center" justify="center" gap={2}>
-                <CurrentRoundProgress />
+                {hasValidData && <CurrentRoundProgress />}
                 <RoundInfo />
               </Flex>
-            </SkeletonText>
+            </Show>
           </Flex>
         </GlowCard>
         <Spacer display={{ base: 'none', md: 'block' }} />
@@ -479,10 +507,12 @@ const Header: React.FC<HeaderProps> = props => {
   const bg = useColorModeValue('rgba(255, 255, 255, 0.7)', 'rgba(26, 32, 44, 0.7)');
   const [y, setY] = useState<number>(0);
 
-  const { scrollY } = useScroll();
   useEffect(() => {
-    scrollY.on('change', () => setY(scrollY.get()));
-  }, [scrollY]);
+    const handleScroll = (): void => setY(window.scrollY);
+
+    window.addEventListener('scroll', handleScroll);
+    return (): void => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <Box

@@ -1,96 +1,71 @@
-import {
-  Flex,
-  Text,
-  Tooltip,
-  useColorModeValue,
-  Box,
-  Icon,
-  Switch,
-  IconProps,
-} from '@chakra-ui/react';
-import { ChangeEvent, MouseEvent, ReactNode, useCallback, useMemo, memo } from 'react';
+import { Flex, Text, Box } from '@chakra-ui/react';
+import { ChangeEvent, MouseEvent, ReactNode, useCallback, memo } from 'react';
+
+import { useColorModeValue } from '@/components/ui/color-mode';
+import { Switch } from '@/components/ui/switch';
 
 interface SettingsRowProps {
   icon: React.ElementType;
   label: string;
-  colorScheme: string;
+  colorPalette: string;
   isChecked: boolean;
   onChange: (e: ChangeEvent<HTMLInputElement> | MouseEvent<HTMLDivElement>) => void;
-  isDisabled?: boolean;
-  tooltipText?: string;
-  iconProps?: IconProps & { baseSize?: string; largeSize?: string };
+  disabled?: boolean;
   children?: ReactNode;
 }
 
 const SettingsRow = memo<SettingsRowProps>(
   ({
-    icon,
+    icon: IconComponent,
     label,
     isChecked,
     onChange,
-    tooltipText,
-    colorScheme = 'blue',
-    iconProps = {},
-    isDisabled = false,
+    colorPalette = 'blue',
+    disabled = false,
   }) => {
-    const baseSize = iconProps.baseSize || '1em';
-    const largeSize = iconProps.largeSize || '1.5em';
-
-    const iconSize = useMemo(
-      () => (isChecked ? largeSize : baseSize),
-      [isChecked, largeSize, baseSize],
-    );
-    const { baseSize: _, largeSize: _2, ...safeIconProps } = iconProps;
-
-    const bgColorEnabled = useColorModeValue(`${colorScheme}.50`, `${colorScheme}.900`);
-    const bgColorDisabled = useColorModeValue(`${colorScheme}.25`, `${colorScheme}.950`);
-    const bgColor = useMemo(
-      () => (isChecked ? bgColorEnabled : bgColorDisabled),
-      [isChecked, bgColorEnabled, bgColorDisabled],
-    );
+    const bgColorEnabled = useColorModeValue(`${colorPalette}.50`, `${colorPalette}.900`);
+    const bgColorDisabled = useColorModeValue(`${colorPalette}.25`, `${colorPalette}.950`);
+    const bgColor = isChecked ? bgColorEnabled : bgColorDisabled;
 
     const handleRowClick = useCallback(
       (e: MouseEvent<HTMLDivElement>) => {
-        if (isDisabled) {
-          return;
+        if (!disabled) {
+          onChange(e);
         }
-        onChange(e);
       },
-      [isDisabled, onChange],
+      [disabled, onChange],
     );
 
     const handleSwitchChange = useCallback(
       (e: ChangeEvent<HTMLInputElement>) => {
         e.stopPropagation();
-        if (isDisabled) {
-          return;
+        if (!disabled) {
+          onChange(e);
         }
-        onChange(e);
       },
-      [isDisabled, onChange],
+      [disabled, onChange],
     );
 
     const handleStopPropagation = useCallback((e: MouseEvent<HTMLDivElement>) => {
       e.stopPropagation();
     }, []);
 
-    const rowContent = (
+    const content = (
       <Flex
         justify="space-between"
         align="center"
         width="100%"
         as="div"
-        opacity={isDisabled ? 0.6 : 1}
+        opacity={disabled ? 0.6 : 1}
         py={2}
         px={2}
         borderRadius="md"
         transition="all 0.2s"
         backgroundColor={bgColor}
         borderWidth="1px"
-        borderColor={isChecked ? `${colorScheme}.200` : 'transparent'}
+        borderColor={isChecked ? `${colorPalette}.200` : 'transparent'}
         onClick={handleRowClick}
-        cursor={isDisabled ? 'not-allowed' : 'pointer'}
-        _hover={{ transform: 'none' }}
+        cursor={disabled ? 'not-allowed' : 'pointer'}
       >
         <Flex align="center" flex="1" cursor="inherit">
           <Box
@@ -102,20 +77,18 @@ const SettingsRow = memo<SettingsRowProps>(
             alignItems="center"
             mr={2}
           >
-            {icon && (
-              <Icon
-                as={icon}
-                color={isChecked ? `${colorScheme}.500` : 'gray.400'}
-                w={iconSize}
-                h={iconSize}
-                maxW="24px"
-                maxH="24px"
+            {IconComponent && (
+              <IconComponent
                 style={{
-                  transition:
-                    'width 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), height 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s',
-                  ...safeIconProps.style,
+                  color: isChecked
+                    ? `var(--chakra-colors-${colorPalette}-500)`
+                    : 'var(--chakra-colors-gray-400)',
+                  width: '1em',
+                  height: '1em',
+                  maxWidth: '24px',
+                  maxHeight: '24px',
+                  transition: 'color 0.2s',
                 }}
-                {...safeIconProps}
               />
             )}
           </Box>
@@ -123,29 +96,19 @@ const SettingsRow = memo<SettingsRowProps>(
         </Flex>
         <Box onClick={handleStopPropagation} position="relative" zIndex={1}>
           <Switch
-            isChecked={isChecked}
-            colorScheme={colorScheme}
-            isDisabled={isDisabled}
+            checked={isChecked}
+            colorPalette={colorPalette}
+            disabled={disabled}
             onChange={handleSwitchChange}
-            cursor={isDisabled ? 'not-allowed' : 'pointer'}
+            cursor={disabled ? 'not-allowed' : 'pointer'}
             size="md"
           />
         </Box>
       </Flex>
     );
 
-    // Always render Tooltip but conditionally disable it to prevent Switch remounting
-    return (
-      <Tooltip
-        label={tooltipText || ''}
-        hasArrow
-        placement="top"
-        openDelay={600}
-        isDisabled={!tooltipText} // Disable tooltip when no text provided
-      >
-        {rowContent}
-      </Tooltip>
-    );
+    // Simple version without Tooltip for now
+    return content;
   },
 );
 

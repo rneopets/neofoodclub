@@ -1,15 +1,4 @@
-import {
-  HStack,
-  Card,
-  Table,
-  Tbody,
-  Th,
-  Thead,
-  Tr,
-  Skeleton,
-  useColorMode,
-  Box,
-} from '@chakra-ui/react';
+import { HStack, Card, Table, Skeleton, Box } from '@chakra-ui/react';
 import { Chart, TooltipItem } from 'chart.js/auto';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import React, { useCallback, useMemo } from 'react';
@@ -25,8 +14,9 @@ import {
 } from '../stores';
 import { amountAbbreviation, displayAsPercent, useTableColors } from '../util';
 
-import Td from './Td';
 import TextTooltip from './TextTooltip';
+
+import { useColorMode } from '@/components/ui/color-mode';
 
 Chart.register(annotationPlugin);
 
@@ -175,7 +165,7 @@ const PayoutCharts: React.FC = React.memo(() => {
       let type = 'units';
 
       if (title === 'Odds') {
-        const validBets = Array.from(betBinaries.values().filter(x => x > 0));
+        const validBets = Array.from(betBinaries.values()).filter((x: number) => x > 0);
 
         breakEven = validBets.length;
         doubleProfit = 2 * breakEven;
@@ -275,12 +265,12 @@ const PayoutCharts: React.FC = React.memo(() => {
       }
 
       return (
-        <Tr>
-          <Td colSpan={4} pt={2}>
+        <Table.Row>
+          <Table.Cell colSpan={4} pt={2}>
             {/* @ts-ignore */}
             <Scatter data={chartData} options={options} />
-          </Td>
-        </Tr>
+          </Table.Cell>
+        </Table.Row>
       );
     },
     [betBinaries, totalBetAmount, colorMode, winningBetBinary, calculationsData],
@@ -310,50 +300,52 @@ const PayoutCharts: React.FC = React.memo(() => {
         }
 
         return (
-          <Tr key={dataObj.value} backgroundColor={bgColor}>
-            <Td isNumeric>{dataObj.value.toLocaleString()}</Td>
-            <Td isNumeric>
+          <Table.Row key={dataObj.value} backgroundColor={bgColor}>
+            <Table.Cell style={{ textAlign: 'end' }}>{dataObj.value.toLocaleString()}</Table.Cell>
+            <Table.Cell style={{ textAlign: 'end' }}>
               <TextTooltip
                 text={displayAsPercent(dataObj.probability, 3)}
-                label={displayAsPercent(dataObj.probability)}
+                content={displayAsPercent(dataObj.probability)}
               />
-            </Td>
-            <Td isNumeric>
+            </Table.Cell>
+            <Table.Cell style={{ textAlign: 'end' }}>
               <TextTooltip
                 text={displayAsPercent(dataObj.cumulative || 0, 3)}
-                label={displayAsPercent(dataObj.cumulative || 0)}
+                content={displayAsPercent(dataObj.cumulative || 0)}
               />
-            </Td>
-            <Td isNumeric>
+            </Table.Cell>
+            <Table.Cell style={{ textAlign: 'end' }}>
               <TextTooltip
                 text={displayAsPercent(dataObj.tail || 0, 3)}
-                label={displayAsPercent(dataObj.tail || 0)}
+                content={displayAsPercent(dataObj.tail || 0)}
               />
-            </Td>
-          </Tr>
+            </Table.Cell>
+          </Table.Row>
         );
       });
 
       return (
         <Box>
-          <Card p={1} boxShadow="2xl">
-            <Skeleton isLoaded={hasRoundData && calculationsData.calculated}>
-              <Table size="sm" width="auto">
-                <Thead>
-                  <Tr>
-                    <Th>{title}</Th>
-                    <Th>Probability</Th>
-                    <Th>Cumulative</Th>
-                    <Th>Tail</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {tableRows}
-                  {makeChart(title, data)}
-                </Tbody>
-              </Table>
-            </Skeleton>
-          </Card>
+          <Card.Root p={1} boxShadow="2xl">
+            <Card.Body>
+              <Skeleton loading={hasRoundData && calculationsData.calculated}>
+                <Table.Root size="sm" width="auto">
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeader>{title}</Table.ColumnHeader>
+                      <Table.ColumnHeader>Probability</Table.ColumnHeader>
+                      <Table.ColumnHeader>Cumulative</Table.ColumnHeader>
+                      <Table.ColumnHeader>Tail</Table.ColumnHeader>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {tableRows}
+                    {makeChart(title, data)}
+                  </Table.Body>
+                </Table.Root>
+              </Skeleton>
+            </Card.Body>
+          </Card.Root>
         </Box>
       );
     },

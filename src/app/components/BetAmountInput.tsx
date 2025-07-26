@@ -1,23 +1,24 @@
-import {
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputProps,
-  NumberInputStepper,
-} from '@chakra-ui/react';
+import { NumberInput } from '@chakra-ui/react';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { useOptimizedBetAmount, useUpdateSingleBetAmount } from '../stores';
 
-interface BetAmountInputProps extends Omit<NumberInputProps, 'onChange'> {
+import {
+  NumberInputRoot,
+  NumberInputField,
+  NumberInputValueChangeDetails,
+} from '@/components/ui/number-input';
+
+interface BetAmountInputProps {
   betIndex: number;
+  invalid?: boolean;
+  errorColor?: string;
   [key: string]: unknown;
 }
 
 const BetAmountInput = React.memo(
   (props: BetAmountInputProps): React.ReactElement => {
-    const { betIndex, isInvalid, errorBorderColor, ...rest } = props;
+    const { betIndex, invalid, errorColor, ...rest } = props;
 
     // Use optimized hook that only subscribes to this specific bet amount
     const betAmount = useOptimizedBetAmount(betIndex);
@@ -57,8 +58,8 @@ const BetAmountInput = React.memo(
       };
     }, [tempValue, updateSingleBetAmount, betIndex, betAmount, isEditing]);
 
-    const handleChange = useCallback((value: string): void => {
-      setTempValue(value);
+    const handleChange = useCallback((details: NumberInputValueChangeDetails): void => {
+      setTempValue(details.value);
       setIsEditing(true);
     }, []);
 
@@ -79,38 +80,33 @@ const BetAmountInput = React.memo(
     }, []);
 
     return (
-      <NumberInput
+      <NumberInputRoot
         size="sm"
         value={tempValue}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        onFocus={handleFocus}
+        onValueChange={handleChange}
         min={-1000}
         max={500_000}
         allowMouseWheel
         width="90px"
-        isInvalid={isInvalid ?? false}
-        {...(errorBorderColor && { errorBorderColor })}
+        invalid={invalid ?? false}
         name={`bet-amount-input-${betIndex}`}
         data-testid={`bet-amount-input-${betIndex}`}
         {...rest}
       >
         <NumberInputField
+          onBlur={handleBlur}
+          onFocus={handleFocus}
           name={`bet-amount-input-field-${betIndex}`}
           data-testid={`bet-amount-input-field-${betIndex}`}
         />
-        <NumberInputStepper width="16px">
-          <NumberIncrementStepper data-testid={`bet-amount-input-increment-${betIndex}`} />
-          <NumberDecrementStepper data-testid={`bet-amount-input-decrement-${betIndex}`} />
-        </NumberInputStepper>
-      </NumberInput>
+      </NumberInputRoot>
     );
   },
   // Custom comparison function - only re-render if relevant props change
   (prevProps, nextProps) =>
     prevProps.betIndex === nextProps.betIndex &&
-    prevProps.isInvalid === nextProps.isInvalid &&
-    prevProps.errorBorderColor === nextProps.errorBorderColor,
+    prevProps.invalid === nextProps.invalid &&
+    prevProps.errorColor === nextProps.errorColor,
 );
 
 BetAmountInput.displayName = 'BetAmountInput';

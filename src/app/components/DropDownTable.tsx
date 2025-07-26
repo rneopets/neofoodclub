@@ -1,4 +1,4 @@
-import { Badge, Skeleton, Table, Tbody, Text, Th, Thead, Tr } from '@chakra-ui/react';
+import { Badge, Skeleton, Table, Text } from '@chakra-ui/react';
 import React, { useCallback, useMemo } from 'react';
 
 import { ARENA_NAMES, PIRATE_NAMES, FULL_PIRATE_NAMES } from '../constants';
@@ -35,24 +35,24 @@ const BetRow = React.memo(
     betNum,
     arenaId,
     pirateValue,
-    isLoaded,
+    loading,
     onChange,
   }: {
     betNum: number;
     arenaId: number;
     pirateValue: number;
-    isLoaded: boolean;
+    loading: boolean;
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   }) => (
     <Pd key={`bet-${betNum}-arena-${arenaId}`}>
-      <Skeleton isLoaded={isLoaded} height="24px">
+      <Skeleton loading={loading} height="24px">
         <PirateSelect arenaId={arenaId} pirateValue={pirateValue} onChange={onChange} />
       </Skeleton>
     </Pd>
   ),
   (prevProps, nextProps) =>
     prevProps.pirateValue === nextProps.pirateValue &&
-    prevProps.isLoaded === nextProps.isLoaded &&
+    prevProps.loading === nextProps.loading &&
     prevProps.onChange === nextProps.onChange,
 );
 
@@ -70,10 +70,10 @@ const DropDownTableRow = React.memo(
   }) => {
     const currentBetLine = useBetLineSpecific(betNum + 1);
     const thisBetBinary = useSpecificBetBinary(betNum + 1);
-    const isLoaded = useIsCalculated();
+    const loading = useIsCalculated();
 
     return (
-      <Tr>
+      <Table.Row>
         {ARENA_NAMES.map((_, arenaId) => {
           const selectedPirate = currentBetLine[arenaId] || 0;
 
@@ -84,13 +84,13 @@ const DropDownTableRow = React.memo(
               betNum={betNum}
               arenaId={arenaId}
               pirateValue={selectedPirate}
-              isLoaded={isLoaded}
+              loading={loading}
               onChange={rowHandlers[arenaId]!}
             />
           );
         })}
         <Pd>{isBetDuplicate(thisBetBinary) && <DuplicateBadge />}</Pd>
-      </Tr>
+      </Table.Row>
     );
   },
 );
@@ -123,7 +123,7 @@ const PirateInfoRow = React.memo(
     const pirateName = PIRATE_NAMES.get(pirateId) as string;
 
     return (
-      <Tr
+      <Table.Row
         key={`pirate-${pirateId}-${arenaId}-${pirateIndex}`}
         backgroundColor={didPirateWin ? green : 'transparent'}
       >
@@ -136,11 +136,11 @@ const PirateInfoRow = React.memo(
         >
           {pirateName}
         </Pd>
-        <Pd isNumeric>{opening}:1</Pd>
-        <Pd isNumeric>
+        <Pd style={{ textAlign: 'end' }}>{opening}:1</Pd>
+        <Pd style={{ textAlign: 'end' }}>
           <Text fontWeight={current === opening ? 'normal' : 'bold'}>{current}:1</Text>
         </Pd>
-      </Tr>
+      </Table.Row>
     );
   },
   (prevProps, nextProps) =>
@@ -161,9 +161,9 @@ const TableHeaderCell = React.memo(
       : '';
 
     return (
-      <Th whiteSpace="nowrap">
+      <Table.ColumnHeader whiteSpace="nowrap">
         {ARENA_NAMES[arenaId]} {arenaRatioString}
-      </Th>
+      </Table.ColumnHeader>
     );
   },
   (prevProps, nextProps) => prevProps.arenaId === nextProps.arenaId,
@@ -172,15 +172,15 @@ const TableHeaderCell = React.memo(
 TableHeaderCell.displayName = 'TableHeaderCell';
 
 const ClearButtonHeader = React.memo(() => (
-  <Th px={1}>
-    <ClearBetsButton minW="100%" colorScheme="red" />
-  </Th>
+  <Table.ColumnHeader px={1}>
+    <ClearBetsButton minW="100%" colorPalette="red" />
+  </Table.ColumnHeader>
 ));
 
 ClearButtonHeader.displayName = 'ClearButtonHeader';
 
 const DuplicateBadge = React.memo(() => (
-  <Badge colorScheme="red" variant="subtle" fontSize="xs">
+  <Badge colorPalette="red" variant="subtle" fontSize="xs">
     ❌ Duplicate
   </Badge>
 ));
@@ -197,7 +197,7 @@ const ArenaCell = React.memo(
   }) => {
     const roundPirates = useRoundPirates();
     const pirates = roundPirates[arenaId] ?? makeEmpty(4);
-    const isLoaded = Boolean(pirates[0]);
+    const loading = Boolean(pirates[0]);
 
     const pirateRows = useMemo(
       () =>
@@ -220,10 +220,10 @@ const ArenaCell = React.memo(
 
     return (
       <Pd key={`arena-${arenaId}`}>
-        <Skeleton isLoaded={isLoaded}>
-          <Table size="sm" maxW="150px">
-            <Tbody>{pirateRows}</Tbody>
-          </Table>
+        <Skeleton loading={loading}>
+          <Table.Root size="sm" maxW="150px">
+            <Table.Body>{pirateRows}</Table.Body>
+          </Table.Root>
         </Skeleton>
       </Pd>
     );
@@ -255,10 +255,10 @@ const ArenaRow = React.memo(
     );
 
     return (
-      <Tr>
+      <Table.Row>
         {arenaCells}
         <Pd>{/* Empty cell for duplicate badge column alignment */}</Pd>
-      </Tr>
+      </Table.Row>
     );
   },
 );
@@ -326,14 +326,14 @@ const DropDownTable = React.memo(
 
     const tableHeader = useMemo(
       () => (
-        <Thead>
-          <Tr>
+        <Table.Header>
+          <Table.Row>
             {Array.from({ length: 5 }, (_, arenaId) => (
               <TableHeaderCell key={`dropdown-arena-${arenaId}`} arenaId={arenaId} />
             ))}
             <ClearButtonHeader />
-          </Tr>
-        </Thead>
+          </Table.Row>
+        </Table.Header>
       ),
       [],
     );
@@ -366,13 +366,13 @@ const DropDownTable = React.memo(
     );
 
     return (
-      <Table size="sm" width="auto">
+      <Table.Root size="sm" width="auto">
         {tableHeader}
-        <Tbody>
+        <Table.Body>
           <ArenaRow createTimelineClickHandler={createTimelineClickHandler} />
           {betRows}
-        </Tbody>
-      </Table>
+        </Table.Body>
+      </Table.Root>
     );
   },
   (prevProps, nextProps) =>

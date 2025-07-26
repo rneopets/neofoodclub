@@ -1,28 +1,30 @@
-import { Box, Flex, Switch, Icon, Tooltip, IconProps } from '@chakra-ui/react';
+import { Box, Flex, IconProps } from '@chakra-ui/react';
 import React, { ChangeEvent, MouseEvent, useCallback, memo } from 'react';
+
+import { Tooltip } from '@/components/ui/tooltip';
 
 /**
  * Reusable setting switch component with indicator line
  */
 interface SettingSwitchProps {
   icon?: React.ElementType;
-  isChecked: boolean;
+  checked: boolean;
   onChange: (e: ChangeEvent<HTMLInputElement> | MouseEvent<HTMLDivElement>) => void;
   tooltipLabel?: string;
-  color?: string;
+  colorPalette?: string;
   iconProps?: IconProps & { baseSize?: unknown; largeSize?: unknown };
-  isDisabled?: boolean;
+  disabled?: boolean;
 }
 
 const SettingSwitch = memo(
   ({
     icon,
-    isChecked,
+    checked: isChecked,
     onChange,
     tooltipLabel,
-    color = 'blue',
+    colorPalette = 'blue',
     iconProps = {},
-    isDisabled = false,
+    disabled = false,
   }: SettingSwitchProps): React.ReactElement => {
     const iconSize = '1em';
     const { baseSize: _, largeSize: _2, ...safeIconProps } = iconProps;
@@ -30,22 +32,22 @@ const SettingSwitch = memo(
     const handleSwitchChange = useCallback(
       (e: ChangeEvent<HTMLInputElement>): void => {
         e.stopPropagation();
-        if (isDisabled) {
+        if (disabled) {
           return;
         }
         onChange(e);
       },
-      [isDisabled, onChange],
+      [disabled, onChange],
     );
 
     const handleIconClick = useCallback(
-      (e: MouseEvent<SVGElement>): void => {
-        if (isDisabled) {
+      (e: MouseEvent<HTMLDivElement>): void => {
+        if (disabled) {
           return;
         }
         onChange(e as unknown as MouseEvent<HTMLDivElement>);
       },
-      [isDisabled, onChange],
+      [disabled, onChange],
     );
 
     const handleStopPropagation = useCallback((e: MouseEvent<HTMLDivElement>): void => {
@@ -60,31 +62,36 @@ const SettingSwitch = memo(
           p={1}
           borderRadius="md"
           minW="32px"
-          opacity={isDisabled ? 0.6 : 1}
+          opacity={disabled ? 0.6 : 1}
         >
           {icon && (
-            <Icon
-              as={icon}
-              color={isChecked ? `${color}.500` : 'gray.400'}
-              w={iconSize}
-              h={iconSize}
-              cursor={isDisabled ? 'not-allowed' : 'pointer'}
+            <Box
+              cursor={disabled ? 'not-allowed' : 'pointer'}
               onClick={handleIconClick}
-              style={{
-                transition: 'color 0.2s',
-                ...safeIconProps.style,
-              }}
-              {...safeIconProps}
-            />
+              display="inline-flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <Box
+                as={icon}
+                color={isChecked ? `${colorPalette}.500` : 'gray.400'}
+                width={iconSize}
+                height={iconSize}
+                style={{
+                  transition: 'color 0.2s',
+                  fontSize: iconSize,
+                  ...safeIconProps.style,
+                }}
+              />
+            </Box>
           )}
           <Box onClick={handleStopPropagation} position="relative" zIndex={1}>
-            <Switch
-              size="md"
-              colorScheme={color}
-              isChecked={isChecked}
+            <input
+              type="checkbox"
+              checked={isChecked}
               onChange={handleSwitchChange}
-              isDisabled={isDisabled}
-              cursor={isDisabled ? 'not-allowed' : 'pointer'}
+              disabled={disabled}
+              style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
             />
           </Box>
         </Flex>
@@ -96,7 +103,7 @@ const SettingSwitch = memo(
           transform="translateX(-50%)"
           width="60%"
           height="1px"
-          bg={isChecked ? `${color}.500` : 'gray.600'}
+          bg={isChecked ? `${colorPalette}.500` : 'gray.600'}
           transition="background-color 0.2s"
           borderRadius="full"
         />
@@ -109,7 +116,7 @@ const SettingSwitch = memo(
         hasArrow
         placement="top"
         openDelay={600}
-        isDisabled={!tooltipLabel}
+        disabled={!tooltipLabel}
       >
         {content}
       </Tooltip>

@@ -6,37 +6,22 @@ import {
   Spacer,
   Wrap,
   WrapItem,
-  Collapse,
   Button,
   ButtonGroup,
   IconButton,
   Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
   Editable,
-  EditableInput,
-  EditablePreview,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalCloseButton,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
+  Dialog,
   Text,
   Heading,
   Badge,
-  Divider,
+  Separator,
   Card,
-  Icon,
-  Tooltip,
-  ScaleFade,
-  useDisclosure,
-  useColorModeValue,
   useClipboard,
+  Portal,
+  Icon,
 } from '@chakra-ui/react';
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import {
   FaMarkdown,
   FaCode,
@@ -96,10 +81,12 @@ import {
   anyBetAmountsExist,
 } from './util';
 
+import { Tooltip } from '@/components/ui/tooltip';
+
 const BuildSetMenu = React.memo((): React.ReactElement => {
   const hasRoundData = useRoundPirates()?.[0]?.[0] !== undefined;
 
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [open, setOpen] = useState(false);
   const [mode, setMode] = React.useState(''); // currently can only be "Ten-bet" or "Gambit"
   const [pirateIndices, setPirateIndices] = React.useState(makeEmpty(5)); // indices of the pirates to be included in the set
   const [min, setMin] = React.useState(0); // minimum pirate amount
@@ -136,8 +123,8 @@ const BuildSetMenu = React.memo((): React.ReactElement => {
     setMin(1);
     setMax(3);
     setPirateIndices(makeEmpty(5));
-    onOpen();
-  }, [onOpen]);
+    setOpen(true);
+  }, []);
 
   const handleGambitClick = useCallback(() => {
     setMode('Gambit');
@@ -145,8 +132,8 @@ const BuildSetMenu = React.memo((): React.ReactElement => {
     setMin(5);
     setMax(5);
     setPirateIndices(makeEmpty(5));
-    onOpen();
-  }, [onOpen]);
+    setOpen(true);
+  }, []);
 
   const handleBuildClick = useCallback(() => {
     if (mode === 'Ten-bet') {
@@ -154,8 +141,8 @@ const BuildSetMenu = React.memo((): React.ReactElement => {
     } else if (mode === 'Gambit') {
       generateGambitWithPirates(pirateIndices);
     }
-    onClose();
-  }, [mode, pirateIndices, generateTenbetSet, generateGambitWithPirates, onClose]);
+    setOpen(false);
+  }, [mode, pirateIndices, generateTenbetSet, generateGambitWithPirates]);
 
   const randomizeIndices = useCallback(() => {
     // generate a full set of random indices
@@ -188,89 +175,107 @@ const BuildSetMenu = React.memo((): React.ReactElement => {
 
   return (
     <>
-      <Menu>
-        <MenuButton
-          as={Button}
-          leftIcon={<Icon as={FaShapes} />}
-          rightIcon={<Icon as={FaChevronDown} />}
-          aria-label="Generate New Bet Set"
-          isDisabled={!hasRoundData}
-          data-testid="build-set-button"
-          size="sm"
-        >
-          Build set
-        </MenuButton>
-        <MenuList>
-          <MenuItem onClick={handleGambitClick} data-testid="build-gambit-set-menuitem">
-            Gambit set
-          </MenuItem>
-          <MenuItem onClick={handleTenBetClick} data-testid="build-tenbet-set-menuitem">
-            Ten-bet set
-          </MenuItem>
-        </MenuList>
-      </Menu>
-
-      <Modal isCentered size="2xl" isOpen={isOpen} onClose={onClose} motionPreset="slideInBottom">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Custom {mode} builder</ModalHeader>
-          <ModalCloseButton data-testid="build-modal-close-button" />
-          <ModalBody>
-            <VStack mb={3}>
-              {min === max ? (
-                <Text as={'i'}>Please choose {max} pirates.</Text>
-              ) : (
-                <Text as={'i'}>
-                  Please choose between {min} and {max} pirates.
-                </Text>
-              )}
-            </VStack>
-            <Wrap justify="center">
-              {ARENA_NAMES.map((arena, index) => (
-                <WrapItem key={arena}>
-                  <PirateSelect
-                    arenaId={index}
-                    pirateValue={pirateIndices[index] ?? 0}
-                    showArenaName={true}
-                    onChange={createOnChangeHandler(index)}
-                  />
-                </WrapItem>
-              ))}
-            </Wrap>
-          </ModalBody>
-          <ModalFooter>
-            <Flex width="2xl">
-              <HStack>
-                <Button
-                  leftIcon={<Icon as={FaShuffle} />}
-                  onClick={randomizeIndices}
-                  data-testid="randomize-button"
-                >
-                  Randomize
-                </Button>
-                <Button
-                  leftIcon={<Icon as={FaTrash} />}
-                  onClick={handleClearIndices}
-                  data-testid="modal-clear-button"
-                  isDisabled={pirateIndices.every(e => e === 0)}
-                >
-                  Clear
-                </Button>
-              </HStack>
-              <Spacer />
-              <Button
-                isDisabled={!buildButtonEnabled}
-                variant="solid"
-                colorScheme="blue"
-                onClick={handleBuildClick}
-                data-testid="build-modal-button"
+      <Menu.Root>
+        <Menu.Trigger asChild>
+          <Button
+            aria-label="Generate New Bet Set"
+            disabled={!hasRoundData}
+            data-testid="build-set-button"
+            size="sm"
+          >
+            <FaShapes />
+            Build set
+            <FaChevronDown />
+          </Button>
+        </Menu.Trigger>
+        <Portal>
+          <Menu.Positioner>
+            <Menu.Content>
+              <Menu.Item
+                value="gambit"
+                onClick={handleGambitClick}
+                data-testid="build-gambit-set-menuitem"
               >
-                Build {mode} set
-              </Button>
-            </Flex>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+                Gambit set
+              </Menu.Item>
+              <Menu.Item
+                value="tenbet"
+                onClick={handleTenBetClick}
+                data-testid="build-tenbet-set-menuitem"
+              >
+                Ten-bet set
+              </Menu.Item>
+            </Menu.Content>
+          </Menu.Positioner>
+        </Portal>
+      </Menu.Root>
+
+      <Dialog.Root
+        placement="center"
+        size="xl"
+        lazyMount
+        open={open}
+        onOpenChange={(e: { open: boolean | ((prevState: boolean) => boolean) }) => setOpen(e.open)}
+      >
+        <Dialog.Backdrop />
+        <Dialog.Positioner>
+          <Dialog.Content>
+            <Dialog.Header>Custom {mode} builder</Dialog.Header>
+            <Dialog.CloseTrigger data-testid="build-modal-close-button" />
+            <Dialog.Body>
+              <VStack mb={3}>
+                {min === max ? (
+                  <Text as={'i'}>Please choose {max} pirates.</Text>
+                ) : (
+                  <Text as={'i'}>
+                    Please choose between {min} and {max} pirates.
+                  </Text>
+                )}
+              </VStack>
+              <Wrap justify="center">
+                {ARENA_NAMES.map((arena, index) => (
+                  <WrapItem key={arena}>
+                    <PirateSelect
+                      arenaId={index}
+                      pirateValue={pirateIndices[index] ?? 0}
+                      showArenaName={true}
+                      onChange={createOnChangeHandler(index)}
+                    />
+                  </WrapItem>
+                ))}
+              </Wrap>
+            </Dialog.Body>
+            <Dialog.Footer>
+              <Flex width="2xl">
+                <HStack>
+                  <Button onClick={randomizeIndices} data-testid="randomize-button">
+                    <FaShuffle />
+                    Randomize
+                  </Button>
+                  <Button
+                    onClick={handleClearIndices}
+                    data-testid="modal-clear-button"
+                    disabled={pirateIndices.every(e => e === 0)}
+                  >
+                    <FaTrash />
+                    Clear
+                  </Button>
+                </HStack>
+                <Spacer />
+                <Button
+                  disabled={!buildButtonEnabled}
+                  variant="solid"
+                  colorPalette="blue"
+                  onClick={handleBuildClick}
+                  data-testid="build-modal-button"
+                >
+                  Build {mode} set
+                </Button>
+              </Flex>
+            </Dialog.Footer>
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Dialog.Root>
     </>
   );
 });
@@ -456,18 +461,18 @@ const BetCopyButtons = React.memo(
     }, [handleCopyWithAnimation, onCopyUrlWithAmounts]);
 
     return (
-      <HStack spacing={1} {...rest}>
+      <HStack gap={1} {...rest}>
         <Spacer />
         <Heading size="xs" textTransform="uppercase">
           Share:
         </Heading>
-        <ButtonGroup variant="solid" isAttached>
+        <ButtonGroup variant="solid" gap={1}>
           <CopyIconButton
             icon={FaLink}
             label="Copy Bet URL"
             onClick={handleCopyUrl}
             ariaLabel="Copy Bet URL"
-            isDisabled={!anyBetsExist(bets)}
+            disabled={!anyBetsExist(bets)}
             testId="copy-bet-url-button"
             isActive={copiedButton === 'url'}
           />
@@ -476,19 +481,19 @@ const BetCopyButtons = React.memo(
             label="Copy Bet URL with amounts"
             onClick={handleCopyUrlWithAmounts}
             ariaLabel="Copy Bet URL with amounts"
-            isDisabled={!anyBetAmountsExist(betAmounts)}
+            disabled={!anyBetAmountsExist(betAmounts)}
             testId="copy-bet-url-with-amounts-button"
             isActive={copiedButton === 'urlWithAmounts'}
           />
         </ButtonGroup>
 
-        <ButtonGroup variant="solid" isAttached>
+        <ButtonGroup variant="solid" gap={1}>
           <CopyIconButton
             icon={FaMarkdown}
             label="Copy Markdown table"
             onClick={handleCopyMarkdown}
             ariaLabel="Copy Markdown table"
-            isDisabled={tableExportDisabled}
+            disabled={tableExportDisabled}
             testId="copy-markdown-button"
             isActive={copiedButton === 'markdown'}
           />
@@ -497,7 +502,7 @@ const BetCopyButtons = React.memo(
             label="Copy HTML table"
             onClick={handleCopyHtml}
             ariaLabel="Copy HTML table"
-            isDisabled={tableExportDisabled}
+            disabled={tableExportDisabled}
             testId="copy-html-button"
             isActive={copiedButton === 'html'}
           />
@@ -516,7 +521,7 @@ const CopyIconButton = React.memo(
     label,
     onClick,
     ariaLabel,
-    isDisabled,
+    disabled,
     testId,
     isActive,
   }: {
@@ -524,28 +529,25 @@ const CopyIconButton = React.memo(
     label: string;
     onClick: () => void;
     ariaLabel: string;
-    isDisabled: boolean;
+    disabled: boolean;
     testId: string;
     isActive: boolean;
   }) => (
-    <Tooltip label={label} openDelay={600}>
+    <Tooltip content={label} openDelay={600}>
       <IconButton
-        icon={
-          <div style={{ position: 'relative', width: '1.5em', height: '1.5em' }}>
-            <ScaleFade in={!isActive} initialScale={0.8}>
-              <Icon as={MainIcon} w="1.5em" h="1.5em" position="absolute" top="0" left="0" />
-            </ScaleFade>
-            <ScaleFade in={isActive} initialScale={0.8}>
-              <Icon as={FaCheck} w="1.5em" h="1.5em" position="absolute" top="0" left="0" />
-            </ScaleFade>
-          </div>
-        }
         onClick={onClick}
         aria-label={ariaLabel}
-        isDisabled={isDisabled}
+        disabled={disabled}
         data-testid={testId}
-        colorScheme={isActive ? 'green' : 'gray'}
-      />
+        colorPalette={isActive ? 'green' : 'gray'}
+      >
+        <Icon
+          as={isActive ? FaCheck : MainIcon}
+          w="1.5em"
+          h="1.5em"
+          transition="all 0.2s ease-in-out"
+        />
+      </IconButton>
     </Tooltip>
   ),
 );
@@ -593,8 +595,6 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
     }
   }, [deleteSet, currentBetIndex, betSetCount]);
 
-  const previewHover = useColorModeValue('gray.200', 'gray.600');
-
   const positiveArenas = useMemo(
     () => arenaRatios.filter((x: number) => x > 0).length,
     [arenaRatios],
@@ -611,9 +611,9 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
 
   const handleEditableSubmit = useCallback(
     (key: number) =>
-      function onSubmit(nextValue: string): void {
+      function onValueCommit(details: { value: string }): void {
         const store = useBetManagementStore.getState();
-        store.updateBetName(key, nextValue);
+        store.updateBetName(key, details.value);
       },
     [],
   );
@@ -634,12 +634,11 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
           isCurrent={isCurrent}
           currentName={currentName}
           onClick={handleCardClick(key)}
-          onSubmit={handleEditableSubmit(key)}
-          previewHover={previewHover}
+          onValueCommit={handleEditableSubmit(key)}
         />
       );
     });
-  }, [betSetCount, allNames, currentBetIndex, handleCardClick, handleEditableSubmit, previewHover]);
+  }, [betSetCount, allNames, currentBetIndex, handleCardClick, handleEditableSubmit]);
 
   const clearBets = useCallback(() => {
     clearOrDeleteSet();
@@ -655,69 +654,74 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
     <SettingsBox p={2} {...rest}>
       <Stack>
         <Wrap>
-          <Button
-            leftIcon={<Icon as={FaPlus} />}
-            onClick={newEmptySet}
-            data-testid="new-set-button"
-            size="sm"
-          >
+          <Button onClick={newEmptySet} data-testid="new-set-button" size="sm">
+            <FaPlus />
             New set
           </Button>
 
-          <ButtonGroup isAttached size="sm">
-            <Button
-              leftIcon={<Icon as={FaClone} />}
-              onClick={cloneSet}
-              data-testid="clone-set-button"
-            >
+          <ButtonGroup size="sm">
+            <Button onClick={cloneSet} data-testid="clone-set-button">
+              <FaClone />
               Clone
             </Button>
-            <Button
-              leftIcon={<Icon as={FaTrash} />}
-              onClick={clearBets}
-              data-testid="clear-delete-button"
-            >
+            <Button onClick={clearBets} data-testid="clear-delete-button">
+              <FaTrash />
               {betSetCount === 1 ? 'Clear' : 'Delete'}
             </Button>
           </ButtonGroup>
 
-          <Menu>
-            <MenuButton
-              as={Button}
-              leftIcon={<Icon as={FaWandMagicSparkles} />}
-              rightIcon={<Icon as={FaChevronDown} />}
-              data-testid="generate-button"
-              isDisabled={!hasRoundData}
-              size="sm"
-            >
-              Generate
-            </MenuButton>
-            <MenuList>
-              <MenuItem onClick={generateMaxTERSet} data-testid="max-ter-set-menuitem">
-                Max TER set
-              </MenuItem>
-              <MenuItem onClick={generateGambitSet} data-testid="gambit-set-menuitem">
-                Gambit set
-              </MenuItem>
-              <MenuItem
-                hidden={winningBetBinary === 0}
-                onClick={generateWinningGambitSet}
-                data-testid="winning-gambit-set-menuitem"
-              >
-                Winning Gambit set
-              </MenuItem>
-              <MenuItem onClick={generateRandomCrazySet} data-testid="random-crazy-set-menuitem">
-                Random Crazy set
-              </MenuItem>
-              <MenuItem
-                onClick={generateBustproofSet}
-                isDisabled={positiveArenas === 0}
-                data-testid="bustproof-set-menuitem"
-              >
-                Bustproof Set
-              </MenuItem>
-            </MenuList>
-          </Menu>
+          <Menu.Root>
+            <Menu.Trigger asChild>
+              <Button data-testid="generate-button" disabled={!hasRoundData} size="sm">
+                <FaWandMagicSparkles />
+                Generate
+                <FaChevronDown />
+              </Button>
+            </Menu.Trigger>
+            <Portal>
+              <Menu.Positioner>
+                <Menu.Content>
+                  <Menu.Item
+                    value="maxTer"
+                    onClick={generateMaxTERSet}
+                    data-testid="max-ter-set-menuitem"
+                  >
+                    Max TER set
+                  </Menu.Item>
+                  <Menu.Item
+                    value="gambit"
+                    onClick={generateGambitSet}
+                    data-testid="gambit-set-menuitem"
+                  >
+                    Gambit set
+                  </Menu.Item>
+                  <Menu.Item
+                    value="winningGambit"
+                    hidden={winningBetBinary === 0}
+                    onClick={generateWinningGambitSet}
+                    data-testid="winning-gambit-set-menuitem"
+                  >
+                    Winning Gambit set
+                  </Menu.Item>
+                  <Menu.Item
+                    value="randomCrazy"
+                    onClick={generateRandomCrazySet}
+                    data-testid="random-crazy-set-menuitem"
+                  >
+                    Random Crazy set
+                  </Menu.Item>
+                  <Menu.Item
+                    value="bustproof"
+                    onClick={generateBustproofSet}
+                    disabled={positiveArenas === 0}
+                    data-testid="bustproof-set-menuitem"
+                  >
+                    Bustproof Set
+                  </Menu.Item>
+                </Menu.Content>
+              </Menu.Positioner>
+            </Portal>
+          </Menu.Root>
 
           <BuildSetMenu />
         </Wrap>
@@ -734,57 +738,40 @@ const BetCard = React.memo(
     isCurrent,
     currentName,
     onClick,
-    onSubmit,
-    previewHover,
+    onValueCommit,
   }: {
     cardKey: number;
     isCurrent: boolean;
     currentName: string;
     onClick: () => void;
-    onSubmit: (value: string) => void;
-    previewHover: string;
+    onValueCommit: (details: { value: string }) => void;
   }) => (
     <WrapItem>
-      <Card
+      <Card.Root
         p={1}
         opacity={isCurrent ? 1 : 0.5}
         cursor={isCurrent ? 'default' : 'pointer'}
         onClick={onClick}
         transition="all 0.2s ease-in-out"
         boxShadow={isCurrent ? 'dark-lg' : 'xl'}
-        _hover={isCurrent ? {} : { bg: previewHover }}
         minW="260px"
       >
-        <VStack align="stretch" minW="200px" divider={<Divider />}>
-          <Heading
-            as={Editable}
-            size="md"
-            key={`${cardKey}-${currentName}`}
-            textAlign="center"
-            minW="100%"
-            placeholder="Unnamed Set"
+        <VStack align="stretch" minW="200px" separator={<Separator />}>
+          <Editable.Root
+            key={cardKey}
+            as={Heading}
             defaultValue={currentName}
-            // @ts-expect-error - onSubmit is not a valid prop for Editable
-            onSubmit={onSubmit}
-            isPreviewFocusable={isCurrent}
-            selectAllOnFocus={true}
+            onValueCommit={onValueCommit}
+            placeholder="Unnamed Set"
+            minW="100%"
           >
-            <EditablePreview
-              minW="100%"
-              px={2}
-              cursor={isCurrent ? 'text' : 'pointer'}
-              _hover={{
-                background: isCurrent ? previewHover : undefined,
-              }}
-            />
-            <EditableInput />
-          </Heading>
+            <Editable.Preview minW="100%" />
+            <Editable.Input />
+          </Editable.Root>
           <BetBadges index={cardKey} />
-          <Collapse in={isCurrent} animateOpacity>
-            <BetCopyButtons index={cardKey} />
-          </Collapse>
+          {isCurrent && <BetCopyButtons index={cardKey} />}
         </VStack>
-      </Card>
+      </Card.Root>
     </WrapItem>
   ),
 );
@@ -847,7 +834,7 @@ const BetBadges = React.memo(
       // round-over badge
       if (isRoundOver) {
         result.push(
-          <Badge key="round-over" colorScheme="red" variant="subtle">
+          <Badge key="round-over" colorPalette="red" variant="subtle">
             Round {roundData?.round} is over
           </Badge>,
         );
@@ -855,7 +842,7 @@ const BetBadges = React.memo(
 
       if (!calculated) {
         result.push(
-          <Badge key="no-round-data" colorScheme="red" variant="subtle">
+          <Badge key="no-round-data" colorPalette="red" variant="subtle">
             ❌ No data for round {currentSelectedRound}
           </Badge>,
         );
@@ -870,7 +857,7 @@ const BetBadges = React.memo(
       if (hasDuplicateBets) {
         // duplicate bets
         result.push(
-          <Badge key="duplicate-bets" colorScheme="red" variant="subtle">
+          <Badge key="duplicate-bets" colorPalette="red" variant="subtle">
             ❌ Contains duplicate bets
           </Badge>,
         );
@@ -885,7 +872,7 @@ const BetBadges = React.memo(
 
       if (invalidBetAmounts.length > 0) {
         result.push(
-          <Badge key="invalid-amounts" colorScheme="red" variant="subtle">
+          <Badge key="invalid-amounts" colorPalette="red" variant="subtle">
             ❌ Invalid bet amounts
           </Badge>,
         );
@@ -894,7 +881,7 @@ const BetBadges = React.memo(
       // bust chance badge
       if (betCount === 0 && calculated) {
         result.push(
-          <Badge key="no-bets" colorScheme="red" variant="subtle">
+          <Badge key="no-bets" colorPalette="red" variant="subtle">
             ❌ No pirates selected
           </Badge>,
         );
@@ -929,7 +916,7 @@ const BetBadges = React.memo(
           });
 
           result.push(
-            <Badge key="gambit" colorScheme="blue" variant="subtle">
+            <Badge key="gambit" colorPalette="blue" variant="subtle">
               Gambit: {names.join(' x ')}
             </Badge>,
           );
@@ -954,7 +941,7 @@ const BetBadges = React.memo(
           });
 
           result.push(
-            <Badge key="tenbet" colorScheme="purple" variant="subtle">
+            <Badge key="tenbet" colorPalette="purple" variant="subtle">
               Tenbet: {names.join(' x ')}
             </Badge>,
           );
@@ -969,7 +956,7 @@ const BetBadges = React.memo(
 
         if (isCrazy) {
           result.push(
-            <Badge key="crazy" colorScheme="pink" variant="subtle">
+            <Badge key="crazy" colorPalette="pink" variant="subtle">
               🤪 Crazy
             </Badge>,
           );
@@ -1019,7 +1006,7 @@ const BetBadges = React.memo(
       const lowestProfit = payoutTables.winnings[0]?.value ?? 0;
       if (betAmountsTotal < lowestProfit) {
         result.push(
-          <Badge key="guaranteed-profit" colorScheme="green" variant="subtle">
+          <Badge key="guaranteed-profit" colorPalette="green" variant="subtle">
             💰 Guaranteed profit ({lowestProfit - betAmountsTotal}+ NP)
           </Badge>,
         );
@@ -1067,14 +1054,14 @@ const BetBadges = React.memo(
         );
       } else {
         result.push(
-          <Badge key="units-won" colorScheme="green" variant="subtle">
+          <Badge key="units-won" colorPalette="green" variant="subtle">
             Units won: {unitsWon.toLocaleString()}
           </Badge>,
         );
 
         if (npWon > 0) {
           result.push(
-            <Badge key="np-won" colorScheme="green" variant="subtle">
+            <Badge key="np-won" colorPalette="green" variant="subtle">
               💰 NP won: {npWon.toLocaleString()}
             </Badge>,
           );
@@ -1106,7 +1093,7 @@ const BetBadges = React.memo(
     );
 
     return (
-      <VStack spacing={1} style={{ userSelect: 'none' }} {...rest}>
+      <VStack gap={1} userSelect="none" {...rest}>
         {allBadges}
       </VStack>
     );

@@ -32,7 +32,10 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src", "e2e", "playwright.config.ts", "vercel-build.ts"],
   "exclude": ["vitest.config.ts"],

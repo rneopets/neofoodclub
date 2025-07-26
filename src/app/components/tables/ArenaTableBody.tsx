@@ -1,6 +1,6 @@
-import { TriangleDownIcon, TriangleUpIcon } from '@chakra-ui/icons';
-import { Box, Button, Icon, Skeleton, Tbody, Text, Td, Tr, VStack } from '@chakra-ui/react';
+import { Box, Button, Skeleton, Table, Text, VStack } from '@chakra-ui/react';
 import React, { useCallback, useMemo, useEffect, useState, useRef } from 'react';
+import { FaCaretDown, FaCaretUp } from 'react-icons/fa6';
 
 import {
   PIRATE_NAMES,
@@ -71,7 +71,7 @@ const PirateFA = React.memo(
       <FaDetailsElement
         key={`fa-${foodId}-pirate-${pirateId}`}
         as={Pd}
-        isNumeric
+        textAlign="end"
         backgroundColor={color}
         whiteSpace="nowrap"
       >
@@ -85,7 +85,7 @@ PirateFA.displayName = 'PirateFA';
 
 // A sticky Td component for the first column
 const StickyTd = React.memo(
-  (props: React.ComponentProps<typeof Td> & { cursor?: string }): React.ReactElement => {
+  (props: React.ComponentProps<typeof Table.Cell> & { cursor?: string }): React.ReactElement => {
     const { children, onClick, cursor = undefined, ...rest } = props;
     const [isStuck, setIsStuck] = useState(false);
     const tdRef = useRef<HTMLTableCellElement>(null);
@@ -146,7 +146,7 @@ const StickyTd = React.memo(
       Object.entries(rest).filter(([_, value]) => value !== undefined),
     );
 
-    const tdProps: React.ComponentProps<typeof Td> = {
+    const tdProps: React.ComponentProps<typeof Table.Cell> = {
       ref: tdRef,
       style: {
         position: 'sticky',
@@ -172,7 +172,7 @@ const StickyTd = React.memo(
       ...filteredRest,
     };
 
-    return <Td {...tdProps}>{children}</Td>;
+    return <Table.Cell {...tdProps}>{children}</Table.Cell>;
   },
 );
 
@@ -211,7 +211,7 @@ const ClearButtonCell = React.memo(
 
     return (
       <Pd backgroundColor={colors.gray}>
-        <Button size="xs" variant="outline" onClick={handleClearRow}>
+        <Button size="xs" onClick={handleClearRow}>
           {betCount}-Bet
         </Button>
       </Pd>
@@ -291,7 +291,7 @@ const FoodItems = React.memo(
                 zIndex: 1,
               }}
             >
-              <TextTooltip text={foodName} label={foodName} />
+              <TextTooltip text={foodName} content={foodName} />
             </FaDetailsElement>
           );
         })}
@@ -313,11 +313,11 @@ const ArenaRatioDisplay = React.memo(
     }
 
     return (
-      <Skeleton isLoaded={currentArenaRatio !== undefined}>
+      <Skeleton loading={currentArenaRatio === undefined}>
         <TextTooltip
           text={displayAsPercent(currentArenaRatio as number, 1)}
-          label={((currentArenaRatio as number) * 100).toString()}
-        />{' '}
+          content={`${(currentArenaRatio as number) * 100}%`}
+        />
       </Skeleton>
     );
   },
@@ -325,16 +325,6 @@ const ArenaRatioDisplay = React.memo(
 );
 
 ArenaRatioDisplay.displayName = 'ArenaRatioDisplay';
-
-// const BigBrainColumns = React.memo(() => {
-//   const { gray } = useTableColors();
-//   const isUsingBigBrain = useBigBrain();
-//   const isUsingLogitModel = useLogitModelSetting();
-
-//   return <Td backgroundColor={gray} colSpan={isUsingBigBrain ? (isUsingLogitModel ? 4 : 6) : 1} />;
-// });
-
-// BigBrainColumns.displayName = 'BigBrainColumns';
 
 const EmptyBetsPlaceholder = React.memo(() => {
   const { gray } = useTableColors();
@@ -351,7 +341,7 @@ EmptyBetsPlaceholder.displayName = 'EmptyBetsPlaceholder';
 
 const EmptyTd = React.memo((props: { colSpan?: number }) => {
   const { gray } = useTableColors();
-  return <Td backgroundColor={gray} colSpan={props.colSpan || 1} />;
+  return <Table.Cell backgroundColor={gray} colSpan={props.colSpan || 1} />;
 });
 
 const ArenaHeaderRow = React.memo(
@@ -402,24 +392,24 @@ const ArenaHeaderRow = React.memo(
     }, [bigBrain, useLogitModel, customOddsMode]);
 
     return (
-      <Tr>
-        <Td rowSpan={5} p={2}>
-          <VStack spacing={1}>
+      <Table.Row>
+        <Table.Cell rowSpan={5} p={2}>
+          <VStack gap={1}>
             <Text fontWeight="bold">{ARENA_NAMES[arenaId]}</Text>
             <ArenaRatioDisplay arenaId={arenaId} />
           </VStack>
-        </Td>
+        </Table.Cell>
         <EmptyTd colSpan={emptyColSpan} />
         {faDetails ? <FoodItems arenaId={arenaId} /> : null}
-        <EmptyTd colSpan={2} /> {/* 2 for open/current odds */}
-        {customOddsMode ? <EmptyTd /> : null} {/* 1 for custom odds */}
-        {oddsTimeline ? <EmptyTd /> : null} {/* 1 for odds timeline */}
+        <EmptyTd colSpan={2} />
+        {customOddsMode ? <EmptyTd /> : null}
+        {oddsTimeline ? <EmptyTd /> : null}
         {piratesForArena ? (
           <ClearRadioRow arenaId={arenaId} handleBetLineChange={handleBetLineChange} />
         ) : (
           <EmptyBetsPlaceholder />
         )}
-      </Tr>
+      </Table.Row>
     );
   },
   (prevProps, nextProps) => prevProps.arenaId === nextProps.arenaId,
@@ -504,7 +494,7 @@ const PirateRow = React.memo(
         return null;
       }
 
-      return <Td isNumeric>{displayAsPercent(logitProb, 1)}</Td>;
+      return <Table.Cell textAlign="end">{displayAsPercent(logitProb, 1)}</Table.Cell>;
     }, [logitProb, useLogitModel, bigBrain]);
 
     const faElement = useMemo(() => {
@@ -512,7 +502,7 @@ const PirateRow = React.memo(
         return null;
       }
 
-      return <Td isNumeric>{pirateFA}</Td>;
+      return <Table.Cell textAlign="end">{pirateFA}</Table.Cell>;
     }, [pirateFA, bigBrain]);
 
     const legacyProbElements = useMemo(() => {
@@ -526,9 +516,9 @@ const PirateRow = React.memo(
 
       return (
         <>
-          <Td isNumeric>{displayAsPercent(legacyProbMin, 1)}</Td>
-          <Td isNumeric>{displayAsPercent(legacyProbMax, 1)}</Td>
-          <Td isNumeric>{displayAsPercent(legacyProbStd, 1)}</Td>
+          <Table.Cell textAlign="end">{displayAsPercent(legacyProbMin, 1)}</Table.Cell>
+          <Table.Cell textAlign="end">{displayAsPercent(legacyProbMax, 1)}</Table.Cell>
+          <Table.Cell textAlign="end">{displayAsPercent(legacyProbStd, 1)}</Table.Cell>
         </>
       );
     }, [legacyProbMin, legacyProbMax, legacyProbStd, useLogitModel, bigBrain]);
@@ -607,20 +597,20 @@ const PirateRow = React.memo(
       }
 
       return (
-        <Td isNumeric backgroundColor={payoutBackground}>
+        <Table.Cell textAlign="end" backgroundColor={payoutBackground}>
           {displayAsPercent(payout, 1)}
-        </Td>
+        </Table.Cell>
       );
     }, [payout, payoutBackground, bigBrain]);
 
     // Return skeleton if no pirate ID
     if (!pirateId) {
       return (
-        <Tr>
-          <Pd colSpan={100}>
+        <Table.Row>
+          <Table.Cell colSpan={100}>
             <Skeleton height="24px">&nbsp;</Skeleton>
-          </Pd>
-        </Tr>
+          </Table.Cell>
+        </Table.Row>
       );
     }
 
@@ -628,7 +618,10 @@ const PirateRow = React.memo(
     const fullPirateName = FULL_PIRATE_NAMES.get(pirateId) as string;
 
     return (
-      <Tr key={`pirate-${pirateId}-${arenaId}`} backgroundColor={pirateWon ? green : 'transparent'}>
+      <Table.Row
+        key={`pirate-${pirateId}-${arenaId}`}
+        backgroundColor={pirateWon ? green : 'transparent'}
+      >
         <StickyTd
           backgroundColor={getPirateBgColor(openingOdds)}
           onClick={handleTimelineClickLocal}
@@ -642,23 +635,23 @@ const PirateRow = React.memo(
         {payoutElement}
         {faElement}
         {faDetailsElement}
-        <Td isNumeric>{openingOdds}:1</Td>
-        <Td isNumeric whiteSpace="nowrap">
-          {currentOdds > openingOdds && <Icon as={TriangleUpIcon} mr={1} color={green} />}
-          {currentOdds < openingOdds && <Icon as={TriangleDownIcon} mr={1} color={red} />}
+        <Table.Cell textAlign="end">{openingOdds}:1</Table.Cell>
+        <Table.Cell textAlign="end" whiteSpace="nowrap">
+          {currentOdds > openingOdds && <FaCaretUp style={{ marginRight: '4px', color: green }} />}
+          {currentOdds < openingOdds && <FaCaretDown style={{ marginRight: '4px', color: red }} />}
           <Text as="span" fontWeight={currentOdds === openingOdds ? 'normal' : 'bold'}>
             {currentOdds}:1
           </Text>
-        </Td>
+        </Table.Cell>
         {customOddsInputElement}
         {timelineElement}
         {betRadios}
-        <Pd>
+        <Table.Cell>
           <Button size="xs" onClick={handleBetLineChangeLocal}>
             {betCount}-Bet
           </Button>
-        </Pd>
-      </Tr>
+        </Table.Cell>
+      </Table.Row>
     );
   },
   (prevProps, nextProps) =>
@@ -703,10 +696,12 @@ const ArenaTableBody = React.memo(
     }, [piratesForArena, arenaId, handleTimelineClick, handleBetLineChange]);
 
     return (
-      <Tbody key={`arena-${arenaId}`}>
-        {headerRow}
-        {pirateRows}
-      </Tbody>
+      <>
+        <Table.Body key={`arena-${arenaId}`}>
+          {headerRow}
+          {pirateRows}
+        </Table.Body>
+      </>
     );
   },
   (prevProps, nextProps) =>

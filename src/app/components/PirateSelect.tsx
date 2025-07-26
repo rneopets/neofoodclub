@@ -1,4 +1,4 @@
-import { Select } from '@chakra-ui/react';
+import { NativeSelect } from '@chakra-ui/react';
 import React, { useMemo } from 'react';
 
 import { PIRATE_NAMES, ARENA_NAMES } from '../constants';
@@ -9,12 +9,13 @@ interface PirateSelectProps {
   arenaId: number;
   pirateValue: number;
   showArenaName?: boolean;
+  onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   [key: string]: unknown;
 }
 
 const PirateSelect = React.memo(
   (props: PirateSelectProps): React.ReactElement => {
-    const { arenaId, pirateValue, showArenaName = false, ...rest } = props;
+    const { arenaId, pirateValue, showArenaName = false, onChange, ...rest } = props;
     const getPirateBgColor = useGetPirateBgColor();
 
     // showArenaName will fill the arena name into the select option as a placeholder if set to true
@@ -50,17 +51,24 @@ const PirateSelect = React.memo(
     );
 
     if (!pirates) {
-      return <Select placeholder="Loading..." isDisabled {...rest} />;
+      return (
+        <NativeSelect.Root disabled {...rest}>
+          <NativeSelect.Field placeholder="Loading..." />
+        </NativeSelect.Root>
+      );
     }
 
     return (
-      <Select size="sm" height="1.5rem" backgroundColor={pirateBg} value={pirateValue} {...rest}>
-        <option disabled={useArenaName} hidden={useArenaName} value="0">
-          {useArenaName ? ARENA_NAMES[arenaId] : ''}
-        </option>
-        <option hidden={!useArenaName} value="0"></option>
+      <NativeSelect.Root size="sm" height="1.5rem" backgroundColor={pirateBg} {...rest}>
+        <NativeSelect.Field value={pirateValue} onChange={onChange}>
+          <option disabled={useArenaName} hidden={useArenaName} value="0">
+            {useArenaName ? ARENA_NAMES[arenaId] : ''}
+          </option>
+          <option hidden={!useArenaName} value="0"></option>
+        </NativeSelect.Field>
+
         {selectOptions}
-      </Select>
+      </NativeSelect.Root>
     );
   },
   // Custom comparison function - only re-render if relevant props change

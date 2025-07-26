@@ -1,8 +1,10 @@
-import { Box, Td, Tooltip } from '@chakra-ui/react';
+import { Box, Table } from '@chakra-ui/react';
 import React, { useMemo } from 'react';
 
 import { useRoundDataStore } from '../stores';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../utils/betUtils';
+
+import { Tooltip } from '@/components/ui/tooltip';
 
 /**
  * Calculate the percentage width for each timeline segment
@@ -100,7 +102,7 @@ const OddsTimeline = React.memo(
     }
 
     return (
-      <Td p={0}>
+      <Table.Cell p={0}>
         <Box maxW="300px" onClick={onClick} cursor="pointer" display="flex">
           {timelineData.odds.map((odds, i) => (
             <TimelineBar
@@ -112,7 +114,7 @@ const OddsTimeline = React.memo(
             />
           ))}
         </Box>
-      </Td>
+      </Table.Cell>
     );
   },
   (prevProps, nextProps) =>

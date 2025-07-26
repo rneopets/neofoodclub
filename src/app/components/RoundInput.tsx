@@ -1,15 +1,13 @@
-import {
-  InputGroup,
-  InputLeftAddon,
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-} from '@chakra-ui/react';
+import { InputGroup, NumberInputControl } from '@chakra-ui/react';
 import { useEffect, useState, FocusEvent, useMemo, useCallback } from 'react';
 
 import { useRoundDataStore } from '../stores';
+
+import {
+  NumberInputRoot,
+  NumberInputField,
+  NumberInputValueChangeDetails,
+} from '@/components/ui/number-input';
 
 // this element is the number input to say which round's data you're viewing
 
@@ -20,85 +18,87 @@ const RoundInput: React.FC = () => {
 
   const initialRoundNumber = useMemo(() => currentSelectedRound || 0, [currentSelectedRound]);
 
-  const [roundNumber, setRoundNumber] = useState<number>(initialRoundNumber);
-  const [hasFocus, setHasFocus] = useState<boolean>(false);
+  const [tempValue, setTempValue] = useState<string>(initialRoundNumber.toString());
 
   useEffect(() => {
-    if (roundNumber === 0) {
+    const trimmedValue = tempValue.trim();
+    if (trimmedValue === '') {
+      return;
+    }
+
+    const roundNumber = parseInt(trimmedValue, 10);
+    if (isNaN(roundNumber) || roundNumber === 0) {
       return;
     }
 
     const timeoutId = setTimeout(() => {
-      const value = roundNumber;
-
-      const isSameRound = value === currentSelectedRound;
+      const isSameRound = roundNumber === currentSelectedRound;
 
       if (isSameRound) {
         return;
       }
 
       // Use the new updateSelectedRound action which handles data fetching automatically
-      updateSelectedRound(value);
+      updateSelectedRound(roundNumber);
     }, 400);
 
     return (): void => {
       clearTimeout(timeoutId);
     };
-  }, [roundNumber, currentSelectedRound, updateSelectedRound]);
+  }, [tempValue, currentSelectedRound, updateSelectedRound]);
 
   useEffect(() => {
-    setRoundNumber(currentSelectedRound || 0);
+    setTempValue((currentSelectedRound || 0).toString());
   }, [currentSelectedRound]);
 
   const handleFocus = useCallback((e: FocusEvent<HTMLInputElement>): void => {
-    setHasFocus(true);
     e.target.select();
   }, []);
 
-  const handleChange = useCallback((valueAsString: string): void => {
-    if (valueAsString === '') {
-      setRoundNumber(0);
+  const handleChange = useCallback((details: NumberInputValueChangeDetails): void => {
+    setTempValue(details.value);
+  }, []);
+
+  const handleBlur = useCallback((): void => {
+    const trimmedValue = tempValue.trim();
+
+    // If input is empty, set to current round
+    if (trimmedValue === '') {
+      setTempValue(currentRound.toString());
       return;
     }
 
-    const value = parseInt(valueAsString);
-    if (!isNaN(value) && value > 0) {
-      setRoundNumber(value);
-    }
-  }, []);
+    const roundNumber = parseInt(trimmedValue, 10);
 
-  const handleBlur = useCallback(
-    (e: FocusEvent<HTMLInputElement>): void => {
-      setHasFocus(false);
-      if (e.target.value === '') {
-        setRoundNumber(currentRound);
-      }
-    },
-    [currentRound],
-  );
+    // If invalid number, revert to current round
+    if (isNaN(roundNumber) || roundNumber < 1) {
+      setTempValue(currentRound.toString());
+      return;
+    }
+
+    // Update the display value to the parsed number
+    setTempValue(roundNumber.toString());
+  }, [tempValue, currentRound]);
 
   return (
-    <InputGroup size="xs">
-      <InputLeftAddon children="Round" />
-      <NumberInput
-        value={roundNumber === 0 ? '' : roundNumber}
+    <InputGroup>
+      <NumberInputRoot
+        value={tempValue}
         min={1}
         allowMouseWheel
-        onFocus={handleFocus}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        width="100px"
+        onValueChange={handleChange}
         name="round-input"
         data-testid="round-input"
+        size="xs"
       >
-        <NumberInputField name="round-input-field" data-testid="round-input-field" />
-        {hasFocus && (
-          <NumberInputStepper width="16px">
-            <NumberIncrementStepper data-testid="round-input-increment" />
-            <NumberDecrementStepper data-testid="round-input-decrement" />
-          </NumberInputStepper>
-        )}
-      </NumberInput>
+        <NumberInputField
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          name="round-input-field"
+          data-testid="round-input-field"
+        />
+        <NumberInputControl />
+      </NumberInputRoot>
     </InputGroup>
   );
 };

@@ -1,16 +1,7 @@
-import {
-  NumberDecrementStepper,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-} from '@chakra-ui/react';
-import React, { memo } from 'react';
-
 import { useCustomValueInput } from '../hooks/useCustomValueInput';
-import { useRoundDataStore, useCalculationsStore, useCustomProbsValue } from '../stores';
+import { useCalculationsStore, useRoundDataStore, useCustomProbsValue } from '../stores';
 
-// this element is the number input for custom probabilities
+import { NumberInputRoot, NumberInputField } from '@/components/ui/number-input';
 
 interface CustomProbsInputProps {
   arenaIndex: number;
@@ -49,12 +40,10 @@ const CustomProbsInput = function CustomProbsInput(
   });
 
   return (
-    <NumberInput
+    <NumberInputRoot
       {...rest}
       value={inputValue}
-      onChange={handleChange}
-      onBlur={handleBlur}
-      onFocus={handleFocus}
+      onValueChange={handleChange}
       size="xs"
       allowMouseWheel
       width="100px"
@@ -63,25 +52,13 @@ const CustomProbsInput = function CustomProbsInput(
       data-testid={`custom-probs-input-${arenaIndex}-${pirateIndex}`}
     >
       <NumberInputField
+        onBlur={handleBlur}
+        onFocus={handleFocus}
         name={`custom-probs-input-field-${arenaIndex}-${pirateIndex}`}
         data-testid={`custom-probs-input-field-${arenaIndex}-${pirateIndex}`}
       />
-      <NumberInputStepper width="16px">
-        <NumberIncrementStepper
-          data-testid={`custom-probs-input-increment-${arenaIndex}-${pirateIndex}`}
-        />
-        <NumberDecrementStepper
-          data-testid={`custom-probs-input-decrement-${arenaIndex}-${pirateIndex}`}
-        />
-      </NumberInputStepper>
-    </NumberInput>
+    </NumberInputRoot>
   );
 };
 
-export default memo(
-  CustomProbsInput,
-  // Only re-render if arena or pirate indices change
-  (prevProps, nextProps) =>
-    prevProps.arenaIndex === nextProps.arenaIndex &&
-    prevProps.pirateIndex === nextProps.pirateIndex,
-);
+export default CustomProbsInput;
