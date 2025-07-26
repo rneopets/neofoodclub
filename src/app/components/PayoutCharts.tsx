@@ -326,9 +326,9 @@ const PayoutCharts: React.FC = React.memo(() => {
 
       return (
         <Box>
-          <Card.Root p={1} boxShadow="2xl">
-            <Card.Body>
-              <Skeleton loading={hasRoundData && calculationsData.calculated}>
+          <Card.Root boxShadow="2xl">
+            <Card.Body p={1}>
+              <Skeleton loading={!hasRoundData || !calculationsData.calculated}>
                 <Table.Root size="sm" width="auto">
                   <Table.Header>
                     <Table.Row>
