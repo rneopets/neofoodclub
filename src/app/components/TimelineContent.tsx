@@ -1,17 +1,14 @@
 import {
   Box,
-  Icon,
   DrawerHeader,
   DrawerBody,
   Flex,
-  Avatar,
   Stack,
-  StackDivider,
+  Separator,
   Spacer,
   VStack,
   Heading,
   Text,
-  Circle,
 } from '@chakra-ui/react';
 import React from 'react';
 import { FaSackDollar, FaUtensils, FaSkullCrossbones } from 'react-icons/fa6';
@@ -24,6 +21,8 @@ import { displayAsPlusMinus } from '../util';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../utils/betUtils';
 
 import DateFormatter from './DateFormatter';
+
+import { Avatar } from '@/components/ui/avatar';
 
 // TimelineContent component for the drawer
 const TimelineContent = React.memo(
@@ -94,7 +93,7 @@ const TimelineContent = React.memo(
         </DrawerHeader>
 
         <DrawerBody>
-          <Stack divider={<StackDivider />} spacing="4">
+          <Stack separator={<Separator />} gap="4">
             <Box>
               <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
                 <Box
@@ -106,7 +105,7 @@ const TimelineContent = React.memo(
                   alignItems="center"
                   justifyContent="center"
                 >
-                  <Icon as={FaUtensils} boxSize={6} color="white" />
+                  <FaUtensils style={{ fontSize: '24px', color: 'white' }} />
                 </Box>
                 <Box>
                   <Heading size="sm">
@@ -124,11 +123,20 @@ const TimelineContent = React.memo(
               return (
                 <Box key={`change-${change.t}-${change.pirate}-${change.arena}`}>
                   <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap" paddingLeft={'2px'}>
-                    <Circle size={9} bg={wentUp ? 'tomato' : 'green.500'} color="white">
+                    <Box
+                      width="36px"
+                      height="36px"
+                      borderRadius="50%"
+                      bg={wentUp ? 'tomato' : 'green.500'}
+                      color="white"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
                       <Text fontSize="md" as="b">
                         {displayAsPlusMinus(change.new - change.old)}
                       </Text>
-                    </Circle>
+                    </Box>
                     <Box>
                       <Heading size="sm">
                         {change.old} to {change.new}
@@ -140,7 +148,7 @@ const TimelineContent = React.memo(
                     </Box>
                     <Spacer />
 
-                    <VStack spacing={0}>
+                    <VStack gap={0}>
                       <Text as="i" fontSize="xs">
                         <DateFormatter
                           format="LTS [NST]"
@@ -168,24 +176,32 @@ const TimelineContent = React.memo(
               <>
                 <Box>
                   <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
-                    <Circle size={10} bg={didPirateWin ? 'green.500' : 'tomato'}>
-                      <Icon
-                        boxSize={6}
-                        color="white"
-                        as={didPirateWin ? FaSackDollar : FaSkullCrossbones}
-                      />
-                    </Circle>
+                    <Box
+                      width="40px"
+                      height="40px"
+                      borderRadius="50%"
+                      bg={didPirateWin ? 'green.500' : 'tomato'}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      {didPirateWin ? (
+                        <FaSackDollar style={{ fontSize: '24px', color: 'white' }} />
+                      ) : (
+                        <FaSkullCrossbones style={{ fontSize: '24px', color: 'white' }} />
+                      )}
+                    </Box>
                     <Box>
                       <Heading size="sm">
                         Round Over{' - '}
                         <DateFormatter format="LTS [NST]" date={endDate} tz="America/Los_Angeles" />
                       </Heading>
-                      <Stack spacing={0}>
+                      <Stack gap={0}>
                         <Text as="i">
-                          {pirateName}{' '}
+                          {pirateName}
                           {didPirateWin
-                            ? 'Won!'
-                            : `lost to ${
+                            ? ' Won!'
+                            : ` Lost to ${
                                 PIRATE_NAMES.get(
                                   arenaPirates[winningPirate - 1] as number,
                                 ) as string

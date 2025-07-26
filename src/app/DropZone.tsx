@@ -1,4 +1,3 @@
-import { useToast } from '@chakra-ui/react';
 import React, { useEffect } from 'react';
 
 import { useAddNewSet } from './stores';
@@ -13,7 +12,6 @@ interface DropZoneProps {
 }
 
 const DropZone = ({ children }: DropZoneProps): React.ReactElement => {
-  const toast = useToast();
   const addNewSet = useAddNewSet();
 
   useEffect(() => {
@@ -48,11 +46,11 @@ const DropZone = ({ children }: DropZoneProps): React.ReactElement => {
       }
 
       addNewSet(name, parsed.bets, parsed.betAmounts, true);
-      toast({
-        title: `Dropped bet imported!`,
-        duration: 2000,
-        isClosable: true,
-      });
+      // toast({
+      //   title: `Dropped bet imported!`,
+      //   duration: 2000,
+      //   isClosable: true,
+      // });
     };
 
     const handleDragOver = (e: DragEvent): void => {
@@ -65,7 +63,7 @@ const DropZone = ({ children }: DropZoneProps): React.ReactElement => {
       document.removeEventListener('drop', handleDrop as EventListener);
       document.removeEventListener('dragover', handleDragOver as EventListener);
     };
-  }, [addNewSet, toast]);
+  }, [addNewSet]);
 
   return <>{children}</>;
 };

@@ -1,10 +1,13 @@
-import { IconButton, Tooltip, useColorModeValue } from '@chakra-ui/react';
+import { IconButton } from '@chakra-ui/react';
 import { memo, useMemo, useCallback, useState, useEffect } from 'react';
 import { FaLock, FaLockOpen } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
-import { getMaxBetLocked, getMaxBet, calculateBaseMaxBet } from '../util';
 import { useRoundDataStore } from '../stores';
+import { getMaxBetLocked, getMaxBet, calculateBaseMaxBet } from '../util';
+
+import { useColorModeValue } from '@/components/ui/color-mode';
+import { Tooltip } from '@/components/ui/tooltip';
 
 const MaxBetLockToggle = memo(() => {
   const [isLocked, setIsLocked] = useState(() => getMaxBetLocked());
@@ -44,7 +47,6 @@ const MaxBetLockToggle = memo(() => {
     setIsLocked(newValue);
   }, [isLocked, cookies, currentSelectedRound]);
 
-  const iconColor = useColorModeValue('gray.600', 'gray.400');
   const lockedColor = useColorModeValue('red.500', 'red.400');
   const unlockedColor = useColorModeValue('green.500', 'green.400');
 
@@ -56,7 +58,6 @@ const MaxBetLockToggle = memo(() => {
     <Tooltip label={tooltipLabel} hasArrow placement="top" openDelay={600}>
       <IconButton
         aria-label={isLocked ? 'Unlock max bet' : 'Lock max bet'}
-        icon={isLocked ? <FaLock /> : <FaLockOpen />}
         size="xs"
         variant="ghost"
         color={isLocked ? lockedColor : unlockedColor}
@@ -76,7 +77,9 @@ const MaxBetLockToggle = memo(() => {
           },
         }}
         data-testid="max-bet-lock-toggle"
-      />
+      >
+        {isLocked ? <FaLock /> : <FaLockOpen />}
+      </IconButton>
     </Tooltip>
   );
 });

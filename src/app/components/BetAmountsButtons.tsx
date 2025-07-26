@@ -1,4 +1,4 @@
-import { Button, ButtonGroup, Icon, Heading, Stack, Tooltip, Wrap } from '@chakra-ui/react';
+import { Button, ButtonGroup, Heading, Stack, Wrap } from '@chakra-ui/react';
 import React, { useCallback } from 'react';
 import { FaFillDrip, FaInfinity } from 'react-icons/fa6';
 
@@ -13,6 +13,8 @@ import {
   useSelectedRound,
 } from '../stores';
 import { getMaxBet, determineBetAmount, makeEmptyBetAmounts, isValidRound } from '../util';
+
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface BetAmountsButtonsProps {
   [key: string]: unknown;
@@ -147,20 +149,20 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
         <Heading size="sm" textTransform="uppercase">
           Set bet amounts
         </Heading>
-        <ButtonGroup as={Wrap} mt={2} isDisabled={!hasRoundData}>
+        <Wrap mt={2}>
           <Tooltip
             label="Sets all bet amounts to whichever is lower: your max bet amount, or the value in the MAXBET column below + 1. This prevents you from betting more than necessary to earn 1M NP from the bet, given the current odds."
             openDelay={600}
             placement="top"
           >
             <Button
-              leftIcon={<Icon as={FaFillDrip} w="1.4em" h="1.4em" />}
               size="sm"
-              colorScheme="green"
+              colorPalette="green"
               onClick={setCappedBetAmounts}
               data-testid="capped-bet-amounts-button"
               {...rest}
             >
+              <FaFillDrip style={{ width: '1.4em', height: '1.4em' }} />
               Capped
             </Button>
           </Tooltip>
@@ -170,40 +172,48 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
             placement="top"
           >
             <Button
-              leftIcon={<Icon as={FaInfinity} w="1.4em" h="1.4em" />}
               size="sm"
-              colorScheme="blue"
+              colorPalette="blue"
               onClick={setUncappedBetAmounts}
               data-testid="uncapped-bet-amounts-button"
               {...rest}
             >
+              <FaInfinity style={{ width: '1.4em', height: '1.4em' }} />
               Uncapped
             </Button>
           </Tooltip>
           <Button
             size="sm"
             onClick={clearBetAmounts}
-            colorScheme="red"
+            colorPalette="red"
             data-testid="clear-bet-amounts-button"
             {...rest}
           >
             Clear
           </Button>
 
-          <ButtonGroup size="sm" colorScheme="purple" isDisabled={!hasRoundData}>
+          <ButtonGroup size="sm" colorPalette="purple">
             <Tooltip label="Increment all bet amounts by 2" openDelay={600} placement="top">
-              <Button onClick={incrementBetAmounts} data-testid="increment-bet-amounts-button">
+              <Button
+                onClick={incrementBetAmounts}
+                data-testid="increment-bet-amounts-button"
+                disabled={!hasRoundData}
+              >
                 +2
               </Button>
             </Tooltip>
 
             <Tooltip label="Decrement all bet amounts by 2" openDelay={600} placement="top">
-              <Button onClick={decrementBetAmounts} data-testid="decrement-bet-amounts-button">
+              <Button
+                onClick={decrementBetAmounts}
+                data-testid="decrement-bet-amounts-button"
+                disabled={!hasRoundData}
+              >
                 -2
               </Button>
             </Tooltip>
           </ButtonGroup>
-        </ButtonGroup>
+        </Wrap>
       </Stack>
     </>
   );

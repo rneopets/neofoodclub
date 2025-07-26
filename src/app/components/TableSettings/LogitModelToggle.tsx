@@ -30,8 +30,8 @@ const LogitModelToggle = memo(() => {
         <MobileSwitchBox
           icon={FaVial}
           label="Experimental Model"
-          colorScheme="green"
-          isChecked={useLogitModel ?? false}
+          colorPalette="green"
+          checked={useLogitModel ?? false}
           onChange={handleChange}
           tooltipText={tooltipLabel}
         />
@@ -41,8 +41,8 @@ const LogitModelToggle = memo(() => {
       <Box display={{ base: 'none', md: 'block' }}>
         <SettingSwitch
           icon={FaVial}
-          color="green"
-          isChecked={useLogitModel ?? false}
+          colorPalette="green"
+          checked={useLogitModel ?? false}
           onChange={handleChange}
           tooltipLabel={tooltipLabel}
         />

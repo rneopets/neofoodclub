@@ -31,8 +31,8 @@ const CopyDomainToggle = memo(() => {
         <MobileSwitchBox
           icon={FaGlobe}
           label="Copy Domain"
-          colorScheme="blue"
-          isChecked={useWebDomain ?? false}
+          colorPalette="blue"
+          checked={useWebDomain ?? false}
           onChange={handleChange}
           tooltipText={tooltipLabel}
         />
@@ -42,8 +42,8 @@ const CopyDomainToggle = memo(() => {
       <Box display={{ base: 'none', md: 'block' }}>
         <SettingSwitch
           icon={FaGlobe}
-          color="blue"
-          isChecked={useWebDomain ?? false}
+          colorPalette="blue"
+          checked={useWebDomain ?? false}
           onChange={handleChange}
           tooltipLabel={tooltipLabel}
         />

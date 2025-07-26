@@ -5,29 +5,29 @@ import SettingsRow from './SettingsRow';
 interface SwitchBoxProps {
   icon: React.ElementType;
   label: string;
-  colorScheme: string;
-  isChecked: boolean;
+  colorPalette: string;
+  checked: boolean;
   onChange: (e: ChangeEvent<HTMLInputElement> | MouseEvent<HTMLDivElement>) => void;
-  isDisabled?: boolean;
+  disabled?: boolean;
   tooltipText?: string;
 }
 
 const MobileSwitchBox: React.FC<SwitchBoxProps> = ({
   icon,
   label,
-  colorScheme,
-  isChecked,
+  colorPalette,
+  checked: isChecked,
   onChange,
-  isDisabled,
+  disabled,
   tooltipText = undefined,
 }) => {
   const settingsRowProps = {
     icon,
     label,
-    colorScheme,
+    colorPalette,
     isChecked,
     onChange,
-    isDisabled: isDisabled ?? false,
+    disabled: disabled ?? false,
     ...(tooltipText && { tooltipText }),
   };
 

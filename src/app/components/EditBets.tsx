@@ -1,17 +1,4 @@
-import {
-  Box,
-  Button,
-  Icon,
-  Collapse,
-  useDisclosure,
-  Drawer,
-  DrawerOverlay,
-  DrawerContent,
-  DrawerCloseButton,
-  Flex,
-  useColorModeValue,
-  Skeleton,
-} from '@chakra-ui/react';
+import { Box, Button, useDisclosure, Drawer, Flex, Skeleton } from '@chakra-ui/react';
 import React, { useCallback, useMemo, useState, useRef, Suspense } from 'react';
 import { FaPenToSquare } from 'react-icons/fa6';
 
@@ -29,6 +16,8 @@ import LogitModelToggle from './TableSettings/LogitModelToggle';
 import TableModes from './TableSettings/TableModes';
 import TimelineContent from './TimelineContent';
 
+import { useColorModeValue } from '@/components/ui/color-mode';
+
 const PayoutCharts = React.lazy(() => import('./PayoutCharts'));
 const PayoutTable = React.lazy(() => import('./PayoutTable'));
 
@@ -38,7 +27,7 @@ interface PirateTableProps {
 
 const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => {
   const tableMode = useTableMode();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { open, onOpen, setOpen } = useDisclosure();
   const [selectedTimeline, setSelectedTimeline] = useState({
     arenaId: 0,
     pirateIndex: 0,
@@ -55,25 +44,25 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
 
   const timelineDrawer = useMemo(
     () => (
-      <Drawer
-        isOpen={isOpen}
-        placement="right"
-        onClose={onClose}
-        // @ts-ignore
-        finalFocusRef={timelineRef}
-        size="md"
-      >
-        <DrawerOverlay />
-        <DrawerContent>
-          <DrawerCloseButton />
-          <TimelineContent
-            arenaId={selectedTimeline.arenaId}
-            pirateIndex={selectedTimeline.pirateIndex}
-          />
-        </DrawerContent>
-      </Drawer>
+      <Drawer.Root open={open} placement="end" onOpenChange={e => setOpen(e.open)} size="md">
+        <Drawer.Backdrop />
+        <Drawer.Positioner>
+          <Drawer.Content>
+            <Drawer.Header>
+              <Drawer.Title>Timeline</Drawer.Title>
+              <Drawer.CloseTrigger />
+            </Drawer.Header>
+            <Drawer.Body>
+              <TimelineContent
+                arenaId={selectedTimeline.arenaId}
+                pirateIndex={selectedTimeline.pirateIndex}
+              />
+            </Drawer.Body>
+          </Drawer.Content>
+        </Drawer.Positioner>
+      </Drawer.Root>
     ),
-    [isOpen, onClose, selectedTimeline.arenaId, selectedTimeline.pirateIndex],
+    [open, setOpen, selectedTimeline.arenaId, selectedTimeline.pirateIndex],
   );
 
   const timelineHandlers = useMemo(
@@ -123,81 +112,80 @@ export default React.memo(function EditBets(): React.ReactElement {
 
   return (
     <>
-      <Collapse in={viewMode}>
+      {viewMode && (
         <Box bgColor={colors.blue} p={4}>
-          <Button
-            leftIcon={<Icon as={FaPenToSquare} />}
-            colorScheme="blackAlpha"
-            onClick={handleEditModeClick}
-          >
+          <Button colorPalette="blackAlpha" onClick={handleEditModeClick}>
+            <FaPenToSquare />
             Edit these bets
           </Button>
         </Box>
-      </Collapse>
+      )}
 
-      <Collapse in={!viewMode}>
-        <Box
-          w="100%"
-          py={{ base: 2, md: 2.5 }}
-          bg={settingsBg}
-          borderBottom="1px solid"
-          borderColor={borderColor}
-          mb={3}
-          position="sticky"
-          top="0"
-          zIndex="1"
-          boxShadow={shadowValue}
-        >
-          {/* Mobile Layout (will be hidden on md and larger screens) */}
-          <Flex
-            direction="column"
-            px={4}
-            py={1}
-            maxW="container.xl"
-            mx="auto"
-            display={{ base: 'flex', md: 'none' }}
+      {!viewMode && (
+        <>
+          <Box
+            w="100%"
+            py={{ base: 2, md: 2.5 }}
+            bg={settingsBg}
+            borderBottom="1px solid"
+            borderColor={borderColor}
+            mb={3}
+            position="sticky"
+            top="0"
+            zIndex="1"
+            boxShadow={shadowValue}
           >
-            <Box mb={2}>
+            {/* Mobile Layout (will be hidden on md and larger screens) */}
+            <Flex
+              direction="column"
+              px={4}
+              py={1}
+              maxW="container.xl"
+              mx="auto"
+              display={{ base: 'flex', md: 'none' }}
+            >
+              <Box mb={2}>
+                <TableModes />
+              </Box>
+
+              <Box mb={2}>
+                <LogitModelToggle />
+              </Box>
+
+              <Box mb={2}>
+                <CopyDomainToggle />
+              </Box>
+
+              <Box>
+                <Extras />
+              </Box>
+            </Flex>
+
+            {/* Desktop Layout (will be hidden on smaller than md screens) */}
+            <Flex
+              align="center"
+              px={5}
+              maxW="container.xl"
+              mx="auto"
+              display={{ base: 'none', md: 'flex' }}
+            >
               <TableModes />
-            </Box>
-
-            <Box mb={2}>
+              <Box borderRight="1px" borderColor={dividerColor} h="18px" mx={4} />
               <LogitModelToggle />
-            </Box>
 
-            <Box mb={2}>
+              <Box borderRight="1px" borderColor={dividerColor} h="18px" mx={4} />
               <CopyDomainToggle />
-            </Box>
 
-            <Box>
+              <Box borderRight="1px" borderColor={dividerColor} h="18px" mx={4} />
               <Extras />
-            </Box>
-          </Flex>
-
-          {/* Desktop Layout (will be hidden on smaller than md screens) */}
-          <Flex
-            align="center"
-            px={5}
-            maxW="container.xl"
-            mx="auto"
-            display={{ base: 'none', md: 'flex' }}
-          >
-            <TableModes />
-            <Box borderRight="1px" borderColor={dividerColor} h="18px" mx={4} />
-            <LogitModelToggle />
-
-            <Box borderRight="1px" borderColor={dividerColor} h="18px" mx={4} />
-            <CopyDomainToggle />
-
-            <Box borderRight="1px" borderColor={dividerColor} h="18px" mx={4} />
-            <Extras />
-          </Flex>
-        </Box>
-        <HorizontalScrollingBox>
-          <PirateTable m={4} />
-        </HorizontalScrollingBox>
-        <BetFunctions />
-      </Collapse>
+            </Flex>
+          </Box>
+          <HorizontalScrollingBox>
+            <PirateTable m={4} />
+          </HorizontalScrollingBox>
+          <BetFunctions />
+        </>
+      )}
 
       {anyBets && (
         <>

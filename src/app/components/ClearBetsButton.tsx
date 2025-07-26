@@ -3,17 +3,16 @@ import React, { useCallback } from 'react';
 
 import { useBetManagementStore } from '../stores';
 
-// Isolated Button that only re-renders when isDisabled changes
+// Isolated Button that only re-renders when disabled changes
 const ClearButtonComponent = React.memo(
   ({
-    isDisabled,
     onClick,
     ...rest
-  }: { isDisabled: boolean; onClick: () => void } & Omit<
+  }: { onClick: () => void } & Omit<
     React.ComponentProps<typeof Button>,
     'onClick'
   >): React.ReactElement => (
-    <Button size="xs" onClick={onClick} isDisabled={isDisabled} {...rest}>
+    <Button size="xs" onClick={onClick} {...rest}>
       Clear
     </Button>
   ),
@@ -25,12 +24,13 @@ ClearButtonComponent.displayName = 'ClearButtonComponent';
 const ClearBetsButton = React.memo(
   (props: Omit<React.ComponentProps<typeof Button>, 'onClick'>): React.ReactElement => {
     // Get whether any bets exist directly from the store
-    const hasAnyBets = useBetManagementStore(state => {
-      const currentBets = state.allBets.get(state.currentBet);
-      return currentBets
-        ? Array.from(currentBets.values()).some(bet => bet.some(pirate => pirate > 0))
-        : false;
-    });
+    const hasAnyBets =
+      useBetManagementStore(state => {
+        const currentBets = state.allBets.get(state.currentBet);
+        return currentBets
+          ? Array.from(currentBets.values()).some(bet => bet.some(pirate => pirate > 0))
+          : false;
+      }) ?? false;
 
     // Get the clearBets function from the store
     const clearBets = useCallback(() => {
@@ -70,7 +70,7 @@ const ClearBetsButton = React.memo(
       });
     }, []);
 
-    return <ClearButtonComponent isDisabled={!hasAnyBets} onClick={clearBets} {...props} />;
+    return <ClearButtonComponent disabled={!hasAnyBets} onClick={clearBets} {...props} />;
   },
 );
 

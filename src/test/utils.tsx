@@ -1,13 +1,12 @@
-import { ChakraProvider } from '@chakra-ui/react';
 import { render, RenderOptions, RenderResult } from '@testing-library/react';
 import React, { ReactElement } from 'react';
 import { vi } from 'vitest';
 
-import theme from '../theme';
+import { Provider } from '../components/ui/provider';
 
 // Custom render function that includes Chakra UI provider
 const AllTheProviders = ({ children }: { children: React.ReactNode }): ReactElement => (
-  <ChakraProvider theme={theme}>{children}</ChakraProvider>
+  <Provider>{children}</Provider>
 );
 
 const customRender = (ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>): RenderResult =>

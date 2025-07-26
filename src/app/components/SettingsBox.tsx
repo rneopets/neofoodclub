@@ -3,15 +3,13 @@ import { Flex } from '@chakra-ui/react';
 // this element is the gray box that contains other elements, for example the "copy markdown code" button
 
 const SettingsBox = (props: React.ComponentProps<typeof Flex>): React.ReactElement => {
-  const { background = undefined, children, ...rest } = props;
-  const flexProps = {
-    align: 'center' as const,
-    justify: 'space-between' as const,
-    ...(background && { backgroundColor: background }),
-    ...rest,
-  };
+  const { background, children, ...rest } = props;
 
-  return <Flex {...flexProps}>{children}</Flex>;
+  return (
+    <Flex align="center" justify="space-between" bg={background} {...rest}>
+      {children}
+    </Flex>
+  );
 };
 
 export default SettingsBox;

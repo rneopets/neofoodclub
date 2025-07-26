@@ -1,4 +1,4 @@
-import { Collapse, HStack, VStack } from '@chakra-ui/react';
+import { HStack, VStack } from '@chakra-ui/react';
 import { memo, useCallback, useMemo } from 'react';
 import { FaSliders, FaBrain, FaTimeline, FaCookieBite } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
@@ -66,56 +66,56 @@ const Extras = memo(() => {
   return (
     <>
       {/* Mobile view */}
-      <VStack spacing={2} align="stretch" width="100%" display={{ base: 'flex', md: 'none' }}>
+      <VStack gap={2} align="stretch" width="100%" display={{ base: 'flex', md: 'none' }}>
         <MobileSwitchBox
           icon={FaBrain}
           label="Big Brain Mode"
-          colorScheme="pink"
-          isChecked={bigBrain}
+          colorPalette="pink"
+          checked={bigBrain}
           onChange={handleBigBrainChange}
         />
 
-        <Collapse in={isBigBrainAndNormalMode}>
-          <VStack spacing={2} align="stretch" width="100%">
+        {isBigBrainAndNormalMode && (
+          <VStack gap={2} align="stretch" width="100%">
             <MobileSwitchBox
               icon={FaTimeline}
               label="Odds Timeline"
-              colorScheme="purple"
-              isChecked={oddsTimeline}
+              colorPalette="purple"
+              checked={oddsTimeline}
               onChange={handleOddsTimelineChange}
-              isDisabled={!isBigBrainAndNormalMode}
+              disabled={!isBigBrainAndNormalMode}
               tooltipText="Odds Timeline"
             />
 
             <MobileSwitchBox
               icon={FaCookieBite}
               label="FA Details"
-              colorScheme="orange"
-              isChecked={faDetails}
+              colorPalette="orange"
+              checked={faDetails}
               onChange={handleFaDetailsChange}
-              isDisabled={!isBigBrainAndNormalMode}
+              disabled={!isBigBrainAndNormalMode}
               tooltipText="FA Details"
             />
 
             <MobileSwitchBox
               icon={FaSliders}
               label="Custom Probs/Odds"
-              colorScheme="blue"
-              isChecked={customOddsMode}
+              colorPalette="blue"
+              checked={customOddsMode}
               onChange={handleCustomOddsModeChange}
-              isDisabled={!isBigBrainAndNormalMode}
+              disabled={!isBigBrainAndNormalMode}
               tooltipText="Custom Probs/Odds"
             />
           </VStack>
-        </Collapse>
+        )}
       </VStack>
 
       {/* Desktop view */}
-      <HStack spacing={3.5} display={{ base: 'none', md: 'flex' }}>
+      <HStack gap={3.5} display={{ base: 'none', md: 'flex' }}>
         <SettingSwitch
           icon={FaBrain}
-          color="pink"
-          isChecked={bigBrain}
+          colorPalette="pink"
+          checked={bigBrain}
           onChange={handleBigBrainChange}
           tooltipLabel="Big Brain Mode"
         />
@@ -124,28 +124,28 @@ const Extras = memo(() => {
           <>
             <SettingSwitch
               icon={FaTimeline}
-              color="purple"
-              isChecked={oddsTimeline}
+              colorPalette="purple"
+              checked={oddsTimeline}
               onChange={handleOddsTimelineChange}
-              isDisabled={!isBigBrainAndNormalMode}
+              disabled={!isBigBrainAndNormalMode}
               tooltipLabel="Odds Timeline"
             />
 
             <SettingSwitch
               icon={FaCookieBite}
-              color="orange"
-              isChecked={faDetails}
+              colorPalette="orange"
+              checked={faDetails}
               onChange={handleFaDetailsChange}
-              isDisabled={!isBigBrainAndNormalMode}
+              disabled={!isBigBrainAndNormalMode}
               tooltipLabel="FA Details"
             />
 
             <SettingSwitch
               icon={FaSliders}
-              color="blue"
-              isChecked={customOddsMode}
+              colorPalette="blue"
+              checked={customOddsMode}
               onChange={handleCustomOddsModeChange}
-              isDisabled={!isBigBrainAndNormalMode}
+              disabled={!isBigBrainAndNormalMode}
               tooltipLabel="Custom Probs/Odds"
             />
           </>

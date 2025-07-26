@@ -1,13 +1,6 @@
-import {
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  Box,
-  Button,
-  VStack,
-} from '@chakra-ui/react';
+import { Alert, Box, Button, VStack, Text } from '@chakra-ui/react';
 import React from 'react';
+import { FaExclamationCircle } from 'react-icons/fa';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -46,19 +39,21 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     if (this.state.hasError) {
       return (
         <Box p={8} maxW="lg" mx="auto" mt={8}>
-          <VStack spacing={4}>
-            <Alert status="error">
-              <AlertIcon />
+          <VStack gap={4}>
+            <Alert.Root status="error">
+              <Alert.Indicator>
+                <FaExclamationCircle />
+              </Alert.Indicator>
               <Box>
-                <AlertTitle>Something went wrong!</AlertTitle>
-                <AlertDescription>
+                <Alert.Title>Something went wrong!</Alert.Title>
+                <Alert.Description>
                   The application encountered an unexpected error and needs to be reloaded.
-                </AlertDescription>
+                </Alert.Description>
               </Box>
-            </Alert>
+            </Alert.Root>
 
-            <VStack spacing={2}>
-              <Button colorScheme="blue" onClick={this.handleReload}>
+            <VStack gap={2}>
+              <Button colorPalette="blue" onClick={this.handleReload}>
                 Reload Page
               </Button>
               <Button variant="ghost" onClick={this.handleReset}>

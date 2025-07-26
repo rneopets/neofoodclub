@@ -1,4 +1,4 @@
-import { Box, Table, Th, Thead, Tr } from '@chakra-ui/react';
+import { Box, Table } from '@chakra-ui/react';
 import React, { useCallback, useMemo } from 'react';
 
 import { ARENA_NAMES } from '../constants';
@@ -60,14 +60,14 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
     }
 
     if (useLogitModel) {
-      return <Th>Prob</Th>;
+      return <Table.ColumnHeader>Prob</Table.ColumnHeader>;
     }
 
     return (
       <>
-        <Th textAlign="center">Min Prob</Th>
-        <Th textAlign="center">Max Prob</Th>
-        <Th textAlign="center">Std Prob</Th>
+        <Table.ColumnHeader textAlign="center">Min Prob</Table.ColumnHeader>
+        <Table.ColumnHeader textAlign="center">Max Prob</Table.ColumnHeader>
+        <Table.ColumnHeader textAlign="center">Std Prob</Table.ColumnHeader>
       </>
     );
   }, [bigBrain, useLogitModel]);
@@ -77,7 +77,7 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
       return null;
     }
 
-    return <Th textAlign="center">Payout</Th>;
+    return <Table.ColumnHeader textAlign="center">Payout</Table.ColumnHeader>;
   }, [bigBrain]);
 
   const customOddsHeader = useMemo(() => {
@@ -89,7 +89,7 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
       return null;
     }
 
-    return <Th textAlign="center">Custom Odds</Th>;
+    return <Table.ColumnHeader textAlign="center">Custom Odds</Table.ColumnHeader>;
   }, [bigBrain, customOddsMode]);
 
   const customProbsHeader = useMemo(() => {
@@ -102,9 +102,9 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
     }
 
     return (
-      <Th textAlign="center">
-        <TextTooltip text="Custom Prob" label="Custom Std. Probability" />
-      </Th>
+      <Table.ColumnHeader textAlign="center">
+        <TextTooltip text="Custom Prob" content="Custom Std. Probability" />
+      </Table.ColumnHeader>
     );
   }, [bigBrain, customOddsMode]);
 
@@ -117,7 +117,7 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
       return null;
     }
 
-    return <Th colSpan={10}>FA Explanation</Th>;
+    return <Table.ColumnHeader colSpan={10}>FA Explanation</Table.ColumnHeader>;
   }, [bigBrain, faDetails]);
 
   const faHeader = useMemo(() => {
@@ -126,9 +126,9 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
     }
 
     return (
-      <Th>
-        <TextTooltip text="FA" label="Food Adjustment" />
-      </Th>
+      <Table.ColumnHeader>
+        <TextTooltip text="FA" content="Food Adjustment" />
+      </Table.ColumnHeader>
     );
   }, [bigBrain]);
 
@@ -139,41 +139,46 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
 
     const text = `Odds Timeline (${amountOfChanges} change${amountOfChanges === 1 ? '' : 's'})`;
 
-    return <Th minW="300px">{text}</Th>;
+    return <Table.ColumnHeader minW="300px">{text}</Table.ColumnHeader>;
   }, [oddsTimeline, amountOfChanges]);
 
   const tableHeader = React.useMemo(
     () => (
-      <Thead>
-        <Tr>
-          <Th textAlign="center">Arena</Th>
-          <Th textAlign="center">Pirate</Th>
+      <Table.Header>
+        <Table.Row>
+          <Table.ColumnHeader textAlign="center">Arena</Table.ColumnHeader>
+          <Table.ColumnHeader textAlign="center">Pirate</Table.ColumnHeader>
           {probsHeader}
           {customProbsHeader}
           {payoutHeader}
           {faHeader}
           {faDetailsHeaders}
-          <Th textAlign="center">
-            <TextTooltip text="Open" label="Opening Odds" />
-          </Th>
-          <Th textAlign="center">
-            <TextTooltip text="Curr" label="Current Odds" />
-          </Th>
+          <Table.ColumnHeader textAlign="center">
+            <TextTooltip text="Open" content="Opening Odds" />
+          </Table.ColumnHeader>
+          <Table.ColumnHeader textAlign="center">
+            <TextTooltip text="Curr" content="Current Odds" />
+          </Table.ColumnHeader>
           {customOddsHeader}
           {oddsTimelineHeader}
           {[...Array(betCount)].map((_e, i) => (
-            // eslint-disable-next-line react/no-array-index-key
-            <Th key={`bet-header-${i}`} whiteSpace="normal" textAlign="center" px={2}>
+            <Table.ColumnHeader
+              // eslint-disable-next-line react/no-array-index-key
+              key={`bet-header-${i}`}
+              whiteSpace="normal"
+              textAlign="center"
+              px={2}
+            >
               <Box as="span" display="inline-block" maxW="100%">
                 Bet {i + 1}
               </Box>
-            </Th>
+            </Table.ColumnHeader>
           ))}
-          <Th px={1}>
-            <ClearBetsButton minW="100%" colorScheme="red" />
-          </Th>
-        </Tr>
-      </Thead>
+          <Table.ColumnHeader px={1}>
+            <ClearBetsButton minW="100%" colorPalette="red" />
+          </Table.ColumnHeader>
+        </Table.Row>
+      </Table.Header>
     ),
     [
       betCount,
@@ -203,10 +208,10 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
   );
 
   return (
-    <Table size="sm" width="auto">
+    <Table.Root size="sm" width="auto">
       {tableHeader}
       {tableBodies}
-    </Table>
+    </Table.Root>
   );
 });
 

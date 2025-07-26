@@ -4,16 +4,18 @@ import {
   Stack,
   Text,
   Heading,
-  Divider,
+  Separator,
   Link,
   Container,
-  useColorModeValue,
   SimpleGrid,
   Flex,
   BoxProps,
   TextProps,
+  Image,
 } from '@chakra-ui/react';
 import * as React from 'react';
+
+import { useColorModeValue } from '../components/ui/color-mode';
 
 import { GitCommit } from './components/GitCommit';
 import { VercelCredit } from './components/VercelCredit';
@@ -21,7 +23,9 @@ import NeopointIcon from './images/np-icon.svg';
 
 const Logo: React.FC = () => (
   <Stack direction="row">
-    <Box as="img" src={NeopointIcon} height="1.5em" width="1.5em" />
+    <Box asChild>
+      <Image src={NeopointIcon} alt="Neopoint Icon" height="1.5em" width="1.5em" />
+    </Box>
     <Heading as="h1" fontFamily="heading" fontWeight="bold" fontSize="xl">
       NeoFoodClub
     </Heading>
@@ -40,7 +44,7 @@ const ListHeader: React.FC<ListHeaderProps> = ({ children, ...props }) => (
 
 const KoFiButton: React.FC = () => (
   <>
-    <Link href="https://ko-fi.com/dice" isExternal>
+    <Link href="https://ko-fi.com/dice" target="_blank" rel="noopener noreferrer">
       <img
         height="36"
         style={{ border: '0px', height: '36px' }}
@@ -55,39 +59,56 @@ type FooterProps = BoxProps;
 
 const Footer: React.FC<FooterProps> = props => (
   <>
-    <Divider />
+    <Separator />
     <Box
       bg={useColorModeValue('gray.50', 'gray.900')}
       color={useColorModeValue('gray.700', 'gray.200')}
       {...props}
     >
       <Container as={Stack} maxW={'6xl'} py={10}>
-        <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={8}>
+        <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} gap={8}>
           <Stack align={'flex-start'}>
             <ListHeader>Food Club Links</ListHeader>
-            <Link isExternal href="https://www.neopets.com/pirates/foodclub.phtml?type=bet">
+            <Link
+              href="https://www.neopets.com/pirates/foodclub.phtml?type=bet"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Place Bets
             </Link>
             <Link
-              isExternal
               href="https://www.neopets.com/pirates/foodclub.phtml?type=current_bets"
+              target="_blank"
+              rel="noopener noreferrer"
             >
               Current Bets
             </Link>
-            <Link isExternal href="https://www.neopets.com/pirates/foodclub.phtml?type=collect">
+            <Link
+              href="https://www.neopets.com/pirates/foodclub.phtml?type=collect"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Collect Winnings
             </Link>
-            <Link isExternal href="https://www.neopets.com/gamescores.phtml?game_id=88">
+            <Link
+              href="https://www.neopets.com/gamescores.phtml?game_id=88"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               High Score List
             </Link>
           </Stack>
 
           <Stack align={'flex-start'}>
             <ListHeader>NeoFoodClub Stuff</ListHeader>
-            <Link isExternal href="https://foodclub.neocities.org/">
+            <Link href="https://foodclub.neocities.org/" target="_blank" rel="noopener noreferrer">
               Classic NeoFoodClub
             </Link>
-            <Link isExternal href="https://github.com/diceroll123/neofoodclub">
+            <Link
+              href="https://github.com/diceroll123/neofoodclub"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Source Code
             </Link>
           </Stack>
