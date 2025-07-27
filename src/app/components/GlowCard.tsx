@@ -2,6 +2,8 @@ import { Box, BoxProps } from '@chakra-ui/react';
 import React from 'react';
 import { styled, keyframes } from 'styled-components';
 
+import { useColorModeValue } from '@/components/ui/color-mode';
+
 const angleProperty = `
   @property --angle {
     syntax: "<angle>";
@@ -21,14 +23,17 @@ const spin = keyframes`
 
 interface CardContainerProps {
   animate?: boolean;
+  backgroundColor: string;
+  borderColor: string;
 }
 
 const CardContainer = styled(Box).withConfig({
-  shouldForwardProp: prop => prop !== 'animate',
+  shouldForwardProp: prop =>
+    !['animate', 'backgroundColor', 'borderColor'].includes(prop as string),
 })<CardContainerProps>`
   ${angleProperty}
 
-  background: var(--chakra-colors-chakra-body-bg);
+  background: ${props => props.backgroundColor};
   border-radius: 10px;
   position: relative;
 
@@ -50,7 +55,7 @@ const CardContainer = styled(Box).withConfig({
   &::before {
     filter: ${(props: CardContainerProps): string => (props.animate ? 'blur(0.5rem)' : 'blur(0)')};
     opacity: ${(props: CardContainerProps): number => (props.animate ? 0.7 : 1)};
-    background-color: var(--chakra-colors-chakra-border-color);
+    background-color: ${props => props.borderColor};
   }
 
   &::after {
@@ -72,10 +77,20 @@ interface GlowCardProps extends BoxProps {
   animate?: boolean;
 }
 
-const GlowCard: React.FC<GlowCardProps> = ({ children, animate, ...props }) => (
-  <CardContainer animate={animate} {...props}>
-    {children}
-  </CardContainer>
-);
+const GlowCard: React.FC<GlowCardProps> = ({ children, animate, ...props }) => {
+  const backgroundColor = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+
+  return (
+    <CardContainer
+      animate={animate}
+      backgroundColor={backgroundColor}
+      borderColor={borderColor}
+      {...props}
+    >
+      {children}
+    </CardContainer>
+  );
+};
 
 export default GlowCard;

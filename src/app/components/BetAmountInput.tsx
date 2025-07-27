@@ -1,4 +1,3 @@
-import { NumberInput } from '@chakra-ui/react';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { useOptimizedBetAmount, useUpdateSingleBetAmount } from '../stores';
@@ -6,19 +5,18 @@ import { useOptimizedBetAmount, useUpdateSingleBetAmount } from '../stores';
 import {
   NumberInputRoot,
   NumberInputField,
-  NumberInputValueChangeDetails,
+  type NumberInputValueChangeDetails,
 } from '@/components/ui/number-input';
 
 interface BetAmountInputProps {
   betIndex: number;
   invalid?: boolean;
   errorColor?: string;
-  [key: string]: unknown;
 }
 
 const BetAmountInput = React.memo(
   (props: BetAmountInputProps): React.ReactElement => {
-    const { betIndex, invalid, errorColor, ...rest } = props;
+    const { betIndex, invalid, errorColor: _errorColor, ...rest } = props;
 
     // Use optimized hook that only subscribes to this specific bet amount
     const betAmount = useOptimizedBetAmount(betIndex);
@@ -62,23 +60,7 @@ const BetAmountInput = React.memo(
       setTempValue(details.value);
       setIsEditing(true);
     }, []);
-
-    const handleBlur = useCallback((): void => {
-      setIsEditing(false);
-      let numValue = parseInt(tempValue) || -1000;
-      if (numValue < 1) {
-        numValue = -1000;
-      }
-      if (numValue !== betAmount) {
-        updateSingleBetAmount(betIndex, numValue);
-      }
-    }, [tempValue, betAmount, updateSingleBetAmount, betIndex]);
-
-    const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement>): void => {
-      e.target.select();
-      setIsEditing(true);
-    }, []);
-
+    ``;
     return (
       <NumberInputRoot
         size="sm"
@@ -94,8 +76,6 @@ const BetAmountInput = React.memo(
         {...rest}
       >
         <NumberInputField
-          onBlur={handleBlur}
-          onFocus={handleFocus}
           name={`bet-amount-input-field-${betIndex}`}
           data-testid={`bet-amount-input-field-${betIndex}`}
         />

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 
 import { useIsPirateSelected, useUpdateSinglePirate } from '../stores';
 import { memoizedCalculations } from '../stores/calculationsStore';
@@ -18,26 +18,17 @@ const BetRadio = React.memo(
 
     const handleChange = useCallback(() => {
       updateSinglePirate(betIndex, arenaIndex, pirateIndex);
-      // Only clear cache for probability-related calculations, not everything
       memoizedCalculations.clearCache('usedProb_');
       memoizedCalculations.clearCache('logitProb_');
       memoizedCalculations.clearCache('legacyProb');
     }, [betIndex, arenaIndex, pirateIndex, updateSinglePirate]);
 
-    // Stabilize value and name props
-    const radioProps = useMemo(
-      () => ({
-        value: pirateIndex.toString(),
-        name: `bet-${betIndex}-arena-${arenaIndex}`,
-        checked: isSelected,
-        onChange: handleChange,
-      }),
-      [betIndex, arenaIndex, pirateIndex, isSelected, handleChange],
-    );
+    const value = `${arenaIndex}-${pirateIndex}`;
+    const currentValue = isSelected ? value : '';
 
     return (
-      <RadioGroup>
-        <Radio {...radioProps} />
+      <RadioGroup value={currentValue} onValueChange={() => handleChange()}>
+        <Radio value={value} size="sm" colorPalette="blue" />
       </RadioGroup>
     );
   },
@@ -56,26 +47,17 @@ export const ClearRadio = React.memo(
 
     const handleChange = useCallback(() => {
       updateSinglePirate(betIndex, arenaIndex, 0);
-      // Only clear cache for probability-related calculations, not everything
       memoizedCalculations.clearCache('usedProb_');
       memoizedCalculations.clearCache('logitProb_');
       memoizedCalculations.clearCache('legacyProb');
     }, [betIndex, arenaIndex, updateSinglePirate]);
 
-    // Stabilize value and name props
-    const radioProps = useMemo(
-      () => ({
-        value: '0',
-        name: `bet-${betIndex}-arena-${arenaIndex}`,
-        checked: isClearSelected,
-        onChange: handleChange,
-      }),
-      [betIndex, arenaIndex, isClearSelected, handleChange],
-    );
+    const value = `${arenaIndex}-0`;
+    const currentValue = isClearSelected ? value : '';
 
     return (
-      <RadioGroup>
-        <Radio {...radioProps} />
+      <RadioGroup value={currentValue} onValueChange={() => handleChange()}>
+        <Radio value={value} size="sm" colorPalette="gray" />
       </RadioGroup>
     );
   },

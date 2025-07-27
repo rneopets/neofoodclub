@@ -3,7 +3,14 @@ import { subscribeWithSelector } from 'zustand/middleware';
 
 import { Bet, BetAmount, NamesState, BetsState, BetAmountsState } from '../../types/bets';
 import { computePiratesBinary } from '../maths';
-import { parseBetUrl, anyBetsExist, makeBetURL, anyBetAmountsExist } from '../util';
+import {
+  parseBetUrl,
+  anyBetsExist,
+  makeBetURL,
+  anyBetAmountsExist,
+  makeEmptyBets,
+  makeEmptyBetAmounts,
+} from '../util';
 
 interface BetManagementStore {
   currentBet: number;
@@ -49,13 +56,25 @@ interface BetManagementStore {
 }
 
 // Parse initial state from URL with error handling
-let initialState;
+let initialState: { round: number; bets: Bet; betAmounts: BetAmount };
 try {
   initialState = parseBetUrl(window.location.hash.slice(1));
 } catch (error) {
   console.error('Failed to parse initial bet URL state:', error);
-  // Fallback to default state
-  initialState = { round: 0, bets: new Map(), betAmounts: new Map() };
+  // Fallback to default state with proper empty bets (not empty Maps)
+  initialState = {
+    round: 0,
+    bets: makeEmptyBets(10),
+    betAmounts: makeEmptyBetAmounts(10),
+  };
+}
+
+// If we successfully parsed but got empty Maps, ensure we have proper default structure
+if (initialState.bets.size === 0) {
+  initialState.bets = makeEmptyBets(10);
+}
+if (initialState.betAmounts.size === 0) {
+  initialState.betAmounts = makeEmptyBetAmounts(10);
 }
 
 // Helper function to safely clone a Map

@@ -57,7 +57,7 @@ const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo
     }, [updateSelectedRound, currentRound]);
 
     return (
-      <Tooltip label={`Go to current round (${currentRound})`} placement="top">
+      <Tooltip content={`Go to current round (${currentRound})`} placement="top">
         <Button
           size="xs"
           variant="ghost"
@@ -211,7 +211,7 @@ const CurrentRoundInfo: React.FC = React.memo(() => {
   return (
     <VStack separator={<Separator />} gap={1} minW={{ sm: '140px' }} overflow="hidden">
       <HStack>
-        <Tooltip label="Last Update">
+        <Tooltip content="Last Update">
           <div>
             <FaRotate />
           </div>
@@ -222,7 +222,7 @@ const CurrentRoundInfo: React.FC = React.memo(() => {
       </HStack>
       {showLastChange && (
         <HStack>
-          <Tooltip label="Last Change">
+          <Tooltip content="Last Change">
             <div>
               <FaClockRotateLeft />
             </div>
@@ -321,7 +321,6 @@ const MaxBetInput: React.FC = () => {
       onValueChange={handleChange}
       min={-1000}
       max={500000}
-      formatOnBlur={false}
       clampValueOnBlur={false}
       allowMouseWheel={false}
       {...(isAnimating && {

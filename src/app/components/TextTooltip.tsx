@@ -5,18 +5,18 @@ import { Tooltip, TooltipProps } from '@/components/ui/tooltip';
 
 // this element is a custom chakra tooltip that simply has an easier way to pass in the text/label
 
-interface TextTooltipProps extends Omit<TooltipProps, 'children'> {
+interface TextTooltipProps extends Omit<TooltipProps, 'children' | 'content'> {
   text: ReactNode;
-  content?: string;
+  label?: string;
 }
 
 const TextTooltip = React.memo((props: TextTooltipProps): React.ReactElement => {
-  const { text, content, ...rest } = props;
+  const { text, label, ...rest } = props;
   // Convert label to string to satisfy aria-label requirement
-  const ariaLabel = content ? content : typeof text === 'string' ? text : '';
+  const ariaLabel = label ? label : typeof text === 'string' ? text : '';
 
   return (
-    <Tooltip content={content || text} aria-label={ariaLabel} {...rest}>
+    <Tooltip content={label || text} aria-label={ariaLabel} {...rest}>
       <Text>{text}</Text>
     </Tooltip>
   );

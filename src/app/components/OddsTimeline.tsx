@@ -33,8 +33,13 @@ function calculatePercentages(timestamps: number[], endTime: number): number[] {
  * Individual bar in the timeline representing a specific odds value
  */
 const TimelineBar = React.memo(
-  (props: { index: number; odds: number; percent: number }): React.ReactElement => {
-    const { index, odds, percent } = props;
+  (props: {
+    index: number;
+    odds: number;
+    percent: number;
+    timestamp: number;
+  }): React.ReactElement => {
+    const { index, odds, percent, timestamp } = props;
 
     const colors = ['cyan', 'green', 'blue', 'purple', 'orange', 'red', 'yellow', 'gray', 'pink'];
 
@@ -45,15 +50,24 @@ const TimelineBar = React.memo(
     }
 
     return (
-      <Tooltip label={label}>
+      <Tooltip content={label} showArrow placement="top">
         <Box
           width={`${percent}%`}
           bgColor={`${colors[odds % (colors.length - 1)]}.500`}
           whiteSpace="nowrap"
           overflow="hidden"
           fontSize="xs"
+          color="white"
+          fontWeight="bold"
+          textAlign="center"
+          minH="6"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          cursor="pointer"
+          data-timestamp={timestamp}
         >
-          &nbsp;{odds}
+          {percent > 15 ? odds : '\u00A0'}
         </Box>
       </Tooltip>
     );
@@ -62,11 +76,17 @@ const TimelineBar = React.memo(
 
 TimelineBar.displayName = 'TimelineBar';
 
+interface OddsTimelineProps {
+  onClick: () => void;
+  arenaId: number;
+  pirateIndex: number;
+}
+
 /**
  * Timeline component that shows odds changes over time
  */
 const OddsTimeline = React.memo(
-  (props: { onClick: () => void; arenaId: number; pirateIndex: number }): React.ReactElement => {
+  (props: OddsTimelineProps): React.ReactElement => {
     const { onClick, arenaId, pirateIndex } = props;
 
     const roundData = useRoundDataStore(state => state.roundState.roundData);
@@ -94,7 +114,7 @@ const OddsTimeline = React.memo(
       // Calculate width percentages
       const percentages = calculatePercentages(times, endTimeDate.getTime());
 
-      return { odds, percentages };
+      return { odds, percentages, times };
     }, [openingOdds, startDate, changes, arenaId, pirateIndex, endTimeDate]);
 
     if (!openingOdds || !start || !endTime) {
@@ -103,14 +123,23 @@ const OddsTimeline = React.memo(
 
     return (
       <Table.Cell p={0}>
-        <Box maxW="300px" onClick={onClick} cursor="pointer" display="flex">
+        <Box
+          maxW="300px"
+          onClick={onClick}
+          cursor="pointer"
+          display="flex"
+          borderRadius="md"
+          overflow="hidden"
+          border="1px solid"
+          borderColor="gray.200"
+        >
           {timelineData.odds.map((odds, i) => (
             <TimelineBar
-              // eslint-disable-next-line react/no-array-index-key
-              key={`timeline-${arenaId}-${pirateIndex}-${i}-${odds}`}
+              key={`timeline-${arenaId}-${pirateIndex}-${timelineData.times[i]}-${odds}`}
               index={i}
               odds={odds}
               percent={timelineData.percentages[i] ?? 0}
+              timestamp={timelineData.times[i] ?? 0}
             />
           ))}
         </Box>

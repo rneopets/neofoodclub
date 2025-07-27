@@ -1,3 +1,5 @@
+import React from 'react';
+
 import { useCustomValueInput } from '../hooks/useCustomValueInput';
 import { useRoundDataStore, useCustomOddsValue } from '../stores';
 
@@ -6,7 +8,6 @@ import { NumberInputRoot, NumberInputField } from '@/components/ui/number-input'
 interface CustomOddsInputProps {
   arenaIndex: number;
   pirateIndex: number;
-  [key: string]: unknown;
 }
 
 // Completely isolated component that manages its own state
@@ -31,11 +32,15 @@ const CustomOddsInput = function CustomOddsInput(props: CustomOddsInputProps): R
     isPercent: false,
   });
 
+  const handleValueChange = (details: { value: string }): void => {
+    handleChange(details.value);
+  };
+
   return (
     <NumberInputRoot
       {...rest}
       value={inputValue}
-      onValueChange={handleChange}
+      onValueChange={handleValueChange}
       size="xs"
       min={2}
       max={13}
