@@ -55,7 +55,7 @@ const MaxBetLockToggle = memo(() => {
     : 'Max bet is unlocked - will increase by 2 per round';
 
   return (
-    <Tooltip label={tooltipLabel} hasArrow placement="top" openDelay={600}>
+    <Tooltip content={tooltipLabel} showArrow placement="top" openDelay={600}>
       <IconButton
         aria-label={isLocked ? 'Unlock max bet' : 'Lock max bet'}
         size="xs"

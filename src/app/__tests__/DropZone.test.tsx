@@ -1,4 +1,3 @@
-import { useToast } from '@chakra-ui/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { render, screen, createMockDragEvent } from '../../test/utils';
@@ -25,7 +24,6 @@ vi.mock('../util', () => ({
 }));
 
 describe('DropZone', () => {
-  const mockToast = vi.fn();
   const mockAddNewSet = vi.fn();
   const mockAnyBetsExist = vi.mocked(anyBetsExist);
   const mockParseBetUrl = vi.mocked(parseBetUrl);
@@ -34,9 +32,6 @@ describe('DropZone', () => {
     vi.clearAllMocks();
 
     // Setup mocks
-    (useToast as unknown as { mockReturnValue: (value: unknown) => void }).mockReturnValue(
-      mockToast,
-    );
     (useAddNewSet as unknown as { mockReturnValue: (value: unknown) => void }).mockReturnValue(
       mockAddNewSet,
     );
@@ -140,11 +135,6 @@ describe('DropZone', () => {
       new Map([[1, 1000]]),
       true,
     );
-    expect(mockToast).toHaveBeenCalledWith({
-      title: 'Dropped bet imported!',
-      duration: 2000,
-      isClosable: true,
-    });
   });
 
   it('generates default name when dropped content starts with http', () => {

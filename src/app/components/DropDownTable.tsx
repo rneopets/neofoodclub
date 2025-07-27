@@ -35,24 +35,24 @@ const BetRow = React.memo(
     betNum,
     arenaId,
     pirateValue,
-    loading,
+    loaded,
     onChange,
   }: {
     betNum: number;
     arenaId: number;
     pirateValue: number;
-    loading: boolean;
+    loaded: boolean;
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   }) => (
     <Pd key={`bet-${betNum}-arena-${arenaId}`}>
-      <Skeleton loading={loading} height="24px">
+      <Skeleton loading={!loaded} height="24px">
         <PirateSelect arenaId={arenaId} pirateValue={pirateValue} onChange={onChange} />
       </Skeleton>
     </Pd>
   ),
   (prevProps, nextProps) =>
     prevProps.pirateValue === nextProps.pirateValue &&
-    prevProps.loading === nextProps.loading &&
+    prevProps.loaded === nextProps.loaded &&
     prevProps.onChange === nextProps.onChange,
 );
 
@@ -70,7 +70,7 @@ const DropDownTableRow = React.memo(
   }) => {
     const currentBetLine = useBetLineSpecific(betNum + 1);
     const thisBetBinary = useSpecificBetBinary(betNum + 1);
-    const loading = useIsCalculated();
+    const loaded = useIsCalculated();
 
     return (
       <Table.Row>
@@ -84,7 +84,7 @@ const DropDownTableRow = React.memo(
               betNum={betNum}
               arenaId={arenaId}
               pirateValue={selectedPirate}
-              loading={loading}
+              loaded={loaded}
               onChange={rowHandlers[arenaId]!}
             />
           );
@@ -196,8 +196,8 @@ const ArenaCell = React.memo(
     createTimelineClickHandler: (arena: number, pirateIndex: number) => () => void;
   }) => {
     const roundPirates = useRoundPirates();
-    const pirates = roundPirates[arenaId] ?? makeEmpty(4);
-    const loading = Boolean(pirates[0]);
+    const pirates = roundPirates?.[arenaId] ?? makeEmpty(4);
+    const hasPirates = pirates && pirates.some(pirateId => pirateId > 0);
 
     const pirateRows = useMemo(
       () =>
@@ -220,7 +220,7 @@ const ArenaCell = React.memo(
 
     return (
       <Pd key={`arena-${arenaId}`}>
-        <Skeleton loading={loading}>
+        <Skeleton loading={!hasPirates}>
           <Table.Root size="sm" maxW="150px">
             <Table.Body>{pirateRows}</Table.Body>
           </Table.Root>

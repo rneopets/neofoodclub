@@ -1,12 +1,14 @@
+import React from 'react';
+
 import { useCustomValueInput } from '../hooks/useCustomValueInput';
-import { useCalculationsStore, useRoundDataStore, useCustomProbsValue } from '../stores';
+import { useRoundDataStore, useCustomProbsValue } from '../stores';
+import { useCalculationsStore } from '../stores/calculationsStore';
 
 import { NumberInputRoot, NumberInputField } from '@/components/ui/number-input';
 
 interface CustomProbsInputProps {
   arenaIndex: number;
   pirateIndex: number;
-  [key: string]: unknown;
 }
 
 // Completely isolated component that manages its own state
@@ -39,11 +41,15 @@ const CustomProbsInput = function CustomProbsInput(
     isPercent: true,
   });
 
+  const handleValueChange = (details: { value: string }): void => {
+    handleChange(details.value);
+  };
+
   return (
     <NumberInputRoot
       {...rest}
       value={inputValue}
-      onValueChange={handleChange}
+      onValueChange={handleValueChange}
       size="xs"
       allowMouseWheel
       width="100px"

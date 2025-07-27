@@ -41,8 +41,8 @@ import TextTooltip from './TextTooltip';
 // this element is the colorful and informative table full of your bet data
 
 const MemoizedTextTooltip = React.memo(
-  ({ text, label }: { text: React.ReactNode; label?: string }) => (
-    <TextTooltip text={text} {...(label && { content: label })} />
+  ({ text, content }: { text: React.ReactNode; content?: string }) => (
+    <TextTooltip text={text} {...(content && { content })} />
   ),
 );
 MemoizedTextTooltip.displayName = 'MemoizedTextTooltip';
@@ -214,16 +214,16 @@ const PayoutTableRow = React.memo(
         </Table.Cell>
         <Table.Cell style={{ textAlign: 'end' }}>{payoffs?.toLocaleString() ?? '0'}</Table.Cell>
         <Table.Cell style={{ textAlign: 'end' }}>
-          <MemoizedTextTooltip text={probabilityTooltip.text} label={probabilityTooltip.label} />
+          <MemoizedTextTooltip text={probabilityTooltip.text} content={probabilityTooltip.label} />
         </Table.Cell>
         <Table.Cell style={{ textAlign: 'end', backgroundColor: erBg }}>
           <MemoizedTextTooltip
             text={expectedRatioTooltip.text}
-            label={expectedRatioTooltip.label}
+            content={expectedRatioTooltip.label}
           />
         </Table.Cell>
         <Table.Cell style={{ textAlign: 'end', backgroundColor: neBg }}>
-          <MemoizedTextTooltip text={netExpectedTooltip.text} label={netExpectedTooltip.label} />
+          <MemoizedTextTooltip text={netExpectedTooltip.text} content={netExpectedTooltip.label} />
         </Table.Cell>
         <Table.Cell style={{ textAlign: 'end', backgroundColor: mbBg }}>
           {maxBets?.toLocaleString() ?? '0'}
@@ -366,13 +366,13 @@ const PayoutTable = React.memo((): React.ReactElement => {
               <Table.ColumnHeader style={{ textAlign: 'end' }}>
                 <MemoizedTextTooltip
                   text={totalExpectedRatioTooltip.text}
-                  label={totalExpectedRatioTooltip.label}
+                  content={totalExpectedRatioTooltip.label}
                 />
               </Table.ColumnHeader>
               <Table.ColumnHeader style={{ textAlign: 'end' }}>
                 <MemoizedTextTooltip
                   text={totalNetExpectedTooltip.text}
-                  label={totalNetExpectedTooltip.label}
+                  content={totalNetExpectedTooltip.label}
                 />
               </Table.ColumnHeader>
               <Table.ColumnHeader />

@@ -10,7 +10,7 @@ const HomePage = React.memo(
     <>
       <Header />
 
-      <Box pt="6.5rem">
+      <Box pt="7rem">
         <EditBets />
       </Box>
 

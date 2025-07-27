@@ -1,6 +1,7 @@
-import { Box, Flex, IconProps } from '@chakra-ui/react';
+import { Box, Flex } from '@chakra-ui/react';
 import React, { ChangeEvent, MouseEvent, useCallback, memo } from 'react';
 
+import { Switch } from '@/components/ui/switch';
 import { Tooltip } from '@/components/ui/tooltip';
 
 /**
@@ -12,7 +13,7 @@ interface SettingSwitchProps {
   onChange: (e: ChangeEvent<HTMLInputElement> | MouseEvent<HTMLDivElement>) => void;
   tooltipLabel?: string;
   colorPalette?: string;
-  iconProps?: IconProps & { baseSize?: unknown; largeSize?: unknown };
+  iconProps?: { style?: React.CSSProperties; [key: string]: unknown };
   disabled?: boolean;
 }
 
@@ -80,18 +81,18 @@ const SettingSwitch = memo(
                 style={{
                   transition: 'color 0.2s',
                   fontSize: iconSize,
-                  ...safeIconProps.style,
+                  ...((safeIconProps.style as React.CSSProperties) || {}),
                 }}
               />
             </Box>
           )}
           <Box onClick={handleStopPropagation} position="relative" zIndex={1}>
-            <input
-              type="checkbox"
+            <Switch
               checked={isChecked}
               onChange={handleSwitchChange}
               disabled={disabled}
-              style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
+              colorPalette={colorPalette}
+              size="sm"
             />
           </Box>
         </Flex>
@@ -112,8 +113,8 @@ const SettingSwitch = memo(
 
     return (
       <Tooltip
-        label={tooltipLabel || ''}
-        hasArrow
+        content={tooltipLabel || ''}
+        showArrow
         placement="top"
         openDelay={600}
         disabled={!tooltipLabel}

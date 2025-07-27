@@ -1,4 +1,4 @@
-import { Alert, Box, Button, VStack, Text } from '@chakra-ui/react';
+import { Alert, Box, Button, VStack } from '@chakra-ui/react';
 import React from 'react';
 import { FaExclamationCircle } from 'react-icons/fa';
 

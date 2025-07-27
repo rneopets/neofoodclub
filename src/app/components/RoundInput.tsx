@@ -9,16 +9,23 @@ import {
   NumberInputValueChangeDetails,
 } from '@/components/ui/number-input';
 
+// Hook to get error state from the store
+const useErrorState = (): string | null => useRoundDataStore(state => state.error);
+
 // this element is the number input to say which round's data you're viewing
 
 const RoundInput: React.FC = () => {
   const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
   const currentRound = useRoundDataStore(state => state.roundState.currentRound);
   const updateSelectedRound = useRoundDataStore(state => state.updateSelectedRound);
+  const error = useErrorState();
 
   const initialRoundNumber = useMemo(() => currentSelectedRound || 0, [currentSelectedRound]);
 
   const [tempValue, setTempValue] = useState<string>(initialRoundNumber.toString());
+
+  // Check if there's an error related to the current round
+  const hasError = Boolean(error);
 
   useEffect(() => {
     const trimmedValue = tempValue.trim();
@@ -90,6 +97,7 @@ const RoundInput: React.FC = () => {
         name="round-input"
         data-testid="round-input"
         size="xs"
+        invalid={hasError}
       >
         <NumberInputField
           onFocus={handleFocus}

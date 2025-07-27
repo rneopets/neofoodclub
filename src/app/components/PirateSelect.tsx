@@ -65,17 +65,16 @@ const PirateSelect = React.memo(
             {useArenaName ? ARENA_NAMES[arenaId] : ''}
           </option>
           <option hidden={!useArenaName} value="0"></option>
+          {selectOptions}
         </NativeSelect.Field>
-
-        {selectOptions}
       </NativeSelect.Root>
     );
   },
-  // Custom comparison function - only re-render if relevant props change
   (prevProps, nextProps) =>
     prevProps.arenaId === nextProps.arenaId &&
     prevProps.pirateValue === nextProps.pirateValue &&
-    prevProps.showArenaName === nextProps.showArenaName,
+    prevProps.showArenaName === nextProps.showArenaName &&
+    prevProps.onChange === nextProps.onChange,
 );
 
 PirateSelect.displayName = 'PirateSelect';

@@ -1,4 +1,4 @@
-import { Box, Button, Skeleton, Table, Text, VStack } from '@chakra-ui/react';
+import { Box, Button, Center, Icon, Skeleton, Table, Text, VStack } from '@chakra-ui/react';
 import React, { useCallback, useMemo, useEffect, useState, useRef } from 'react';
 import { FaCaretDown, FaCaretUp } from 'react-icons/fa6';
 
@@ -183,9 +183,9 @@ const ClearRadioCell = React.memo(
     const colors = useTableColors();
     return (
       <Pd key={`bet-${betNum}-arena-${arenaId}`} backgroundColor={colors.gray}>
-        <center>
+        <Center>
           <ClearRadio betIndex={betNum + 1} arenaIndex={arenaId} />
-        </center>
+        </Center>
       </Pd>
     );
   },
@@ -211,7 +211,7 @@ const ClearButtonCell = React.memo(
 
     return (
       <Pd backgroundColor={colors.gray}>
-        <Button size="xs" onClick={handleClearRow}>
+        <Button size="2xs" onClick={handleClearRow}>
           {betCount}-Bet
         </Button>
       </Pd>
@@ -476,9 +476,9 @@ const PirateRow = React.memo(
       for (let betNum = 0; betNum < betCount; betNum++) {
         radios.push(
           <Pd key={`bet-${betNum + 1}-arena-${arenaId}-pirate-${pirateId}`}>
-            <center>
+            <Center>
               <BetRadio betIndex={betNum + 1} arenaIndex={arenaId} pirateIndex={pirateIndex + 1} />
-            </center>
+            </Center>
           </Pd>,
         );
       }
@@ -603,6 +603,10 @@ const PirateRow = React.memo(
       );
     }, [payout, payoutBackground, bigBrain]);
 
+    // Odds comparison logic
+    const oddsIncreased = currentOdds > openingOdds;
+    const oddsChanged = currentOdds !== openingOdds;
+
     // Return skeleton if no pirate ID
     if (!pirateId) {
       return (
@@ -637,17 +641,20 @@ const PirateRow = React.memo(
         {faDetailsElement}
         <Table.Cell textAlign="end">{openingOdds}:1</Table.Cell>
         <Table.Cell textAlign="end" whiteSpace="nowrap">
-          {currentOdds > openingOdds && <FaCaretUp style={{ marginRight: '4px', color: green }} />}
-          {currentOdds < openingOdds && <FaCaretDown style={{ marginRight: '4px', color: red }} />}
-          <Text as="span" fontWeight={currentOdds === openingOdds ? 'normal' : 'bold'}>
-            {currentOdds}:1
-          </Text>
+          <Box display="flex" alignItems="center" justifyContent="flex-end">
+            {oddsChanged && (
+              <Icon color={oddsIncreased ? green : red} mr={1}>
+                {oddsIncreased ? <FaCaretUp /> : <FaCaretDown />}
+              </Icon>
+            )}
+            <Text fontWeight={oddsChanged ? 'bold' : 'normal'}>{currentOdds}:1</Text>
+          </Box>
         </Table.Cell>
         {customOddsInputElement}
         {timelineElement}
         {betRadios}
-        <Table.Cell>
-          <Button size="xs" onClick={handleBetLineChangeLocal}>
+        <Table.Cell py={0}>
+          <Button size="2xs" onClick={handleBetLineChangeLocal}>
             {betCount}-Bet
           </Button>
         </Table.Cell>
