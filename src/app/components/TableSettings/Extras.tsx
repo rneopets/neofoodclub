@@ -76,42 +76,42 @@ const Extras = memo(() => {
         />
 
         {isBigBrainAndNormalMode && (
-          <VStack gap={2} align="stretch" width="100%">
-            <MobileSwitchBox
-              icon={FaTimeline}
-              label="Odds Timeline"
-              colorPalette="purple"
-              checked={oddsTimeline}
-              onChange={handleOddsTimelineChange}
-              disabled={!isBigBrainAndNormalMode}
-              tooltipText="Odds Timeline"
-            />
-
-            <MobileSwitchBox
-              icon={FaCookieBite}
-              label="FA Details"
-              colorPalette="orange"
-              checked={faDetails}
-              onChange={handleFaDetailsChange}
-              disabled={!isBigBrainAndNormalMode}
-              tooltipText="FA Details"
-            />
-
-            <MobileSwitchBox
-              icon={FaSliders}
-              label="Custom Probs/Odds"
-              colorPalette="blue"
-              checked={customOddsMode}
-              onChange={handleCustomOddsModeChange}
-              disabled={!isBigBrainAndNormalMode}
-              tooltipText="Custom Probs/Odds"
-            />
-          </VStack>
+          <MobileSwitchBox
+            icon={FaTimeline}
+            label="Odds Timeline"
+            colorPalette="purple"
+            checked={oddsTimeline}
+            onChange={handleOddsTimelineChange}
+            disabled={!isBigBrainAndNormalMode}
+            tooltipText="Odds Timeline"
+          />
+        )}
+        {isBigBrainAndNormalMode && (
+          <MobileSwitchBox
+            icon={FaCookieBite}
+            label="FA Details"
+            colorPalette="orange"
+            checked={faDetails}
+            onChange={handleFaDetailsChange}
+            disabled={!isBigBrainAndNormalMode}
+            tooltipText="FA Details"
+          />
+        )}
+        {isBigBrainAndNormalMode && (
+          <MobileSwitchBox
+            icon={FaSliders}
+            label="Custom Probs/Odds"
+            colorPalette="blue"
+            checked={customOddsMode}
+            onChange={handleCustomOddsModeChange}
+            disabled={!isBigBrainAndNormalMode}
+            tooltipText="Custom Probs/Odds"
+          />
         )}
       </VStack>
 
       {/* Desktop view */}
-      <HStack gap={3.5} display={{ base: 'none', md: 'flex' }}>
+      <HStack display={{ base: 'none', md: 'flex' }}>
         <SettingSwitch
           icon={FaBrain}
           colorPalette="pink"
@@ -121,34 +121,34 @@ const Extras = memo(() => {
         />
 
         {isNormalMode && (
-          <>
-            <SettingSwitch
-              icon={FaTimeline}
-              colorPalette="purple"
-              checked={oddsTimeline}
-              onChange={handleOddsTimelineChange}
-              disabled={!isBigBrainAndNormalMode}
-              tooltipLabel="Odds Timeline"
-            />
-
-            <SettingSwitch
-              icon={FaCookieBite}
-              colorPalette="orange"
-              checked={faDetails}
-              onChange={handleFaDetailsChange}
-              disabled={!isBigBrainAndNormalMode}
-              tooltipLabel="FA Details"
-            />
-
-            <SettingSwitch
-              icon={FaSliders}
-              colorPalette="blue"
-              checked={customOddsMode}
-              onChange={handleCustomOddsModeChange}
-              disabled={!isBigBrainAndNormalMode}
-              tooltipLabel="Custom Probs/Odds"
-            />
-          </>
+          <SettingSwitch
+            icon={FaTimeline}
+            colorPalette="purple"
+            checked={oddsTimeline}
+            onChange={handleOddsTimelineChange}
+            disabled={!isBigBrainAndNormalMode}
+            tooltipLabel="Odds Timeline"
+          />
+        )}
+        {isNormalMode && (
+          <SettingSwitch
+            icon={FaCookieBite}
+            colorPalette="orange"
+            checked={faDetails}
+            onChange={handleFaDetailsChange}
+            disabled={!isBigBrainAndNormalMode}
+            tooltipLabel="FA Details"
+          />
+        )}
+        {isNormalMode && (
+          <SettingSwitch
+            icon={FaSliders}
+            colorPalette="blue"
+            checked={customOddsMode}
+            onChange={handleCustomOddsModeChange}
+            disabled={!isBigBrainAndNormalMode}
+            tooltipLabel="Custom Probs/Odds"
+          />
         )}
       </HStack>
     </>
