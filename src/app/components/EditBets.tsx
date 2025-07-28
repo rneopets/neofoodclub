@@ -44,7 +44,12 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
 
   const timelineDrawer = useMemo(
     () => (
-      <Drawer.Root open={open} placement="end" onOpenChange={e => setOpen(e.open)} size="md">
+      <Drawer.Root
+        open={open}
+        placement="end"
+        onOpenChange={(e: { open: boolean }) => setOpen(e.open)}
+        size="md"
+      >
         <Drawer.Backdrop />
         <Drawer.Positioner>
           <Drawer.Content>
@@ -78,7 +83,7 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
 
   return (
     <>
-      {/* Dynamically load table components based on mode */}
+      {/* Conditional rendering to completely avoid layering conflicts */}
       {isNormalMode && <NormalTable timelineHandlers={timelineHandlers} {...props} />}
       {isDropdownMode && <DropDownTable timelineHandlers={timelineHandlers} {...props} />}
       {timelineDrawer}
