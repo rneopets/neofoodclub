@@ -1,4 +1,13 @@
-import { Box, Button, useDisclosure, Drawer, Flex, Skeleton } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  useDisclosure,
+  Drawer,
+  Flex,
+  Skeleton,
+  Separator,
+  HStack,
+} from '@chakra-ui/react';
 import React, { useCallback, useMemo, useState, useRef, Suspense } from 'react';
 import { FaPenToSquare } from 'react-icons/fa6';
 
@@ -164,23 +173,17 @@ export default React.memo(function EditBets(): React.ReactElement {
             </Flex>
 
             {/* Desktop Layout (will be hidden on smaller than md screens) */}
-            <Flex
-              align="center"
-              px={5}
-              maxW="container.xl"
-              mx="auto"
-              display={{ base: 'none', md: 'flex' }}
-            >
+            <HStack px={5} display={{ base: 'none', md: 'flex' }}>
               <TableModes />
-              <Box borderRight="1px" borderColor={dividerColor} h="18px" mx={4} />
+              {/* <Separator orientation="vertical" colorScheme="blue" h="18px" mx={4}/> */}
               <LogitModelToggle />
 
-              <Box borderRight="1px" borderColor={dividerColor} h="18px" mx={4} />
+              {/* <Separator orientation="vertical" colorScheme="blue" h="18px" mx={4} /> */}
               <CopyDomainToggle />
 
-              <Box borderRight="1px" borderColor={dividerColor} h="18px" mx={4} />
+              {/* <Separator orientation="vertical" colorScheme="blue" h="18px" mx={4} /> */}
               <Extras />
-            </Flex>
+            </HStack>
           </Box>
           <HorizontalScrollingBox>
             <PirateTable m={4} />
