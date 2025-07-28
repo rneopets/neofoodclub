@@ -135,9 +135,6 @@ export default React.memo(function EditBets(): React.ReactElement {
             borderBottom="1px solid"
             borderColor={borderColor}
             mb={3}
-            position="sticky"
-            top="0"
-            zIndex="1"
             boxShadow={shadowValue}
           >
             {/* Mobile Layout (will be hidden on md and larger screens) */}
