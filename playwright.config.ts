@@ -91,7 +91,7 @@ export default defineConfig({
     stdout: 'pipe',
     stderr: 'pipe',
     env: {
-      NODE_ENV: 'development',
+      NODE_ENV: 'test',
       DISABLE_REACT_SCAN: 'true',
       PLAYWRIGHT_TEST: 'true',
       VITEST: 'false',
