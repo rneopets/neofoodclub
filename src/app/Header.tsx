@@ -15,6 +15,7 @@ import {
   IconButton,
   Show,
   AbsoluteCenter,
+  InputGroup,
 } from '@chakra-ui/react';
 import { addYears, differenceInMilliseconds } from 'date-fns';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -25,6 +26,7 @@ import { useColorMode } from '../components/ui/color-mode';
 
 import DateFormatter from './components/DateFormatter';
 import GlowCard from './components/GlowCard';
+import MaxBetLockToggle from './components/MaxBetLockToggle';
 import RoundInput from './components/RoundInput';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
@@ -260,12 +262,20 @@ const MaxBetInput: React.FC = () => {
   );
 
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const [isLocked, setIsLocked] = useState<boolean>(() => getMaxBetLocked());
 
   // Update temp value when round changes only
   useEffect(() => {
     const cookieValue = getMaxBet(currentSelectedRound);
     setTempValue(cookieValue.toString());
   }, [currentSelectedRound]);
+
+  useEffect(() => {
+    const currentLockState = getMaxBetLocked();
+    if (currentLockState !== isLocked) {
+      setIsLocked(currentLockState);
+    }
+  }, [currentSelectedRound, isLocked]);
 
   const handleChange = useCallback((details: NumberInputValueChangeDetails): void => {
     setTempValue(details.value);
@@ -289,9 +299,9 @@ const MaxBetInput: React.FC = () => {
 
     if (numValue !== currentMaxBet) {
       const cookies = new Cookies();
-      const isLocked = getMaxBetLocked();
+      const currentIsLocked = getMaxBetLocked();
 
-      if (isLocked) {
+      if (currentIsLocked) {
         cookies.set('lockedMaxBet', numValue, {
           expires: addYears(new Date(), 100),
         });
@@ -317,17 +327,27 @@ const MaxBetInput: React.FC = () => {
       max={500000}
       clampValueOnBlur={false}
       allowMouseWheel={false}
+      showControl={!isLocked}
+      disabled={isLocked}
+      readOnly={isLocked}
       {...(isAnimating && {
         borderColor: 'green.400',
         boxShadow: '0 0 0 1px var(--chakra-colors-green-400)',
       })}
       transition="all 0.3s ease"
     >
-      <NumberInputField
-        data-testid="max-bet-input-field-input"
-        onBlur={handleBlur}
-        onFocus={handleFocus}
-      />
+      <InputGroup
+        startElement={<MaxBetLockToggle onToggle={setIsLocked} />}
+        startElementProps={{ pointerEvents: 'auto' }}
+      >
+        <NumberInputField
+          data-testid="max-bet-input-field-input"
+          onBlur={handleBlur}
+          onFocus={handleFocus}
+          cursor={isLocked ? 'not-allowed' : 'text'}
+          color={isLocked ? 'fg.muted' : undefined}
+        />
+      </InputGroup>
     </NumberInputRoot>
   );
 };
