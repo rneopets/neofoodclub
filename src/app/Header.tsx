@@ -3,7 +3,6 @@ import {
   Button,
   ProgressCircle,
   Image,
-  Flex,
   Heading,
   HStack,
   SkeletonText,
@@ -324,7 +323,11 @@ const MaxBetInput: React.FC = () => {
       })}
       transition="all 0.3s ease"
     >
-      <NumberInputField onBlur={handleBlur} onFocus={handleFocus} />
+      <NumberInputField
+        data-testid="max-bet-input-field-input"
+        onBlur={handleBlur}
+        onFocus={handleFocus}
+      />
     </NumberInputRoot>
   );
 };

@@ -43,7 +43,7 @@ async function generateBets(page: Page, type: 'gambit' | 'max-ter'): Promise<voi
 
 // Helper to set max bet amount
 async function setMaxBet(page: Page, amount: string): Promise<void> {
-  const input = page.locator('[data-testid="max-bet-input-field"]');
+  const input = page.locator('[data-testid="max-bet-input-field-input"]');
   await input.fill(amount);
   await input.press('Tab');
   await page.waitForTimeout(100);
@@ -145,14 +145,14 @@ test.describe('NeoFoodClub Bet Generation', () => {
     await verifyGambitBadge(page);
 
     // Verify max bet input still shows 1000
-    const maxBetInput = page.locator('[data-testid="max-bet-input-field"]');
+    const maxBetInput = page.locator('[data-testid="max-bet-input-field-input"]');
     const maxBetValue = await maxBetInput.inputValue();
     expect(maxBetValue).toBe('1000');
   });
 
   test('should work with default -1000 max bet (unset)', async ({ page }) => {
     // Verify max bet is -1000 by default
-    const maxBetInput = page.locator('[data-testid="max-bet-input-field"]');
+    const maxBetInput = page.locator('[data-testid="max-bet-input-field-input"]');
     const maxBetValue = await maxBetInput.inputValue();
     expect(maxBetValue).toBe('-1000');
 
