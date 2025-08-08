@@ -178,8 +178,7 @@ const PayoutTableRow = React.memo(
                 <Spacer />
                 <HStack gap={1}>
                   <IconButton
-                    size="xs"
-                    height="20px"
+                    size="2xs"
                     onClick={handleSwapUp}
                     disabled={betIndex === 0}
                     aria-label="Move bet up"
@@ -187,8 +186,7 @@ const PayoutTableRow = React.memo(
                     <FaArrowUp />
                   </IconButton>
                   <IconButton
-                    size="xs"
-                    height="20px"
+                    size="2xs"
                     onClick={handleSwapDown}
                     disabled={betIndex === amountOfBets - 1}
                     aria-label="Move bet down"
