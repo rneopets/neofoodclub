@@ -221,12 +221,7 @@ const ArenaCell = React.memo(
     return (
       <Pd key={`arena-${arenaId}`}>
         <Skeleton loading={!hasPirates}>
-          <Table.Root
-            size="sm"
-            maxW="150px"
-            height="fit-content"
-            overflow="hidden"
-          >
+          <Table.Root size="sm" maxW="150px" height="fit-content" overflow="hidden">
             <Table.Body overflow="hidden" height="fit-content" maxHeight="100px">
               {pirateRows}
             </Table.Body>
