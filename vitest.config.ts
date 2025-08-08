@@ -8,6 +8,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    env: {
+      NODE_ENV: 'test',
+      VITEST: 'true',
+      DISABLE_REACT_SCAN: 'true',
+    },
     // Enable parallel execution with multiple threads
     pool: 'threads',
     // Allow multiple workers for better parallel performance

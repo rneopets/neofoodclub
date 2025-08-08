@@ -10,7 +10,7 @@ const HorizontalScrollingBox = (props: React.ComponentProps<typeof Box>): React.
   // *page*, and extend the entire page's scroll area to fit them. This includes
   // normal hidden elements, like in Chakra's <Radio />!
   return (
-    <Box overflowX="auto" position="relative" {...rest}>
+    <Box overflowX="auto" position="relative" height="fit-content" {...rest}>
       {children}
     </Box>
   );

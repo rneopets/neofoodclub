@@ -59,7 +59,7 @@ const PirateSelect = React.memo(
     }
 
     return (
-      <NativeSelect.Root size="sm" height="1.5rem" backgroundColor={pirateBg} {...rest}>
+      <NativeSelect.Root size="xs" colorPalette={pirateBg} {...rest}>
         <NativeSelect.Field value={pirateValue} onChange={onChange}>
           <option disabled={useArenaName} hidden={useArenaName} value="0">
             {useArenaName ? ARENA_NAMES[arenaId] : ''}
@@ -67,6 +67,7 @@ const PirateSelect = React.memo(
           <option hidden={!useArenaName} value="0"></option>
           {selectOptions}
         </NativeSelect.Field>
+        <NativeSelect.Indicator />
       </NativeSelect.Root>
     );
   },
