@@ -1,17 +1,8 @@
-import { Box, BoxProps } from '@chakra-ui/react';
+import { Box, BoxProps, useToken } from '@chakra-ui/react';
 import React from 'react';
-import { styled, keyframes } from 'styled-components';
+import { keyframes, styled } from 'styled-components';
 
-import { useColorModeValue } from '@/components/ui/color-mode';
-
-const angleProperty = `
-  @property --angle {
-    syntax: "<angle>";
-    initial-value: 0deg;
-    inherits: false;
-  }
-`;
-
+// CSS keyframes for the spinning animation
 const spin = keyframes`
   from {
     --angle: 0deg;
@@ -21,44 +12,55 @@ const spin = keyframes`
   }
 `;
 
+const angleProperty = `
+  @property --angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+`;
+
 interface CardContainerProps {
   animate?: boolean;
   backgroundColor: string;
   borderColor: string;
+  borderRadius: string;
 }
 
 const CardContainer = styled(Box).withConfig({
   shouldForwardProp: prop =>
-    !['animate', 'backgroundColor', 'borderColor'].includes(prop as string),
+    !['animate', 'backgroundColor', 'borderColor', 'borderRadius'].includes(prop as string),
 })<CardContainerProps>`
   ${angleProperty}
 
-  background: ${props => props.backgroundColor};
-  border-radius: 10px;
+  background: ${(props): string => props.borderColor};
+  border-radius: ${(props): string => props.borderRadius};
   position: relative;
 
   &::before,
   &::after {
     content: '';
     position: absolute;
-    height: 100%;
-    width: 100%;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: -1;
-    padding: 1px;
-    border-radius: 10px;
     transition: opacity 1s ease;
   }
 
   &::before {
-    filter: ${(props: CardContainerProps): string => (props.animate ? 'blur(0.5rem)' : 'blur(0)')};
-    opacity: ${(props: CardContainerProps): number => (props.animate ? 0.7 : 1)};
-    background-color: ${props => props.borderColor};
+    z-index: -2;
+    height: calc(100% + 2px);
+    width: calc(100% + 2px);
+    border-radius: ${(props): string => props.borderRadius};
+
+    background: ${(props): string => props.backgroundColor};
   }
 
   &::after {
+    z-index: -1;
+    height: calc(100% + 2px);
+    width: calc(100% + 2px);
+    border-radius: ${(props): string => props.borderRadius};
     background-image: conic-gradient(
       from var(--angle),
       #ff4545,
@@ -77,15 +79,22 @@ interface GlowCardProps extends BoxProps {
   animate?: boolean;
 }
 
-const GlowCard: React.FC<GlowCardProps> = ({ children, animate, ...props }) => {
-  const backgroundColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
+const GlowCard: React.FC<GlowCardProps> = ({
+  children,
+  animate,
+  borderRadius = 'lg',
+  ...props
+}) => {
+  const [borderColorValue] = useToken('colors', ['bg.panel']);
+  const [backgroundColorValue] = useToken('colors', ['border']);
+  const borderRadiusValue = useToken('radii', borderRadius as string);
 
   return (
     <CardContainer
       animate={animate}
-      backgroundColor={backgroundColor}
-      borderColor={borderColor}
+      backgroundColor={backgroundColorValue}
+      borderColor={borderColorValue}
+      borderRadius={borderRadiusValue}
       {...props}
     >
       {children}

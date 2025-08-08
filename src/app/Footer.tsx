@@ -12,6 +12,7 @@ import {
   BoxProps,
   TextProps,
   Image,
+  HStack,
 } from '@chakra-ui/react';
 import * as React from 'react';
 
@@ -22,14 +23,10 @@ import { VercelCredit } from './components/VercelCredit';
 import NeopointIcon from './images/np-icon.svg';
 
 const Logo: React.FC = () => (
-  <Stack direction="row">
-    <Box asChild>
-      <Image src={NeopointIcon} alt="Neopoint Icon" height="1.5em" width="1.5em" />
-    </Box>
-    <Heading as="h1" fontFamily="heading" fontWeight="bold" fontSize="xl">
-      NeoFoodClub
-    </Heading>
-  </Stack>
+  <HStack>
+    <Image src={NeopointIcon} alt="Neopoint Icon" height="1.5em" width="1.5em" fit="contain" />
+    <Heading>NeoFoodClub</Heading>
+  </HStack>
 );
 
 interface ListHeaderProps extends TextProps {
@@ -120,25 +117,11 @@ const Footer: React.FC<FooterProps> = props => (
         </SimpleGrid>
       </Container>
       <Box py={10}>
-        <Flex
-          align={'center'}
-          _before={{
-            content: '""',
-            borderBottom: '1px solid',
-            borderColor: useColorModeValue('gray.200', 'gray.700'),
-            flexGrow: 1,
-            mr: 8,
-          }}
-          _after={{
-            content: '""',
-            borderBottom: '1px solid',
-            borderColor: useColorModeValue('gray.200', 'gray.700'),
-            flexGrow: 1,
-            ml: 8,
-          }}
-        >
+        <HStack>
+          <Separator flex="1" />
           <Logo />
-        </Flex>
+          <Separator flex="1" />
+        </HStack>
         <Text pt={6} fontSize={'sm'} textAlign={'center'}>
           Website, design, and code &copy; neofood.club
           <br />

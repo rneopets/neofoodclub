@@ -109,9 +109,6 @@ export default React.memo(function EditBets(): React.ReactElement {
 
   const colors = useTableColors();
 
-  const settingsBg = useColorModeValue('white', '#1c2130');
-  const borderColor = useColorModeValue('blue.100', 'blue.900');
-  const dividerColor = useColorModeValue('gray.300', 'gray.600');
   const shadowValue = useColorModeValue(
     '0 1px 2px rgba(0,0,0,0.02)',
     '0 4px 6px -1px rgba(0,0,0,0.2), 0 2px 4px -1px rgba(0,0,0,0.06)',
@@ -140,9 +137,9 @@ export default React.memo(function EditBets(): React.ReactElement {
           <Box
             w="100%"
             py={{ base: 2, md: 2.5 }}
-            bg={settingsBg}
+            bg={'bg'}
             borderBottom="1px solid"
-            borderColor={borderColor}
+            borderColor={'border'}
             mb={3}
             boxShadow={shadowValue}
           >
