@@ -6,10 +6,13 @@ import Cookies from 'universal-cookie';
 import { useRoundDataStore } from '../stores';
 import { getMaxBetLocked, getMaxBet, calculateBaseMaxBet } from '../util';
 
-import { useColorModeValue } from '@/components/ui/color-mode';
 import { Tooltip } from '@/components/ui/tooltip';
 
-const MaxBetLockToggle = memo(() => {
+interface MaxBetLockToggleProps {
+  onToggle?: (locked: boolean) => void;
+}
+
+const MaxBetLockToggle = memo(({ onToggle }: MaxBetLockToggleProps) => {
   const [isLocked, setIsLocked] = useState(() => getMaxBetLocked());
   const cookies = useMemo(() => new Cookies(), []);
   const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
@@ -45,10 +48,8 @@ const MaxBetLockToggle = memo(() => {
 
     cookies.set('maxBetLocked', newValue);
     setIsLocked(newValue);
-  }, [isLocked, cookies, currentSelectedRound]);
-
-  const lockedColor = useColorModeValue('red.500', 'red.400');
-  const unlockedColor = useColorModeValue('green.500', 'green.400');
+    onToggle?.(newValue);
+  }, [isLocked, cookies, currentSelectedRound, onToggle]);
 
   const tooltipLabel = isLocked
     ? 'Max bet is locked - will not increase with round number'
@@ -58,25 +59,12 @@ const MaxBetLockToggle = memo(() => {
     <Tooltip content={tooltipLabel} showArrow placement="top" openDelay={600}>
       <IconButton
         aria-label={isLocked ? 'Unlock max bet' : 'Lock max bet'}
-        size="xs"
+        size="2xs"
         variant="ghost"
-        color={isLocked ? lockedColor : unlockedColor}
+        colorPalette={isLocked ? 'red' : 'green'}
         onClick={handleToggle}
-        minW="auto"
-        h="20px"
-        w="20px"
-        p={0}
-        _hover={{
-          backgroundColor: isLocked ? 'red.50' : 'green.50',
-          color: isLocked ? 'red.600' : 'green.600',
-        }}
-        _dark={{
-          _hover: {
-            backgroundColor: isLocked ? 'red.900' : 'green.900',
-            color: isLocked ? 'red.300' : 'green.300',
-          },
-        }}
         data-testid="max-bet-lock-toggle"
+        p={1}
       >
         {isLocked ? <FaLock /> : <FaLockOpen />}
       </IconButton>
