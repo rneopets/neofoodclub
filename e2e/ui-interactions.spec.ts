@@ -160,7 +160,7 @@ test.describe('NeoFoodClub UI Interactions', () => {
     // Test different types of inputs
     const textInputs = page.locator('input[type="text"], input:not([type])');
     const roundInput = page.locator('[data-testid="round-input-field"]'); // Use specific round input
-    const maxBetInput = page.locator('[data-testid="max-bet-input-field"]'); // Use specific max bet input
+    const maxBetInput = page.locator('[data-testid="max-bet-input-field-input"]'); // Use specific max bet input
     const selects = page.locator('select');
 
     const textCount = await textInputs.count();
