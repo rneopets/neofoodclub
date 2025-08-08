@@ -221,8 +221,15 @@ const ArenaCell = React.memo(
     return (
       <Pd key={`arena-${arenaId}`}>
         <Skeleton loading={!hasPirates}>
-          <Table.Root size="sm" maxW="150px">
-            <Table.Body>{pirateRows}</Table.Body>
+          <Table.Root
+            size="sm"
+            maxW="150px"
+            height="fit-content"
+            overflow="hidden"
+          >
+            <Table.Body overflow="hidden" height="fit-content" maxHeight="100px">
+              {pirateRows}
+            </Table.Body>
           </Table.Root>
         </Skeleton>
       </Pd>
@@ -366,9 +373,9 @@ const DropDownTable = React.memo(
     );
 
     return (
-      <Table.Root size="sm" width="auto">
+      <Table.Root size="sm" width="auto" height="fit-content" maxHeight="60vh" overflow="hidden">
         {tableHeader}
-        <Table.Body>
+        <Table.Body overflow="hidden" height="fit-content" maxHeight="50vh">
           <ArenaRow createTimelineClickHandler={createTimelineClickHandler} />
           {betRows}
         </Table.Body>
