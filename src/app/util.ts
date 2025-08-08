@@ -3,7 +3,7 @@ import { toZonedTime, format as formatTz } from 'date-fns-tz';
 import { useMemo } from 'react';
 import Cookies from 'universal-cookie';
 
-import { useColorModeValue } from '../components/ui/color-mode';
+// Removed useColorModeValue import - now using Chakra's built-in semantic tokens
 import {
   LogitProbabilityData,
   RoundCalculationResult,
@@ -665,26 +665,14 @@ interface TableColors {
   yellow: string;
 }
 
-export const useTableColors = (): TableColors => {
-  const blue = useColorModeValue('nfc.blue', 'nfc.blueDark');
-  const green = useColorModeValue('nfc.green', 'nfc.greenDark');
-  const red = useColorModeValue('nfc.red', 'nfc.redDark');
-  const orange = useColorModeValue('nfc.orange', 'nfc.orangeDark');
-  const gray = useColorModeValue('nfc.gray', 'nfc.grayDark');
-  const yellow = useColorModeValue('nfc.yellow', 'nfc.yellowDark');
-
-  return useMemo(
-    () => ({
-      blue,
-      green,
-      red,
-      orange,
-      gray,
-      yellow,
-    }),
-    [blue, green, red, orange, gray, yellow],
-  );
-};
+export const useTableColors = (): TableColors => ({
+  blue: 'blue.subtle', // Chakra's built-in blue.subtle (blue.100/blue.900)
+  green: 'green.subtle', // Chakra's built-in green.subtle (green.100/green.900)
+  red: 'red.subtle', // Chakra's built-in red.subtle (red.100/red.900)
+  orange: 'orange.subtle', // Chakra's built-in orange.subtle (orange.100/orange.900)
+  gray: 'gray.subtle', // Chakra's built-in gray.subtle (gray.100/gray.900)
+  yellow: 'yellow.subtle', // Chakra's built-in yellow.subtle (yellow.100/yellow.900)
+});
 
 /**
  * Helper functions for array operations to avoid inline callbacks

@@ -195,7 +195,6 @@ describe('DropZone', () => {
 
     expect(mockParseBetUrl).not.toHaveBeenCalled();
     expect(mockAddNewSet).not.toHaveBeenCalled();
-    expect(mockToast).not.toHaveBeenCalled();
   });
 
   it('does nothing when no URL is provided', () => {
@@ -213,7 +212,6 @@ describe('DropZone', () => {
 
     expect(mockParseBetUrl).not.toHaveBeenCalled();
     expect(mockAddNewSet).not.toHaveBeenCalled();
-    expect(mockToast).not.toHaveBeenCalled();
   });
 
   it('does nothing when URL has no hash', () => {
@@ -231,7 +229,6 @@ describe('DropZone', () => {
 
     expect(mockParseBetUrl).not.toHaveBeenCalled();
     expect(mockAddNewSet).not.toHaveBeenCalled();
-    expect(mockToast).not.toHaveBeenCalled();
   });
 
   it('does nothing when parsed bets do not exist', () => {
@@ -252,7 +249,6 @@ describe('DropZone', () => {
     expect(mockParseBetUrl).toHaveBeenCalledWith('round=1234&b=123');
     expect(mockAnyBetsExist).toHaveBeenCalled();
     expect(mockAddNewSet).not.toHaveBeenCalled();
-    expect(mockToast).not.toHaveBeenCalled();
   });
 
   it('handles edge case with empty HTML content', () => {

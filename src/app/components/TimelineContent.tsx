@@ -28,6 +28,7 @@ import {
 
 import { OddsChange } from '../../types';
 import { PIRATE_NAMES, ARENA_NAMES } from '../constants';
+import { useBgColors } from '../hooks/useBgColors';
 import { makeEmpty } from '../maths';
 import {
   useRoundDataStore,
@@ -42,7 +43,6 @@ import { getOrdinalSuffix, filterChangesByArenaPirate } from '../utils/betUtils'
 import DateFormatter from './DateFormatter';
 
 import { Avatar } from '@/components/ui/avatar';
-import { useColorModeValue } from '@/components/ui/color-mode';
 import { Timeline } from '@/components/ui/timeline';
 
 // TimelineContent component for the drawer
@@ -64,11 +64,8 @@ const TimelineContent = React.memo(
     const legacyProb = useStableLegacyProbabilityStd(arenaId, pirateIndex + 1);
     const arenaRatios = useArenaRatios();
 
-    // Color mode values - must be at top level
-    const cardBg = useColorModeValue('white', 'gray.800');
-    const borderColor = useColorModeValue('gray.200', 'gray.600');
-    const mutedText = useColorModeValue('gray.600', 'gray.400');
-    const detailsBg = useColorModeValue('gray.50', 'gray.700');
+    // Background colors using semantic tokens
+    const bgColors = useBgColors();
 
     if (!pirateId || !start || !endTime) {
       return null;
@@ -129,7 +126,7 @@ const TimelineContent = React.memo(
         ],
         time: startDate,
         odds: openingOdds,
-        color: 'blue.500',
+        color: 'blue.solid',
         payout: openingPayout,
       },
       ...thisPiratesChanges.map((change, index) => {
@@ -151,7 +148,7 @@ const TimelineContent = React.memo(
           ],
           time: new Date(change.t),
           odds: change.new,
-          color: isIncrease ? 'green.500' : 'red.500',
+          color: isIncrease ? 'green.solid' : 'red.solid',
           payout: newPayout,
           change: change.new - change.old,
           changePercent,
@@ -182,7 +179,7 @@ const TimelineContent = React.memo(
             ],
         time: endDate,
         odds: thisPiratesOdds[thisPiratesOdds.length - 1] || openingOdds,
-        color: didPirateWin ? 'green.500' : 'red.500',
+        color: didPirateWin ? 'green.solid' : 'red.solid',
         payout: finalPayout,
       });
     }
@@ -201,7 +198,7 @@ const TimelineContent = React.memo(
                 <Heading size="lg" mb={1}>
                   {pirateName} {oddsChangesCountLabel}
                 </Heading>
-                <Text color={mutedText} fontSize="md" mb={2}>
+                <Text color={bgColors.textMuted} fontSize="md" mb={2}>
                   {arenaName} • Round {roundData.round}
                 </Text>
                 <HStack gap={2} flexWrap="wrap">
@@ -227,25 +224,25 @@ const TimelineContent = React.memo(
             </Flex>
 
             {/* Summary Stats */}
-            <Card.Root bg={cardBg} borderColor={borderColor}>
+            <Card.Root bg={bgColors.canvas} borderColor={bgColors.border}>
               <Card.Body py={3}>
                 <Grid templateColumns="repeat(auto-fit, minmax(120px, 1fr))" gap={4}>
                   <GridItem>
                     <VStack gap={1}>
                       <HStack>
                         <FaChartLine color={totalOddsChange >= 0 ? 'green' : 'red'} />
-                        <Text fontSize="xs" fontWeight="bold" color={mutedText}>
+                        <Text fontSize="xs" fontWeight="bold" color={bgColors.textMuted}>
                           TOTAL CHANGE
                         </Text>
                       </HStack>
                       <Text
                         fontSize="lg"
                         fontWeight="bold"
-                        color={totalOddsChange >= 0 ? 'green.500' : 'red.500'}
+                        color={totalOddsChange >= 0 ? 'green.fg' : 'red.fg'}
                       >
                         {displayAsPlusMinus(totalOddsChange)}
                       </Text>
-                      <Text fontSize="xs" color={mutedText}>
+                      <Text fontSize="xs" color={bgColors.textMuted}>
                         {percentageChange > 0 ? '+' : ''}
                         {percentageChange.toFixed(1)}%
                       </Text>
@@ -256,14 +253,14 @@ const TimelineContent = React.memo(
                     <VStack gap={1}>
                       <HStack>
                         <FaPercent color="blue" />
-                        <Text fontSize="xs" fontWeight="bold" color={mutedText}>
+                        <Text fontSize="xs" fontWeight="bold" color={bgColors.textMuted}>
                           PROBABILITY
                         </Text>
                       </HStack>
                       <Text fontSize="lg" fontWeight="bold">
                         {displayAsPercent(useLogitModel ? logitProb : legacyProb, 1)}
                       </Text>
-                      <Text fontSize="xs" color={mutedText}>
+                      <Text fontSize="xs" color={bgColors.textMuted}>
                         {useLogitModel ? 'Logit' : 'Legacy'} model
                       </Text>
                     </VStack>
@@ -273,14 +270,14 @@ const TimelineContent = React.memo(
                     <VStack gap={1}>
                       <HStack>
                         <FaClock color="orange" />
-                        <Text fontSize="xs" fontWeight="bold" color={mutedText}>
+                        <Text fontSize="xs" fontWeight="bold" color={bgColors.textMuted}>
                           VOLATILITY
                         </Text>
                       </HStack>
                       <Text fontSize="lg" fontWeight="bold">
                         {volatility}
                       </Text>
-                      <Text fontSize="xs" color={mutedText}>
+                      <Text fontSize="xs" color={bgColors.textMuted}>
                         {volatility === 0
                           ? 'Stable'
                           : volatility === 1
@@ -296,18 +293,18 @@ const TimelineContent = React.memo(
                     <VStack gap={1}>
                       <HStack>
                         <FaSackDollar color={payoutChange >= 0 ? 'green' : 'red'} />
-                        <Text fontSize="xs" fontWeight="bold" color={mutedText}>
+                        <Text fontSize="xs" fontWeight="bold" color={bgColors.textMuted}>
                           PAYOUT CHANGE
                         </Text>
                       </HStack>
                       <Text
                         fontSize="lg"
                         fontWeight="bold"
-                        color={payoutChange >= 0 ? 'green.500' : 'red.500'}
+                        color={payoutChange >= 0 ? 'green.fg' : 'red.fg'}
                       >
                         {displayAsPlusMinus(payoutChange)}
                       </Text>
-                      <Text fontSize="xs" color={mutedText}>
+                      <Text fontSize="xs" color={bgColors.textMuted}>
                         Expected return
                       </Text>
                     </VStack>
@@ -324,7 +321,7 @@ const TimelineContent = React.memo(
               <Text
                 fontSize="sm"
                 fontWeight="bold"
-                color={mutedText}
+                color={bgColors.textMuted}
                 mb={3}
                 textTransform="uppercase"
                 letterSpacing="wide"
@@ -349,7 +346,7 @@ const TimelineContent = React.memo(
                           <Timeline.Title fontSize="md" fontWeight="bold" mb={1}>
                             {event.title}
                           </Timeline.Title>
-                          <Timeline.Description color={mutedText} fontSize="sm" mb={2}>
+                          <Timeline.Description color={bgColors.textMuted} fontSize="sm" mb={2}>
                             <DateFormatter
                               format="LTS [NST]"
                               date={event.time}
@@ -363,7 +360,7 @@ const TimelineContent = React.memo(
 
                         {event.details && event.details.length > 0 && (
                           <Box
-                            bg={detailsBg}
+                            bg={bgColors.panel}
                             p={3}
                             borderRadius="md"
                             width="100%"
@@ -375,7 +372,7 @@ const TimelineContent = React.memo(
                                 <Text
                                   key={`${event.id}-detail-${detail.slice(0, 20)}`}
                                   fontSize="xs"
-                                  color={mutedText}
+                                  color={bgColors.textMuted}
                                   fontFamily="mono"
                                 >
                                   • {detail}

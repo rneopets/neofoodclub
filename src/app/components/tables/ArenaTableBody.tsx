@@ -10,6 +10,7 @@ import {
   ARENA_NAMES,
   FOODS,
 } from '../../constants';
+import { useBgColors } from '../../hooks/useBgColors';
 import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
 import { computePirateBinary } from '../../maths';
 import {
@@ -33,7 +34,7 @@ import {
   useCustomOddsMode,
   useFaDetails,
 } from '../../stores';
-import { useTableColors, displayAsPercent } from '../../util';
+import { displayAsPercent } from '../../util';
 import BetRadio, { ClearRadio } from '../BetRadio';
 import CustomOddsInput from '../CustomOddsInput';
 import CustomProbsInput from '../CustomProbsInput';
@@ -47,7 +48,6 @@ const PirateFA = React.memo(
   (props: { pirateId: number; foodId: number }): React.ReactElement | null => {
     const { pirateId, foodId } = props;
     // returns the FA <td> element for the associated pirate/food
-    const { green, red, yellow } = useTableColors();
 
     const pos = POSITIVE_FAS[pirateId]![foodId]!;
     const neg = NEGATIVE_FAS[pirateId]![foodId]!;
@@ -57,13 +57,13 @@ const PirateFA = React.memo(
     let indicator = '';
 
     if (pos && neg) {
-      color = yellow;
+      color = 'yellow.subtle';
       indicator = `+${pos}/-${neg}`;
     } else if (pos) {
-      color = green;
+      color = 'green.subtle';
       indicator = `+${pos}`;
     } else if (neg) {
-      color = red;
+      color = 'red.subtle';
       indicator = `-${neg}`;
     }
 
@@ -179,16 +179,13 @@ const StickyTd = React.memo(
 StickyTd.displayName = 'StickyTd';
 
 const ClearRadioCell = React.memo(
-  ({ betNum, arenaId }: { betNum: number; arenaId: number }) => {
-    const colors = useTableColors();
-    return (
-      <Pd key={`bet-${betNum}-arena-${arenaId}`} backgroundColor={colors.gray}>
-        <Center>
-          <ClearRadio betIndex={betNum + 1} arenaIndex={arenaId} />
-        </Center>
-      </Pd>
-    );
-  },
+  ({ betNum, arenaId }: { betNum: number; arenaId: number }) => (
+    <Pd key={`bet-${betNum}-arena-${arenaId}`} backgroundColor="bg.subtle">
+      <Center>
+        <ClearRadio betIndex={betNum + 1} arenaIndex={arenaId} />
+      </Center>
+    </Pd>
+  ),
   (prevProps, nextProps) =>
     prevProps.betNum === nextProps.betNum && prevProps.arenaId === nextProps.arenaId,
 );
@@ -203,14 +200,13 @@ const ClearButtonCell = React.memo(
     arenaId: number;
     handleBetLineChange: (a: number, v: number) => void;
   }) => {
-    const colors = useTableColors();
     const betCount = useBetCount();
     const handleClearRow = useCallback(() => {
       handleBetLineChange(arenaId, 0);
     }, [handleBetLineChange, arenaId]);
 
     return (
-      <Pd backgroundColor={colors.gray}>
+      <Pd backgroundColor="bg.subtle">
         <Button size="2xs" onClick={handleClearRow}>
           {betCount}-Bet
         </Button>
@@ -259,7 +255,6 @@ ClearRadioRow.displayName = 'ClearRadioRow';
 
 const FoodItems = React.memo(
   ({ arenaId }: { arenaId: number }) => {
-    const { gray } = useTableColors();
     const foods = useFoodsForArena(arenaId);
 
     if (!foods) {
@@ -276,7 +271,7 @@ const FoodItems = React.memo(
               as={Pd}
               whiteSpace="nowrap"
               overflow="hidden"
-              backgroundColor={gray}
+              backgroundColor="bg.subtle"
               cursor="default"
               position="relative"
               _after={{
@@ -326,23 +321,19 @@ const ArenaRatioDisplay = React.memo(
 
 ArenaRatioDisplay.displayName = 'ArenaRatioDisplay';
 
-const EmptyBetsPlaceholder = React.memo(() => {
-  const { gray } = useTableColors();
-  return (
-    <Pd colSpan={100} backgroundColor={gray}>
-      <Skeleton height="24px">
-        <Box>&nbsp;</Box>
-      </Skeleton>
-    </Pd>
-  );
-});
+const EmptyBetsPlaceholder = React.memo(() => (
+  <Pd colSpan={100} backgroundColor="bg.subtle">
+    <Skeleton height="24px">
+      <Box>&nbsp;</Box>
+    </Skeleton>
+  </Pd>
+));
 
 EmptyBetsPlaceholder.displayName = 'EmptyBetsPlaceholder';
 
-const EmptyTd = React.memo((props: { colSpan?: number }) => {
-  const { gray } = useTableColors();
-  return <Table.Cell backgroundColor={gray} colSpan={props.colSpan || 1} />;
-});
+const EmptyTd = React.memo((props: { colSpan?: number }) => (
+  <Table.Cell backgroundColor="bg.subtle" colSpan={props.colSpan || 1} />
+));
 
 const ArenaHeaderRow = React.memo(
   ({
@@ -437,7 +428,7 @@ const PirateRow = React.memo(
     const bigBrain = useBigBrain();
     const oddsTimeline = useOddsTimeline();
     const foods = useFoodsForArena(arenaId);
-    const { green, red } = useTableColors();
+    const bgColors = useBgColors();
     const winningBetBinary = useWinningBetBinary();
     const pirateBin = computePirateBinary(arenaId, pirateIndex + 1);
     const pirateWon = (winningBetBinary & pirateBin) === pirateBin;
@@ -456,12 +447,12 @@ const PirateRow = React.memo(
 
     const payoutBackground = useMemo(() => {
       if (payout > 0) {
-        return green;
+        return bgColors.payoutPositive;
       } else if (payout <= -0.1) {
-        return red;
+        return bgColors.payoutNegative;
       }
-      return 'transparent';
-    }, [payout, green, red]);
+      return bgColors.payoutNeutral;
+    }, [payout, bgColors]);
 
     const handleTimelineClickLocal = useCallback(() => {
       handleTimelineClick(arenaId, pirateIndex);
@@ -624,7 +615,7 @@ const PirateRow = React.memo(
     return (
       <Table.Row
         key={`pirate-${pirateId}-${arenaId}`}
-        backgroundColor={pirateWon ? green : 'transparent'}
+        backgroundColor={pirateWon ? bgColors.winner : 'transparent'}
       >
         <StickyTd
           backgroundColor={getPirateBgColor(openingOdds)}
@@ -643,7 +634,7 @@ const PirateRow = React.memo(
         <Table.Cell textAlign="end" whiteSpace="nowrap">
           <Box display="flex" alignItems="center" justifyContent="flex-end">
             {oddsChanged && (
-              <Icon color={oddsIncreased ? green : red} mr={1}>
+              <Icon color={oddsIncreased ? 'green.fg' : 'red.fg'} mr={1}>
                 {oddsIncreased ? <FaCaretUp /> : <FaCaretDown />}
               </Icon>
             )}

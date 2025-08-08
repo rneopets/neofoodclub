@@ -1,23 +1,23 @@
 import { useCallback } from 'react';
 
-import { useTableColors } from '../util';
+import { useBgColors } from './useBgColors';
 
 export const useGetPirateBgColor = (): ((odds: number) => string) => {
-  const colors = useTableColors();
+  const bgColors = useBgColors();
 
   return useCallback(
     (odds: number): string => {
       if ([3, 4, 5].includes(odds)) {
-        return colors.blue;
+        return bgColors.pirateStandard; // blue.subtle
       }
       if ([6, 7, 8, 9].includes(odds)) {
-        return colors.orange;
+        return bgColors.pirateRisky; // orange.subtle
       }
       if ([10, 11, 12, 13].includes(odds)) {
-        return colors.red;
+        return bgColors.pirateUnsafe; // red.subtle
       }
-      return colors.green;
+      return bgColors.pirateSafe; // green.subtle
     },
-    [colors],
+    [bgColors],
   );
 };

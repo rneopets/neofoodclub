@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Center,
   ProgressCircle,
   Image,
   Flex,
@@ -23,7 +22,7 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { FaRotate, FaClockRotateLeft, FaPlay, FaMoon, FaSun } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
-import { useColorMode, useColorModeValue } from '../components/ui/color-mode';
+import { useColorMode } from '../components/ui/color-mode';
 
 import DateFormatter from './components/DateFormatter';
 import GlowCard from './components/GlowCard';
@@ -145,15 +144,15 @@ const CurrentRoundProgress = React.memo((): React.ReactElement | null => {
   return (
     <>
       {roundPercentOver === 100 ? (
-        <ProgressCircle.Root value={null} size="md">
-          <ProgressCircle.Circle>
+        <ProgressCircle.Root value={null}>
+          <ProgressCircle.Circle css={{ '--thickness': '3px' }}>
             <ProgressCircle.Track />
             <ProgressCircle.Range strokeLinecap="round" />
           </ProgressCircle.Circle>
         </ProgressCircle.Root>
       ) : (
-        <ProgressCircle.Root value={roundPercentOver} size="md">
-          <ProgressCircle.Circle>
+        <ProgressCircle.Root value={roundPercentOver}>
+          <ProgressCircle.Circle css={{ '--thickness': '3px' }}>
             <ProgressCircle.Track />
             <ProgressCircle.Range strokeLinecap="round" />
           </ProgressCircle.Circle>
@@ -209,12 +208,10 @@ const CurrentRoundInfo: React.FC = React.memo(() => {
   ) : null;
 
   return (
-    <VStack separator={<Separator />} gap={1} minW={{ sm: '140px' }} overflow="hidden">
+    <VStack separator={<Separator />} gap={1}>
       <HStack>
         <Tooltip content="Last Update">
-          <div>
-            <FaRotate />
-          </div>
+          <FaRotate />
         </Tooltip>
         <Text fontSize="xs" as={element} minW={{ base: 'auto', sm: '100px' }} truncate>
           {formattedLastUpdate}
@@ -223,9 +220,7 @@ const CurrentRoundInfo: React.FC = React.memo(() => {
       {showLastChange && (
         <HStack>
           <Tooltip content="Last Change">
-            <div>
-              <FaClockRotateLeft />
-            </div>
+            <FaClockRotateLeft />
           </Tooltip>
           <Text fontSize="xs" minW={{ base: 'auto', sm: '100px' }} truncate>
             {formattedLastChange}
@@ -367,43 +362,21 @@ const TitleHeading: React.FC<TitleHeadingProps> = props => {
         width="auto"
         height="auto"
         onClick={handleClick}
-        p={2}
+        p={1}
         data-testid="title-heading"
         {...props}
       >
-        <Center>
-          <Box
-            asChild
+        <HStack>
+          <Image
+            src={NeopointIcon}
+            alt="Neopoint Icon"
             height="1.5em"
             width="1.5em"
-            display={{ base: 'none', md: 'inline-block' }}
-            mr={2}
-          >
-            <Image src={NeopointIcon} alt="Neopoint Icon" height="1.5em" width="1.5em" />
-          </Box>
-          <Heading
-            as={'h1'}
-            fontFamily="heading"
-            fontWeight="bold"
-            fontSize="xl"
-            display={{ base: 'none', lg: 'inline-block' }}
-          >
-            NeoFoodClub
-          </Heading>
-          <Heading
-            as={'h1'}
-            fontFamily="heading"
-            fontWeight="bold"
-            fontSize="xl"
-            display={{
-              base: 'none',
-              md: 'inline-block',
-              lg: 'none',
-            }}
-          >
-            NFC
-          </Heading>
-        </Center>
+            fit="contain"
+          />
+          <Heading display={{ base: 'none', lg: 'inline-block' }}>NeoFoodClub</Heading>
+          <Heading display={{ base: 'none', md: 'inline-block', lg: 'none' }}>NFC</Heading>
+        </HStack>
       </Button>
     </>
   );
@@ -476,22 +449,20 @@ const HeaderContent: React.FC = () => {
 
   return (
     <>
-      <HStack p={4} gap={4} as={Flex}>
+      <HStack p={4} gap={4}>
         <TitleHeading />
         <Spacer display={{ base: 'none', md: 'block' }} />
         <GlowCard p={2} maxW="lg" animate={isGlowing} mx="auto">
-          <Flex h="100%" gap={2} align="center">
+          <HStack>
             <VStack gap={1} maxW="160px">
               <RoundInput />
               <MaxBetInput />
             </VStack>
+            {hasValidData && <CurrentRoundProgress />}
             <Show when={hasValidData || error} fallback={<SkeletonText minW="140px" />}>
-              <Flex align="center" justify="center" gap={2}>
-                {hasValidData && <CurrentRoundProgress />}
-                <RoundInfo />
-              </Flex>
+              <RoundInfo />
             </Show>
-          </Flex>
+          </HStack>
         </GlowCard>
         <Spacer display={{ base: 'none', md: 'block' }} />
         <ColorModeToggle />
@@ -503,7 +474,6 @@ const HeaderContent: React.FC = () => {
 type HeaderProps = BoxProps;
 
 const Header: React.FC<HeaderProps> = props => {
-  const bg = useColorModeValue('rgba(255, 255, 255, 0.7)', 'rgba(26, 32, 44, 0.7)');
   const [y, setY] = useState<number>(0);
 
   useEffect(() => {
@@ -517,11 +487,11 @@ const Header: React.FC<HeaderProps> = props => {
     <Box
       as={'header'}
       shadow={y > 0 ? 'lg' : ''}
-      transition="box-shadow 0.2s"
+      transition="box-shadow 0.2s;"
       pos="fixed"
       top="0"
-      zIndex="2"
-      bg={bg}
+      zIndex={'docked'}
+      bg={y > 0 ? 'bg.subtle/70' : 'bg'}
       style={{ backdropFilter: 'saturate(180%) blur(5px)' }}
       left="0"
       right="0"
