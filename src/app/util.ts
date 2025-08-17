@@ -1,6 +1,5 @@
 import { format, addDays, formatDistanceStrict, formatRelative } from 'date-fns';
 import { toZonedTime, format as formatTz } from 'date-fns-tz';
-import { useMemo } from 'react';
 import Cookies from 'universal-cookie';
 
 // Removed useColorModeValue import - now using Chakra's built-in semantic tokens
@@ -227,45 +226,56 @@ export function getTableMode(): string {
   return mode;
 }
 
-export function getBigBrainMode(): boolean {
+function getBooleanCookie(key: string, defaultValue: boolean = false): boolean {
   const cookies = new Cookies();
-  const mode = cookies.get('bigBrainMode');
-  return mode !== undefined ? mode : true; // Default to true if not set
+  const value = cookies.get(key);
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const lower = value.toLowerCase();
+    if (lower === 'true') {
+      return true;
+    }
+    if (lower === 'false') {
+      return false;
+    }
+  }
+  if (typeof value === 'number') {
+    return value !== 0;
+  }
+  return defaultValue;
+}
+
+export function getBigBrainMode(): boolean {
+  return getBooleanCookie('bigBrainMode', true);
 }
 
 export function getFaDetailsMode(): boolean {
-  const cookies = new Cookies();
-  const mode = cookies.get('faDetailsMode');
-  return mode !== undefined ? mode : false; // Default to false if not set
+  return getBooleanCookie('faDetailsMode');
 }
 
 export function getCustomOddsMode(): boolean {
-  const cookies = new Cookies();
-  const mode = cookies.get('customOddsMode');
-  return mode !== undefined ? mode : false; // Default to false if not set
+  return getBooleanCookie('customOddsMode');
 }
 
 export function getOddsTimelineMode(): boolean {
-  const cookies = new Cookies();
-  const mode = cookies.get('oddsTimelineMode');
-  return mode !== undefined ? mode : false; // Default to false if not set
+  return getBooleanCookie('oddsTimelineMode');
 }
 
 export function getUseWebDomain(): boolean {
-  const cookies = new Cookies();
-  return cookies.get('useWebDomain');
+  return getBooleanCookie('useWebDomain');
 }
 
 export function getMaxBetLocked(): boolean {
-  const cookies = new Cookies();
-  const locked = cookies.get('maxBetLocked');
-  return locked !== undefined ? locked : false; // Default to false (unlocked) if not set
+  return getBooleanCookie('maxBetLocked');
 }
 
 export function getUseLogitModel(): boolean {
-  const cookies = new Cookies();
-  const mode = cookies.get('useLogitModel');
-  return mode !== undefined ? mode : false; // Default to false if not set
+  return getBooleanCookie('useLogitModel');
 }
 
 export function isValidRound(roundState?: RoundState): boolean {
