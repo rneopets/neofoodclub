@@ -269,12 +269,7 @@ export function getUseLogitModel(): boolean {
 }
 
 export function isValidRound(roundState?: RoundState): boolean {
-  return !!(
-    roundState &&
-    roundState.roundData &&
-    roundState.roundData.round &&
-    roundState.roundData.pirates?.[0]?.[0]
-  );
+  return !!(roundState && roundState?.roundData?.round && roundState?.roundData?.pirates?.[0]?.[0]);
 }
 
 export function anyBetsExist(betsObject?: Bet): boolean {
