@@ -8,15 +8,12 @@ import {
   Link,
   Container,
   SimpleGrid,
-  Flex,
-  BoxProps,
   TextProps,
   Image,
   HStack,
+  BoxProps,
 } from '@chakra-ui/react';
 import * as React from 'react';
-
-import { useColorModeValue } from '../components/ui/color-mode';
 
 import { GitCommit } from './components/GitCommit';
 import { VercelCredit } from './components/VercelCredit';
@@ -57,11 +54,7 @@ type FooterProps = BoxProps;
 const Footer: React.FC<FooterProps> = props => (
   <>
     <Separator />
-    <Box
-      bg={useColorModeValue('gray.50', 'gray.900')}
-      color={useColorModeValue('gray.700', 'gray.200')}
-      {...props}
-    >
+    <Box bg="bg.subtle" color="fg.muted" {...props}>
       <Container as={Stack} maxW={'6xl'} py={10}>
         <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} gap={8}>
           <Stack align={'flex-start'}>
