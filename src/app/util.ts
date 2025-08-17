@@ -666,12 +666,12 @@ interface TableColors {
 }
 
 export const useTableColors = (): TableColors => ({
-  blue: 'blue.subtle', // Chakra's built-in blue.subtle (blue.100/blue.900)
-  green: 'green.subtle', // Chakra's built-in green.subtle (green.100/green.900)
-  red: 'red.subtle', // Chakra's built-in red.subtle (red.100/red.900)
-  orange: 'orange.subtle', // Chakra's built-in orange.subtle (orange.100/orange.900)
-  gray: 'gray.subtle', // Chakra's built-in gray.subtle (gray.100/gray.900)
-  yellow: 'yellow.subtle', // Chakra's built-in yellow.subtle (yellow.100/yellow.900)
+  blue: 'bg.info',
+  green: 'green.muted',
+  red: 'bg.error',
+  orange: 'bg.warning',
+  gray: 'bg.muted',
+  yellow: 'bg.warning',
 });
 
 /**
