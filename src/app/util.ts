@@ -302,9 +302,9 @@ export function makeBetURL(
   let url = `/#round=${roundNumber}`;
   const anyBets = anyBetsExist(bets);
 
-  if (anyBets && bets) {
+  if (anyBets) {
     // Extract bet values using Array.from
-    const betsValues = Array.from(bets.values());
+    const betsValues = Array.from(bets!.values());
     const b = makeBetsUrl(betsValues);
     url += `&b=${b}`;
   }
