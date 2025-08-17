@@ -103,7 +103,7 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
 
     return (
       <Table.ColumnHeader textAlign="center">
-        <TextTooltip text="Custom Prob" content="Custom Std. Probability" />
+        <TextTooltip text="Custom Prob" content="Custom Probability" />
       </Table.ColumnHeader>
     );
   }, [bigBrain, customOddsMode]);
