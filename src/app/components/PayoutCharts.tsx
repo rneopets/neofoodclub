@@ -5,6 +5,7 @@ import React, { useCallback, useMemo } from 'react';
 import { Scatter } from 'react-chartjs-2';
 
 import { PayoutData } from '../../types';
+import { useBgColors } from '../hooks/useBgColors';
 import {
   useRoundDataStore,
   useCalculationsStore,
@@ -12,7 +13,7 @@ import {
   useWinningBetBinary,
   useTotalBetAmounts,
 } from '../stores';
-import { amountAbbreviation, displayAsPercent, useTableColors } from '../util';
+import { amountAbbreviation, displayAsPercent } from '../util';
 
 import TextTooltip from './TextTooltip';
 
@@ -101,7 +102,7 @@ interface ChartOptions {
 // this element contains the odds/winnings tables + charts
 
 const PayoutCharts: React.FC = React.memo(() => {
-  const { green, red } = useTableColors();
+  const { winner, loser } = useBgColors();
   const hasRoundData = useRoundDataStore(state => state.roundState.roundData !== null);
 
   const betBinaries = useBetBinaries();
@@ -266,7 +267,7 @@ const PayoutCharts: React.FC = React.memo(() => {
 
       return (
         <Table.Row>
-          <Table.Cell colSpan={4} pt={2}>
+          <Table.Cell colSpan={4} pt={2} borderBottom="none">
             {/* @ts-ignore */}
             <Scatter data={chartData} options={options} />
           </Table.Cell>
@@ -293,9 +294,9 @@ const PayoutCharts: React.FC = React.memo(() => {
             (title === 'Winnings' && totalWinningPayoff === dataObj.value))
         ) {
           if (dataObj.value === 0) {
-            bgColor = red;
+            bgColor = loser;
           } else {
-            bgColor = green;
+            bgColor = winner;
           }
         }
 
@@ -349,7 +350,7 @@ const PayoutCharts: React.FC = React.memo(() => {
         </Box>
       );
     },
-    [calculationsData, winningBetBinary, red, green, hasRoundData, makeChart],
+    [calculationsData, winningBetBinary, loser, winner, hasRoundData, makeChart],
   );
 
   const oddsTable = useMemo(
