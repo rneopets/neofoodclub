@@ -385,7 +385,8 @@ const TitleHeading: React.FC<TitleHeadingProps> = props => {
         width="auto"
         height="auto"
         onClick={handleClick}
-        p={1}
+        px={2}
+        py={1}
         data-testid="title-heading"
         {...props}
       >
