@@ -65,11 +65,11 @@ const BG_COLORS: BgColors = {
   winner: 'green.emphasized', // green.200/green.800
   loser: 'red.subtle', // red.100/red.900
 
-  // Pirate odds backgrounds (using color semantic tokens)
-  pirateSafe: 'green.solid', // 13:1+ odds (green.100/green.900)
-  pirateStandard: 'blue.solid', // 3-5:1 odds (blue.100/blue.900)
-  pirateRisky: 'orange.solid', // 6-9:1 odds (orange.100/orange.900)
-  pirateUnsafe: 'red.solid', // 10-12:1 odds (red.100/red.900)
+  // Pirate odds backgrounds (use variants for better readability)
+  pirateSafe: 'green.solid', // 13:1+ odds
+  pirateStandard: 'blue.solid', // 3-5:1 odds
+  pirateRisky: 'orange.solid', // 6-9:1 odds
+  pirateUnsafe: 'red.solid', // 10-12:1 odds
 
   // Text and border colors (using Chakra's built-in semantic tokens)
   textMuted: 'fg.muted', // gray.600/gray.400
