@@ -281,10 +281,6 @@ const MaxBetInput: React.FC = () => {
     setTempValue(details.value);
   }, []);
 
-  const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement>): void => {
-    e.target.select();
-  }, []);
-
   const handleBlur = useCallback((): void => {
     let numValue = parseInt(tempValue) || -1000;
     if (numValue < 1) {
@@ -317,6 +313,64 @@ const MaxBetInput: React.FC = () => {
     }
   }, [tempValue, currentSelectedRound]);
 
+  const handleLockClick = useCallback((): void => {
+    if (isLocked) {
+      return;
+    }
+
+    const cookies = new Cookies();
+    const currentMaxBet = getMaxBet(currentSelectedRound);
+
+    if (currentMaxBet > 0) {
+      cookies.set('lockedMaxBet', currentMaxBet, {
+        expires: addYears(new Date(), 100),
+      });
+    }
+
+    cookies.set('maxBetLocked', true);
+    setIsLocked(true);
+  }, [isLocked, currentSelectedRound]);
+
+  const handleUnlockClick = useCallback((): void => {
+    if (!isLocked) {
+      return;
+    }
+
+    const cookies = new Cookies();
+    const currentMaxBet = getMaxBet(currentSelectedRound);
+
+    if (currentMaxBet > 0) {
+      const baseMaxBet = calculateBaseMaxBet(currentMaxBet, currentSelectedRound);
+      cookies.set('baseMaxBet', baseMaxBet, {
+        expires: addYears(new Date(), 100),
+      });
+    }
+
+    cookies.set('maxBetLocked', false);
+    setIsLocked(false);
+  }, [isLocked, currentSelectedRound]);
+
+  const handleFocus = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>): void => {
+      if (isLocked) {
+        handleUnlockClick();
+      }
+      e.target.select();
+    },
+    [isLocked, handleUnlockClick],
+  );
+
+  const handleLockToggle = useCallback(
+    (newLocked: boolean): void => {
+      if (newLocked) {
+        handleLockClick();
+      } else {
+        handleUnlockClick();
+      }
+    },
+    [handleLockClick, handleUnlockClick],
+  );
+
   return (
     <NumberInputRoot
       data-testid="max-bet-input-field"
@@ -332,8 +386,17 @@ const MaxBetInput: React.FC = () => {
       color={isLocked ? 'fg.muted' : 'fg'}
     >
       <InputGroup
-        startElement={<MaxBetLockToggle onToggle={setIsLocked} />}
-        startElementProps={{ pointerEvents: 'auto' }}
+        startElement={
+          <MaxBetLockToggle
+            key={isLocked ? 'locked' : 'unlocked'}
+            locked={isLocked}
+            onToggle={handleLockToggle}
+          />
+        }
+        startElementProps={{
+          pointerEvents: 'none',
+          style: { marginInlineStart: '-6px' },
+        }}
       >
         <NumberInputField
           data-testid="max-bet-input-field-input"
