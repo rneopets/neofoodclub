@@ -328,8 +328,8 @@ const MaxBetInput: React.FC = () => {
       clampValueOnBlur={false}
       allowMouseWheel={false}
       showControl={!isLocked}
-      disabled={isLocked}
       readOnly={isLocked}
+      color={isLocked ? 'fg.muted' : 'fg'}
       {...(isAnimating && {
         borderColor: 'green.400',
         boxShadow: '0 0 0 1px var(--chakra-colors-green-400)',
