@@ -330,11 +330,6 @@ const MaxBetInput: React.FC = () => {
       showControl={!isLocked}
       readOnly={isLocked}
       color={isLocked ? 'fg.muted' : 'fg'}
-      {...(isAnimating && {
-        borderColor: 'green.400',
-        boxShadow: '0 0 0 1px var(--chakra-colors-green-400)',
-      })}
-      transition="all 0.3s ease"
     >
       <InputGroup
         startElement={<MaxBetLockToggle onToggle={setIsLocked} />}
@@ -344,8 +339,12 @@ const MaxBetInput: React.FC = () => {
           data-testid="max-bet-input-field-input"
           onBlur={handleBlur}
           onFocus={handleFocus}
-          cursor={isLocked ? 'not-allowed' : 'text'}
-          color={isLocked ? 'fg.muted' : undefined}
+          cursor={isLocked ? 'pointer' : 'text'}
+          transition="all 0.5s ease"
+          {...(isAnimating && {
+            boxShadow: '0 0 0 1px var(--chakra-colors-green-400)',
+            borderColor: 'green.400',
+          })}
         />
       </InputGroup>
     </NumberInputRoot>
