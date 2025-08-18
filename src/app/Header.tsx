@@ -325,8 +325,8 @@ const MaxBetInput: React.FC = () => {
       onValueChange={handleChange}
       min={-1000}
       max={500000}
-      clampValueOnBlur={false}
-      allowMouseWheel={false}
+      clampValueOnBlur={true}
+      allowMouseWheel={true}
       showControl={!isLocked}
       readOnly={isLocked}
       color={isLocked ? 'fg.muted' : 'fg'}
