@@ -67,7 +67,7 @@ const TimelineBar = React.memo(
           cursor="pointer"
           data-timestamp={timestamp}
         >
-          {percent > 15 ? odds : '\u00A0'}
+          {percent > 8 ? odds : '\u00A0'}
         </Box>
       </Tooltip>
     );
