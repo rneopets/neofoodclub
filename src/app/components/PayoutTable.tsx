@@ -31,12 +31,13 @@ import {
   useViewMode,
   useSwapBets,
 } from '../stores';
-import { displayAsPercent, useTableColors } from '../util';
+import { displayAsPercent } from '../util';
 
 import BetAmountInput from './BetAmountInput';
 import Pd from './Pd';
 import PlaceThisBetButton from './PlaceThisBetButton';
 import TextTooltip from './TextTooltip';
+import { useBgColors } from '../hooks/useBgColors';
 
 // this element is the colorful and informative table full of your bet data
 
@@ -49,7 +50,7 @@ MemoizedTextTooltip.displayName = 'MemoizedTextTooltip';
 
 const PirateNameCell = React.memo(
   ({ arenaIndex, pirateIndex }: { arenaIndex: number; pirateIndex: number }) => {
-    const colors = useTableColors();
+    const { winner, loser } = useBgColors();
     const getPirateBgColor = useGetPirateBgColor();
     const pirateId = usePirateId(arenaIndex, pirateIndex - 1);
     const pirateName = pirateId ? (PIRATE_NAMES.get(pirateId) ?? '') : '';
@@ -61,7 +62,7 @@ const PirateNameCell = React.memo(
 
     if (pirateBin > 0) {
       if (winningBetBinary) {
-        bgColor = (winningBetBinary & pirateBin) === pirateBin ? colors.green : colors.red;
+        bgColor = (winningBetBinary & pirateBin) === pirateBin ? winner : loser;
       } else {
         bgColor = getPirateBgColor(openingOdds);
       }
@@ -83,7 +84,7 @@ const PayoutTableRow = React.memo(
     onSwapUp: (index: number) => void;
     onSwapDown: (index: number) => void;
   }) => {
-    const colors = useTableColors();
+    const { loser, winner } = useBgColors();
     const viewMode = useViewMode();
     const winningBetBinary = useWinningBetBinary();
     const currentBet = useCurrentBet();
@@ -134,8 +135,8 @@ const PayoutTableRow = React.memo(
       return null;
     }
 
-    const erBg = er - 1 < 0 ? colors.red : 'transparent';
-    const neBg = ne - 1 < 0 ? colors.red : 'transparent';
+    const erBg = er - 1 < 0 ? loser : 'transparent';
+    const neBg = ne - 1 < 0 ? loser : 'transparent';
 
     let betNumBgColor = 'transparent';
     let maxBetColor = 'transparent';
@@ -143,14 +144,14 @@ const PayoutTableRow = React.memo(
     if (odds !== 0) {
       const div = 1_000_000 / odds;
       if (betAmount > Math.ceil(div)) {
-        maxBetColor = colors.orange;
+        maxBetColor = 'border.warning';
       } else if (betAmount > Math.floor(div)) {
-        maxBetColor = colors.yellow;
+        maxBetColor = 'border.warning';
       }
     }
 
     if (winningBetBinary > 0 && betBinary > 0) {
-      betNumBgColor = (winningBetBinary & betBinary) === betBinary ? colors.green : colors.red;
+      betNumBgColor = (winningBetBinary & betBinary) === betBinary ? winner : loser;
     }
 
     const mbBg = maxBetColor;
@@ -158,12 +159,10 @@ const PayoutTableRow = React.memo(
     const betKey = `bet-${currentBet}-${betIndex + 1}`;
 
     let baBg = 'transparent';
-    if (betAmount > Math.ceil(maxBets)) {
-      baBg = colors.orange;
-    } else if (betAmount > Math.floor(maxBets)) {
-      baBg = colors.yellow;
+    if (betAmount > Math.ceil(maxBets) || betAmount > Math.floor(maxBets)) {
+      baBg = 'border.warning';
     } else if (betAmount < 1) {
-      baBg = colors.red;
+      baBg = 'border.error';
     }
 
     return (
