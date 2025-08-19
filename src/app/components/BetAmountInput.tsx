@@ -84,19 +84,9 @@ const BetAmountInput = React.memo(
       [betAmount, betIndex, tempValue, updateSingleBetAmount],
     );
 
-    // Derive error styles if invalid
-    const errorStyles = invalid
-      ? {
-          borderColor: _errorColor,
-          boxShadow: _errorColor
-            ? `0 0 0 1px var(--chakra-colors-${String(_errorColor).replaceAll('.', '-')})`
-            : undefined,
-        }
-      : undefined;
-
     return (
       <Input
-        size="sm"
+        size="xs"
         value={tempValue}
         onChange={handleChange}
         onBlur={handleBlur}
@@ -107,7 +97,7 @@ const BetAmountInput = React.memo(
         name={`bet-amount-input-${betIndex}`}
         data-testid={`bet-amount-input-${betIndex}`}
         inputMode="numeric"
-        {...errorStyles}
+        // {...errorStyles}
         {...rest}
       />
     );
