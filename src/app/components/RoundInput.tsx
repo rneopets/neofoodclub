@@ -1,4 +1,4 @@
-import { InputGroup, NumberInputControl } from '@chakra-ui/react';
+import { Group, NumberInputControl, Text } from '@chakra-ui/react';
 import { useEffect, useState, FocusEvent, useMemo, useCallback } from 'react';
 
 import { useRoundDataStore } from '../stores';
@@ -88,7 +88,26 @@ const RoundInput: React.FC = () => {
   }, [tempValue, currentRound]);
 
   return (
-    <InputGroup>
+    <Group attached w="full" gap={0} alignItems="stretch">
+      <Text
+        fontSize="xs"
+        lineHeight="1"
+        fontWeight="medium"
+        color="fg.muted"
+        bg="bg.muted"
+        borderWidth="1px"
+        borderEndWidth="0"
+        borderColor="border"
+        roundedStart="md"
+        roundedEnd={0}
+        px="2"
+        display="flex"
+        alignItems="center"
+        whiteSpace="nowrap"
+        userSelect="none"
+      >
+        Round
+      </Text>
       <NumberInputRoot
         value={tempValue}
         min={1}
@@ -104,10 +123,11 @@ const RoundInput: React.FC = () => {
           onBlur={handleBlur}
           name="round-input-field"
           data-testid="round-input-field"
+          roundedStart={0}
         />
         <NumberInputControl />
       </NumberInputRoot>
-    </InputGroup>
+    </Group>
   );
 };
 
