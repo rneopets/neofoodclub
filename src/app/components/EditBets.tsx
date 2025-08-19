@@ -42,7 +42,6 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
     pirateIndex: 0,
   });
   const timelineRef = useRef<HTMLElement>(null);
-  const roundData = useRoundDataStore(state => state.roundState.roundData);
   const openTimelineDrawer = useCallback(
     (arenaId: number, pirateIndex: number) => {
       setSelectedTimeline({ arenaId, pirateIndex });
@@ -65,9 +64,6 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
             <Drawer.CloseTrigger asChild>
               <CloseButton size="sm" />
             </Drawer.CloseTrigger>
-            <Drawer.Header>
-              <Drawer.Title>Timeline of round {roundData.round}</Drawer.Title>
-            </Drawer.Header>
             <Drawer.Body>
               <TimelineContent
                 arenaId={selectedTimeline.arenaId}
@@ -78,7 +74,7 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
         </Drawer.Positioner>
       </Drawer.Root>
     ),
-    [open, setOpen, selectedTimeline.arenaId, selectedTimeline.pirateIndex, roundData.round],
+    [open, setOpen, selectedTimeline.arenaId, selectedTimeline.pirateIndex],
   );
 
   const timelineHandlers = useMemo(
