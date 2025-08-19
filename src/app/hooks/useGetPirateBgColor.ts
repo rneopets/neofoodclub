@@ -8,15 +8,15 @@ export const useGetPirateBgColor = (): ((odds: number) => string) => {
   return useCallback(
     (odds: number): string => {
       if ([3, 4, 5].includes(odds)) {
-        return bgColors.pirateStandard; // blue.subtle
+        return bgColors.pirateStandard;
       }
       if ([6, 7, 8, 9].includes(odds)) {
-        return bgColors.pirateRisky; // orange.subtle
+        return bgColors.pirateRisky;
       }
       if ([10, 11, 12, 13].includes(odds)) {
-        return bgColors.pirateUnsafe; // red.subtle
+        return bgColors.pirateUnsafe;
       }
-      return bgColors.pirateSafe; // green.subtle
+      return bgColors.pirateSafe;
     },
     [bgColors],
   );
