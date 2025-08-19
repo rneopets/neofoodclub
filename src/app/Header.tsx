@@ -389,7 +389,7 @@ const MaxBetInput: React.FC = () => {
         startElement={
           <MaxBetLockToggle
             key={isLocked ? 'locked' : 'unlocked'}
-            locked={isLocked}
+            isLocked={isLocked}
             onToggle={handleLockToggle}
           />
         }
