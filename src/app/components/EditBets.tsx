@@ -5,7 +5,6 @@ import {
   Drawer,
   Flex,
   Skeleton,
-  Separator,
   HStack,
   CloseButton,
 } from '@chakra-ui/react';
@@ -175,13 +174,8 @@ export default React.memo(function EditBets(): React.ReactElement {
             {/* Desktop Layout (will be hidden on smaller than md screens) */}
             <HStack px={5} display={{ base: 'none', md: 'flex' }}>
               <TableModes />
-              {/* <Separator orientation="vertical" colorScheme="blue" h="18px" mx={4}/> */}
               <LogitModelToggle />
-
-              {/* <Separator orientation="vertical" colorScheme="blue" h="18px" mx={4} /> */}
               <CopyDomainToggle />
-
-              {/* <Separator orientation="vertical" colorScheme="blue" h="18px" mx={4} /> */}
               <Extras />
             </HStack>
           </Box>
