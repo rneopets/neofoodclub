@@ -1,10 +1,16 @@
-import { Input } from '@chakra-ui/react';
-import React, { useState, useEffect, useCallback, FocusEvent, ChangeEvent } from 'react';
+import { NumberInputControl } from '@chakra-ui/react';
+import React, { useState, useEffect, useCallback, FocusEvent } from 'react';
 
 import { useOptimizedBetAmount, useUpdateSingleBetAmount } from '../stores';
 
+import {
+  NumberInputRoot,
+  NumberInputField,
+  NumberInputValueChangeDetails,
+} from '@/components/ui/number-input';
+
 interface BetAmountInputProps
-  extends Omit<React.ComponentProps<typeof Input>, 'value' | 'onChange' | 'onBlur'> {
+  extends Omit<React.ComponentProps<typeof NumberInputRoot>, 'value' | 'onValueChange'> {
   betIndex: number;
   invalid?: boolean;
   errorColor?: string;
@@ -12,7 +18,7 @@ interface BetAmountInputProps
 
 const BetAmountInput = React.memo(
   (props: BetAmountInputProps): React.ReactElement => {
-    const { betIndex, invalid, errorColor: _errorColor, ...rest } = props;
+    const { betIndex, invalid, errorColor, ...rest } = props;
 
     // Use optimized hook that only subscribes to this specific bet amount
     const betAmount = useOptimizedBetAmount(betIndex);
@@ -45,16 +51,39 @@ const BetAmountInput = React.memo(
       return Math.min(Math.max(parsed, MIN), MAX);
     }, []);
 
-    const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
-      setTempValue(e.target.value);
-      setIsEditing(true);
-    }, []);
+    const handleChange = useCallback(
+      (details: NumberInputValueChangeDetails): void => {
+        setTempValue(details.value);
+        setIsEditing(true);
+
+        // Update immediately if the input can be parsed as an integer
+        const parsed = parseInt(details.value, 10);
+        if (!Number.isNaN(parsed)) {
+          const nextValue = sanitizeToInteger(details.value);
+          if (nextValue !== betAmount) {
+            updateSingleBetAmount(betIndex, nextValue);
+          }
+        }
+      },
+      [betAmount, betIndex, sanitizeToInteger, updateSingleBetAmount],
+    );
 
     const handleFocus = useCallback((e: FocusEvent<HTMLInputElement>): void => {
       e.target.select();
     }, []);
 
     const handleBlur = useCallback((): void => {
+      // Only commit if the input can be parsed as an integer
+      const cleaned = tempValue.trim().replace(/[,_\s]/g, '');
+      const parsed = parseInt(cleaned, 10);
+
+      if (Number.isNaN(parsed)) {
+        // Revert visual value to current store value without updating the store
+        setIsEditing(false);
+        setTempValue(betAmount.toString());
+        return;
+      }
+
       const nextValue = sanitizeToInteger(tempValue);
       // Only update store if value actually changed
       if (nextValue !== betAmount) {
@@ -64,42 +93,29 @@ const BetAmountInput = React.memo(
       setIsEditing(false);
     }, [betAmount, betIndex, sanitizeToInteger, tempValue, updateSingleBetAmount]);
 
-    const handleKeyDown = useCallback(
-      (e: React.KeyboardEvent<HTMLInputElement>): void => {
-        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') {
-          return;
-        }
-        e.preventDefault();
-        const MIN = -1000;
-        const MAX = 500_000;
-        const cleaned = tempValue.trim().replace(/[,_\s]/g, '');
-        const parsed = parseInt(cleaned, 10);
-        const current = Number.isNaN(parsed) ? betAmount : parsed;
-        const delta = e.key === 'ArrowUp' ? 1 : -1;
-        const next = Math.min(Math.max(current + delta, MIN), MAX);
-        setTempValue(next.toString());
-        updateSingleBetAmount(betIndex, next);
-        setIsEditing(false);
-      },
-      [betAmount, betIndex, tempValue, updateSingleBetAmount],
-    );
-
     return (
-      <Input
+      <NumberInputRoot
         size="xs"
         value={tempValue}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        onFocus={handleFocus}
-        width="90px"
-        aria-invalid={invalid ? true : undefined}
-        name={`bet-amount-input-${betIndex}`}
-        data-testid={`bet-amount-input-${betIndex}`}
+        onValueChange={handleChange}
+        min={-1000}
+        max={500000}
+        step={1}
+        clampValueOnBlur
+        allowMouseWheel
         inputMode="numeric"
-        // {...errorStyles}
+        width="90px"
         {...rest}
-      />
+      >
+        <NumberInputField
+          borderColor={invalid ? errorColor : 'border'}
+          onBlur={handleBlur}
+          onFocus={handleFocus}
+          name={`bet-amount-input-${betIndex}`}
+          data-testid={`bet-amount-input-${betIndex}`}
+        />
+        <NumberInputControl />
+      </NumberInputRoot>
     );
   },
   // Custom comparison function - only re-render if relevant props change
