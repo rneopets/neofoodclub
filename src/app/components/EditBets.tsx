@@ -13,7 +13,6 @@ import { FaPenToSquare } from 'react-icons/fa6';
 
 import BetFunctions from '../BetFunctions';
 import { useRoundDataStore, useViewMode, useTableMode, useHasAnyBets } from '../stores';
-import { useTableColors } from '../util';
 
 import BetAmountsSettings from './BetAmountsSettings';
 import DropDownTable from './DropDownTable';
@@ -105,8 +104,6 @@ export default React.memo(function EditBets(): React.ReactElement {
   const anyBets = useHasAnyBets();
   const setRoundState = useRoundDataStore(state => state.setRoundState);
 
-  const colors = useTableColors();
-
   const shadowValue = useColorModeValue(
     '0 1px 2px rgba(0,0,0,0.02)',
     '0 4px 6px -1px rgba(0,0,0,0.2), 0 2px 4px -1px rgba(0,0,0,0.06)',
@@ -122,7 +119,7 @@ export default React.memo(function EditBets(): React.ReactElement {
   return (
     <>
       {viewMode && (
-        <Box bgColor={colors.blue} p={4}>
+        <Box bgColor={'bg.emphasized'} p={4}>
           <Button colorPalette="blackAlpha" onClick={handleEditModeClick}>
             <FaPenToSquare />
             Edit these bets
