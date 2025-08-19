@@ -661,24 +661,6 @@ function convertMomentToDateFnsFormat(momentFormat: string): string {
     .replace(/\[([^\]]+)\]/g, "'$1'"); // Convert [NST] to 'NST'
 }
 
-interface TableColors {
-  blue: string;
-  green: string;
-  red: string;
-  orange: string;
-  gray: string;
-  yellow: string;
-}
-
-export const useTableColors = (): TableColors => ({
-  blue: 'bg.info',
-  green: 'green.muted',
-  red: 'bg.error',
-  orange: 'bg.warning',
-  gray: 'bg.muted',
-  yellow: 'bg.warning',
-});
-
 /**
  * Helper functions for array operations to avoid inline callbacks
  */
