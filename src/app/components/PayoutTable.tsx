@@ -3,6 +3,7 @@ import React, { useCallback, useMemo } from 'react';
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa6';
 
 import { PIRATE_NAMES } from '../constants';
+import { useBgColors } from '../hooks/useBgColors';
 import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
 import { computePirateBinary } from '../maths';
 import {
@@ -34,10 +35,9 @@ import {
 import { displayAsPercent } from '../util';
 
 import BetAmountInput from './BetAmountInput';
-import Pd from './Pd';
 import PlaceThisBetButton from './PlaceThisBetButton';
+import Td from './Td';
 import TextTooltip from './TextTooltip';
-import { useBgColors } from '../hooks/useBgColors';
 
 // this element is the colorful and informative table full of your bet data
 
@@ -167,7 +167,7 @@ const PayoutTableRow = React.memo(
 
     return (
       <Table.Row key={betKey}>
-        <Pd backgroundColor={betNumBgColor}>
+        <Td backgroundColor={betNumBgColor}>
           <HStack px={2} gap={1}>
             <Spacer />
             <Text>{betIndex + 1}</Text>
@@ -197,14 +197,14 @@ const PayoutTableRow = React.memo(
             )}
             <Spacer />
           </HStack>
-        </Pd>
-        <Pd>
+        </Td>
+        <Td>
           <BetAmountInput
             betIndex={betIndex + 1}
             invalid={baBg !== 'transparent'}
             errorColor={baBg}
           />
-        </Pd>
+        </Td>
         <Table.Cell style={{ textAlign: 'end' }}>
           {odds?.toLocaleString() ?? '0'}
           :1

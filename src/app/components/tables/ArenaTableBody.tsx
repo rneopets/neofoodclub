@@ -40,7 +40,7 @@ import CustomOddsInput from '../CustomOddsInput';
 import CustomProbsInput from '../CustomProbsInput';
 import FaDetailsElement from '../FaDetailsElement';
 import OddsTimeline from '../OddsTimeline';
-import Pd from '../Pd';
+import Td from '../Td';
 import TextTooltip from '../TextTooltip';
 
 // Component to show Food Adjustment for a pirate and food
@@ -72,7 +72,7 @@ const PirateFA = React.memo(
     return (
       <FaDetailsElement
         key={`fa-${foodId}-pirate-${pirateId}`}
-        as={Pd}
+        as={Td}
         textAlign="end"
         backgroundColor={bgColor}
         color={fgColor}
@@ -183,11 +183,11 @@ StickyTd.displayName = 'StickyTd';
 
 const ClearRadioCell = React.memo(
   ({ betNum, arenaId }: { betNum: number; arenaId: number }) => (
-    <Pd key={`bet-${betNum}-arena-${arenaId}`} backgroundColor="bg.subtle">
+    <Td key={`bet-${betNum}-arena-${arenaId}`} backgroundColor="bg.subtle">
       <Center>
         <ClearRadio betIndex={betNum + 1} arenaIndex={arenaId} />
       </Center>
-    </Pd>
+    </Td>
   ),
   (prevProps, nextProps) =>
     prevProps.betNum === nextProps.betNum && prevProps.arenaId === nextProps.arenaId,
@@ -209,11 +209,11 @@ const ClearButtonCell = React.memo(
     }, [handleBetLineChange, arenaId]);
 
     return (
-      <Pd backgroundColor="bg.subtle">
+      <Td backgroundColor="bg.subtle">
         <Button size="2xs" onClick={handleClearRow}>
           {betCount}-Bet
         </Button>
-      </Pd>
+      </Td>
     );
   },
   (prevProps, nextProps) => prevProps.arenaId === nextProps.arenaId,
@@ -271,7 +271,7 @@ const FoodItems = React.memo(
           return (
             <FaDetailsElement
               key={foodId}
-              as={Pd}
+              as={Td}
               whiteSpace="nowrap"
               overflow="hidden"
               backgroundColor="bg.subtle"
@@ -325,11 +325,11 @@ const ArenaRatioDisplay = React.memo(
 ArenaRatioDisplay.displayName = 'ArenaRatioDisplay';
 
 const EmptyBetsPlaceholder = React.memo(() => (
-  <Pd colSpan={100} backgroundColor="bg.subtle">
+  <Td colSpan={100} backgroundColor="bg.subtle">
     <Skeleton height="24px">
       <Box>&nbsp;</Box>
     </Skeleton>
-  </Pd>
+  </Td>
 ));
 
 EmptyBetsPlaceholder.displayName = 'EmptyBetsPlaceholder';
@@ -469,11 +469,11 @@ const PirateRow = React.memo(
       const radios = [];
       for (let betNum = 0; betNum < betCount; betNum++) {
         radios.push(
-          <Pd key={`bet-${betNum + 1}-arena-${arenaId}-pirate-${pirateId}`}>
+          <Td key={`bet-${betNum + 1}-arena-${arenaId}-pirate-${pirateId}`}>
             <Center>
               <BetRadio betIndex={betNum + 1} arenaIndex={arenaId} pirateIndex={pirateIndex + 1} />
             </Center>
-          </Pd>,
+          </Td>,
         );
       }
       return radios;
@@ -567,9 +567,9 @@ const PirateRow = React.memo(
       }
 
       return (
-        <Pd>
+        <Td>
           <CustomOddsInput arenaIndex={arenaId} pirateIndex={pirateIndex + 1} />
-        </Pd>
+        </Td>
       );
     }, [arenaId, pirateIndex, customOddsMode, bigBrain]);
 
@@ -579,9 +579,9 @@ const PirateRow = React.memo(
       }
 
       return (
-        <Pd>
+        <Td>
           <CustomProbsInput arenaIndex={arenaId} pirateIndex={pirateIndex + 1} />
-        </Pd>
+        </Td>
       );
     }, [arenaId, pirateIndex, customOddsMode]);
 

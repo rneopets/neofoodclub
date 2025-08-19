@@ -22,8 +22,8 @@ import {
 import { displayAsPercent } from '../util';
 
 import ClearBetsButton from './ClearBetsButton';
-import Pd from './Pd';
 import PirateSelect from './PirateSelect';
+import Td from './Td';
 
 interface DropDownTableProps {
   timelineHandlers: {
@@ -45,11 +45,11 @@ const BetRow = React.memo(
     loaded: boolean;
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   }) => (
-    <Pd key={`bet-${betNum}-arena-${arenaId}`}>
+    <Td key={`bet-${betNum}-arena-${arenaId}`}>
       <Skeleton loading={!loaded} height="32px">
         <PirateSelect arenaId={arenaId} pirateValue={pirateValue} onChange={onChange} />
       </Skeleton>
-    </Pd>
+    </Td>
   ),
   (prevProps, nextProps) =>
     prevProps.pirateValue === nextProps.pirateValue &&
@@ -90,7 +90,7 @@ const DropDownTableRow = React.memo(
             />
           );
         })}
-        <Pd>{isBetDuplicate(thisBetBinary) && <DuplicateBadge />}</Pd>
+        <Td>{isBetDuplicate(thisBetBinary) && <DuplicateBadge />}</Td>
       </Table.Row>
     );
   },
@@ -128,7 +128,7 @@ const PirateInfoRow = React.memo(
         key={`pirate-${pirateId}-${arenaId}-${pirateIndex}`}
         backgroundColor={didPirateWin ? winner : 'transparent'}
       >
-        <Pd
+        <Td
           whiteSpace="nowrap"
           backgroundColor={didPirateWin ? winner : getPirateBgColor(opening)}
           onClick={onClick}
@@ -136,11 +136,11 @@ const PirateInfoRow = React.memo(
           title={`Click to view odds timeline for ${fullPirateName}`}
         >
           {pirateName}
-        </Pd>
-        <Pd style={{ textAlign: 'end' }}>{opening}:1</Pd>
-        <Pd style={{ textAlign: 'end' }}>
+        </Td>
+        <Td style={{ textAlign: 'end' }}>{opening}:1</Td>
+        <Td style={{ textAlign: 'end' }}>
           <Text fontWeight={current === opening ? 'normal' : 'bold'}>{current}:1</Text>
-        </Pd>
+        </Td>
       </Table.Row>
     );
   },
@@ -220,7 +220,7 @@ const ArenaCell = React.memo(
     );
 
     return (
-      <Pd key={`arena-${arenaId}`}>
+      <Td key={`arena-${arenaId}`}>
         <Skeleton loading={!hasPirates}>
           <Table.Root size="sm" maxW="150px" height="fit-content" overflow="hidden">
             <Table.Body overflow="hidden" height="fit-content" maxHeight="100px">
@@ -228,7 +228,7 @@ const ArenaCell = React.memo(
             </Table.Body>
           </Table.Root>
         </Skeleton>
-      </Pd>
+      </Td>
     );
   },
   (prevProps, nextProps) =>
@@ -260,7 +260,7 @@ const ArenaRow = React.memo(
     return (
       <Table.Row>
         {arenaCells}
-        <Pd>{/* Empty cell for duplicate badge column alignment */}</Pd>
+        <Td>{/* Empty cell for duplicate badge column alignment */}</Td>
       </Table.Row>
     );
   },
