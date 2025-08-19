@@ -25,29 +25,20 @@ const PirateSelect = React.memo(
 
     const pirates = usePiratesForArena(arenaId);
 
-    const pirateBg = useMemo(() => {
-      let bg = 'transparent';
-      const currentOpeningOdds = openingOdds[arenaId]?.[pirateValue] as number;
+    const currentOpeningOdds = openingOdds[arenaId]?.[pirateValue] as number;
 
-      if (currentOpeningOdds > 1) {
-        bg = getPirateBgColor(currentOpeningOdds);
-      }
-      return bg;
-    }, [openingOdds, pirateValue, getPirateBgColor, arenaId]);
+    const bgColor = pirateValue !== 0 ? getPirateBgColor(currentOpeningOdds) : undefined;
 
     const useArenaName = showArenaName && pirateValue === 0;
 
     const selectOptions = useMemo(
       () =>
-        pirates?.map((pirateId: number, pirateIndex: number) => {
-          const bgColor = getPirateBgColor(openingOdds?.[arenaId]?.[pirateIndex + 1] as number);
-          return (
-            <option key={pirateId} style={{ background: bgColor }} value={pirateIndex + 1}>
-              {PIRATE_NAMES.get(pirateId)}
-            </option>
-          );
-        }),
-      [pirates, openingOdds, getPirateBgColor, arenaId],
+        pirates?.map((pirateId: number, pirateIndex: number) => (
+          <option key={pirateId} value={pirateIndex + 1}>
+            {PIRATE_NAMES.get(pirateId)}
+          </option>
+        )),
+      [pirates],
     );
 
     if (!pirates) {
@@ -59,15 +50,15 @@ const PirateSelect = React.memo(
     }
 
     return (
-      <NativeSelect.Root size="xs" colorPalette={pirateBg} {...rest}>
-        <NativeSelect.Field value={pirateValue} onChange={onChange}>
+      <NativeSelect.Root size="xs" {...rest}>
+        <NativeSelect.Field value={pirateValue} onChange={onChange} bg={bgColor}>
           <option disabled={useArenaName} hidden={useArenaName} value="0">
             {useArenaName ? ARENA_NAMES[arenaId] : ''}
           </option>
           <option hidden={!useArenaName} value="0"></option>
           {selectOptions}
         </NativeSelect.Field>
-        <NativeSelect.Indicator />
+        <NativeSelect.Indicator color="fg" />
       </NativeSelect.Root>
     );
   },
