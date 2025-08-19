@@ -53,17 +53,19 @@ const PirateFA = React.memo(
     const neg = NEGATIVE_FAS[pirateId]![foodId]!;
 
     // by default, transparent + empty string if FA is 0
-    let color = 'transparent';
+    let bgColor = 'transparent';
+    let fgColor = 'fg.emphasized';
     let indicator = '';
 
     if (pos && neg) {
-      color = 'yellow.subtle';
+      bgColor = 'yellow.emphasized';
+      fgColor = 'yellow.contrast';
       indicator = `+${pos}/-${neg}`;
     } else if (pos) {
-      color = 'green.subtle';
+      bgColor = 'green.solid';
       indicator = `+${pos}`;
     } else if (neg) {
-      color = 'red.subtle';
+      bgColor = 'red.solid';
       indicator = `-${neg}`;
     }
 
@@ -72,7 +74,8 @@ const PirateFA = React.memo(
         key={`fa-${foodId}-pirate-${pirateId}`}
         as={Pd}
         textAlign="end"
-        backgroundColor={color}
+        backgroundColor={bgColor}
+        color={fgColor}
         whiteSpace="nowrap"
       >
         <Text as={'b'}>{indicator}</Text>
