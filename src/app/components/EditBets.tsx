@@ -7,6 +7,7 @@ import {
   Skeleton,
   Separator,
   HStack,
+  CloseButton,
 } from '@chakra-ui/react';
 import React, { useCallback, useMemo, useState, useRef, Suspense } from 'react';
 import { FaPenToSquare } from 'react-icons/fa6';
