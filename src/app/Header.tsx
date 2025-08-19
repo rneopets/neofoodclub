@@ -15,7 +15,8 @@ import {
   IconButton,
   Show,
   AbsoluteCenter,
-  InputGroup,
+  Group,
+  NumberInputControl,
 } from '@chakra-ui/react';
 import { addYears, differenceInMilliseconds } from 'date-fns';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -263,6 +264,7 @@ const MaxBetInput: React.FC = () => {
 
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [isLocked, setIsLocked] = useState<boolean>(() => getMaxBetLocked());
+  const [isNumberInputFocused, setIsNumberInputFocused] = useState<boolean>(false);
 
   // Update temp value when round changes only
   useEffect(() => {
@@ -372,45 +374,87 @@ const MaxBetInput: React.FC = () => {
   );
 
   return (
-    <NumberInputRoot
-      data-testid="max-bet-input-field"
-      size="xs"
-      value={tempValue}
-      onValueChange={handleChange}
-      min={-1000}
-      max={500000}
-      clampValueOnBlur={true}
-      allowMouseWheel={true}
-      showControl={!isLocked}
-      readOnly={isLocked}
-      color={isLocked ? 'fg.muted' : 'fg'}
+    <Group
+      attached
+      w="full"
+      gap={0}
+      alignItems="stretch"
+      rounded="md"
+      transition="all 0.5s ease"
+      {...(isAnimating && {
+        boxShadow: '0 0 0 1px var(--chakra-colors-green-400)',
+        borderColor: 'green.400',
+      })}
     >
-      <InputGroup
-        startElement={
-          <MaxBetLockToggle
-            key={isLocked ? 'locked' : 'unlocked'}
-            isLocked={isLocked}
-            onToggle={handleLockToggle}
-          />
-        }
-        startElementProps={{
-          pointerEvents: 'none',
-          style: { marginInlineStart: '-6px' },
-        }}
+      <Text
+        fontSize="xs"
+        lineHeight="1"
+        fontWeight="medium"
+        color="fg.muted"
+        bg="bg.muted"
+        borderWidth="1px"
+        borderEndWidth="0"
+        borderColor="border"
+        roundedStart="md"
+        roundedEnd={0}
+        px="2"
+        display="flex"
+        alignItems="center"
+        whiteSpace="nowrap"
+        userSelect="none"
+      >
+        Max bet
+      </Text>
+      <NumberInputRoot
+        data-testid="max-bet-input-field"
+        size="xs"
+        value={tempValue}
+        onValueChange={handleChange}
+        min={-1000}
+        max={500000}
+        clampValueOnBlur={true}
+        allowMouseWheel={true}
+        showControl={isNumberInputFocused && !isLocked}
+        readOnly={isLocked}
+        color={isLocked ? 'fg.muted' : 'fg'}
       >
         <NumberInputField
           data-testid="max-bet-input-field-input"
-          onBlur={handleBlur}
-          onFocus={handleFocus}
+          onBlur={(): void => {
+            handleBlur();
+            setIsNumberInputFocused(false);
+          }}
+          onFocus={(e: React.FocusEvent<HTMLInputElement>): void => {
+            handleFocus(e);
+            setIsNumberInputFocused(true);
+          }}
           cursor={isLocked ? 'pointer' : 'text'}
-          transition="all 0.5s ease"
-          {...(isAnimating && {
-            boxShadow: '0 0 0 1px var(--chakra-colors-green-400)',
-            borderColor: 'green.400',
-          })}
+          rounded={0}
         />
-      </InputGroup>
-    </NumberInputRoot>
+        <NumberInputControl
+          hidden={!isNumberInputFocused || isLocked}
+          onFocus={(): void => setIsNumberInputFocused(true)}
+          onBlur={(): void => setIsNumberInputFocused(false)}
+        />
+      </NumberInputRoot>
+      <Box
+        borderWidth="1px"
+        borderStartWidth={0}
+        borderColor="border"
+        roundedEnd="md"
+        roundedStart={0}
+        display="flex"
+        alignItems="center"
+        px="1"
+        bg="transparent"
+      >
+        <MaxBetLockToggle
+          key={isLocked ? 'locked' : 'unlocked'}
+          isLocked={isLocked}
+          onToggle={handleLockToggle}
+        />
+      </Box>
+    </Group>
   );
 };
 
@@ -539,12 +583,15 @@ const HeaderContent: React.FC = () => {
         <TitleHeading />
         <Spacer display={{ base: 'none', md: 'block' }} />
         <GlowCard p={2} maxW="lg" animate={isGlowing} mx="auto">
-          <HStack>
-            <VStack gap={1} maxW="160px">
+          <HStack gap={2}>
+            <VStack gap={1} minW="170px" maxW="170px">
               <RoundInput />
               <MaxBetInput />
             </VStack>
-            {hasValidData && <CurrentRoundProgress />}
+            <Show when={hasValidData}>
+              <CurrentRoundProgress />
+            </Show>
+
             <Show when={hasValidData || error} fallback={<SkeletonText minW="140px" />}>
               <RoundInfo />
             </Show>
