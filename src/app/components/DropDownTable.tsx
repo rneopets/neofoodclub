@@ -46,7 +46,7 @@ const BetRow = React.memo(
     onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   }) => (
     <Pd key={`bet-${betNum}-arena-${arenaId}`}>
-      <Skeleton loading={!loaded} height="24px">
+      <Skeleton loading={!loaded} height="32px">
         <PirateSelect arenaId={arenaId} pirateValue={pirateValue} onChange={onChange} />
       </Skeleton>
     </Pd>
