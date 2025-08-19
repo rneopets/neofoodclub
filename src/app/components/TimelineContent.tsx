@@ -8,19 +8,17 @@ import {
   Badge,
   VStack,
   HStack,
-  Separator,
   Card,
   Grid,
   GridItem,
+  Spacer,
 } from '@chakra-ui/react';
 import React from 'react';
 import {
-  FaSackDollar,
   FaUtensils,
   FaSkullCrossbones,
   FaArrowUp,
   FaArrowDown,
-  FaChartLine,
   FaPercent,
   FaClock,
   FaMedal,
@@ -32,12 +30,9 @@ import { useBgColors } from '../hooks/useBgColors';
 import { makeEmpty } from '../maths';
 import {
   useRoundDataStore,
-  useStableUsedProbability,
   useStableLogitProbability,
   useStableLegacyProbabilityStd,
-  useArenaRatios,
 } from '../stores';
-import { displayAsPlusMinus, displayAsPercent } from '../util';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../utils/betUtils';
 
 import DateFormatter from './DateFormatter';
@@ -51,18 +46,13 @@ const TimelineContent = React.memo(
     const { arenaId, pirateIndex } = props;
 
     const roundData = useRoundDataStore(state => state.roundState.roundData);
-    const useLogitModel = useRoundDataStore(
-      state => state.roundState.advanced?.useLogitModel ?? false,
-    );
     const pirateId = roundData.pirates?.[arenaId]?.[pirateIndex];
     const start = roundData.start;
     const endTime = roundData.timestamp;
 
     // Get probability data
-    const currentProb = useStableUsedProbability(arenaId, pirateIndex + 1);
     const logitProb = useStableLogitProbability(arenaId, pirateIndex + 1);
     const legacyProb = useStableLegacyProbabilityStd(arenaId, pirateIndex + 1);
-    const arenaRatios = useArenaRatios();
 
     // Background colors using semantic tokens
     const bgColors = useBgColors();
@@ -71,12 +61,12 @@ const TimelineContent = React.memo(
       return null;
     }
 
-    const pirateName = PIRATE_NAMES.get(pirateId) as string;
-    const arenaName = ARENA_NAMES[arenaId] || `Arena ${arenaId + 1}`;
+    const pirateName = PIRATE_NAMES.get(pirateId)!;
+    const arenaName = ARENA_NAMES[arenaId]!;
     const openingOdds = roundData.openingOdds?.[arenaId]?.[pirateIndex + 1] as number;
     const currentOdds = roundData.currentOdds?.[arenaId]?.[pirateIndex + 1] as number;
-    const startDate = new Date(start as string);
-    const endDate = new Date(endTime as string);
+    const startDate = new Date(start!);
+    const endDate = new Date(endTime!);
 
     const thisPiratesOdds = [openingOdds];
     const thisPiratesChangesTimes = [startDate.getTime()];
@@ -91,26 +81,16 @@ const TimelineContent = React.memo(
       thisPiratesChanges.push(change);
     });
 
-    const _arenaPirates = roundData.pirates[arenaId] as number[];
     const winners = roundData.winners || makeEmpty(5);
     const winningPirate = winners[arenaId] ?? 0;
     const isRoundOver = winningPirate > 0;
     const didPirateWin = winningPirate === pirateIndex + 1;
 
-    // Calculate statistics
-    const totalOddsChange = currentOdds - openingOdds;
-    const percentageChange = ((currentOdds - openingOdds) / openingOdds) * 100;
-    const volatility = thisPiratesChanges.length;
-    const currentPayout = currentOdds * currentProb - 1;
-    const openingPayout = openingOdds * currentProb - 1;
-    const payoutChange = currentPayout - openingPayout;
-    const arenaRatio = arenaRatios[arenaId] || 0;
-
     // Memoized label calculation
     const oddsChangesCountLabel =
       thisPiratesChanges.length === 0
         ? ''
-        : ` - ${thisPiratesChanges.length} odds change${thisPiratesChanges.length > 1 ? 's' : ''}`;
+        : ` • ${thisPiratesChanges.length} odds change${thisPiratesChanges.length > 1 ? 's' : ''}`;
 
     // Enhanced timeline events with more data
     const timelineEvents = [
@@ -119,46 +99,28 @@ const TimelineContent = React.memo(
         icon: <FaUtensils />,
         title: 'Round Started',
         description: `${pirateName} opened at ${openingOdds}:1`,
-        details: [
-          `Win Probability: ${displayAsPercent(currentProb, 1)}`,
-          `Opening Payout: ${displayAsPlusMinus(openingPayout)} ratio`,
-          `Arena ${arenaName} ratio: ${arenaRatio.toFixed(2)}`,
-        ],
         time: startDate,
         odds: openingOdds,
         color: 'blue.solid',
-        payout: openingPayout,
       },
       ...thisPiratesChanges.map((change, index) => {
         const isIncrease = change.new > change.old;
-        const changePercent = ((change.new - change.old) / change.old) * 100;
-        const newPayout = change.new * currentProb - 1;
-        const oldPayout = change.old * currentProb - 1;
-        const payoutDiff = newPayout - oldPayout;
 
         return {
           id: `change-${change.t}-${index}`,
           icon: isIncrease ? <FaArrowUp /> : <FaArrowDown />,
-          title: `Odds ${isIncrease ? 'Increased' : 'Decreased'} to ${change.new}:1`,
-          description: `${displayAsPlusMinus(change.new - change.old)} change (${getOrdinalSuffix(index + 1)} change)`,
-          details: [
-            `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(1)}% odds change`,
-            `Payout ratio: ${displayAsPlusMinus(payoutDiff)}`,
-            `New expected return: ${displayAsPlusMinus(newPayout)}`,
-          ],
+          title: `${change.old} to ${change.new}`,
+          description: `${index + 1}${getOrdinalSuffix(index + 1)} change`,
           time: new Date(change.t),
           odds: change.new,
           color: isIncrease ? 'green.solid' : 'red.solid',
-          payout: newPayout,
           change: change.new - change.old,
-          changePercent,
         };
       }),
     ];
 
     // Add round end event if finished
     if (isRoundOver) {
-      const finalPayout = currentOdds * currentProb - 1;
       timelineEvents.push({
         id: `end-${endDate.getTime()}`,
         icon: didPirateWin ? <FaMedal /> : <FaSkullCrossbones />,
@@ -166,157 +128,80 @@ const TimelineContent = React.memo(
         description: didPirateWin
           ? `${pirateName} was the winner of ${arenaName}!`
           : `${pirateName} did not win ${arenaName}`,
-        details: didPirateWin
-          ? [
-              `Final odds: ${currentOdds}:1`,
-              `Winning payout achieved!`,
-              `Total odds change: ${displayAsPlusMinus(totalOddsChange)}`,
-            ]
-          : [
-              `Final odds: ${currentOdds}:1`,
-              `Better luck next time`,
-              `Total odds change: ${displayAsPlusMinus(totalOddsChange)}`,
-            ],
         time: endDate,
         odds: thisPiratesOdds[thisPiratesOdds.length - 1] || openingOdds,
         color: didPirateWin ? 'green.solid' : 'red.solid',
-        payout: finalPayout,
       });
     }
 
     return (
       <>
-        <DrawerHeader pb={4}>
-          <VStack gap={4} align="stretch">
+        <DrawerHeader>
+          <VStack align="stretch">
             <Flex gap="4" alignItems="center" flexWrap="wrap">
               <Avatar
                 name={pirateName}
                 src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirateId}.gif`}
-                size="lg"
+                size="xl"
               />
               <Box flex="1" minW="200px">
-                <Heading size="lg" mb={1}>
+                <Heading size="lg">
                   {pirateName} {oddsChangesCountLabel}
                 </Heading>
-                <Text color={bgColors.textMuted} fontSize="md" mb={2}>
-                  {arenaName} • Round {roundData.round}
+                <Text as="i" fontSize="md" color={bgColors.textMuted} fontStyle="italic">
+                  Round {roundData.round}
+                  {' - '}
+                  <DateFormatter
+                    tz="America/Los_Angeles"
+                    format="dddd, MMMM Do YYYY"
+                    date={start}
+                    withTitle
+                    titleFormat="LLL [NST]"
+                  />
                 </Text>
-                <HStack gap={2} flexWrap="wrap">
-                  <Badge
-                    colorPalette={
-                      didPirateWin
-                        ? 'green'
-                        : totalOddsChange > 0
-                          ? 'green'
-                          : totalOddsChange < 0
-                            ? 'red'
-                            : 'gray'
-                    }
-                  >
-                    {currentOdds}:1 odds
-                  </Badge>
-                  <Badge colorPalette={currentPayout > 0 ? 'green' : 'red'}>
-                    {displayAsPlusMinus(currentPayout)} payout
-                  </Badge>
-                  <Badge colorPalette="blue">{displayAsPercent(currentProb, 1)} chance</Badge>
-                </HStack>
               </Box>
             </Flex>
-
-            {/* Summary Stats */}
-            <Card.Root bg={bgColors.canvas} borderColor={bgColors.border}>
+            {/* TODO: Summary Stats */}
+            {/* https://chakra-ui.com/docs/charts/donut-chart#detached-segment */}
+            {/* <Card.Root bg={bgColors.canvas} borderColor={bgColors.border}>
               <Card.Body py={3}>
-                <Grid templateColumns="repeat(auto-fit, minmax(120px, 1fr))" gap={4}>
-                  <GridItem>
-                    <VStack gap={1}>
-                      <HStack>
-                        <FaChartLine color={totalOddsChange >= 0 ? 'green' : 'red'} />
-                        <Text fontSize="xs" fontWeight="bold" color={bgColors.textMuted}>
-                          TOTAL CHANGE
-                        </Text>
-                      </HStack>
-                      <Text
-                        fontSize="lg"
-                        fontWeight="bold"
-                        color={totalOddsChange >= 0 ? 'green.fg' : 'red.fg'}
-                      >
-                        {displayAsPlusMinus(totalOddsChange)}
+                <Grid gap={4} templateColumns="repeat(2, 1fr)">
+                  <GridItem colSpan={2}>
+                    <HStack gap={2} justifyContent="center">
+                      <FaPercent />
+                      <Text fontWeight="bold" fontSize="lg">
+                        Probabilities
                       </Text>
-                      <Text fontSize="xs" color={bgColors.textMuted}>
-                        {percentageChange > 0 ? '+' : ''}
-                        {percentageChange.toFixed(1)}%
-                      </Text>
-                    </VStack>
+                    </HStack>
                   </GridItem>
-
                   <GridItem>
                     <VStack gap={1}>
-                      <HStack>
-                        <FaPercent color="blue" />
-                        <Text fontSize="xs" fontWeight="bold" color={bgColors.textMuted}>
-                          PROBABILITY
-                        </Text>
-                      </HStack>
                       <Text fontSize="lg" fontWeight="bold">
-                        {displayAsPercent(useLogitModel ? logitProb : legacyProb, 1)}
+                        {displayAsPercent(legacyProb, 1)}
                       </Text>
                       <Text fontSize="xs" color={bgColors.textMuted}>
-                        {useLogitModel ? 'Logit' : 'Legacy'} model
+                        Legacy model
                       </Text>
                     </VStack>
                   </GridItem>
-
                   <GridItem>
                     <VStack gap={1}>
-                      <HStack>
-                        <FaClock color="orange" />
-                        <Text fontSize="xs" fontWeight="bold" color={bgColors.textMuted}>
-                          VOLATILITY
-                        </Text>
-                      </HStack>
                       <Text fontSize="lg" fontWeight="bold">
-                        {volatility}
+                        {displayAsPercent(logitProb, 1)}
                       </Text>
                       <Text fontSize="xs" color={bgColors.textMuted}>
-                        {volatility === 0
-                          ? 'Stable'
-                          : volatility === 1
-                            ? 'Low'
-                            : volatility < 4
-                              ? 'Medium'
-                              : 'High'}
-                      </Text>
-                    </VStack>
-                  </GridItem>
-
-                  <GridItem>
-                    <VStack gap={1}>
-                      <HStack>
-                        <FaSackDollar color={payoutChange >= 0 ? 'green' : 'red'} />
-                        <Text fontSize="xs" fontWeight="bold" color={bgColors.textMuted}>
-                          PAYOUT CHANGE
-                        </Text>
-                      </HStack>
-                      <Text
-                        fontSize="lg"
-                        fontWeight="bold"
-                        color={payoutChange >= 0 ? 'green.fg' : 'red.fg'}
-                      >
-                        {displayAsPlusMinus(payoutChange)}
-                      </Text>
-                      <Text fontSize="xs" color={bgColors.textMuted}>
-                        Expected return
+                        Logit model
                       </Text>
                     </VStack>
                   </GridItem>
                 </Grid>
               </Card.Body>
-            </Card.Root>
+            </Card.Root> */}
           </VStack>
         </DrawerHeader>
 
         <DrawerBody>
-          <VStack gap={4} align="stretch">
+          <VStack align="stretch">
             <Box>
               <Text
                 fontSize="sm"
@@ -327,8 +212,7 @@ const TimelineContent = React.memo(
                 letterSpacing="wide"
               >
                 <FaClock style={{ display: 'inline', marginRight: '8px' }} />
-                Timeline •{' '}
-                <DateFormatter tz="America/Los_Angeles" format="dddd, MMMM Do YYYY" date={start} />
+                Timeline
               </Text>
 
               <Timeline.Root size="lg" variant="subtle">
@@ -341,51 +225,50 @@ const TimelineContent = React.memo(
                       </Timeline.Indicator>
                     </Timeline.Connector>
                     <Timeline.Content>
-                      <VStack align="start" gap={2}>
+                      <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
                         <Box>
-                          <Timeline.Title fontSize="md" fontWeight="bold" mb={1}>
+                          <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
                             {event.title}
                           </Timeline.Title>
-                          <Timeline.Description color={bgColors.textMuted} fontSize="sm" mb={2}>
+                          <Timeline.Description color={bgColors.textMuted} fontSize="sm">
+                            <Text fontSize="sm">{event.description}</Text>
+                          </Timeline.Description>
+                        </Box>
+                        <Spacer />
+                        <VStack
+                          gap={1}
+                          minH="100%"
+                          align="flex-end"
+                          justify="flex-end"
+                          alignItems="center"
+                        >
+                          <Text fontSize="sm" color={bgColors.textMuted} fontStyle="italic">
                             <DateFormatter
                               format="LTS [NST]"
                               date={event.time}
                               tz="America/Los_Angeles"
+                              withTitle
+                              titleFormat="LLL [NST]"
                             />
-                          </Timeline.Description>
-                          <Text fontSize="sm" mb={2}>
-                            {event.description}
                           </Text>
-                        </Box>
-
-                        {event.details && event.details.length > 0 && (
-                          <Box
-                            bg={bgColors.panel}
-                            p={3}
-                            borderRadius="md"
-                            width="100%"
-                            borderLeft="3px solid"
-                            borderColor={event.color}
+                          <Text
+                            fontSize="sm"
+                            color={bgColors.textMuted}
+                            fontStyle="italic"
+                            hidden={!isRoundOver}
                           >
-                            <VStack align="start" gap={1}>
-                              {event.details.map(detail => (
-                                <Text
-                                  key={`${event.id}-detail-${detail.slice(0, 20)}`}
-                                  fontSize="xs"
-                                  color={bgColors.textMuted}
-                                  fontFamily="mono"
-                                >
-                                  • {detail}
-                                </Text>
-                              ))}
-                            </VStack>
-                          </Box>
-                        )}
-
-                        <Box pt={2}>
-                          <Separator />
-                        </Box>
-                      </VStack>
+                            <DateFormatter
+                              format="LTS [NST]"
+                              date={event.time}
+                              tz="America/Los_Angeles"
+                              fromNow
+                              withTitle
+                              titleFormat="LLL [NST]"
+                              interval={1}
+                            />
+                          </Text>
+                        </VStack>
+                      </Flex>
                     </Timeline.Content>
                   </Timeline.Item>
                 ))}
