@@ -92,12 +92,34 @@ export function useCustomValueInput({
       return;
     }
 
-    // Parse the input value
-    const parsedValue = isPercent ? parseFloat(trimmedValue) : parseInt(trimmedValue, 10);
-    const finalValue = isPercent ? parsedValue / 100 : parsedValue;
+    // Parse the input value and enforce precision
+    let isInvalid = false;
+    let finalValue = 0;
+    let roundedDisplayValue = 0; // used to update the input display immediately
+
+    if (isPercent) {
+      const parsed = parseFloat(trimmedValue);
+      if (isNaN(parsed)) {
+        isInvalid = true;
+      } else {
+        // Round to 5 decimal places for display (percent input)
+        const roundedPercent = Math.round(parsed * 1e5) / 1e5;
+        roundedDisplayValue = roundedPercent;
+        // Store as fraction (divide by 100)
+        finalValue = roundedPercent / 100;
+      }
+    } else {
+      const parsed = parseInt(trimmedValue, 10);
+      if (isNaN(parsed)) {
+        isInvalid = true;
+      } else {
+        roundedDisplayValue = parsed;
+        finalValue = parsed;
+      }
+    }
 
     // If the value is invalid or unchanged, revert to display value
-    if (isNaN(parsedValue) || finalValue === (customValue ?? originalValue)) {
+    if (isInvalid || finalValue === (customValue ?? originalValue)) {
       setInputValue(displayValue.toString());
       return;
     }
@@ -140,6 +162,7 @@ export function useCustomValueInput({
         useCalculationsStore.getState().forceRecalculate();
       }, 0);
     }
+    setInputValue((isPercent ? roundedDisplayValue : finalValue).toString());
   }, [
     inputValue,
     arenaIndex,
