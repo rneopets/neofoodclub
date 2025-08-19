@@ -51,6 +51,8 @@ const CustomProbsInput = function CustomProbsInput(
       value={inputValue}
       onValueChange={handleValueChange}
       size="xs"
+      formatOptions={{ maximumFractionDigits: 4 }}
+      pattern="^-?[0-9]*(\\.[0-9]{0,4})?$"
       allowMouseWheel
       width="100px"
       inputMode="decimal"
