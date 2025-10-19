@@ -452,6 +452,7 @@ const MaxBetInput: React.FC = () => {
           key={isLocked ? 'locked' : 'unlocked'}
           isLocked={isLocked}
           onToggle={handleLockToggle}
+          maxBet={parseInt(tempValue)}
         />
       </Box>
     </Group>
