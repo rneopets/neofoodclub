@@ -63,12 +63,10 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
             <Drawer.CloseTrigger asChild>
               <CloseButton size="sm" />
             </Drawer.CloseTrigger>
-            <Drawer.Body>
-              <TimelineContent
-                arenaId={selectedTimeline.arenaId}
-                pirateIndex={selectedTimeline.pirateIndex}
-              />
-            </Drawer.Body>
+            <TimelineContent
+              arenaId={selectedTimeline.arenaId}
+              pirateIndex={selectedTimeline.pirateIndex}
+            />
           </Drawer.Content>
         </Drawer.Positioner>
       </Drawer.Root>
