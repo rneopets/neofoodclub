@@ -7,12 +7,15 @@ import { Tooltip } from '@/components/ui/tooltip';
 interface MaxBetLockToggleProps {
   isLocked: boolean;
   onToggle: (locked: boolean) => void;
+  maxBet: number;
 }
 
-const MaxBetLockToggle = memo(({ isLocked: locked, onToggle }: MaxBetLockToggleProps) => {
+const MaxBetLockToggle = memo(({ isLocked: locked, onToggle, maxBet }: MaxBetLockToggleProps) => {
   const tooltipLabel = locked
     ? 'Max bet is locked - will not increase with round number'
-    : 'Max bet is unlocked - will increase by 2 per round';
+    : maxBet === -1000
+      ? 'Max bet is unlocked'
+      : 'Max bet is unlocked - will increase by 2 per round';
 
   return (
     <Tooltip content={tooltipLabel} showArrow placement="top" openDelay={600} paddingInline={0}>
