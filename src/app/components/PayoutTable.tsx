@@ -108,7 +108,7 @@ const PayoutTableRow = React.memo(
     const probabilityTooltip = useMemo(
       () => ({
         text: displayAsPercent(probabilities, 3),
-        label: displayAsPercent(probabilities, 2),
+        label: displayAsPercent(probabilities),
       }),
       [probabilities],
     );
