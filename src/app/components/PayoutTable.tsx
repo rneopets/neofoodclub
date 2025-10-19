@@ -3,7 +3,6 @@ import React, { useCallback, useMemo } from 'react';
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa6';
 
 import { PIRATE_NAMES } from '../constants';
-import { useBgColors } from '../hooks/useBgColors';
 import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
 import { computePirateBinary } from '../maths';
 import {
@@ -50,25 +49,28 @@ MemoizedTextTooltip.displayName = 'MemoizedTextTooltip';
 
 const PirateNameCell = React.memo(
   ({ arenaIndex, pirateIndex }: { arenaIndex: number; pirateIndex: number }) => {
-    const { winner, loser } = useBgColors();
     const getPirateBgColor = useGetPirateBgColor();
     const pirateId = usePirateId(arenaIndex, pirateIndex - 1);
     const pirateName = pirateId ? (PIRATE_NAMES.get(pirateId) ?? '') : '';
     const openingOdds = useOpeningOdds(arenaIndex, pirateIndex - 1);
     const winningBetBinary = useWinningBetBinary();
 
-    let bgColor = 'transparent';
+    let bgColor = undefined;
     const pirateBin = computePirateBinary(arenaIndex, pirateIndex);
 
     if (pirateBin > 0) {
       if (winningBetBinary) {
-        bgColor = (winningBetBinary & pirateBin) === pirateBin ? winner : loser;
+        bgColor = (winningBetBinary & pirateBin) === pirateBin ? 'green' : 'red';
       } else {
         bgColor = getPirateBgColor(openingOdds);
       }
     }
 
-    return <Table.Cell backgroundColor={bgColor}>{pirateName}</Table.Cell>;
+    return (
+      <Table.Cell {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}>
+        {pirateName}
+      </Table.Cell>
+    );
   },
 );
 
@@ -84,7 +86,6 @@ const PayoutTableRow = React.memo(
     onSwapUp: (index: number) => void;
     onSwapDown: (index: number) => void;
   }) => {
-    const { loser, winner } = useBgColors();
     const viewMode = useViewMode();
     const winningBetBinary = useWinningBetBinary();
     const currentBet = useCurrentBet();
@@ -122,7 +123,7 @@ const PayoutTableRow = React.memo(
 
     const netExpectedTooltip = useMemo(
       () => ({
-        text: ne.toFixed(2).toLocaleString(),
+        text: ne.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
         label: ne.toString(),
       }),
       [ne],
@@ -135,30 +136,30 @@ const PayoutTableRow = React.memo(
       return null;
     }
 
-    const erBg = er - 1 < 0 ? loser : 'transparent';
-    const neBg = ne - 1 < 0 ? loser : 'transparent';
+    const erBg = er - 1 < 0 ? 'red' : undefined;
+    const neBg = ne - 1 < 0 ? 'red' : undefined;
 
-    let betNumBgColor = 'transparent';
-    let maxBetColor = 'transparent';
+    let betNumBgColor = undefined;
+    let maxBetColor = undefined;
 
     if (odds !== 0) {
       const div = 1_000_000 / odds;
       if (betAmount > Math.ceil(div)) {
-        maxBetColor = 'border.warning';
+        maxBetColor = 'orange';
       } else if (betAmount > Math.floor(div)) {
-        maxBetColor = 'border.warning';
+        maxBetColor = 'yellow';
       }
     }
 
     if (winningBetBinary > 0 && betBinary > 0) {
-      betNumBgColor = (winningBetBinary & betBinary) === betBinary ? winner : loser;
+      betNumBgColor = (winningBetBinary & betBinary) === betBinary ? 'green' : undefined;
     }
 
     const mbBg = maxBetColor;
 
     const betKey = `bet-${currentBet}-${betIndex + 1}`;
 
-    let baBg = 'transparent';
+    let baBg = undefined;
     if (betAmount > Math.ceil(maxBets) || betAmount > Math.floor(maxBets)) {
       baBg = 'border.warning';
     } else if (betAmount < 1) {
@@ -167,7 +168,7 @@ const PayoutTableRow = React.memo(
 
     return (
       <Table.Row key={betKey}>
-        <Td backgroundColor={betNumBgColor}>
+        <Td {...(betNumBgColor && { layerStyle: 'fill.subtle', colorPalette: betNumBgColor })}>
           <HStack px={2} gap={1}>
             <Spacer />
             <Text>{betIndex + 1}</Text>
@@ -201,8 +202,8 @@ const PayoutTableRow = React.memo(
         <Td>
           <BetAmountInput
             betIndex={betIndex + 1}
-            invalid={baBg !== 'transparent'}
-            errorColor={baBg}
+            invalid={baBg !== undefined}
+            {...(baBg && { errorColor: baBg })}
           />
         </Td>
         <Table.Cell style={{ textAlign: 'end' }}>
@@ -213,17 +214,39 @@ const PayoutTableRow = React.memo(
         <Table.Cell style={{ textAlign: 'end' }}>
           <MemoizedTextTooltip text={probabilityTooltip.text} content={probabilityTooltip.label} />
         </Table.Cell>
-        <Table.Cell style={{ textAlign: 'end', backgroundColor: erBg }}>
+        <Table.Cell
+          style={{ textAlign: 'end' }}
+          {...(erBg && { layerStyle: 'fill.subtle', colorPalette: erBg })}
+        >
           <MemoizedTextTooltip
             text={expectedRatioTooltip.text}
             content={expectedRatioTooltip.label}
           />
         </Table.Cell>
-        <Table.Cell style={{ textAlign: 'end', backgroundColor: neBg }}>
+        <Table.Cell
+          style={{ textAlign: 'end' }}
+          {...(neBg && { layerStyle: 'fill.subtle', colorPalette: neBg })}
+        >
           <MemoizedTextTooltip text={netExpectedTooltip.text} content={netExpectedTooltip.label} />
         </Table.Cell>
-        <Table.Cell style={{ textAlign: 'end', backgroundColor: mbBg }}>
-          {maxBets?.toLocaleString() ?? '0'}
+        <Table.Cell
+          style={{ textAlign: 'end' }}
+          {...(mbBg && { layerStyle: 'fill.subtle', colorPalette: mbBg })}
+        >
+          {mbBg ? (
+            <TextTooltip
+              placement="top"
+              text={maxBets?.toLocaleString() ?? '0'}
+              content={
+                mbBg === 'yellow'
+                  ? 'Bet amount is 1 NP over maxbet'
+                  : 'Bet amount is 2+ NP over maxbet'
+              }
+              cursor="help"
+            />
+          ) : (
+            (maxBets?.toLocaleString() ?? '0')
+          )}
         </Table.Cell>
         {[0, 1, 2, 3, 4].map(arenaIndex => {
           const pirateIndex = currentBetLine[arenaIndex] as number;
@@ -307,14 +330,17 @@ const PayoutTable = React.memo((): React.ReactElement => {
 
   const totalNetExpectedTooltip = useMemo(
     () => ({
-      text: totalBetNetExpected.toFixed(2).toLocaleString(),
+      text: totalBetNetExpected.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
       label: totalBetNetExpected.toString(),
     }),
     [totalBetNetExpected],
   );
 
   return (
-    <Table.Root size="sm" width="auto">
+    <Table.Root size="sm" width="auto" interactive>
       <Table.Header>
         <Table.Row>
           <Table.ColumnHeader>Bet #</Table.ColumnHeader>

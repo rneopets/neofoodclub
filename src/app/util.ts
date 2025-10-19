@@ -295,7 +295,7 @@ export function anyBetAmountsExist(betAmountsObject?: BetAmount): boolean {
     return false;
   }
 
-  return countNonZeroElements(Array.from(betAmountsObject.values())) > 0;
+  return Array.from(betAmountsObject.values()).some(amount => amount > 0);
 }
 
 export function makeBetURL(

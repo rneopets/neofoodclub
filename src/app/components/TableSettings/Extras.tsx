@@ -101,7 +101,7 @@ const Extras = memo(() => {
           <MobileSwitchBox
             icon={FaSliders}
             label="Custom Probs/Odds"
-            colorPalette="blue"
+            colorPalette="cyan"
             checked={customOddsMode}
             onChange={handleCustomOddsModeChange}
             disabled={!isBigBrainAndNormalMode}
@@ -143,7 +143,7 @@ const Extras = memo(() => {
         {isNormalMode && (
           <SettingSwitch
             icon={FaSliders}
-            colorPalette="blue"
+            colorPalette="cyan"
             checked={customOddsMode}
             onChange={handleCustomOddsModeChange}
             disabled={!isBigBrainAndNormalMode}

@@ -2,7 +2,6 @@ import { Badge, Skeleton, Table, Text } from '@chakra-ui/react';
 import React, { useCallback, useMemo } from 'react';
 
 import { ARENA_NAMES, PIRATE_NAMES, FULL_PIRATE_NAMES } from '../constants';
-import { useBgColors } from '../hooks/useBgColors';
 import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
 import { computePirateBinary, makeEmpty } from '../maths';
 import {
@@ -110,7 +109,6 @@ const PirateInfoRow = React.memo(
     arenaId: number;
     onClick: () => void;
   }) => {
-    const { winner } = useBgColors();
     const getPirateBgColor = useGetPirateBgColor();
     const winningBetBinary = useWinningBetBinary();
     const openingOdds = useRoundOpeningOdds()[arenaId] ?? makeEmpty(5);
@@ -126,14 +124,15 @@ const PirateInfoRow = React.memo(
     return (
       <Table.Row
         key={`pirate-${pirateId}-${arenaId}-${pirateIndex}`}
-        backgroundColor={didPirateWin ? winner : 'transparent'}
+        {...(didPirateWin && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
       >
         <Td
           whiteSpace="nowrap"
-          backgroundColor={didPirateWin ? winner : getPirateBgColor(opening)}
           onClick={onClick}
           cursor="pointer"
           title={`Click to view odds timeline for ${fullPirateName}`}
+          layerStyle="fill.muted"
+          colorPalette={getPirateBgColor(opening)}
         >
           {pirateName}
         </Td>

@@ -7,6 +7,7 @@ import {
   Skeleton,
   HStack,
   CloseButton,
+  ScrollArea,
 } from '@chakra-ui/react';
 import React, { useCallback, useMemo, useState, useRef, Suspense } from 'react';
 import { FaPenToSquare } from 'react-icons/fa6';
@@ -16,7 +17,6 @@ import { useRoundDataStore, useViewMode, useTableMode, useHasAnyBets } from '../
 
 import BetAmountsSettings from './BetAmountsSettings';
 import DropDownTable from './DropDownTable';
-import HorizontalScrollingBox from './HorizontalScrollingBox';
 import NormalTable from './NormalTable';
 import CopyDomainToggle from './TableSettings/CopyDomainToggle';
 import Extras from './TableSettings/Extras';
@@ -172,9 +172,14 @@ export default React.memo(function EditBets(): React.ReactElement {
               <Extras />
             </HStack>
           </Box>
-          <HorizontalScrollingBox>
-            <PirateTable m={4} />
-          </HorizontalScrollingBox>
+          <ScrollArea.Root width="full">
+            <ScrollArea.Viewport>
+              <ScrollArea.Content pb={4}>
+                <PirateTable m={4} />
+              </ScrollArea.Content>
+            </ScrollArea.Viewport>
+            <ScrollArea.Scrollbar orientation="horizontal" />
+          </ScrollArea.Root>
           <BetFunctions />
         </>
       )}
@@ -184,15 +189,25 @@ export default React.memo(function EditBets(): React.ReactElement {
           <BetAmountsSettings boxShadow="md" />
 
           <Suspense fallback={TableFallback}>
-            <HorizontalScrollingBox py={4}>
-              <PayoutTable />
-            </HorizontalScrollingBox>
+            <ScrollArea.Root width="full">
+              <ScrollArea.Viewport>
+                <ScrollArea.Content pt={4} pb={6}>
+                  <PayoutTable />
+                </ScrollArea.Content>
+              </ScrollArea.Viewport>
+              <ScrollArea.Scrollbar orientation="horizontal" />
+            </ScrollArea.Root>
           </Suspense>
 
           <Suspense fallback={ChartsFallback}>
-            <HorizontalScrollingBox py={4}>
-              <PayoutCharts />
-            </HorizontalScrollingBox>
+            <ScrollArea.Root width="full">
+              <ScrollArea.Viewport>
+                <ScrollArea.Content pt={4} pb={6}>
+                  <PayoutCharts />
+                </ScrollArea.Content>
+              </ScrollArea.Viewport>
+              <ScrollArea.Scrollbar orientation="horizontal" />
+            </ScrollArea.Root>
           </Suspense>
         </>
       )}

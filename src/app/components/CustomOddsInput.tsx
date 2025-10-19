@@ -50,6 +50,7 @@ const CustomOddsInput = function CustomOddsInput(props: CustomOddsInputProps): R
       clampValueOnBlur={true}
       name={`custom-odds-input-${arenaIndex}-${pirateIndex}`}
       data-testid={`custom-odds-input-${arenaIndex}-${pirateIndex}`}
+      variant="subtle"
     >
       <NumberInputField
         onBlur={handleBlur}

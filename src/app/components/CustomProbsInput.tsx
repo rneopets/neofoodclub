@@ -58,6 +58,7 @@ const CustomProbsInput = function CustomProbsInput(
       inputMode="decimal"
       name={`custom-probs-input-${arenaIndex}-${pirateIndex}`}
       data-testid={`custom-probs-input-${arenaIndex}-${pirateIndex}`}
+      variant="subtle"
     >
       <NumberInputField
         onBlur={handleBlur}

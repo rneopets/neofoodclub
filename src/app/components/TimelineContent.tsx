@@ -5,12 +5,7 @@ import {
   Flex,
   Heading,
   Text,
-  Badge,
   VStack,
-  HStack,
-  Card,
-  Grid,
-  GridItem,
   Spacer,
 } from '@chakra-ui/react';
 import React from 'react';
@@ -19,20 +14,14 @@ import {
   FaSkullCrossbones,
   FaArrowUp,
   FaArrowDown,
-  FaPercent,
   FaClock,
   FaMedal,
 } from 'react-icons/fa6';
 
 import { OddsChange } from '../../types';
 import { PIRATE_NAMES, ARENA_NAMES } from '../constants';
-import { useBgColors } from '../hooks/useBgColors';
 import { makeEmpty } from '../maths';
-import {
-  useRoundDataStore,
-  useStableLogitProbability,
-  useStableLegacyProbabilityStd,
-} from '../stores';
+import { useRoundDataStore } from '../stores';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../utils/betUtils';
 
 import DateFormatter from './DateFormatter';
@@ -50,13 +39,6 @@ const TimelineContent = React.memo(
     const start = roundData.start;
     const endTime = roundData.timestamp;
 
-    // Get probability data
-    const logitProb = useStableLogitProbability(arenaId, pirateIndex + 1);
-    const legacyProb = useStableLegacyProbabilityStd(arenaId, pirateIndex + 1);
-
-    // Background colors using semantic tokens
-    const bgColors = useBgColors();
-
     if (!pirateId || !start || !endTime) {
       return null;
     }
@@ -64,7 +46,6 @@ const TimelineContent = React.memo(
     const pirateName = PIRATE_NAMES.get(pirateId)!;
     const arenaName = ARENA_NAMES[arenaId]!;
     const openingOdds = roundData.openingOdds?.[arenaId]?.[pirateIndex + 1] as number;
-    const currentOdds = roundData.currentOdds?.[arenaId]?.[pirateIndex + 1] as number;
     const startDate = new Date(start!);
     const endDate = new Date(endTime!);
 
@@ -101,7 +82,7 @@ const TimelineContent = React.memo(
         description: `${pirateName} opened at ${openingOdds}:1`,
         time: startDate,
         odds: openingOdds,
-        color: 'blue.solid',
+        color: 'blue',
       },
       ...thisPiratesChanges.map((change, index) => {
         const isIncrease = change.new > change.old;
@@ -113,7 +94,7 @@ const TimelineContent = React.memo(
           description: `${index + 1}${getOrdinalSuffix(index + 1)} change`,
           time: new Date(change.t),
           odds: change.new,
-          color: isIncrease ? 'green.solid' : 'red.solid',
+          color: isIncrease ? 'green' : 'red',
           change: change.new - change.old,
         };
       }),
@@ -126,11 +107,11 @@ const TimelineContent = React.memo(
         icon: didPirateWin ? <FaMedal /> : <FaSkullCrossbones />,
         title: didPirateWin ? '🏆 Pirate Won!' : '💀 Pirate Lost',
         description: didPirateWin
-          ? `${pirateName} was the winner of ${arenaName}!`
-          : `${pirateName} did not win ${arenaName}`,
+          ? `${pirateName} won ${arenaName}!`
+          : `${pirateName} lost ${arenaName}`,
         time: endDate,
         odds: thisPiratesOdds[thisPiratesOdds.length - 1] || openingOdds,
-        color: didPirateWin ? 'green.solid' : 'red.solid',
+        color: didPirateWin ? 'green' : 'red',
       });
     }
 
@@ -148,7 +129,7 @@ const TimelineContent = React.memo(
                 <Heading size="lg">
                   {pirateName} {oddsChangesCountLabel}
                 </Heading>
-                <Text as="i" fontSize="md" color={bgColors.textMuted} fontStyle="italic">
+                <Text as="i" fontSize="md" color="fg.muted" fontStyle="italic">
                   Round {roundData.round}
                   {' - '}
                   <DateFormatter
@@ -206,7 +187,7 @@ const TimelineContent = React.memo(
               <Text
                 fontSize="sm"
                 fontWeight="bold"
-                color={bgColors.textMuted}
+                color="fg.muted"
                 mb={3}
                 textTransform="uppercase"
                 letterSpacing="wide"
@@ -215,12 +196,12 @@ const TimelineContent = React.memo(
                 Timeline
               </Text>
 
-              <Timeline.Root size="lg" variant="subtle">
+              <Timeline.Root size="xl" variant="subtle">
                 {timelineEvents.map(event => (
                   <Timeline.Item key={event.id}>
                     <Timeline.Connector>
                       <Timeline.Separator />
-                      <Timeline.Indicator bg={event.color} color="white">
+                      <Timeline.Indicator layerStyle="fill.surface" colorPalette={event.color}>
                         {event.icon}
                       </Timeline.Indicator>
                     </Timeline.Connector>
@@ -230,7 +211,7 @@ const TimelineContent = React.memo(
                           <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
                             {event.title}
                           </Timeline.Title>
-                          <Timeline.Description color={bgColors.textMuted} fontSize="sm">
+                          <Timeline.Description color="fg.muted" fontSize="sm">
                             <Text fontSize="sm">{event.description}</Text>
                           </Timeline.Description>
                         </Box>
@@ -242,7 +223,7 @@ const TimelineContent = React.memo(
                           justify="flex-end"
                           alignItems="center"
                         >
-                          <Text fontSize="sm" color={bgColors.textMuted} fontStyle="italic">
+                          <Text fontSize="sm" color="fg.muted" fontStyle="italic">
                             <DateFormatter
                               format="LTS [NST]"
                               date={event.time}
@@ -253,7 +234,7 @@ const TimelineContent = React.memo(
                           </Text>
                           <Text
                             fontSize="sm"
-                            color={bgColors.textMuted}
+                            color="fg.muted"
                             fontStyle="italic"
                             hidden={!isRoundOver}
                           >
