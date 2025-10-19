@@ -41,7 +41,17 @@ const TimelineBar = React.memo(
   }): React.ReactElement => {
     const { index, odds, percent, timestamp } = props;
 
-    const colors = ['cyan', 'green', 'blue', 'purple', 'orange', 'red', 'yellow', 'gray', 'pink'];
+    const palettes = [
+      'cyan',
+      'green',
+      'blue',
+      'purple',
+      'orange',
+      'red',
+      'yellow',
+      'gray',
+      'pink',
+    ] as const;
 
     let label = `${odds} (${index}${getOrdinalSuffix(index)} change)`;
 
@@ -53,12 +63,12 @@ const TimelineBar = React.memo(
       <Tooltip content={label} showArrow placement="top">
         <Box
           width={`${percent}%`}
-          bgColor={`${colors[odds % (colors.length - 1)]}.500`}
           whiteSpace="nowrap"
           overflow="hidden"
           fontSize="xs"
-          color="white"
-          fontWeight="bold"
+          layerStyle="fill.muted"
+          colorPalette={palettes[odds % (palettes.length - 1)]}
+          fontWeight="semibold"
           textAlign="center"
           minH="6"
           display="flex"
@@ -128,10 +138,12 @@ const OddsTimeline = React.memo(
           onClick={onClick}
           cursor="pointer"
           display="flex"
-          borderRadius="md"
+          px="0"
+          rounded="lg"
           overflow="hidden"
+          borderRadius="md"
           border="1px solid"
-          borderColor="gray.200"
+          borderColor="border"
         >
           {timelineData.odds.map((odds, i) => (
             <TimelineBar

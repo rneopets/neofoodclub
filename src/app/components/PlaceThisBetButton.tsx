@@ -31,7 +31,7 @@ const ErrorBetButton: React.FC<BetButtonProps> = props => {
   const { children, ...rest } = props;
 
   return (
-    <BetButton colorPalette="red" disabled {...rest}>
+    <BetButton colorPalette="red" layerStyle="fill.solid" disabled {...rest}>
       {children}
     </BetButton>
   );
@@ -96,7 +96,11 @@ const PlaceThisBetButton = React.memo(
     }
 
     return (
-      <BetButton onClick={handleClick} colorPalette={clicked ? 'gray' : 'green'}>
+      <BetButton
+        onClick={handleClick}
+        colorPalette="gray"
+        layerStyle={clicked ? 'fill.surface' : 'fill.solid'}
+      >
         {clicked ? 'Bet placed!' : 'Place bet!'} <FaExternalLinkAlt />
       </BetButton>
     );

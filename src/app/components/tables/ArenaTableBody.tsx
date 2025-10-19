@@ -10,7 +10,6 @@ import {
   ARENA_NAMES,
   FOODS,
 } from '../../constants';
-import { useBgColors } from '../../hooks/useBgColors';
 import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
 import { computePirateBinary } from '../../maths';
 import {
@@ -53,19 +52,18 @@ const PirateFA = React.memo(
     const neg = NEGATIVE_FAS[pirateId]![foodId]!;
 
     // by default, transparent + empty string if FA is 0
-    let bgColor = 'transparent';
-    let fgColor = 'fg.emphasized';
+    let color = undefined;
     let indicator = '';
 
     if (pos && neg) {
-      bgColor = 'yellow.emphasized';
-      fgColor = 'yellow.contrast';
+      color = 'yellow';
+      // fgColor = 'yellow.fg';
       indicator = `+${pos}/-${neg}`;
     } else if (pos) {
-      bgColor = 'green.solid';
+      color = 'green';
       indicator = `+${pos}`;
     } else if (neg) {
-      bgColor = 'red.solid';
+      color = 'red';
       indicator = `-${neg}`;
     }
 
@@ -74,8 +72,7 @@ const PirateFA = React.memo(
         key={`fa-${foodId}-pirate-${pirateId}`}
         as={Td}
         textAlign="end"
-        backgroundColor={bgColor}
-        color={fgColor}
+        {...(color && { layerStyle: 'fill.subtle', colorPalette: color })}
         whiteSpace="nowrap"
       >
         <Text as={'b'}>{indicator}</Text>
@@ -431,7 +428,6 @@ const PirateRow = React.memo(
     const bigBrain = useBigBrain();
     const oddsTimeline = useOddsTimeline();
     const foods = useFoodsForArena(arenaId);
-    const bgColors = useBgColors();
     const winningBetBinary = useWinningBetBinary();
     const pirateBin = computePirateBinary(arenaId, pirateIndex + 1);
     const pirateWon = (winningBetBinary & pirateBin) === pirateBin;
@@ -450,12 +446,12 @@ const PirateRow = React.memo(
 
     const payoutBackground = useMemo(() => {
       if (payout > 0) {
-        return bgColors.payoutPositive;
+        return 'green';
       } else if (payout <= -0.1) {
-        return bgColors.payoutNegative;
+        return 'red';
       }
-      return bgColors.payoutNeutral;
-    }, [payout, bgColors]);
+      return undefined;
+    }, [payout]);
 
     const handleTimelineClickLocal = useCallback(() => {
       handleTimelineClick(arenaId, pirateIndex);
@@ -488,16 +484,30 @@ const PirateRow = React.memo(
         return null;
       }
 
-      return <Table.Cell textAlign="end">{displayAsPercent(logitProb, 1)}</Table.Cell>;
-    }, [logitProb, useLogitModel, bigBrain]);
+      return (
+        <Table.Cell
+          textAlign="end"
+          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+        >
+          {displayAsPercent(logitProb, 1)}
+        </Table.Cell>
+      );
+    }, [logitProb, useLogitModel, bigBrain, pirateWon]);
 
     const faElement = useMemo(() => {
       if (!bigBrain) {
         return null;
       }
 
-      return <Table.Cell textAlign="end">{pirateFA}</Table.Cell>;
-    }, [pirateFA, bigBrain]);
+      return (
+        <Table.Cell
+          textAlign="end"
+          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+        >
+          {pirateFA}
+        </Table.Cell>
+      );
+    }, [pirateFA, bigBrain, pirateWon]);
 
     const legacyProbElements = useMemo(() => {
       if (!bigBrain) {
@@ -510,12 +520,27 @@ const PirateRow = React.memo(
 
       return (
         <>
-          <Table.Cell textAlign="end">{displayAsPercent(legacyProbMin, 1)}</Table.Cell>
-          <Table.Cell textAlign="end">{displayAsPercent(legacyProbMax, 1)}</Table.Cell>
-          <Table.Cell textAlign="end">{displayAsPercent(legacyProbStd, 1)}</Table.Cell>
+          <Table.Cell
+            textAlign="end"
+            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+          >
+            {displayAsPercent(legacyProbMin, 1)}
+          </Table.Cell>
+          <Table.Cell
+            textAlign="end"
+            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+          >
+            {displayAsPercent(legacyProbMax, 1)}
+          </Table.Cell>
+          <Table.Cell
+            textAlign="end"
+            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+          >
+            {displayAsPercent(legacyProbStd, 1)}
+          </Table.Cell>
         </>
       );
-    }, [legacyProbMin, legacyProbMax, legacyProbStd, useLogitModel, bigBrain]);
+    }, [legacyProbMin, legacyProbMax, legacyProbStd, useLogitModel, bigBrain, pirateWon]);
 
     const faDetailsElement = useMemo(() => {
       if (!foods) {
@@ -568,10 +593,14 @@ const PirateRow = React.memo(
 
       return (
         <Td>
-          <CustomOddsInput arenaIndex={arenaId} pirateIndex={pirateIndex + 1} />
+          <CustomOddsInput
+            arenaIndex={arenaId}
+            pirateIndex={pirateIndex + 1}
+            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+          />
         </Td>
       );
-    }, [arenaId, pirateIndex, customOddsMode, bigBrain]);
+    }, [arenaId, pirateIndex, customOddsMode, bigBrain, pirateWon]);
 
     const customProbsInputElement = useMemo(() => {
       if (!customOddsMode) {
@@ -580,10 +609,14 @@ const PirateRow = React.memo(
 
       return (
         <Td>
-          <CustomProbsInput arenaIndex={arenaId} pirateIndex={pirateIndex + 1} />
+          <CustomProbsInput
+            arenaIndex={arenaId}
+            pirateIndex={pirateIndex + 1}
+            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+          />
         </Td>
       );
-    }, [arenaId, pirateIndex, customOddsMode]);
+    }, [arenaId, pirateIndex, customOddsMode, pirateWon]);
 
     const payoutElement = useMemo(() => {
       if (!bigBrain) {
@@ -591,7 +624,10 @@ const PirateRow = React.memo(
       }
 
       return (
-        <Table.Cell textAlign="end" backgroundColor={payoutBackground}>
+        <Table.Cell
+          textAlign="end"
+          {...(payoutBackground && { layerStyle: 'fill.subtle', colorPalette: payoutBackground })}
+        >
           {displayAsPercent(payout, 1)}
         </Table.Cell>
       );
@@ -618,10 +654,11 @@ const PirateRow = React.memo(
     return (
       <Table.Row
         key={`pirate-${pirateId}-${arenaId}`}
-        backgroundColor={pirateWon ? bgColors.winner : 'transparent'}
+        backgroundColor={pirateWon ? 'green.subtle' : 'transparent'}
       >
         <StickyTd
-          backgroundColor={getPirateBgColor(openingOdds)}
+          layerStyle="fill.muted"
+          colorPalette={getPirateBgColor(openingOdds)}
           onClick={handleTimelineClickLocal}
           cursor="pointer"
           title={`Click to view odds timeline for ${fullPirateName}`}
@@ -633,8 +670,17 @@ const PirateRow = React.memo(
         {payoutElement}
         {faElement}
         {faDetailsElement}
-        <Table.Cell textAlign="end">{openingOdds}:1</Table.Cell>
-        <Table.Cell textAlign="end" whiteSpace="nowrap">
+        <Table.Cell
+          textAlign="end"
+          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+        >
+          {openingOdds}:1
+        </Table.Cell>
+        <Table.Cell
+          textAlign="end"
+          whiteSpace="nowrap"
+          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+        >
           <Box display="flex" alignItems="center" justifyContent="flex-end">
             {oddsChanged && (
               <Icon color={oddsIncreased ? 'green.fg' : 'red.fg'} mr={1}>

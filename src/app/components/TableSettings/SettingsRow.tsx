@@ -1,7 +1,6 @@
-import { Flex, Text, Box } from '@chakra-ui/react';
-import { ChangeEvent, MouseEvent, ReactNode, useCallback, memo } from 'react';
+import { Text, HStack, Spacer } from '@chakra-ui/react';
+import { ChangeEvent, ReactNode, useCallback, memo } from 'react';
 
-import { useColorModeValue } from '@/components/ui/color-mode';
 import { Switch } from '@/components/ui/switch';
 
 interface SettingsRowProps {
@@ -9,7 +8,7 @@ interface SettingsRowProps {
   label: string;
   colorPalette: string;
   isChecked: boolean;
-  onChange: (e: ChangeEvent<HTMLInputElement> | MouseEvent<HTMLDivElement>) => void;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   children?: ReactNode;
 }
@@ -23,88 +22,37 @@ const SettingsRow = memo<SettingsRowProps>(
     colorPalette = 'blue',
     disabled = false,
   }) => {
-    const bgColorEnabled = useColorModeValue(`${colorPalette}.50`, `${colorPalette}.900`);
-    const bgColorDisabled = useColorModeValue(`${colorPalette}.25`, `${colorPalette}.950`);
-    const bgColor = isChecked ? bgColorEnabled : bgColorDisabled;
+    const handleContainerClick = useCallback(() => {
+      if (!disabled) {
+        // Create a synthetic event to pass to onChange
+        const syntheticEvent = {
+          target: { checked: !isChecked },
+          currentTarget: { checked: !isChecked },
+        } as ChangeEvent<HTMLInputElement>;
+        onChange(syntheticEvent);
+      }
+    }, [disabled, isChecked, onChange]);
 
-    const handleRowClick = useCallback(
-      (e: MouseEvent<HTMLDivElement>) => {
-        if (!disabled) {
-          onChange(e);
-        }
-      },
-      [disabled, onChange],
-    );
-
-    const handleSwitchChange = useCallback(
-      (e: ChangeEvent<HTMLInputElement>) => {
-        e.stopPropagation();
-        if (!disabled) {
-          onChange(e);
-        }
-      },
-      [disabled, onChange],
-    );
-
-    const handleStopPropagation = useCallback((e: MouseEvent<HTMLDivElement>) => {
-      e.stopPropagation();
-    }, []);
+    const color = isChecked ? colorPalette : 'gray';
 
     const content = (
-      <Flex
-        justify="space-between"
-        align="center"
+      <HStack
+        display="flex"
         width="100%"
-        as="div"
-        opacity={disabled ? 0.6 : 1}
-        py={2}
-        px={2}
-        borderRadius="md"
-        transition="all 0.2s"
-        backgroundColor={bgColor}
-        borderWidth="1px"
-        borderColor={isChecked ? `${colorPalette}.200` : 'transparent'}
-        onClick={handleRowClick}
+        layerStyle="fill.surface"
+        px="2"
+        py="2"
+        rounded="l1"
+        colorPalette={color}
+        onClick={handleContainerClick}
         cursor={disabled ? 'not-allowed' : 'pointer'}
+        userSelect="none"
       >
-        <Flex align="center" flex="1" cursor="inherit">
-          <Box
-            minWidth="24px"
-            width="24px"
-            height="24px"
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            mr={2}
-          >
-            {IconComponent && (
-              <IconComponent
-                style={{
-                  color: isChecked
-                    ? `var(--chakra-colors-${colorPalette}-500)`
-                    : 'var(--chakra-colors-gray-400)',
-                  width: '1em',
-                  height: '1em',
-                  maxWidth: '24px',
-                  maxHeight: '24px',
-                  transition: 'color 0.2s',
-                }}
-              />
-            )}
-          </Box>
-          <Text>{label}</Text>
-        </Flex>
-        <Box onClick={handleStopPropagation} position="relative" zIndex={1}>
-          <Switch
-            checked={isChecked}
-            colorPalette={colorPalette}
-            disabled={disabled}
-            onChange={handleSwitchChange}
-            cursor={disabled ? 'not-allowed' : 'pointer'}
-            size="md"
-          />
-        </Box>
-      </Flex>
+        <IconComponent />
+        <Text>{label}</Text>
+        <Spacer />
+        <Switch checked={isChecked} colorPalette={color} disabled={disabled} pointerEvents="none" />
+      </HStack>
     );
 
     // Simple version without Tooltip for now

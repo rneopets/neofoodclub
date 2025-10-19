@@ -5,7 +5,6 @@ import React, { useCallback, useMemo } from 'react';
 import { Scatter } from 'react-chartjs-2';
 
 import { PayoutData } from '../../types';
-import { useBgColors } from '../hooks/useBgColors';
 import {
   useRoundDataStore,
   useCalculationsStore,
@@ -102,7 +101,6 @@ interface ChartOptions {
 // this element contains the odds/winnings tables + charts
 
 const PayoutCharts: React.FC = React.memo(() => {
-  const { winner, loser } = useBgColors();
   const hasRoundData = useRoundDataStore(state => state.roundState.roundData !== null);
 
   const betBinaries = useBetBinaries();
@@ -204,8 +202,8 @@ const PayoutCharts: React.FC = React.memo(() => {
             callbacks: {
               label: function (context: TooltipItem<'scatter'>): string[] {
                 return [
-                  `${context.parsed.x.toLocaleString()} ${type}`,
-                  `${displayAsPercent(context.parsed.y, 3)}`,
+                  `${context!.parsed!.x!.toLocaleString()} ${type}`,
+                  `${displayAsPercent(context!.parsed!.y!, 3)}`,
                 ];
               },
             },
@@ -286,7 +284,7 @@ const PayoutCharts: React.FC = React.memo(() => {
       const { totalWinningOdds, totalWinningPayoff } = calculationsData;
 
       const tableRows = data.map(dataObj => {
-        let bgColor: string = 'transparent';
+        let bgColor: string | undefined = undefined;
 
         if (
           winningBetBinary > 0 &&
@@ -294,14 +292,17 @@ const PayoutCharts: React.FC = React.memo(() => {
             (title === 'Winnings' && totalWinningPayoff === dataObj.value))
         ) {
           if (dataObj.value === 0) {
-            bgColor = loser;
+            bgColor = 'red';
           } else {
-            bgColor = winner;
+            bgColor = 'green';
           }
         }
 
         return (
-          <Table.Row key={dataObj.value} backgroundColor={bgColor}>
+          <Table.Row
+            key={dataObj.value}
+            {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}
+          >
             <Table.Cell style={{ textAlign: 'end' }}>{dataObj.value.toLocaleString()}</Table.Cell>
             <Table.Cell style={{ textAlign: 'end' }}>
               <TextTooltip
@@ -330,7 +331,7 @@ const PayoutCharts: React.FC = React.memo(() => {
           <Card.Root boxShadow="2xl">
             <Card.Body p={1}>
               <Skeleton loading={!hasRoundData || !calculationsData.calculated}>
-                <Table.Root size="sm" width="auto">
+                <Table.Root size="sm" width="auto" interactive>
                   <Table.Header>
                     <Table.Row>
                       <Table.ColumnHeader>{title}</Table.ColumnHeader>
@@ -350,7 +351,7 @@ const PayoutCharts: React.FC = React.memo(() => {
         </Box>
       );
     },
-    [calculationsData, winningBetBinary, loser, winner, hasRoundData, makeChart],
+    [calculationsData, winningBetBinary, hasRoundData, makeChart],
   );
 
   const oddsTable = useMemo(

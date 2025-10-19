@@ -12,7 +12,7 @@ const ClearButtonComponent = React.memo(
     React.ComponentProps<typeof Button>,
     'onClick'
   >): React.ReactElement => (
-    <Button size="2xs" onClick={onClick} {...rest}>
+    <Button size="2xs" onClick={onClick} layerStyle="fill.solid" colorPalette="red" {...rest}>
       Clear
     </Button>
   ),

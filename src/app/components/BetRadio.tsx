@@ -28,7 +28,7 @@ const BetRadio = React.memo(
 
     return (
       <RadioGroup value={currentValue} onValueChange={() => handleChange()}>
-        <Radio value={value} size="sm" colorPalette="blue" />
+        <Radio value={value} size="sm" colorPalette="gray" />
       </RadioGroup>
     );
   },

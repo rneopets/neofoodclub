@@ -23,7 +23,7 @@ const SettingSwitch = memo(
     checked: isChecked,
     onChange,
     tooltipLabel,
-    colorPalette = 'blue',
+    colorPalette = 'gray',
     iconProps = {},
     disabled = false,
   }: SettingSwitchProps): React.ReactElement => {
@@ -75,7 +75,7 @@ const SettingSwitch = memo(
             >
               <Box
                 as={icon}
-                color={isChecked ? `${colorPalette}.500` : 'gray.400'}
+                color={isChecked ? `${colorPalette}.400` : 'gray.400'}
                 width={iconSize}
                 height={iconSize}
                 style={{
@@ -104,7 +104,7 @@ const SettingSwitch = memo(
           transform="translateX(-50%)"
           width="60%"
           height="1px"
-          bg={isChecked ? `${colorPalette}.500` : 'gray.600'}
+          bg={isChecked ? `${colorPalette}.400` : 'gray.600'}
           transition="background-color 0.2s"
           borderRadius="full"
         />

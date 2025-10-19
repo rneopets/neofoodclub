@@ -62,7 +62,7 @@ const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo
         <Button
           size="xs"
           variant="ghost"
-          colorPalette="blue"
+          colorPalette="gray"
           onClick={handleGoToCurrent}
           fontSize="xs"
           height="auto"

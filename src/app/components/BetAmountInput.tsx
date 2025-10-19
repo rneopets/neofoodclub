@@ -105,6 +105,7 @@ const BetAmountInput = React.memo(
         allowMouseWheel
         inputMode="numeric"
         width="90px"
+        variant="subtle"
         {...rest}
       >
         <NumberInputField

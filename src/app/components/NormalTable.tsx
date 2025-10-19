@@ -175,7 +175,7 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
             </Table.ColumnHeader>
           ))}
           <Table.ColumnHeader px={1}>
-            <ClearBetsButton minW="100%" colorPalette="red" />
+            <ClearBetsButton minW="100%" />
           </Table.ColumnHeader>
         </Table.Row>
       </Table.Header>

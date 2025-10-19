@@ -105,7 +105,10 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
     const updates: Array<{ betIndex: number; amount: number }> = [];
 
     for (const [index, amount] of currentAmounts.entries()) {
-      if (amount > 0) {
+      if (amount === -1000) {
+        // Bump -1000 to 0 before incrementing
+        updates.push({ betIndex: index, amount: 2 });
+      } else if (amount > 0) {
         updates.push({ betIndex: index, amount: amount + 2 });
       }
     }
@@ -157,6 +160,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
           >
             <Button
               size="sm"
+              layerStyle="fill.surface"
               colorPalette="green"
               onClick={setCappedBetAmounts}
               data-testid="capped-bet-amounts-button"
@@ -173,6 +177,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
           >
             <Button
               size="sm"
+              layerStyle="fill.surface"
               colorPalette="blue"
               onClick={setUncappedBetAmounts}
               data-testid="uncapped-bet-amounts-button"
@@ -185,6 +190,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
           <Button
             size="sm"
             onClick={clearBetAmounts}
+            layerStyle="fill.surface"
             colorPalette="red"
             data-testid="clear-bet-amounts-button"
             {...rest}
@@ -198,6 +204,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
                 onClick={incrementBetAmounts}
                 data-testid="increment-bet-amounts-button"
                 disabled={!hasRoundData}
+                layerStyle="fill.surface"
               >
                 +2
               </Button>
@@ -208,6 +215,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
                 onClick={decrementBetAmounts}
                 data-testid="decrement-bet-amounts-button"
                 disabled={!hasRoundData}
+                layerStyle="fill.surface"
               >
                 -2
               </Button>

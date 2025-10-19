@@ -264,8 +264,8 @@ const BuildSetMenu = React.memo((): React.ReactElement => {
                 <Spacer />
                 <Button
                   disabled={!buildButtonEnabled}
-                  variant="solid"
-                  colorPalette="blue"
+                  variant="surface"
+                  colorPalette="gray"
                   onClick={handleBuildClick}
                   data-testid="build-modal-button"
                 >
@@ -466,7 +466,8 @@ const BetCopyButtons = React.memo(
         <Heading size="xs" textTransform="uppercase">
           Share:
         </Heading>
-        <ButtonGroup variant="solid" gap={1}>
+        <Spacer />
+        <ButtonGroup variant="ghost" gap={1} size="xs">
           <CopyIconButton
             icon={FaLink}
             label="Copy Bet URL"
@@ -487,7 +488,7 @@ const BetCopyButtons = React.memo(
           />
         </ButtonGroup>
 
-        <ButtonGroup variant="solid" gap={1}>
+        <ButtonGroup variant="ghost" gap={1} size="xs">
           <CopyIconButton
             icon={FaMarkdown}
             label="Copy Markdown table"
@@ -654,12 +655,12 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
     <SettingsBox p={2} {...rest}>
       <Stack>
         <Wrap>
-          <Button onClick={newEmptySet} data-testid="new-set-button" size="sm">
-            <FaPlus />
-            New set
-          </Button>
+          <ButtonGroup size="sm" variant="surface">
+            <Button onClick={newEmptySet} data-testid="new-set-button">
+              <FaPlus />
+              New set
+            </Button>
 
-          <ButtonGroup size="sm">
             <Button onClick={cloneSet} data-testid="clone-set-button">
               <FaClone />
               Clone
@@ -758,7 +759,7 @@ const BetCard = React.memo(
       >
         <VStack align="stretch" minW="200px" separator={<Separator />}>
           <Editable.Root
-            key={cardKey}
+            key={`${cardKey}-${currentName}`}
             as={Heading}
             defaultValue={currentName}
             onValueCommit={onValueCommit}
@@ -834,7 +835,7 @@ const BetBadges = React.memo(
       // round-over badge
       if (isRoundOver) {
         result.push(
-          <Badge key="round-over" colorPalette="red" variant="subtle">
+          <Badge key="round-over" colorPalette="red" variant="surface">
             Round {roundData?.round} is over
           </Badge>,
         );
@@ -842,7 +843,7 @@ const BetBadges = React.memo(
 
       if (!calculated) {
         result.push(
-          <Badge key="no-round-data" colorPalette="red" variant="subtle">
+          <Badge key="no-round-data" colorPalette="red" variant="surface">
             ❌ No data for round {currentSelectedRound}
           </Badge>,
         );
@@ -857,7 +858,7 @@ const BetBadges = React.memo(
       if (hasDuplicateBets) {
         // duplicate bets
         result.push(
-          <Badge key="duplicate-bets" colorPalette="red" variant="subtle">
+          <Badge key="duplicate-bets" colorPalette="red" variant="surface">
             ❌ Contains duplicate bets
           </Badge>,
         );
@@ -872,7 +873,7 @@ const BetBadges = React.memo(
 
       if (invalidBetAmounts.length > 0) {
         result.push(
-          <Badge key="invalid-amounts" colorPalette="red" variant="subtle">
+          <Badge key="invalid-amounts" colorPalette="red" variant="surface">
             ❌ Invalid bet amounts
           </Badge>,
         );
@@ -881,7 +882,7 @@ const BetBadges = React.memo(
       // bust chance badge
       if (betCount === 0 && calculated) {
         result.push(
-          <Badge key="no-bets" colorPalette="red" variant="subtle">
+          <Badge key="no-bets" colorPalette="red" variant="surface">
             ❌ No pirates selected
           </Badge>,
         );
@@ -916,7 +917,7 @@ const BetBadges = React.memo(
           });
 
           result.push(
-            <Badge key="gambit" colorPalette="blue" variant="subtle">
+            <Badge key="gambit" colorPalette="blue" variant="surface">
               Gambit: {names.join(' x ')}
             </Badge>,
           );
@@ -941,7 +942,7 @@ const BetBadges = React.memo(
           });
 
           result.push(
-            <Badge key="tenbet" colorPalette="purple" variant="subtle">
+            <Badge key="tenbet" colorPalette="purple" variant="surface">
               Tenbet: {names.join(' x ')}
             </Badge>,
           );
@@ -956,7 +957,7 @@ const BetBadges = React.memo(
 
         if (isCrazy) {
           result.push(
-            <Badge key="crazy" colorPalette="pink" variant="subtle">
+            <Badge key="crazy" colorPalette="pink" variant="surface">
               🤪 Crazy
             </Badge>,
           );
@@ -982,7 +983,7 @@ const BetBadges = React.memo(
 
       if (bustChance === 0) {
         result.push(
-          <Badge key="bust-proof" variant="subtle">
+          <Badge key="bust-proof" variant="surface">
             🎉 Bust-proof!
           </Badge>,
         );
@@ -990,7 +991,7 @@ const BetBadges = React.memo(
         const bustEmoji = bustChance > 99 ? '💀' : '';
         const beakerEmoji = useLogitModel ? '🧪' : '';
         result.push(
-          <Badge key="bust-chance" variant="subtle">
+          <Badge key="bust-chance" variant="surface">
             {bustEmoji} {Math.floor(bustChance)}% Bust {beakerEmoji}
           </Badge>,
         );
@@ -1006,7 +1007,7 @@ const BetBadges = React.memo(
       const lowestProfit = payoutTables.winnings[0]?.value ?? 0;
       if (betAmountsTotal < lowestProfit) {
         result.push(
-          <Badge key="guaranteed-profit" colorPalette="green" variant="subtle">
+          <Badge key="guaranteed-profit" colorPalette="green" variant="surface">
             💰 Guaranteed profit ({lowestProfit - betAmountsTotal}+ NP)
           </Badge>,
         );
@@ -1048,20 +1049,20 @@ const BetBadges = React.memo(
 
       if (unitsWon === 0) {
         result.push(
-          <Badge key="busted" variant="subtle">
+          <Badge key="busted" variant="surface">
             💀 Busted
           </Badge>,
         );
       } else {
         result.push(
-          <Badge key="units-won" colorPalette="green" variant="subtle">
+          <Badge key="units-won" colorPalette="green" variant="surface">
             Units won: {unitsWon.toLocaleString()}
           </Badge>,
         );
 
         if (npWon > 0) {
           result.push(
-            <Badge key="np-won" colorPalette="green" variant="subtle">
+            <Badge key="np-won" colorPalette="green" variant="surface">
               💰 NP won: {npWon.toLocaleString()}
             </Badge>,
           );

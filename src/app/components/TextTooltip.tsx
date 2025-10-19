@@ -11,13 +11,13 @@ interface TextTooltipProps extends Omit<TooltipProps, 'children' | 'content'> {
 }
 
 const TextTooltip = React.memo((props: TextTooltipProps): React.ReactElement => {
-  const { text, label, ...rest } = props;
+  const { text, label, cursor, ...rest } = props;
   // Convert label to string to satisfy aria-label requirement
   const ariaLabel = label ? label : typeof text === 'string' ? text : '';
 
   return (
     <Tooltip content={label || text} aria-label={ariaLabel} {...rest}>
-      <Text>{text}</Text>
+      <Text cursor={cursor}>{text}</Text>
     </Tooltip>
   );
 });
