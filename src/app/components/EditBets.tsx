@@ -83,13 +83,16 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
   );
 
   const isDropdownMode = useMemo(() => tableMode === 'dropdown', [tableMode]);
-  const isNormalMode = useMemo(() => tableMode === 'normal', [tableMode]);
+  // const isNormalMode = useMemo(() => tableMode === 'normal', [tableMode]);
 
   return (
     <>
-      {/* Conditional rendering to completely avoid layering conflicts */}
-      {isNormalMode && <NormalTable timelineHandlers={timelineHandlers} {...props} />}
-      {isDropdownMode && <DropDownTable timelineHandlers={timelineHandlers} {...props} />}
+      <Box display={isDropdownMode ? 'none' : 'block'}>
+        <NormalTable timelineHandlers={timelineHandlers} {...props} />
+      </Box>
+      <Box display={isDropdownMode ? 'block' : 'none'}>
+        <DropDownTable timelineHandlers={timelineHandlers} {...props} />
+      </Box>
       {timelineDrawer}
     </>
   );
