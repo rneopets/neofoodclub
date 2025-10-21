@@ -433,10 +433,10 @@ const BetCopyButtons = React.memo(
       return useWebDomain ? `${window.location.origin}${url}` : url;
     }, [tableExportDisabled, currentSelectedRound, bets, betAmounts, useWebDomain]);
 
-    const { onCopy: onCopyMarkdown } = useClipboard(markdownTable || '');
-    const { onCopy: onCopyHtml } = useClipboard(htmlTable || '');
-    const { onCopy: onCopyUrl } = useClipboard(betUrl);
-    const { onCopy: onCopyUrlWithAmounts } = useClipboard(betUrlWithAmounts);
+    const { copy: copyMarkdown } = useClipboard({ value: markdownTable || '' });
+    const { copy: copyHtml } = useClipboard({ value: htmlTable || '' });
+    const { copy: copyUrl } = useClipboard({ value: betUrl });
+    const { copy: copyUrlWithAmounts } = useClipboard({ value: betUrlWithAmounts });
 
     const handleCopyWithAnimation = useCallback((buttonId: string, copyFn: () => void) => {
       copyFn();
@@ -445,20 +445,20 @@ const BetCopyButtons = React.memo(
     }, []);
 
     const handleCopyMarkdown = useCallback(() => {
-      handleCopyWithAnimation('markdown', onCopyMarkdown);
-    }, [handleCopyWithAnimation, onCopyMarkdown]);
+      handleCopyWithAnimation('markdown', copyMarkdown);
+    }, [handleCopyWithAnimation, copyMarkdown]);
 
     const handleCopyHtml = useCallback(() => {
-      handleCopyWithAnimation('html', onCopyHtml);
-    }, [handleCopyWithAnimation, onCopyHtml]);
+      handleCopyWithAnimation('html', copyHtml);
+    }, [handleCopyWithAnimation, copyHtml]);
 
     const handleCopyUrl = useCallback(() => {
-      handleCopyWithAnimation('url', onCopyUrl);
-    }, [handleCopyWithAnimation, onCopyUrl]);
+      handleCopyWithAnimation('url', copyUrl);
+    }, [handleCopyWithAnimation, copyUrl]);
 
     const handleCopyUrlWithAmounts = useCallback(() => {
-      handleCopyWithAnimation('urlWithAmounts', onCopyUrlWithAmounts);
-    }, [handleCopyWithAnimation, onCopyUrlWithAmounts]);
+      handleCopyWithAnimation('urlWithAmounts', copyUrlWithAmounts);
+    }, [handleCopyWithAnimation, copyUrlWithAmounts]);
 
     return (
       <HStack gap={1} {...rest}>
