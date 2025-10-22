@@ -21,9 +21,21 @@ import { GitCommit } from './components/GitCommit';
 import { VercelCredit } from './components/VercelCredit';
 import NeopointIcon from './images/np-icon.svg';
 
-const Logo: React.FC = () => (
+interface LogoProps {
+  rotation: number;
+}
+
+const Logo: React.FC<LogoProps> = ({ rotation }) => (
   <HStack>
-    <Image src={NeopointIcon} alt="Neopoint Icon" height="1.5em" width="1.5em" fit="contain" />
+    <Image
+      src={NeopointIcon}
+      alt="Neopoint Icon"
+      height="1.5em"
+      width="1.5em"
+      fit="contain"
+      transition="transform 0.5s ease"
+      transform={`rotate(${rotation}deg)`}
+    />
     <Heading>NeoFoodClub</Heading>
   </HStack>
 );
@@ -55,6 +67,62 @@ type FooterProps = BoxProps;
 
 const Footer: React.FC<FooterProps> = props => {
   const [isDevModeOpen, setIsDevModeOpen] = React.useState(false);
+  const [clickCount, setClickCount] = React.useState(0);
+  const [rotation, setRotation] = React.useState(0);
+  const clickTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const hasOpenedBefore = React.useRef(
+    typeof localStorage !== 'undefined' && localStorage.getItem('devModeOpened') === 'true',
+  );
+
+  const handleLogoClick = React.useCallback(() => {
+    // Trigger spin animation - increment rotation by 360 degrees
+    setRotation(prev => prev + 360);
+
+    // If dev mode was opened before, open on first click
+    if (hasOpenedBefore.current) {
+      setIsDevModeOpen(true);
+      return;
+    }
+
+    setClickCount(prev => {
+      const newCount = prev + 1;
+
+      // Clear existing timeout
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+
+      // Reset click count after 2 seconds of no clicks
+      clickTimeoutRef.current = setTimeout(() => {
+        setClickCount(0);
+      }, 2000);
+
+      // Open dev mode on 5th click
+      if (newCount >= 5) {
+        setIsDevModeOpen(true);
+        setClickCount(0);
+        if (clickTimeoutRef.current) {
+          clearTimeout(clickTimeoutRef.current);
+        }
+        // Mark that dev mode has been opened
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('devModeOpened', 'true');
+          hasOpenedBefore.current = true;
+        }
+      }
+
+      return newCount;
+    });
+  }, []);
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <>
@@ -121,7 +189,9 @@ const Footer: React.FC<FooterProps> = props => {
         <Box py={10}>
           <HStack>
             <Separator flex="1" />
-            <Logo />
+            <Box onClick={handleLogoClick} cursor="pointer" userSelect="none">
+              <Logo rotation={rotation} />
+            </Box>
             <Separator flex="1" />
           </HStack>
           <Text pt={6} fontSize={'sm'} textAlign={'center'}>
@@ -135,11 +205,6 @@ const Footer: React.FC<FooterProps> = props => {
           </Center>
           <Center mt={3}>
             <GitCommit />
-          </Center>
-          <Center mt={3}>
-            <Button size="xs" variant="ghost" onClick={() => setIsDevModeOpen(true)}>
-              Dev Mode
-            </Button>
           </Center>
         </Box>
       </Box>
