@@ -6,6 +6,7 @@
   "dependencies": {
     "@chakra-ui/react": "3.27.1",
     "@emotion/react": "^11.14.0",
+    "@types/react-window": "^1.8.8",
     "chart.js": "^4.4.9",
     "chartjs-plugin-annotation": "^3.1.0",
     "date-fns": "^4.1.0",
@@ -16,6 +17,7 @@
     "react-dom": "19.2.0",
     "react-icons": "^5.5.0",
     "react-scan": "^0.4.3",
+    "react-window": "^2.2.1",
     "shiki": "^3.13.0",
     "styled-components": "^6.1.18",
     "typescript": "5.9.2",
