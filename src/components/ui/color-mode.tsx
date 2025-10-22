@@ -1,5 +1,4 @@
 /* eslint-disable no-duplicate-imports */
-'use client';
 
 import type { IconButtonProps, SpanProps } from '@chakra-ui/react';
 import { ClientOnly, IconButton, Skeleton, Span } from '@chakra-ui/react';
