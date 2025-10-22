@@ -15,19 +15,19 @@ import { FaPenToSquare } from 'react-icons/fa6';
 import BetFunctions from '../BetFunctions';
 import { useRoundDataStore, useViewMode, useTableMode, useHasAnyBets } from '../stores';
 
-import BetAmountsSettings from './BetAmountsSettings';
 import DropDownTable from './DropDownTable';
 import NormalTable from './NormalTable';
 import CopyDomainToggle from './TableSettings/CopyDomainToggle';
 import Extras from './TableSettings/Extras';
 import LogitModelToggle from './TableSettings/LogitModelToggle';
 import TableModes from './TableSettings/TableModes';
-import TimelineContent from './TimelineContent';
 
 import { useColorModeValue } from '@/components/ui/color-mode';
 
+const BetAmountsSettings = React.lazy(() => import('./BetAmountsSettings'));
 const PayoutCharts = React.lazy(() => import('./PayoutCharts'));
 const PayoutTable = React.lazy(() => import('./PayoutTable'));
+const TimelineContent = React.lazy(() => import('./TimelineContent'));
 
 interface PirateTableProps {
   [key: string]: unknown; // Allow other props like m, px, etc.
@@ -63,10 +63,12 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
             <Drawer.CloseTrigger asChild>
               <CloseButton size="sm" />
             </Drawer.CloseTrigger>
-            <TimelineContent
-              arenaId={selectedTimeline.arenaId}
-              pirateIndex={selectedTimeline.pirateIndex}
-            />
+            <Suspense fallback={null}>
+              <TimelineContent
+                arenaId={selectedTimeline.arenaId}
+                pirateIndex={selectedTimeline.pirateIndex}
+              />
+            </Suspense>
           </Drawer.Content>
         </Drawer.Positioner>
       </Drawer.Root>
@@ -113,9 +115,6 @@ export default React.memo(function EditBets(): React.ReactElement {
   const handleEditModeClick = useCallback(() => {
     setRoundState({ viewMode: false });
   }, [setRoundState]);
-
-  const ChartsFallback = <Skeleton height="400px" />;
-  const TableFallback = <Skeleton height="300px" />;
 
   return (
     <>
@@ -187,9 +186,11 @@ export default React.memo(function EditBets(): React.ReactElement {
 
       {anyBets && (
         <>
-          <BetAmountsSettings boxShadow="md" />
+          <Suspense fallback={null}>
+            <BetAmountsSettings boxShadow="md" />
+          </Suspense>
 
-          <Suspense fallback={TableFallback}>
+          <Suspense fallback={null}>
             <ScrollArea.Root width="full">
               <ScrollArea.Viewport>
                 <ScrollArea.Content pt={4} pb={6}>
@@ -200,7 +201,7 @@ export default React.memo(function EditBets(): React.ReactElement {
             </ScrollArea.Root>
           </Suspense>
 
-          <Suspense fallback={ChartsFallback}>
+          <Suspense fallback={null}>
             <ScrollArea.Root width="full">
               <ScrollArea.Viewport>
                 <ScrollArea.Content pt={4} pb={6}>
