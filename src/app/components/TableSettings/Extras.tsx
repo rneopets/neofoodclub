@@ -16,7 +16,7 @@ import {
 } from '../../stores';
 
 import MobileSwitchBox from './MobileSwitchBox';
-import SettingSwitch from './SettingSwitch';
+import ToolbarButton from './ToolbarButton';
 
 const Extras = memo(() => {
   const bigBrain = useBigBrain();
@@ -111,40 +111,40 @@ const Extras = memo(() => {
       </VStack>
 
       {/* Desktop view */}
-      <HStack display={{ base: 'none', md: 'flex' }}>
-        <SettingSwitch
+      <HStack display={{ base: 'none', md: 'flex' }} gap={1}>
+        <ToolbarButton
           icon={FaBrain}
           colorPalette="pink"
-          checked={bigBrain}
+          isActive={bigBrain}
           onChange={handleBigBrainChange}
           tooltipLabel="Big Brain Mode"
         />
 
         {isNormalMode && (
-          <SettingSwitch
+          <ToolbarButton
             icon={FaTimeline}
             colorPalette="purple"
-            checked={oddsTimeline}
+            isActive={oddsTimeline}
             onChange={handleOddsTimelineChange}
             disabled={!isBigBrainAndNormalMode}
             tooltipLabel="Odds Timeline"
           />
         )}
         {isNormalMode && (
-          <SettingSwitch
+          <ToolbarButton
             icon={FaCookieBite}
             colorPalette="orange"
-            checked={faDetails}
+            isActive={faDetails}
             onChange={handleFaDetailsChange}
             disabled={!isBigBrainAndNormalMode}
             tooltipLabel="FA Details"
           />
         )}
         {isNormalMode && (
-          <SettingSwitch
+          <ToolbarButton
             icon={FaSliders}
             colorPalette="cyan"
-            checked={customOddsMode}
+            isActive={customOddsMode}
             onChange={handleCustomOddsModeChange}
             disabled={!isBigBrainAndNormalMode}
             tooltipLabel="Custom Probs/Odds"

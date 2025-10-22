@@ -6,7 +6,7 @@ import Cookies from 'universal-cookie';
 import { useRoundDataStore } from '../../stores';
 
 import MobileSwitchBox from './MobileSwitchBox';
-import SettingSwitch from './SettingSwitch';
+import ToolbarButton from './ToolbarButton';
 
 const CopyDomainToggle = memo(() => {
   const useWebDomain = useRoundDataStore(state => state.roundState.useWebDomain);
@@ -22,7 +22,7 @@ const CopyDomainToggle = memo(() => {
     });
   }, [useWebDomain, cookies, setRoundState]);
 
-  const tooltipLabel = `Include domain when copying bets\n(${window.location.origin}/)`;
+  const tooltipLabel = 'Copy Domain';
 
   return (
     <>
@@ -34,16 +34,16 @@ const CopyDomainToggle = memo(() => {
           colorPalette="blue"
           checked={useWebDomain ?? false}
           onChange={handleChange}
-          tooltipText={tooltipLabel}
+          tooltipText={`Include domain when copying bets\n(${window.location.origin}/)`}
         />
       </Box>
 
       {/* Desktop view */}
       <Box display={{ base: 'none', md: 'block' }}>
-        <SettingSwitch
+        <ToolbarButton
           icon={FaGlobe}
           colorPalette="blue"
-          checked={useWebDomain ?? false}
+          isActive={useWebDomain ?? false}
           onChange={handleChange}
           tooltipLabel={tooltipLabel}
         />

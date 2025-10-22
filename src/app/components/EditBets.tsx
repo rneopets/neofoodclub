@@ -7,9 +7,11 @@ import {
   HStack,
   CloseButton,
   ScrollArea,
+  Separator,
+  Text,
 } from '@chakra-ui/react';
 import React, { useCallback, useMemo, useState, useRef, Suspense } from 'react';
-import { FaPenToSquare } from 'react-icons/fa6';
+import { FaPenToSquare, FaGear } from 'react-icons/fa6';
 
 import BetFunctions from '../BetFunctions';
 import { useRoundDataStore, useViewMode, useTableMode, useHasAnyBets } from '../stores';
@@ -167,12 +169,28 @@ export default React.memo(function EditBets(): React.ReactElement {
             </Flex>
 
             {/* Desktop Layout (will be hidden on smaller than md screens) */}
-            <HStack px={5} display={{ base: 'none', md: 'flex' }}>
-              <TableModes />
-              <LogitModelToggle />
-              <CopyDomainToggle />
-              <Extras />
-            </HStack>
+            <Flex
+              px={5}
+              py={2}
+              display={{ base: 'none', md: 'flex' }}
+              align="center"
+              gap={4}
+              maxW="container.xl"
+              mx="auto"
+            >
+              <HStack gap={2} color="fg.muted">
+                <FaGear size={14} />
+                <Text fontSize="sm" fontWeight="semibold">
+                  View
+                </Text>
+              </HStack>
+              <HStack gap={2}>
+                <TableModes />
+                <LogitModelToggle />
+                <CopyDomainToggle />
+                <Extras />
+              </HStack>
+            </Flex>
           </Box>
           <ScrollArea.Root width="full">
             <ScrollArea.Viewport>

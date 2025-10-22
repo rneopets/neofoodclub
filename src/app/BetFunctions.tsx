@@ -786,7 +786,6 @@ const BetBadges = React.memo(
     const roundData = useRoundDataStore(state => state.roundState.roundData);
     const winnersBinary = useWinnersBinary();
     const isRoundOver = winnersBinary > 0;
-    const useLogitModel = useLogitModelSetting();
 
     const usedProbabilities = useUsedProbabilities();
     const odds = useRoundDataStore(state => state.roundState.roundData.currentOdds || []);
@@ -989,10 +988,9 @@ const BetBadges = React.memo(
         );
       } else {
         const bustEmoji = bustChance > 99 ? '💀' : '';
-        const beakerEmoji = useLogitModel ? '🧪' : '';
         result.push(
           <Badge key="bust-chance" variant="surface">
-            {bustEmoji} {Math.floor(bustChance)}% Bust {beakerEmoji}
+            {bustEmoji} {Math.floor(bustChance)}% Bust
           </Badge>,
         );
       }
@@ -1014,15 +1012,7 @@ const BetBadges = React.memo(
       }
 
       return result;
-    }, [
-      betCount,
-      isRoundOver,
-      hasDuplicateBets,
-      calculated,
-      payoutTables,
-      betAmounts,
-      useLogitModel,
-    ]);
+    }, [betCount, isRoundOver, hasDuplicateBets, calculated, payoutTables, betAmounts]);
 
     const resultsBadges: React.ReactElement[] = useMemo(() => {
       const result: React.ReactElement[] = [];
