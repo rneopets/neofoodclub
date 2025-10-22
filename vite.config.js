@@ -111,6 +111,20 @@ export default defineConfig({
   },
   build: {
     outDir: 'build',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split Chakra UI into its own chunk
+          'chakra-ui': ['@chakra-ui/react', '@emotion/react'],
+          // Split Chart.js into its own chunk
+          chart: ['chart.js', 'react-chartjs-2', 'chartjs-plugin-annotation'],
+          // Split React libraries
+          'react-vendor': ['react', 'react-dom'],
+          // Split icons and other UI libraries
+          'ui-vendor': ['react-icons', 'date-fns', 'date-fns-tz'],
+        },
+      },
+    },
   },
   optimizeDeps: {
     esbuildOptions: {
