@@ -152,7 +152,7 @@ const PayoutTableRow = React.memo(
     }
 
     if (winningBetBinary > 0 && betBinary > 0) {
-      betNumBgColor = (winningBetBinary & betBinary) === betBinary ? 'green' : undefined;
+      betNumBgColor = (winningBetBinary & betBinary) === betBinary ? 'green' : 'red';
     }
 
     const mbBg = maxBetColor;
