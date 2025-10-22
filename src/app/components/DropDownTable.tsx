@@ -26,7 +26,7 @@ import Td from './Td';
 
 interface DropDownTableProps {
   timelineHandlers: {
-    openTimelineDrawer: (arenaId: number, pirateIndex: number) => void;
+    openTimelineDrawer: (arenaId: number | null, pirateIndex: number | null) => void;
   };
 }
 
