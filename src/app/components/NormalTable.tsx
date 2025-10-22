@@ -1,5 +1,6 @@
-import { Box, Table } from '@chakra-ui/react';
+import { Box, Button, Table } from '@chakra-ui/react';
 import React, { useCallback, useMemo } from 'react';
+import { FaChartLine } from 'react-icons/fa6';
 
 import { ARENA_NAMES } from '../constants';
 import {
@@ -19,7 +20,7 @@ import TextTooltip from './TextTooltip';
 
 interface NormalTableProps {
   timelineHandlers: {
-    openTimelineDrawer: (arenaId: number, pirateIndex: number) => void;
+    openTimelineDrawer: (arenaId: number | null, pirateIndex: number | null) => void;
   };
 }
 
@@ -132,15 +133,31 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
     );
   }, [bigBrain]);
 
+  const handleOverallTimelineClick = useCallback(() => {
+    openTimelineDrawer(null, null);
+  }, [openTimelineDrawer]);
+
   const oddsTimelineHeader = useMemo(() => {
     if (!oddsTimeline) {
       return null;
     }
 
-    const text = `Odds Timeline (${amountOfChanges} change${amountOfChanges === 1 ? '' : 's'})`;
-
-    return <Table.ColumnHeader minW="300px">{text}</Table.ColumnHeader>;
-  }, [oddsTimeline, amountOfChanges]);
+    return (
+      <Table.ColumnHeader minW="300px">
+        <Button
+          size="xs"
+          variant="ghost"
+          onClick={handleOverallTimelineClick}
+          display="flex"
+          alignItems="center"
+          gap={2}
+        >
+          <FaChartLine />
+          Odds Timeline ({amountOfChanges} change{amountOfChanges === 1 ? '' : 's'})
+        </Button>
+      </Table.ColumnHeader>
+    );
+  }, [oddsTimeline, amountOfChanges, handleOverallTimelineClick]);
 
   const tableHeader = React.useMemo(
     () => (

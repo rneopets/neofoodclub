@@ -7,8 +7,11 @@ import {
   Text,
   VStack,
   Spacer,
+  Breadcrumb,
+  Button,
+  Collapsible,
 } from '@chakra-ui/react';
-import React from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   FaUtensils,
   FaSkullCrossbones,
@@ -16,6 +19,9 @@ import {
   FaArrowDown,
   FaClock,
   FaMedal,
+  FaChartLine,
+  FaChevronDown,
+  FaWaveSquare,
 } from 'react-icons/fa6';
 
 import { OddsChange } from '../../types';
@@ -29,10 +35,947 @@ import DateFormatter from './DateFormatter';
 import { Avatar } from '@/components/ui/avatar';
 import { Timeline } from '@/components/ui/timeline';
 
-// TimelineContent component for the drawer
-const TimelineContent = React.memo(
-  (props: { arenaId: number; pirateIndex: number }): React.ReactElement | null => {
-    const { arenaId, pirateIndex } = props;
+// Types for timeline events
+type TimelineStartEvent = {
+  id: string;
+  icon: React.ReactElement;
+  title: string;
+  description: string;
+  time: Date;
+  color: string;
+  type: 'start';
+};
+
+type PirateChange = {
+  arenaId: number;
+  pirateIndex: number;
+  pirateName: string;
+  pirateId: number;
+  arenaName: string;
+  oldOdds: number;
+  newOdds: number;
+  isIncrease: boolean;
+};
+
+type TimelineChangeEvent = {
+  id: string;
+  icon: React.ReactElement;
+  title: string;
+  description: string;
+  time: Date;
+  color: string;
+  type: 'change';
+  pirates: PirateChange[];
+};
+
+type TimelineConsolidatedEvent = {
+  id: string;
+  icon: React.ReactElement;
+  title: string;
+  description: string;
+  time: Date;
+  color: string;
+  type: 'consolidated';
+  changes: TimelineChangeEvent[];
+  pirate: {
+    arenaId: number;
+    pirateIndex: number;
+    pirateName: string;
+    pirateId: number;
+    arenaName: string;
+  };
+};
+
+type WinningPirate = {
+  arenaId: number;
+  pirateIndex: number;
+  pirateName: string;
+  pirateId: number;
+  arenaName: string;
+  finalOdds: number;
+};
+
+type TimelineEndEvent = {
+  id: string;
+  icon: React.ReactElement;
+  title: string;
+  description: string;
+  time: Date;
+  color: string;
+  type: 'end';
+  winners?: WinningPirate[];
+};
+
+type TimelineEvent =
+  | TimelineStartEvent
+  | TimelineChangeEvent
+  | TimelineConsolidatedEvent
+  | TimelineEndEvent;
+
+type ViewState = 'overall' | 'arena' | 'pirate';
+
+// Overall Timeline View Component
+const OverallTimelineView = React.memo(
+  (props: {
+    onPirateClick: (arenaId: number, pirateIndex: number) => void;
+    onArenaClick?: (arenaId: number) => void;
+    scrollContainerRef?: React.RefObject<HTMLDivElement>;
+  }): React.ReactElement | null => {
+    const { onPirateClick, onArenaClick, scrollContainerRef } = props;
+
+    const roundData = useRoundDataStore(state => state.roundState.roundData);
+    const start = roundData.start;
+    const endTime = roundData.timestamp;
+
+    if (!start || !endTime) {
+      return null;
+    }
+
+    const startDate = new Date(start);
+    const endDate = new Date(endTime);
+    const changes = roundData.changes || [];
+    const winners = roundData.winners || makeEmpty(5);
+    const isRoundOver = winners.some(w => w > 0);
+
+    // Group changes by timestamp
+    const changesByTimestamp = new Map<string, PirateChange[]>();
+    changes.forEach(change => {
+      // change.pirate is 1-indexed (1-4), convert to 0-indexed for array access
+      const pirateIndex = change.pirate - 1;
+      const pirateId = roundData.pirates[change.arena]?.[pirateIndex];
+      if (!pirateId) {
+        return;
+      }
+
+      const pirateName = PIRATE_NAMES.get(pirateId);
+      const arenaName = ARENA_NAMES[change.arena];
+
+      if (!pirateName || !arenaName) {
+        return;
+      }
+
+      const timestamp = change.t;
+      if (!changesByTimestamp.has(timestamp)) {
+        changesByTimestamp.set(timestamp, []);
+      }
+
+      changesByTimestamp.get(timestamp)!.push({
+        arenaId: change.arena,
+        pirateIndex, // Already converted to 0-indexed
+        pirateName,
+        pirateId,
+        arenaName,
+        oldOdds: change.old,
+        newOdds: change.new,
+        isIncrease: change.new > change.old,
+      });
+    });
+
+    // Build timeline events
+    const allTimelineEvents: TimelineEvent[] = [
+      {
+        id: `start-${startDate.getTime()}`,
+        icon: <FaUtensils />,
+        title: 'Round Started',
+        description: '',
+        time: startDate,
+        color: 'blue',
+        type: 'start' as const,
+      },
+    ];
+
+    // Add grouped odds changes
+    changesByTimestamp.forEach((pirates, timestamp) => {
+      const time = new Date(timestamp);
+      const hasIncreases = pirates.some(p => p.isIncrease);
+      const hasDecreases = pirates.some(p => !p.isIncrease);
+
+      // Determine color and icon based on changes
+      let color = 'gray';
+      let icon = <FaArrowUp />;
+
+      if (hasIncreases && hasDecreases) {
+        color = 'blue';
+        icon = <FaWaveSquare />;
+      } else if (hasIncreases) {
+        color = 'green';
+        icon = <FaArrowUp />;
+      } else {
+        color = 'red';
+        icon = <FaArrowDown />;
+      }
+
+      // Create title and description
+      const firstPirate = pirates[0];
+      if (!firstPirate) {
+        return;
+      }
+
+      const title =
+        pirates.length === 1
+          ? `${firstPirate.pirateName} - ${firstPirate.arenaName}`
+          : `${pirates.length} Pirates Changed`;
+
+      allTimelineEvents.push({
+        id: `change-${timestamp}`,
+        icon,
+        title,
+        description: '',
+        time,
+        color,
+        type: 'change' as const,
+        pirates,
+      });
+    });
+
+    // Add round end event if finished
+    if (isRoundOver) {
+      const winningPirates: WinningPirate[] = [];
+
+      winners.forEach((winningPirateIndex, arenaId) => {
+        if (winningPirateIndex > 0) {
+          const pirateIndex = winningPirateIndex - 1;
+          const pirateId = roundData.pirates[arenaId]?.[pirateIndex];
+          const pirateName = pirateId ? PIRATE_NAMES.get(pirateId) : undefined;
+          const arenaName = ARENA_NAMES[arenaId];
+          const finalOdds = roundData.currentOdds?.[arenaId]?.[winningPirateIndex];
+
+          if (pirateId && pirateName && arenaName && finalOdds) {
+            winningPirates.push({
+              arenaId,
+              pirateIndex,
+              pirateName,
+              pirateId,
+              arenaName,
+              finalOdds,
+            });
+          }
+        }
+      });
+
+      allTimelineEvents.push({
+        id: `end-${endDate.getTime()}`,
+        icon: <FaMedal />,
+        title: 'Round Ended',
+        description: `${winningPirates.length} winning pirate${winningPirates.length !== 1 ? 's' : ''}`,
+        time: endDate,
+        color: 'purple',
+        type: 'end' as const,
+        winners: winningPirates,
+      });
+    }
+
+    // Sort by time
+    allTimelineEvents.sort((a, b) => a.time.getTime() - b.time.getTime());
+
+    // Consolidate consecutive single-pirate changes
+    const consolidatedEvents: TimelineEvent[] = [];
+    let i = 0;
+
+    while (i < allTimelineEvents.length) {
+      const event = allTimelineEvents[i];
+
+      // Check if this is a single-pirate change event
+      if (event?.type === 'change' && event.pirates.length === 1 && event.pirates[0]) {
+        const firstPirateChange = event.pirates[0];
+        const consecutiveChanges: TimelineChangeEvent[] = [event];
+        let j = i + 1;
+
+        // Look ahead for consecutive changes of the same pirate
+        // Only consolidate if they're truly consecutive (no other events in between)
+        while (j < allTimelineEvents.length) {
+          const nextEvent = allTimelineEvents[j];
+
+          // Must be a change event
+          if (nextEvent?.type !== 'change') {
+            break;
+          }
+
+          // If it's a multi-pirate change, stop consolidating
+          if (nextEvent.pirates.length !== 1) {
+            break;
+          }
+
+          const nextPirate = nextEvent.pirates[0];
+          if (!nextPirate) {
+            break;
+          }
+
+          // If it's the same pirate, add it to consolidation
+          if (
+            nextPirate.arenaId === firstPirateChange.arenaId &&
+            nextPirate.pirateIndex === firstPirateChange.pirateIndex
+          ) {
+            consecutiveChanges.push(nextEvent);
+            j++;
+          } else {
+            // Different pirate, stop consolidating
+            break;
+          }
+        }
+
+        // If we found multiple consecutive changes for the same pirate, consolidate them
+        if (consecutiveChanges.length > 1) {
+          const firstChange = consecutiveChanges[0];
+          const lastChange = consecutiveChanges[consecutiveChanges.length - 1];
+          const firstOdds = firstChange?.pirates[0]?.oldOdds;
+          const lastOdds = lastChange?.pirates[0]?.newOdds;
+
+          if (firstChange && lastChange && firstOdds && lastOdds) {
+            const hasIncreases = consecutiveChanges.some(c => c.pirates[0]?.isIncrease);
+            const hasDecreases = consecutiveChanges.some(c => !c.pirates[0]?.isIncrease);
+
+            let color = 'gray';
+            let icon = <FaArrowUp />;
+
+            if (hasIncreases && hasDecreases) {
+              color = 'blue';
+              icon = <FaWaveSquare />;
+            } else if (lastOdds > firstOdds) {
+              color = 'green';
+              icon = <FaArrowUp />;
+            } else {
+              color = 'red';
+              icon = <FaArrowDown />;
+            }
+
+            const distinctChangesCount = consecutiveChanges.length;
+
+            consolidatedEvents.push({
+              id: `consolidated-${firstChange.id}`,
+              icon,
+              title: `${firstPirateChange.pirateName} - ${firstPirateChange.arenaName}`,
+              description: `${distinctChangesCount} change${distinctChangesCount !== 1 ? 's' : ''}: ${firstOdds}:1 → ${lastOdds}:1`,
+              time: firstChange.time,
+              color,
+              type: 'consolidated' as const,
+              changes: consecutiveChanges,
+              pirate: {
+                arenaId: firstPirateChange.arenaId,
+                pirateIndex: firstPirateChange.pirateIndex,
+                pirateName: firstPirateChange.pirateName,
+                pirateId: firstPirateChange.pirateId,
+                arenaName: firstPirateChange.arenaName,
+              },
+            });
+          }
+
+          i = j; // Skip past all the consolidated events
+        } else {
+          // Single change, add as-is
+          consolidatedEvents.push(event);
+          i++;
+        }
+      } else {
+        // Not a change event or not a single pirate, add as-is
+        if (event) {
+          consolidatedEvents.push(event);
+        }
+        i++;
+      }
+    }
+
+    return (
+      <>
+        <DrawerHeader>
+          <VStack align="stretch">
+            <Flex gap="4" alignItems="center" flexWrap="wrap">
+              <Box flex="1" minW="200px">
+                <Heading size="lg">
+                  <FaChartLine style={{ display: 'inline', marginRight: '12px' }} />
+                  All Odds Changes
+                </Heading>
+                <Text as="i" fontSize="md" color="fg.muted" fontStyle="italic">
+                  Round {roundData.round}
+                  {' - '}
+                  <DateFormatter
+                    tz="America/Los_Angeles"
+                    format="dddd, MMMM Do YYYY"
+                    date={start}
+                    withTitle
+                    titleFormat="LLL [NST]"
+                  />
+                </Text>
+              </Box>
+            </Flex>
+
+            {/* Arena Filter Buttons */}
+            {onArenaClick && (
+              <Box mt={4} mb={3}>
+                <Text fontSize="xs" fontWeight="bold" color="fg.muted" mb={2}>
+                  View by Arena:
+                </Text>
+                <Flex gap={2} flexWrap="wrap">
+                  {ARENA_NAMES.map((arena, idx) => (
+                    <Button
+                      key={arena}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onArenaClick(idx)}
+                    >
+                      {arena}
+                    </Button>
+                  ))}
+                </Flex>
+              </Box>
+            )}
+            <Text
+              fontSize="sm"
+              fontWeight="bold"
+              color="fg.muted"
+              textTransform="uppercase"
+              letterSpacing="wide"
+            >
+              <FaClock style={{ display: 'inline', marginRight: '8px' }} />
+              Timeline ({changes.length} odds change{changes.length !== 1 ? 's' : ''})
+            </Text>
+          </VStack>
+        </DrawerHeader>
+
+        <DrawerBody ref={scrollContainerRef}>
+          <VStack align="stretch">
+            <Box>
+              <Timeline.Root size="xl" variant="subtle">
+                {consolidatedEvents.map(event => (
+                  <Timeline.Item key={event.id}>
+                    <Timeline.Connector>
+                      <Timeline.Separator />
+                      <Timeline.Indicator layerStyle="fill.surface" colorPalette={event.color}>
+                        {event.icon}
+                      </Timeline.Indicator>
+                    </Timeline.Connector>
+                    <Timeline.Content>
+                      <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
+                        <Box flex="1">
+                          <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
+                            {event.title}
+                          </Timeline.Title>
+                          <Timeline.Description color="fg.muted" fontSize="sm">
+                            <Text fontSize="sm">{event.description}</Text>
+                          </Timeline.Description>
+
+                          {/* Consolidated changes (collapsible) */}
+                          {event.type === 'consolidated' && (
+                            <Box mt={2}>
+                              <Button
+                                size="xs"
+                                variant="ghost"
+                                onClick={() =>
+                                  onPirateClick(event.pirate.arenaId, event.pirate.pirateIndex)
+                                }
+                                mb={2}
+                              >
+                                <Avatar
+                                  name={event.pirate.pirateName}
+                                  src={`https://images.neopets.com/pirates/fc/fc_pirate_${event.pirate.pirateId}.gif`}
+                                  size="2xs"
+                                />
+                                View Timeline
+                              </Button>
+                              <Collapsible.Root>
+                                <Collapsible.Trigger asChild>
+                                  <Button size="xs" variant="outline">
+                                    <Text fontSize="xs">Show all changes</Text>
+                                    <Collapsible.Indicator
+                                      transition="transform 0.2s"
+                                      _open={{ transform: 'rotate(180deg)' }}
+                                    >
+                                      <FaChevronDown />
+                                    </Collapsible.Indicator>
+                                  </Button>
+                                </Collapsible.Trigger>
+                                <Collapsible.Content>
+                                  <VStack align="stretch" gap={2} mt={2} pl={4}>
+                                    {event.changes.map((change, idx) => {
+                                      const pirate = change.pirates[0];
+                                      if (!pirate) {
+                                        return null;
+                                      }
+
+                                      return (
+                                        <Flex
+                                          key={change.id}
+                                          gap={2}
+                                          alignItems="center"
+                                          fontSize="xs"
+                                        >
+                                          <Text color="fg.muted">#{idx + 1}:</Text>
+                                          <Text color="fg.muted">
+                                            {pirate.oldOdds}:1 →{' '}
+                                            <Text
+                                              as="span"
+                                              fontWeight="semibold"
+                                              color={pirate.isIncrease ? 'green.500' : 'red.500'}
+                                            >
+                                              {pirate.newOdds}:1
+                                            </Text>
+                                          </Text>
+                                          <Text color="fg.muted" fontSize="2xs">
+                                            <DateFormatter
+                                              format="LTS [NST]"
+                                              date={change.time}
+                                              tz="America/Los_Angeles"
+                                            />
+                                          </Text>
+                                        </Flex>
+                                      );
+                                    })}
+                                  </VStack>
+                                </Collapsible.Content>
+                              </Collapsible.Root>
+                            </Box>
+                          )}
+
+                          {/* Regular changes */}
+                          {event.type === 'change' && (
+                            <VStack align="stretch" gap={1} mt={2}>
+                              {event.pirates.map(pirate => (
+                                <Flex
+                                  key={`${pirate.arenaId}-${pirate.pirateIndex}`}
+                                  gap={2}
+                                  alignItems="center"
+                                  flexWrap="wrap"
+                                >
+                                  <Button
+                                    size="xs"
+                                    variant="ghost"
+                                    onClick={() =>
+                                      onPirateClick(pirate.arenaId, pirate.pirateIndex)
+                                    }
+                                  >
+                                    <Avatar
+                                      name={pirate.pirateName}
+                                      src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirate.pirateId}.gif`}
+                                      size="2xs"
+                                    />
+                                    {pirate.pirateName}
+                                  </Button>
+                                  <Text fontSize="xs" color="fg.muted">
+                                    {pirate.arenaName}: {pirate.oldOdds}:1 →{' '}
+                                    <Text
+                                      as="span"
+                                      fontWeight="semibold"
+                                      color={pirate.isIncrease ? 'green.500' : 'red.500'}
+                                    >
+                                      {pirate.newOdds}:1
+                                    </Text>
+                                  </Text>
+                                </Flex>
+                              ))}
+                            </VStack>
+                          )}
+
+                          {/* Round ended with winners */}
+                          {event.type === 'end' && event.winners && event.winners.length > 0 && (
+                            <VStack align="stretch" gap={2} mt={3}>
+                              {event.winners.map(winner => (
+                                <Flex
+                                  key={`winner-${winner.arenaId}-${winner.pirateIndex}`}
+                                  gap={3}
+                                  alignItems="center"
+                                  p={2}
+                                  borderRadius="md"
+                                  bg="bg.muted"
+                                  _hover={{ bg: 'bg.emphasized' }}
+                                  transition="background 0.2s"
+                                >
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() =>
+                                      onPirateClick(winner.arenaId, winner.pirateIndex)
+                                    }
+                                    p={0}
+                                  >
+                                    <Avatar
+                                      name={winner.pirateName}
+                                      src={`https://images.neopets.com/pirates/fc/fc_pirate_${winner.pirateId}.gif`}
+                                      size="sm"
+                                    />
+                                  </Button>
+                                  <Box flex="1">
+                                    <Flex gap={2} alignItems="baseline" flexWrap="wrap">
+                                      <Text fontWeight="bold" fontSize="sm">
+                                        {winner.pirateName}
+                                      </Text>
+                                      <Text fontSize="xs" color="fg.muted">
+                                        {winner.arenaName}
+                                      </Text>
+                                    </Flex>
+                                    <Text fontSize="xs" color="fg.muted">
+                                      Won at{' '}
+                                      <Text as="span" fontWeight="semibold" color="green.500">
+                                        {winner.finalOdds}:1
+                                      </Text>
+                                    </Text>
+                                  </Box>
+                                  <Text fontSize="2xl">🏆</Text>
+                                </Flex>
+                              ))}
+                            </VStack>
+                          )}
+                        </Box>
+                        <VStack
+                          gap={1}
+                          minH="100%"
+                          align="flex-end"
+                          justify="flex-end"
+                          alignItems="center"
+                        >
+                          <Text fontSize="sm" color="fg.muted" fontStyle="italic">
+                            <DateFormatter
+                              format="LTS [NST]"
+                              date={event.time}
+                              tz="America/Los_Angeles"
+                              withTitle
+                              titleFormat="LLL [NST]"
+                            />
+                          </Text>
+                          <Text
+                            fontSize="sm"
+                            color="fg.muted"
+                            fontStyle="italic"
+                            hidden={!isRoundOver}
+                          >
+                            <DateFormatter
+                              format="LTS [NST]"
+                              date={event.time}
+                              tz="America/Los_Angeles"
+                              fromNow
+                              withTitle
+                              titleFormat="LLL [NST]"
+                              interval={1}
+                            />
+                          </Text>
+                        </VStack>
+                      </Flex>
+                    </Timeline.Content>
+                  </Timeline.Item>
+                ))}
+              </Timeline.Root>
+            </Box>
+          </VStack>
+        </DrawerBody>
+      </>
+    );
+  },
+);
+
+OverallTimelineView.displayName = 'OverallTimelineView';
+
+// Arena Timeline View Component (shows all pirates in one arena)
+const ArenaTimelineView = React.memo(
+  (props: {
+    arenaId: number;
+    onPirateClick: (arenaId: number, pirateIndex: number) => void;
+    onBackToOverall: () => void;
+    scrollContainerRef?: React.RefObject<HTMLDivElement>;
+  }): React.ReactElement | null => {
+    const { arenaId, onPirateClick, onBackToOverall, scrollContainerRef } = props;
+
+    const roundData = useRoundDataStore(state => state.roundState.roundData);
+    const start = roundData.start;
+    const endTime = roundData.timestamp;
+
+    if (!start || !endTime) {
+      return null;
+    }
+
+    const arenaName = ARENA_NAMES[arenaId];
+    const changes = roundData.changes || [];
+    const winners = roundData.winners || makeEmpty(5);
+    const isRoundOver = winners.some(w => w > 0);
+
+    // Filter changes for this arena only
+    const arenaChanges = changes.filter(change => change.arena === arenaId);
+
+    // Group changes by timestamp for this arena
+    const changesByTimestamp = new Map<string, PirateChange[]>();
+    arenaChanges.forEach(change => {
+      const pirateIndex = change.pirate - 1;
+      const pirateId = roundData.pirates[change.arena]?.[pirateIndex];
+      if (!pirateId) {
+        return;
+      }
+
+      const pirateName = PIRATE_NAMES.get(pirateId);
+      if (!pirateName) {
+        return;
+      }
+
+      const timestamp = change.t;
+      if (!changesByTimestamp.has(timestamp)) {
+        changesByTimestamp.set(timestamp, []);
+      }
+
+      changesByTimestamp.get(timestamp)!.push({
+        arenaId: change.arena,
+        pirateIndex,
+        pirateName,
+        pirateId,
+        arenaName: arenaName!,
+        oldOdds: change.old,
+        newOdds: change.new,
+        isIncrease: change.new > change.old,
+      });
+    });
+
+    // Build timeline events for this arena
+    const arenaTimelineEvents: TimelineEvent[] = [];
+
+    // Add grouped odds changes
+    changesByTimestamp.forEach((pirates, timestamp) => {
+      const time = new Date(timestamp);
+      const hasIncreases = pirates.some(p => p.isIncrease);
+      const hasDecreases = pirates.some(p => !p.isIncrease);
+
+      let color = 'gray';
+      let icon = <FaArrowUp />;
+
+      if (hasIncreases && hasDecreases) {
+        color = 'blue';
+        icon = <FaWaveSquare />;
+      } else if (hasIncreases) {
+        color = 'green';
+        icon = <FaArrowUp />;
+      } else {
+        color = 'red';
+        icon = <FaArrowDown />;
+      }
+
+      const firstPirate = pirates[0];
+      if (!firstPirate) {
+        return;
+      }
+
+      const title =
+        pirates.length === 1 ? `${firstPirate.pirateName}` : `${pirates.length} Pirates Changed`;
+
+      arenaTimelineEvents.push({
+        id: `change-${timestamp}`,
+        icon,
+        title,
+        description: '',
+        time,
+        color,
+        type: 'change' as const,
+        pirates,
+      });
+    });
+
+    // Add round end event if finished
+    if (isRoundOver) {
+      const winningPirateIndex = winners[arenaId];
+      if (winningPirateIndex !== undefined && winningPirateIndex > 0) {
+        const pirateIndex = winningPirateIndex - 1;
+        const pirateId = roundData.pirates[arenaId]?.[pirateIndex];
+        const pirateName = pirateId ? PIRATE_NAMES.get(pirateId) : undefined;
+        const finalOdds = roundData.currentOdds?.[arenaId]?.[winningPirateIndex];
+
+        if (pirateId && pirateName && finalOdds) {
+          const winningPirate: WinningPirate = {
+            arenaId,
+            pirateIndex,
+            pirateName,
+            pirateId,
+            arenaName: arenaName!,
+            finalOdds,
+          };
+
+          arenaTimelineEvents.push({
+            id: `end-${endTime}`,
+            icon: <FaMedal />,
+            title: 'Round Ended',
+            description: `${pirateName} won!`,
+            time: new Date(endTime),
+            color: 'purple',
+            type: 'end' as const,
+            winners: [winningPirate],
+          });
+        }
+      }
+    }
+
+    // Sort by time
+    arenaTimelineEvents.sort((a, b) => a.time.getTime() - b.time.getTime());
+
+    return (
+      <>
+        <DrawerHeader>
+          <VStack align="stretch">
+            {/* Breadcrumb Navigation */}
+            <Breadcrumb.Root size="md" variant="underline" mb={3}>
+              <Breadcrumb.List>
+                <Breadcrumb.Item>
+                  <Breadcrumb.Link asChild>
+                    <Button variant="ghost" size="sm" onClick={onBackToOverall}>
+                      Round {roundData.round}
+                    </Button>
+                  </Breadcrumb.Link>
+                </Breadcrumb.Item>
+                <Breadcrumb.Separator />
+                <Breadcrumb.Item>
+                  <Breadcrumb.CurrentLink>{arenaName}</Breadcrumb.CurrentLink>
+                </Breadcrumb.Item>
+              </Breadcrumb.List>
+            </Breadcrumb.Root>
+
+            <Text
+              fontSize="sm"
+              fontWeight="bold"
+              color="fg.muted"
+              textTransform="uppercase"
+              letterSpacing="wide"
+            >
+              <FaClock style={{ display: 'inline', marginRight: '8px' }} />
+              Timeline ({arenaChanges.length} odds change{arenaChanges.length !== 1 ? 's' : ''})
+            </Text>
+          </VStack>
+        </DrawerHeader>
+
+        <DrawerBody ref={scrollContainerRef}>
+          <VStack align="stretch">
+            <Box>
+              <Timeline.Root size="xl" variant="subtle">
+                {arenaTimelineEvents.map(event => (
+                  <Timeline.Item key={event.id}>
+                    <Timeline.Connector>
+                      <Timeline.Separator />
+                      <Timeline.Indicator layerStyle="fill.surface" colorPalette={event.color}>
+                        {event.icon}
+                      </Timeline.Indicator>
+                    </Timeline.Connector>
+                    <Timeline.Content>
+                      <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
+                        <Box flex="1">
+                          <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
+                            {event.title}
+                          </Timeline.Title>
+                          <Timeline.Description color="fg.muted" fontSize="sm">
+                            <Text fontSize="sm">{event.description}</Text>
+                          </Timeline.Description>
+                          {event.type === 'change' && (
+                            <VStack align="stretch" gap={1} mt={2}>
+                              {event.pirates.map(pirate => (
+                                <Flex
+                                  key={`${pirate.arenaId}-${pirate.pirateIndex}`}
+                                  gap={2}
+                                  alignItems="center"
+                                  flexWrap="wrap"
+                                >
+                                  <Button
+                                    size="xs"
+                                    variant="ghost"
+                                    onClick={() =>
+                                      onPirateClick(pirate.arenaId, pirate.pirateIndex)
+                                    }
+                                  >
+                                    <Avatar
+                                      name={pirate.pirateName}
+                                      src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirate.pirateId}.gif`}
+                                      size="2xs"
+                                    />
+                                    {pirate.pirateName}
+                                  </Button>
+                                  <Text fontSize="xs" color="fg.muted">
+                                    {pirate.oldOdds}:1 →{' '}
+                                    <Text
+                                      as="span"
+                                      fontWeight="semibold"
+                                      color={pirate.isIncrease ? 'green.500' : 'red.500'}
+                                    >
+                                      {pirate.newOdds}:1
+                                    </Text>
+                                  </Text>
+                                </Flex>
+                              ))}
+                            </VStack>
+                          )}
+
+                          {/* Round ended with winner */}
+                          {event.type === 'end' && event.winners && event.winners.length > 0 && (
+                            <VStack align="stretch" gap={2} mt={3}>
+                              {event.winners.map(winner => (
+                                <Flex
+                                  key={`winner-${winner.arenaId}-${winner.pirateIndex}`}
+                                  gap={3}
+                                  alignItems="center"
+                                  p={2}
+                                  borderRadius="md"
+                                  bg="bg.muted"
+                                  _hover={{ bg: 'bg.emphasized' }}
+                                  transition="background 0.2s"
+                                >
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() =>
+                                      onPirateClick(winner.arenaId, winner.pirateIndex)
+                                    }
+                                    p={0}
+                                  >
+                                    <Avatar
+                                      name={winner.pirateName}
+                                      src={`https://images.neopets.com/pirates/fc/fc_pirate_${winner.pirateId}.gif`}
+                                      size="sm"
+                                    />
+                                  </Button>
+                                  <Box flex="1">
+                                    <Flex gap={2} alignItems="baseline" flexWrap="wrap">
+                                      <Text fontWeight="bold" fontSize="sm">
+                                        {winner.pirateName}
+                                      </Text>
+                                      <Text fontSize="xs" color="fg.muted">
+                                        {winner.finalOdds}:1
+                                      </Text>
+                                    </Flex>
+                                  </Box>
+                                </Flex>
+                              ))}
+                            </VStack>
+                          )}
+                        </Box>
+                        <VStack
+                          gap={1}
+                          minH="100%"
+                          align="flex-end"
+                          justify="flex-end"
+                          alignItems="center"
+                        >
+                          <Text fontSize="sm" color="fg.muted" fontStyle="italic">
+                            <DateFormatter
+                              format="LTS [NST]"
+                              date={event.time}
+                              tz="America/Los_Angeles"
+                              withTitle
+                              titleFormat="LLL [NST]"
+                            />
+                          </Text>
+                        </VStack>
+                      </Flex>
+                    </Timeline.Content>
+                  </Timeline.Item>
+                ))}
+              </Timeline.Root>
+            </Box>
+          </VStack>
+        </DrawerBody>
+      </>
+    );
+  },
+);
+
+ArenaTimelineView.displayName = 'ArenaTimelineView';
+
+// Individual Pirate Timeline View Component
+const PirateTimelineView = React.memo(
+  (props: {
+    arenaId: number;
+    pirateIndex: number;
+    onBackToOverall: () => void;
+    onBackToArena: (arenaId: number) => void;
+  }): React.ReactElement | null => {
+    const { arenaId, pirateIndex, onBackToOverall, onBackToArena } = props;
 
     const roundData = useRoundDataStore(state => state.roundState.roundData);
     const pirateId = roundData.pirates?.[arenaId]?.[pirateIndex];
@@ -108,7 +1051,7 @@ const TimelineContent = React.memo(
         title: didPirateWin ? '🏆 Pirate Won!' : '💀 Pirate Lost',
         description: didPirateWin
           ? `${pirateName} won ${arenaName}!`
-          : `${pirateName} lost ${arenaName}`,
+          : `${pirateName} lost ${arenaName}.`,
         time: endDate,
         odds: thisPiratesOdds[thisPiratesOdds.length - 1] || openingOdds,
         color: didPirateWin ? 'green' : 'red',
@@ -119,7 +1062,32 @@ const TimelineContent = React.memo(
       <>
         <DrawerHeader>
           <VStack align="stretch">
-            <Flex gap="4" alignItems="center" flexWrap="wrap">
+            {/* Breadcrumb Navigation */}
+            <Breadcrumb.Root size="md" variant="underline" mb={3}>
+              <Breadcrumb.List>
+                <Breadcrumb.Item>
+                  <Breadcrumb.Link asChild>
+                    <Button variant="ghost" size="sm" onClick={onBackToOverall}>
+                      Round {roundData.round}
+                    </Button>
+                  </Breadcrumb.Link>
+                </Breadcrumb.Item>
+                <Breadcrumb.Separator />
+                <Breadcrumb.Item>
+                  <Breadcrumb.Link asChild>
+                    <Button variant="ghost" size="sm" onClick={() => onBackToArena(arenaId)}>
+                      {arenaName}
+                    </Button>
+                  </Breadcrumb.Link>
+                </Breadcrumb.Item>
+                <Breadcrumb.Separator />
+                <Breadcrumb.Item>
+                  <Breadcrumb.CurrentLink>{pirateName}</Breadcrumb.CurrentLink>
+                </Breadcrumb.Item>
+              </Breadcrumb.List>
+            </Breadcrumb.Root>
+
+            <Flex gap="4" alignItems="center" flexWrap="wrap" mb={3}>
               <Avatar
                 name={pirateName}
                 src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirateId}.gif`}
@@ -130,72 +1098,27 @@ const TimelineContent = React.memo(
                   {pirateName} {oddsChangesCountLabel}
                 </Heading>
                 <Text as="i" fontSize="md" color="fg.muted" fontStyle="italic">
-                  Round {roundData.round}
-                  {' - '}
-                  <DateFormatter
-                    tz="America/Los_Angeles"
-                    format="dddd, MMMM Do YYYY"
-                    date={start}
-                    withTitle
-                    titleFormat="LLL [NST]"
-                  />
+                  {arenaName} - Round {roundData.round}
                 </Text>
               </Box>
             </Flex>
-            {/* TODO: Summary Stats */}
-            {/* https://chakra-ui.com/docs/charts/donut-chart#detached-segment */}
-            {/* <Card.Root bg={bgColors.canvas} borderColor={bgColors.border}>
-              <Card.Body py={3}>
-                <Grid gap={4} templateColumns="repeat(2, 1fr)">
-                  <GridItem colSpan={2}>
-                    <HStack gap={2} justifyContent="center">
-                      <FaPercent />
-                      <Text fontWeight="bold" fontSize="lg">
-                        Probabilities
-                      </Text>
-                    </HStack>
-                  </GridItem>
-                  <GridItem>
-                    <VStack gap={1}>
-                      <Text fontSize="lg" fontWeight="bold">
-                        {displayAsPercent(legacyProb, 1)}
-                      </Text>
-                      <Text fontSize="xs" color={bgColors.textMuted}>
-                        Legacy model
-                      </Text>
-                    </VStack>
-                  </GridItem>
-                  <GridItem>
-                    <VStack gap={1}>
-                      <Text fontSize="lg" fontWeight="bold">
-                        {displayAsPercent(logitProb, 1)}
-                      </Text>
-                      <Text fontSize="xs" color={bgColors.textMuted}>
-                        Logit model
-                      </Text>
-                    </VStack>
-                  </GridItem>
-                </Grid>
-              </Card.Body>
-            </Card.Root> */}
+            <Text
+              fontSize="sm"
+              fontWeight="bold"
+              color="fg.muted"
+              textTransform="uppercase"
+              letterSpacing="wide"
+            >
+              <FaClock style={{ display: 'inline', marginRight: '8px' }} />
+              Timeline ({thisPiratesChanges.length} odds change
+              {thisPiratesChanges.length !== 1 ? 's' : ''})
+            </Text>
           </VStack>
         </DrawerHeader>
 
         <DrawerBody>
           <VStack align="stretch">
             <Box>
-              <Text
-                fontSize="sm"
-                fontWeight="bold"
-                color="fg.muted"
-                mb={3}
-                textTransform="uppercase"
-                letterSpacing="wide"
-              >
-                <FaClock style={{ display: 'inline', marginRight: '8px' }} />
-                Timeline
-              </Text>
-
               <Timeline.Root size="xl" variant="subtle">
                 {timelineEvents.map(event => (
                   <Timeline.Item key={event.id}>
@@ -259,6 +1182,121 @@ const TimelineContent = React.memo(
         </DrawerBody>
       </>
     );
+  },
+);
+
+PirateTimelineView.displayName = 'PirateTimelineView';
+
+// Main TimelineContent component that manages all three views
+const TimelineContent = React.memo(
+  (props: { arenaId: number | null; pirateIndex: number | null }): React.ReactElement | null => {
+    const { arenaId: initialArenaId, pirateIndex: initialPirateIndex } = props;
+
+    // Determine initial view based on props
+    const getInitialView = (): ViewState => {
+      if (initialArenaId !== null && initialPirateIndex !== null) {
+        return 'pirate';
+      }
+      if (initialArenaId !== null) {
+        return 'arena';
+      }
+      return 'overall';
+    };
+
+    const [view, setView] = useState<ViewState>(getInitialView());
+    const [selectedArena, setSelectedArena] = useState<number | null>(initialArenaId);
+    const [selectedPirate, setSelectedPirate] = useState<{
+      arenaId: number;
+      pirateIndex: number;
+    } | null>(
+      initialArenaId !== null && initialPirateIndex !== null
+        ? { arenaId: initialArenaId, pirateIndex: initialPirateIndex }
+        : null,
+    );
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const savedScrollPosition = useRef<number>(0);
+
+    const handleArenaClick = useCallback((arenaId: number) => {
+      // Save scroll position before navigating away
+      if (scrollContainerRef.current) {
+        savedScrollPosition.current = scrollContainerRef.current.scrollTop;
+      }
+      setSelectedArena(arenaId);
+      setView('arena');
+    }, []);
+
+    const handlePirateClick = useCallback((arenaId: number, pirateIndex: number) => {
+      // Save scroll position before navigating away
+      if (scrollContainerRef.current) {
+        savedScrollPosition.current = scrollContainerRef.current.scrollTop;
+      }
+      setSelectedArena(arenaId);
+      setSelectedPirate({ arenaId, pirateIndex });
+      setView('pirate');
+    }, []);
+
+    const handleBackToOverall = useCallback(() => {
+      setView('overall');
+    }, []);
+
+    const handleBackToArena = useCallback((arenaId: number) => {
+      setSelectedArena(arenaId);
+      setView('arena');
+    }, []);
+
+    // Restore scroll position when returning to overall or arena view
+    useEffect(() => {
+      if (
+        (view === 'overall' || view === 'arena') &&
+        savedScrollPosition.current > 0 &&
+        scrollContainerRef.current
+      ) {
+        // Use setTimeout to ensure the content is rendered before scrolling
+        const timeoutId = setTimeout(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = savedScrollPosition.current;
+          }
+        }, 0);
+        return (): void => {
+          clearTimeout(timeoutId);
+        };
+      }
+      return undefined;
+    }, [view]);
+
+    if (view === 'overall') {
+      return (
+        <OverallTimelineView
+          onPirateClick={handlePirateClick}
+          onArenaClick={handleArenaClick}
+          scrollContainerRef={scrollContainerRef as React.RefObject<HTMLDivElement>}
+        />
+      );
+    }
+
+    if (view === 'arena' && selectedArena !== null) {
+      return (
+        <ArenaTimelineView
+          arenaId={selectedArena}
+          onPirateClick={handlePirateClick}
+          onBackToOverall={handleBackToOverall}
+          scrollContainerRef={scrollContainerRef as React.RefObject<HTMLDivElement>}
+        />
+      );
+    }
+
+    if (view === 'pirate' && selectedPirate) {
+      return (
+        <PirateTimelineView
+          arenaId={selectedPirate.arenaId}
+          pirateIndex={selectedPirate.pirateIndex}
+          onBackToOverall={handleBackToOverall}
+          onBackToArena={handleBackToArena}
+        />
+      );
+    }
+
+    return null;
   },
 );
 

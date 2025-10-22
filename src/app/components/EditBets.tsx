@@ -4,7 +4,6 @@ import {
   useDisclosure,
   Drawer,
   Flex,
-  Skeleton,
   HStack,
   CloseButton,
   ScrollArea,
@@ -36,13 +35,16 @@ interface PirateTableProps {
 const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => {
   const tableMode = useTableMode();
   const { open, onOpen, setOpen } = useDisclosure();
-  const [selectedTimeline, setSelectedTimeline] = useState({
-    arenaId: 0,
-    pirateIndex: 0,
+  const [selectedTimeline, setSelectedTimeline] = useState<{
+    arenaId: number | null;
+    pirateIndex: number | null;
+  }>({
+    arenaId: null,
+    pirateIndex: null,
   });
   const timelineRef = useRef<HTMLElement>(null);
   const openTimelineDrawer = useCallback(
-    (arenaId: number, pirateIndex: number) => {
+    (arenaId: number | null = null, pirateIndex: number | null = null) => {
       setSelectedTimeline({ arenaId, pirateIndex });
       onOpen();
     },
@@ -58,8 +60,8 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
         size="md"
       >
         <Drawer.Backdrop />
-        <Drawer.Positioner>
-          <Drawer.Content>
+        <Drawer.Positioner padding={2}>
+          <Drawer.Content rounded="md">
             <Drawer.CloseTrigger asChild>
               <CloseButton size="sm" />
             </Drawer.CloseTrigger>
