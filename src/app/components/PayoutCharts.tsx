@@ -1,5 +1,13 @@
 import { HStack, Card, Table, Skeleton, Box } from '@chakra-ui/react';
-import { Chart, TooltipItem } from 'chart.js/auto';
+import {
+  Chart as ChartJS,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
+  TooltipItem,
+} from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import React, { useCallback, useMemo } from 'react';
 import { Scatter } from 'react-chartjs-2';
@@ -18,7 +26,7 @@ import TextTooltip from './TextTooltip';
 
 import { useColorMode } from '@/components/ui/color-mode';
 
-Chart.register(annotationPlugin);
+ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, annotationPlugin);
 
 interface ChartPoint {
   x: number;
