@@ -12,9 +12,11 @@ import {
   Image,
   HStack,
   BoxProps,
+  Button,
 } from '@chakra-ui/react';
 import * as React from 'react';
 
+import { DevModeDrawer } from './components/DevModeDrawer';
 import { GitCommit } from './components/GitCommit';
 import { VercelCredit } from './components/VercelCredit';
 import NeopointIcon from './images/np-icon.svg';
@@ -51,85 +53,99 @@ const KoFiButton: React.FC = () => (
 
 type FooterProps = BoxProps;
 
-const Footer: React.FC<FooterProps> = props => (
-  <>
-    <Separator />
-    <Box bg="bg.subtle" color="fg.muted" {...props}>
-      <Container as={Stack} maxW={'6xl'} py={10}>
-        <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} gap={8}>
-          <Stack align={'flex-start'}>
-            <ListHeader>Food Club Links</ListHeader>
-            <Link
-              href="https://www.neopets.com/pirates/foodclub.phtml?type=bet"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Place Bets
-            </Link>
-            <Link
-              href="https://www.neopets.com/pirates/foodclub.phtml?type=current_bets"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Current Bets
-            </Link>
-            <Link
-              href="https://www.neopets.com/pirates/foodclub.phtml?type=collect"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Collect Winnings
-            </Link>
-            <Link
-              href="https://www.neopets.com/gamescores.phtml?game_id=88"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              High Score List
-            </Link>
-          </Stack>
+const Footer: React.FC<FooterProps> = props => {
+  const [isDevModeOpen, setIsDevModeOpen] = React.useState(false);
 
-          <Stack align={'flex-start'}>
-            <ListHeader>NeoFoodClub Stuff</ListHeader>
-            <Link href="https://foodclub.neocities.org/" target="_blank" rel="noopener noreferrer">
-              Classic NeoFoodClub
-            </Link>
-            <Link
-              href="https://github.com/diceroll123/neofoodclub"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Source Code
-            </Link>
-          </Stack>
+  return (
+    <>
+      <Separator />
+      <Box bg="bg.subtle" color="fg.muted" {...props}>
+        <Container as={Stack} maxW={'6xl'} py={10}>
+          <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} gap={8}>
+            <Stack align={'flex-start'}>
+              <ListHeader>Food Club Links</ListHeader>
+              <Link
+                href="https://www.neopets.com/pirates/foodclub.phtml?type=bet"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Place Bets
+              </Link>
+              <Link
+                href="https://www.neopets.com/pirates/foodclub.phtml?type=current_bets"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Current Bets
+              </Link>
+              <Link
+                href="https://www.neopets.com/pirates/foodclub.phtml?type=collect"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Collect Winnings
+              </Link>
+              <Link
+                href="https://www.neopets.com/gamescores.phtml?game_id=88"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                High Score List
+              </Link>
+            </Stack>
 
-          <Stack align={'flex-start'}>
-            <ListHeader>Support us</ListHeader>
-            <KoFiButton />
-          </Stack>
-        </SimpleGrid>
-      </Container>
-      <Box py={10}>
-        <HStack>
-          <Separator flex="1" />
-          <Logo />
-          <Separator flex="1" />
-        </HStack>
-        <Text pt={6} fontSize={'sm'} textAlign={'center'}>
-          Website, design, and code &copy; neofood.club
-          <br />
-          This is an unofficial Neopets fansite with no affiliation/endorsement with Neopets.
-          <br /> Images/Names &copy; Neopets, Inc. All rights reserved. Used With Permission.
-        </Text>
-        <Center>
-          <VercelCredit />
-        </Center>
-        <Center mt={3}>
-          <GitCommit />
-        </Center>
+            <Stack align={'flex-start'}>
+              <ListHeader>NeoFoodClub Stuff</ListHeader>
+              <Link
+                href="https://foodclub.neocities.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Classic NeoFoodClub
+              </Link>
+              <Link
+                href="https://github.com/diceroll123/neofoodclub"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Source Code
+              </Link>
+            </Stack>
+
+            <Stack align={'flex-start'}>
+              <ListHeader>Support us</ListHeader>
+              <KoFiButton />
+            </Stack>
+          </SimpleGrid>
+        </Container>
+        <Box py={10}>
+          <HStack>
+            <Separator flex="1" />
+            <Logo />
+            <Separator flex="1" />
+          </HStack>
+          <Text pt={6} fontSize={'sm'} textAlign={'center'}>
+            Website, design, and code &copy; neofood.club
+            <br />
+            This is an unofficial Neopets fansite with no affiliation/endorsement with Neopets.
+            <br /> Images/Names &copy; Neopets, Inc. All rights reserved. Used With Permission.
+          </Text>
+          <Center>
+            <VercelCredit />
+          </Center>
+          <Center mt={3}>
+            <GitCommit />
+          </Center>
+          <Center mt={3}>
+            <Button size="xs" variant="ghost" onClick={() => setIsDevModeOpen(true)}>
+              Dev Mode
+            </Button>
+          </Center>
+        </Box>
       </Box>
-    </Box>
-  </>
-);
+      <DevModeDrawer isOpen={isDevModeOpen} onClose={() => setIsDevModeOpen(false)} />
+    </>
+  );
+};
 
 export default Footer;

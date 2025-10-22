@@ -34,6 +34,9 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
   const roundData = useRoundDataStore(state => state.roundState.roundData);
   const hasRoundData = isValidRound({ roundData, currentSelectedRound } as RoundState);
 
+  const maxBet = getMaxBet(currentSelectedRound);
+  const maxBetDisplay = maxBet === -1000 ? '(currently unset)' : maxBet.toLocaleString();
+
   const setCappedBetAmounts = useCallback(() => {
     const store = useBetManagementStore.getState();
     const maxBet = getMaxBet(currentSelectedRound);
@@ -154,7 +157,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
         </Heading>
         <Wrap mt={2}>
           <Tooltip
-            content="Sets all bet amounts to whichever is lower: your max bet amount, or the value in the MAXBET column below + 1. This prevents you from betting more than necessary to earn 1M NP from the bet, given the current odds."
+            content={`Sets all bet amounts to whichever is lower: your max bet (${maxBetDisplay}), or the value in the MAXBET column below + 1. This prevents you from betting more than necessary to earn 1M NP from the bet, given the current odds.`}
             openDelay={600}
             placement="top"
           >
@@ -171,7 +174,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
             </Button>
           </Tooltip>
           <Tooltip
-            content="Sets all bet amounts your max bet, regardless of overflow with the MAXBET column below. This is generally used by people who would like to maximize profits in the event of odds changing."
+            content={`Sets all bet amounts to your max bet (${maxBetDisplay}), regardless of overflow with the MAXBET column below. This is generally used by people who would like to maximize profits in the event of odds changing.`}
             openDelay={600}
             placement="top"
           >
