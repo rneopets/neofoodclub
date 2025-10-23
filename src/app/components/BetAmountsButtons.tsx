@@ -36,16 +36,17 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
   const setCappedBetAmounts = useCallback(() => {
     const store = useBetStore.getState();
     const maxBet = getMaxBet(currentSelectedRound);
+    const currentBets = store.allBets.get(store.currentBet) ?? new Map();
     const currentAmounts = store.allBetAmounts.get(store.currentBet) ?? new Map();
 
     const roundStore = useRoundStore.getState();
     const betOdds = roundStore.calculations.betOdds;
-    const betBinaries = roundStore.calculations.betBinaries;
 
     const updates: Array<{ betIndex: number; amount: number }> = [];
 
     for (const index of currentAmounts.keys()) {
-      if ((betBinaries.get(index) ?? 0) > 0) {
+      const bet = currentBets.get(index) ?? [];
+      if (bet.some((pirate: number) => pirate > 0)) {
         const amount = determineBetAmount(maxBet, Math.ceil(1_000_000 / (betOdds.get(index) ?? 1)));
         updates.push({ betIndex: index, amount });
       } else {
@@ -61,15 +62,14 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
   const setUncappedBetAmounts = useCallback(() => {
     const store = useBetStore.getState();
     const maxBet = getMaxBet(currentSelectedRound);
+    const currentBets = store.allBets.get(store.currentBet) ?? new Map();
     const currentAmounts = store.allBetAmounts.get(store.currentBet) ?? new Map();
-
-    const roundStore = useRoundStore.getState();
-    const betBinaries = roundStore.calculations.betBinaries;
 
     const updates: Array<{ betIndex: number; amount: number }> = [];
 
     for (const index of currentAmounts.keys()) {
-      if ((betBinaries.get(index) ?? 0) > 0) {
+      const bet = currentBets.get(index) ?? [];
+      if (bet.some((pirate: number) => pirate > 0)) {
         updates.push({ betIndex: index, amount: maxBet });
       } else {
         updates.push({ betIndex: index, amount: -1000 });
