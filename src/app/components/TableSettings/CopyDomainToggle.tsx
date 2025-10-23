@@ -3,24 +3,22 @@ import { memo, useMemo, useCallback } from 'react';
 import { FaGlobe } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
-import { useRoundDataStore } from '../../stores';
+import { useRoundStore, useUseWebDomain, useSetUseWebDomain } from '../../stores';
 
 import MobileSwitchBox from './MobileSwitchBox';
 import ToolbarButton from './ToolbarButton';
 
 const CopyDomainToggle = memo(() => {
-  const useWebDomain = useRoundDataStore(state => state.roundState.useWebDomain);
-  const setRoundState = useRoundDataStore(state => state.setRoundState);
+  const useWebDomain = useUseWebDomain();
+  const setUseWebDomain = useSetUseWebDomain();
 
   const cookies = useMemo(() => new Cookies(), []);
 
   const handleChange = useCallback((): void => {
     const newValue = !useWebDomain;
     cookies.set('useWebDomain', newValue);
-    setRoundState({
-      useWebDomain: newValue,
-    });
-  }, [useWebDomain, cookies, setRoundState]);
+    setUseWebDomain(newValue);
+  }, [useWebDomain, cookies, setUseWebDomain]);
 
   const tooltipLabel = 'Copy Domain';
 

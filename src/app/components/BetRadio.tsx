@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 
 import { useIsPirateSelected, useUpdateSinglePirate } from '../stores';
-import { memoizedCalculations } from '../stores/calculationsStore';
 
 import { Radio, RadioGroup } from '@/components/ui/radio';
 
@@ -18,9 +17,6 @@ const BetRadio = React.memo(
 
     const handleChange = useCallback(() => {
       updateSinglePirate(betIndex, arenaIndex, pirateIndex);
-      memoizedCalculations.clearCache('usedProb_');
-      memoizedCalculations.clearCache('logitProb_');
-      memoizedCalculations.clearCache('legacyProb');
     }, [betIndex, arenaIndex, pirateIndex, updateSinglePirate]);
 
     const value = `${arenaIndex}-${pirateIndex}`;
@@ -47,9 +43,6 @@ export const ClearRadio = React.memo(
 
     const handleChange = useCallback(() => {
       updateSinglePirate(betIndex, arenaIndex, 0);
-      memoizedCalculations.clearCache('usedProb_');
-      memoizedCalculations.clearCache('logitProb_');
-      memoizedCalculations.clearCache('legacyProb');
     }, [betIndex, arenaIndex, updateSinglePirate]);
 
     const value = `${arenaIndex}-0`;

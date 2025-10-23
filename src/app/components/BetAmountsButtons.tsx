@@ -4,12 +4,10 @@ import { FaFillDrip, FaInfinity } from 'react-icons/fa6';
 
 import { RoundState } from '../../types';
 import {
-  useUpdateBetAmounts,
-  useCurrentBet,
-  useRoundDataStore,
-  useBetManagementStore,
+  useRoundStore,
+  useRoundData,
+  useBetStore,
   useBatchUpdateBetAmounts,
-  useCalculationsStore,
   useSelectedRound,
 } from '../stores';
 import { getMaxBet, determineBetAmount, makeEmptyBetAmounts, isValidRound } from '../util';
@@ -22,29 +20,27 @@ interface BetAmountsButtonsProps {
 
 const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.ReactElement => {
   const { ...rest } = props;
-  const updateBetAmounts = useUpdateBetAmounts();
   const batchUpdateBetAmounts = useBatchUpdateBetAmounts();
-  const currentBet = useCurrentBet();
 
-  const currentBetAmountsSize = useBetManagementStore(
+  const currentBetAmountsSize = useBetStore(
     state => state.allBetAmounts.get(state.currentBet)?.size ?? 0,
   );
 
   const currentSelectedRound = useSelectedRound();
-  const roundData = useRoundDataStore(state => state.roundState.roundData);
+  const roundData = useRoundData();
   const hasRoundData = isValidRound({ roundData, currentSelectedRound } as RoundState);
 
   const maxBet = getMaxBet(currentSelectedRound);
   const maxBetDisplay = maxBet === -1000 ? '(currently unset)' : maxBet.toLocaleString();
 
   const setCappedBetAmounts = useCallback(() => {
-    const store = useBetManagementStore.getState();
+    const store = useBetStore.getState();
     const maxBet = getMaxBet(currentSelectedRound);
     const currentAmounts = store.allBetAmounts.get(store.currentBet) ?? new Map();
 
-    const calculationsStore = useCalculationsStore.getState();
-    const betOdds = calculationsStore.calculations.betOdds;
-    const betBinaries = calculationsStore.calculations.betBinaries;
+    const roundStore = useRoundStore.getState();
+    const betOdds = roundStore.calculations.betOdds;
+    const betBinaries = roundStore.calculations.betBinaries;
 
     const updates: Array<{ betIndex: number; amount: number }> = [];
 
@@ -58,23 +54,17 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
     }
 
     if (updates.length > 0) {
-      store.startBatchUpdate();
-
       batchUpdateBetAmounts(updates);
-
-      setTimeout(() => {
-        store.endBatchUpdate();
-      }, 0);
     }
   }, [currentSelectedRound, batchUpdateBetAmounts]);
 
   const setUncappedBetAmounts = useCallback(() => {
-    const store = useBetManagementStore.getState();
+    const store = useBetStore.getState();
     const maxBet = getMaxBet(currentSelectedRound);
     const currentAmounts = store.allBetAmounts.get(store.currentBet) ?? new Map();
 
-    const calculationsStore = useCalculationsStore.getState();
-    const betBinaries = calculationsStore.calculations.betBinaries;
+    const roundStore = useRoundStore.getState();
+    const betBinaries = roundStore.calculations.betBinaries;
 
     const updates: Array<{ betIndex: number; amount: number }> = [];
 
@@ -87,23 +77,21 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
     }
 
     if (updates.length > 0) {
-      store.startBatchUpdate();
-
       batchUpdateBetAmounts(updates);
-
-      setTimeout(() => {
-        store.endBatchUpdate();
-      }, 0);
     }
   }, [currentSelectedRound, batchUpdateBetAmounts]);
 
   const clearBetAmounts = useCallback(() => {
     const emptyBetAmounts = makeEmptyBetAmounts(currentBetAmountsSize);
-    updateBetAmounts(currentBet, emptyBetAmounts);
-  }, [currentBet, currentBetAmountsSize, updateBetAmounts]);
+    const updates: Array<{ betIndex: number; amount: number }> = [];
+    emptyBetAmounts.forEach((amount, betIndex) => {
+      updates.push({ betIndex, amount });
+    });
+    batchUpdateBetAmounts(updates);
+  }, [currentBetAmountsSize, batchUpdateBetAmounts]);
 
   const incrementBetAmounts = useCallback(() => {
-    const store = useBetManagementStore.getState();
+    const store = useBetStore.getState();
     const currentAmounts = store.allBetAmounts.get(store.currentBet) ?? new Map();
     const updates: Array<{ betIndex: number; amount: number }> = [];
 
@@ -117,18 +105,12 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
     }
 
     if (updates.length > 0) {
-      store.startBatchUpdate();
-
       batchUpdateBetAmounts(updates);
-
-      setTimeout(() => {
-        store.endBatchUpdate();
-      }, 0);
     }
   }, [batchUpdateBetAmounts]);
 
   const decrementBetAmounts = useCallback(() => {
-    const store = useBetManagementStore.getState();
+    const store = useBetStore.getState();
     const currentAmounts = store.allBetAmounts.get(store.currentBet) ?? new Map();
     const updates: Array<{ betIndex: number; amount: number }> = [];
 
@@ -139,13 +121,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
     }
 
     if (updates.length > 0) {
-      store.startBatchUpdate();
-
       batchUpdateBetAmounts(updates);
-
-      setTimeout(() => {
-        store.endBatchUpdate();
-      }, 0);
     }
   }, [batchUpdateBetAmounts]);
 

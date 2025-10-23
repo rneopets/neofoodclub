@@ -1,8 +1,7 @@
 import React from 'react';
 
 import { useCustomValueInput } from '../hooks/useCustomValueInput';
-import { useRoundDataStore, useCustomProbsValue } from '../stores';
-import { useCalculationsStore } from '../stores/calculationsStore';
+import { useRoundStore, useCustomProbsValue } from '../stores';
 
 import { NumberInputRoot, NumberInputField } from '@/components/ui/number-input';
 
@@ -21,10 +20,8 @@ const CustomProbsInput = function CustomProbsInput(
   const customProbsValue = useCustomProbsValue(arenaIndex, pirateIndex);
 
   // Get the original calculated probability value for this specific pirate (before custom probabilities)
-  const useLogitModel = useRoundDataStore(
-    state => state.roundState.advanced?.useLogitModel ?? false,
-  );
-  const calculatedProbValue = useCalculationsStore(state => {
+  const useLogitModel = useRoundStore(state => state.useLogitModel);
+  const calculatedProbValue = useRoundStore(state => {
     if (useLogitModel) {
       return state.calculations.logitProbabilities?.used?.[arenaIndex]?.[pirateIndex] ?? 0;
     }

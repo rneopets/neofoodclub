@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { useRoundDataStore, useCalculationsStore } from '../stores';
-import { memoizedCalculations } from '../stores/calculationsStore';
+import { useRoundStore } from '../stores';
 
 type CustomValueType = 'odds' | 'probs';
 
@@ -27,7 +26,8 @@ export function useCustomValueInput({
   handleBlur: () => void;
   handleFocus: (e: React.FocusEvent<HTMLInputElement>) => void;
 } {
-  const setRoundState = useRoundDataStore(state => state.setRoundState);
+  const setCustomOdds = useRoundStore(state => state.setCustomOdds);
+  const setCustomProbs = useRoundStore(state => state.setCustomProbs);
 
   // Convert values for display (probabilities need to be converted to percentages)
   const displayValue = isPercent
@@ -53,13 +53,12 @@ export function useCustomValueInput({
 
     // If input is empty, remove only this specific custom value
     if (trimmedValue === '') {
-      const currentState = useRoundDataStore.getState().roundState;
-      const customKey = type === 'odds' ? 'customOdds' : 'customProbs';
-      const currentCustomValues = currentState[customKey];
+      const state = useRoundStore.getState();
+      const customValues = type === 'odds' ? state.customOdds : state.customProbs;
 
-      if (currentCustomValues) {
+      if (customValues) {
         // Create new custom values, replacing this specific value with original
-        const newCustomValues = currentCustomValues.map((arena, aIdx) => {
+        const newCustomValues = customValues.map((arena, aIdx) => {
           if (aIdx !== arenaIndex) {
             return arena;
           }
@@ -73,19 +72,11 @@ export function useCustomValueInput({
           });
         });
 
-        // Clear cache and force recalculation (same as when setting new values)
-        const cacheKey = `${arenaIndex}_${pirateIndex}`;
-        memoizedCalculations.clearCache(cacheKey);
-
-        const calculationsStore = useCalculationsStore.getState();
-        calculationsStore.lastCalculationKey = '';
-
-        setRoundState({ [customKey]: newCustomValues });
-
-        // Force recalculation
-        setTimeout(() => {
-          useCalculationsStore.getState().forceRecalculate();
-        }, 0);
+        if (type === 'odds') {
+          setCustomOdds(newCustomValues);
+        } else {
+          setCustomProbs(newCustomValues);
+        }
       }
 
       setInputValue((isPercent ? originalValue * 100 : originalValue).toString());
@@ -125,22 +116,16 @@ export function useCustomValueInput({
     }
 
     // Get current state and update custom values
-    const currentState = useRoundDataStore.getState().roundState;
-    const customKey = type === 'odds' ? 'customOdds' : 'customProbs';
+    const state = useRoundStore.getState();
 
     // Get the base values to use as starting point
     const allUsedValues =
-      type === 'odds'
-        ? currentState.roundData?.currentOdds
-        : useCalculationsStore.getState().calculations.usedProbabilities;
+      type === 'odds' ? state.roundData?.currentOdds : state.calculations.usedProbabilities;
 
-    const currentCustomValues = currentState[customKey] || allUsedValues;
+    const currentCustomValues =
+      (type === 'odds' ? state.customOdds : state.customProbs) || allUsedValues;
 
     if (currentCustomValues) {
-      // Track this specific value change
-      const valueKey = `${type}_${arenaIndex}_${pirateIndex}`;
-      memoizedCalculations.trackCustomValue(valueKey, finalValue);
-
       // Create a copy with the new value
       const newCustomValues = structuredClone(currentCustomValues);
       if (!newCustomValues[arenaIndex]) {
@@ -148,19 +133,11 @@ export function useCustomValueInput({
       }
       newCustomValues[arenaIndex]![pirateIndex] = finalValue;
 
-      // Clear cache and force recalculation
-      const cacheKey = `${arenaIndex}_${pirateIndex}`;
-      memoizedCalculations.clearCache(cacheKey);
-
-      const calculationsStore = useCalculationsStore.getState();
-      calculationsStore.lastCalculationKey = '';
-
-      setRoundState({ [customKey]: newCustomValues });
-
-      // Force recalculation
-      setTimeout(() => {
-        useCalculationsStore.getState().forceRecalculate();
-      }, 0);
+      if (type === 'odds') {
+        setCustomOdds(newCustomValues);
+      } else {
+        setCustomProbs(newCustomValues);
+      }
     }
     setInputValue((isPercent ? roundedDisplayValue : finalValue).toString());
   }, [
@@ -172,7 +149,8 @@ export function useCustomValueInput({
     originalValue,
     isPercent,
     displayValue,
-    setRoundState,
+    setCustomOdds,
+    setCustomProbs,
   ]);
 
   // Handle focus event

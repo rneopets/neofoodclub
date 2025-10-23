@@ -1,382 +1,290 @@
-import { OddsChange } from '../../types';
-import { Bet, BetAmount } from '../../types/bets';
 import { computePiratesBinary } from '../maths';
-import { makeEmptyBetAmounts } from '../util';
 
-import { useBetManagementStore } from './betManagementStore';
-import { useCalculationsStore, memoizedCalculations } from './calculationsStore';
-import { useRoundDataStore } from './roundDataStore';
-import { useTimestampStore } from './timestampStore';
+import { useBetStore } from './betStore';
+import { useRoundStore } from './roundStore';
 
-export {
-  useRoundDataStore,
-  useRoundPirates,
-  useRoundOpeningOdds,
-  useRoundCurrentOdds,
-} from './roundDataStore';
-export { useBetManagementStore } from './betManagementStore';
-export { useCalculationsStore } from './calculationsStore';
+export { useBetStore } from './betStore';
+export { useRoundStore, setToastFunction } from './roundStore';
 
-const DEFAULT_BET_LINE: number[] = [0, 0, 0, 0, 0];
+// =============================================================================
+// BET HOOKS (from betStore)
+// =============================================================================
 
-export const useCurrentBet = (): number => useBetManagementStore(state => state.currentBet);
+export const useCurrentBet = () => useBetStore(state => state.currentBet);
+export const useAllBets = () => useBetStore(state => state.allBets);
+export const useAllBetAmounts = () => useBetStore(state => state.allBetAmounts);
+export const useAllBetSetNames = () => useBetStore(state => state.allNames);
 
-export const useCurrentBetName = (): string =>
-  useBetManagementStore(state => state.allNames.get(state.currentBet) ?? 'Unknown Set');
+export const useCurrentBetName = () =>
+  useBetStore(state => state.allNames.get(state.currentBet) ?? 'Unknown Set');
 
-export const useCurrentBetForURL = (): number => useBetManagementStore(state => state.currentBet);
+export const useCurrentBets = () =>
+  useBetStore(state => state.allBets.get(state.currentBet) ?? new Map());
 
-export const useUpdateSinglePirate = (): ((
-  betIndex: number,
-  arenaIndex: number,
-  pirateIndex: number,
-) => void) => useBetManagementStore(state => state.updateSinglePirate);
-export const useUpdateSingleBetAmount = (): ((betIndex: number, amount: number) => void) =>
-  useBetManagementStore(state => state.updateSingleBetAmount);
-export const useUpdateBetAmounts = (): ((betIndex: number, amounts: Map<number, number>) => void) =>
-  useBetManagementStore(state => state.updateBetAmounts);
-export const useAddNewSet = (): ((
-  name: string,
-  bets: Bet,
-  betAmounts: BetAmount,
-  maybe_replace?: boolean,
-) => void) => useBetManagementStore(state => state.addNewSet);
-export const useDeleteBetSet = (): ((betIndex: number) => void) =>
-  useBetManagementStore(state => state.deleteBetSet);
-export const useSetCurrentBet = (): ((bet: number) => void) =>
-  useBetManagementStore(state => state.setCurrentBet);
-export const useSetAllBets = (): ((bets: Map<number, Map<number, number[]>>) => void) =>
-  useBetManagementStore(state => state.setAllBets);
-export const useSetAllBetAmounts = (): ((amounts: Map<number, Map<number, number>>) => void) =>
-  useBetManagementStore(state => state.setAllBetAmounts);
-export const useSwapBets = (): ((uiIndex1: number, uiIndex2: number) => void) =>
-  useBetManagementStore(state => state.swapBets);
+export const useCurrentBetAmounts = () =>
+  useBetStore(state => state.allBetAmounts.get(state.currentBet) ?? new Map());
 
-export const useBatchUpdateBetAmounts = (): ((
-  updates: Array<{ betIndex: number; amount: number }>,
-) => void) => useBetManagementStore(state => state.batchUpdateBetAmounts);
+export const useBetCount = () =>
+  useBetStore(state => state.allBets.get(state.currentBet)?.size ?? 0);
 
-export const useTableMode = (): string => useRoundDataStore(state => state.roundState.tableMode);
+export const useBetSetCount = () => useBetStore(state => state.allBets.size);
 
-export const useViewMode = (): boolean => useRoundDataStore(state => state.roundState.viewMode);
-
-export const useSpecificBetAmount = (betIndex: number): number =>
-  useBetManagementStore(
-    (state): number => state.allBetAmounts.get(state.currentBet)?.get(betIndex) ?? -1000,
-  );
-
-// Hook that subscribes to the count of bets (for iteration)
-export const useBetCount = (): number =>
-  useBetManagementStore(state => state.allBets.get(state.currentBet)?.size ?? 0);
-
-// Hook that subscribes to whether any bets exist in the current set
-export const useHasAnyBets = (): boolean =>
-  useBetManagementStore(state =>
+export const useHasAnyBets = () =>
+  useBetStore(state =>
     Array.from(state.allBets.get(state.currentBet)?.values() ?? []).some(bet =>
-      bet.some((pirate: number) => pirate > 0),
+      bet.some(pirate => pirate > 0),
     ),
   );
 
-// Hook that subscribes to the total number of bet sets
-export const useBetSetCount = (): number => useBetManagementStore(state => state.allBets.size);
+// Actions
+export const useSetCurrentBet = () => useBetStore(state => state.setCurrentBet);
+export const useAddNewSet = () => useBetStore(state => state.addNewSet);
+export const useDeleteBetSet = () => useBetStore(state => state.deleteBetSet);
+export const useSwapBets = () => useBetStore(state => state.swapBets);
+export const useUpdatePirate = () => useBetStore(state => state.updatePirate);
+export const useUpdateBetAmount = () => useBetStore(state => state.updateBetAmount);
+export const useUpdateBetAmounts = () => useBetStore(state => state.updateBetAmounts);
+export const useSetAllBets = () => useBetStore(state => state.setAllBets);
+export const useSetAllBetAmounts = () => useBetStore(state => state.setAllBetAmounts);
+export const useClearAllBets = () => useBetStore(state => state.clearAllBets);
 
-// Hook that subscribes to a specific pirate selection
-export const useIsPirateSelected = (
-  betIndex: number,
-  arenaIndex: number,
-  pirateIndex: number,
-): boolean =>
-  useBetManagementStore(state => {
-    const currentBets = state.allBets.get(state.currentBet);
-    if (!currentBets) {
-      return false;
-    }
+// =============================================================================
+// ROUND DATA HOOKS (from roundStore)
+// =============================================================================
 
-    const betLine = currentBets.get(betIndex);
-    if (!betLine) {
-      return false;
-    }
+export const useRoundData = () => useRoundStore(state => state.roundData);
+export const useCurrentRound = () => useRoundStore(state => state.currentRound);
+export const useSelectedRound = () => useRoundStore(state => state.currentSelectedRound);
+export const useIsLoading = () => useRoundStore(state => state.isLoading);
+export const useIsRoundSwitching = () => useRoundStore(state => state.isRoundSwitching);
 
-    return betLine[arenaIndex] === pirateIndex;
+export const usePirates = () => useRoundStore(state => state.roundData.pirates);
+export const useFoods = () => useRoundStore(state => state.roundData.foods);
+export const useOpeningOdds = () => useRoundStore(state => state.roundData.openingOdds);
+export const useCurrentOdds = () => useRoundStore(state => state.roundData.currentOdds);
+export const useChanges = () => useRoundStore(state => state.roundData.changes);
+export const useWinners = () => useRoundStore(state => state.roundData.winners);
+export const useTimestamp = () => useRoundStore(state => state.roundData.timestamp);
+export const useLastChange = () => useRoundStore(state => state.roundData.lastChange);
+
+export const useHasRoundWinners = () =>
+  useRoundStore(state => {
+    const winners = state.roundData.winners;
+    return !!(winners && winners.some(w => w > 0));
   });
 
-// Hook that subscribes to all bet set names
-export const useAllBetSetNames = (): Map<number, string> =>
-  useBetManagementStore(state => state.allNames);
-
-export const useBetLineSpecific = (betIndex: number): number[] =>
-  useBetManagementStore((state): number[] => {
-    const currentBets = state.allBets.get(state.currentBet);
-    return currentBets?.get(betIndex) ?? DEFAULT_BET_LINE;
-  });
-
-export const useAllBetsForURLData = (): Map<number, Map<number, number[]>> =>
-  useBetManagementStore(state => state.allBets);
-
-export const useAllBetAmountsForURLData = (): Map<number, Map<number, number>> =>
-  useBetManagementStore(state => state.allBetAmounts);
-
-// More granular calculation hooks to prevent unnecessary re-renders
-export const useCalculationsStatus = (): boolean =>
-  useCalculationsStore(state => state.calculations.calculated);
-
-export const useBetOdds = (): Map<number, number> =>
-  useCalculationsStore(state => state.calculations.betOdds);
-
-export const useBetPayoffs = (): Map<number, number> =>
-  useCalculationsStore(state => state.calculations.betPayoffs);
-
-export const useBetBinaries = (): Map<number, number> =>
-  useCalculationsStore(state => state.calculations.betBinaries);
-
-export const useTotalBetAmounts = (): number =>
-  useCalculationsStore(state => state.calculations.totalBetAmounts);
-
-export const useTotalBetExpectedRatios = (): number =>
-  useCalculationsStore(state => state.calculations.totalBetExpectedRatios);
-
-export const useTotalBetNetExpected = (): number =>
-  useCalculationsStore(state => state.calculations.totalBetNetExpected);
-
-export const useTotalWinningOdds = (): number =>
-  useCalculationsStore(state => state.calculations.totalWinningOdds);
-
-export const useTotalWinningPayoff = (): number =>
-  useCalculationsStore(state => state.calculations.totalWinningPayoff);
-
-export const useTotalEnabledBets = (): number =>
-  useCalculationsStore(state => state.calculations.totalEnabledBets);
-
-export const useArenaRatios = (): number[] =>
-  useCalculationsStore(state => state.calculations.arenaRatios);
-
-export const useWinningBetBinary = (): number =>
-  useCalculationsStore(state => state.calculations.winningBetBinary);
-
-export const useUsedProbabilities = (): number[][] =>
-  useCalculationsStore(state => state.calculations.usedProbabilities);
-
-// Round data hooks
-export const usePirateId = (arenaId: number, pirateIndex: number): number =>
-  useRoundDataStore(
-    state => state.roundState.roundData?.pirates?.[arenaId]?.[pirateIndex] as number,
-  );
-
-export const useOpeningOdds = (arenaId: number, pirateIndex: number): number =>
-  useRoundDataStore(
-    state => state.roundState.roundData?.openingOdds?.[arenaId]?.[pirateIndex + 1] as number,
-  );
-
-export const useCurrentOdds = (arenaId: number, pirateIndex: number): number =>
-  useRoundDataStore(
-    state => state.roundState.roundData?.currentOdds?.[arenaId]?.[pirateIndex + 1] as number,
-  );
-
-export const usePiratesForArena = (arenaId: number): number[] | undefined =>
-  useRoundDataStore(state => state.roundState.roundData?.pirates?.[arenaId]);
-
-export const useFoodsForArena = (arenaId: number): number[] | undefined =>
-  useRoundDataStore(state => state.roundState.roundData?.foods?.[arenaId]);
-
-export const useChanges = (): OddsChange[] | undefined =>
-  useRoundDataStore(state => state.roundState.roundData?.changes);
-
-export const useWinnersBinary = (): number =>
-  useCalculationsStore(state => state.calculations.winningBetBinary);
-
-export const useRoundWinners = (): number[] =>
-  useRoundDataStore(state => state.roundState.roundData.winners ?? []);
-
-export const useHasRoundWinners = (): boolean =>
-  useRoundDataStore(state => {
-    const winners = state.roundState.roundData.winners;
-    return !!(winners && winners.some(winner => winner > 0));
-  });
-
-export const useRoundWinnersBinary = (): number =>
-  useRoundDataStore(state => {
-    const winners = state.roundState.roundData.winners;
+export const useRoundWinnersBinary = () =>
+  useRoundStore(state => {
+    const winners = state.roundData.winners;
     return winners ? computePiratesBinary(winners) : 0;
   });
 
-// Settings hooks
-export const useBigBrain = (): boolean =>
-  useRoundDataStore(state => !!state.roundState.advanced?.bigBrain);
+// Settings
+export const useTableMode = () => useRoundStore(state => state.tableMode);
+export const useViewMode = () => useRoundStore(state => state.viewMode);
+export const useUseWebDomain = () => useRoundStore(state => state.useWebDomain);
+export const useBigBrain = () => useRoundStore(state => state.bigBrain);
+export const useFaDetails = () => useRoundStore(state => state.faDetails && state.bigBrain);
+export const useCustomOddsMode = () =>
+  useRoundStore(state => state.customOddsMode && state.bigBrain);
+export const useOddsTimeline = () => useRoundStore(state => state.oddsTimeline && state.bigBrain);
+export const useLogitModelSetting = () => useRoundStore(state => state.useLogitModel);
 
-export const useLogitModelSetting = (): boolean =>
-  useRoundDataStore(state => !!state.roundState.advanced.useLogitModel);
+export const useCustomOdds = () => useRoundStore(state => state.customOdds);
+export const useCustomProbs = () => useRoundStore(state => state.customProbs);
 
-export const useCustomOddsMode = (): boolean =>
-  useRoundDataStore(
-    state => !!state.roundState.advanced?.bigBrain && !!state.roundState.advanced?.customOddsMode,
-  );
+// Setting Actions
+export const useUpdateSelectedRound = () => useRoundStore(state => state.updateSelectedRound);
+export const useSetTableMode = () => useRoundStore(state => state.setTableMode);
+export const useSetViewMode = () => useRoundStore(state => state.setViewMode);
+export const useSetUseWebDomain = () => useRoundStore(state => state.setUseWebDomain);
+export const useToggleBigBrain = () => useRoundStore(state => state.toggleBigBrain);
+export const useToggleFaDetails = () => useRoundStore(state => state.toggleFaDetails);
+export const useToggleOddsTimeline = () => useRoundStore(state => state.toggleOddsTimeline);
+export const useToggleCustomOddsMode = () => useRoundStore(state => state.toggleCustomOddsMode);
+export const useToggleUseLogitModel = () => useRoundStore(state => state.toggleUseLogitModel);
+export const useSetCustomOdds = () => useRoundStore(state => state.setCustomOdds);
+export const useSetCustomProbs = () => useRoundStore(state => state.setCustomProbs);
 
-export const useFaDetails = (): boolean =>
-  useRoundDataStore(
-    state => !!state.roundState.advanced?.bigBrain && !!state.roundState.advanced?.faDetails,
-  );
+export const useInitializeRoundData = () => useRoundStore(state => state.initialize);
 
-export const useOddsTimeline = (): boolean =>
-  useRoundDataStore(
-    state => !!state.roundState.advanced?.bigBrain && !!state.roundState.advanced?.oddsTimeline,
-  );
+// =============================================================================
+// CALCULATION HOOKS (from roundStore.calculations)
+// =============================================================================
 
-// Separate hooks for timestamp data to avoid object creation
-export const useTimestampValue = (): string | undefined =>
-  useTimestampStore(state => state.timestamp);
+export const useCalculations = () => useRoundStore(state => state.calculations);
 
-export const useLastChange = (): string | undefined => useTimestampStore(state => state.lastChange);
+export const useIsCalculated = () => useRoundStore(state => state.calculations.calculated);
 
-export const useSelectedRound = (): number =>
-  useRoundDataStore(state => state.roundState.currentSelectedRound);
+export const useBetOdds = () => useRoundStore(state => state.calculations.betOdds);
+export const useBetPayoffs = () => useRoundStore(state => state.calculations.betPayoffs);
+export const useBetProbabilities = () =>
+  useRoundStore(state => state.calculations.betProbabilities);
+export const useBetBinaries = () => useRoundStore(state => state.calculations.betBinaries);
+export const useBetExpectedRatios = () =>
+  useRoundStore(state => state.calculations.betExpectedRatios);
+export const useBetNetExpected = () => useRoundStore(state => state.calculations.betNetExpected);
+export const useBetMaxBets = () => useRoundStore(state => state.calculations.betMaxBets);
 
-// Separate action hooks to avoid object creation
-export const useInitializeRoundData = (): (() => void) =>
-  useRoundDataStore(state => state.initialize);
+export const useTotalBetAmounts = () => useRoundStore(state => state.calculations.totalBetAmounts);
+export const useTotalBetExpectedRatios = () =>
+  useRoundStore(state => state.calculations.totalBetExpectedRatios);
+export const useTotalBetNetExpected = () =>
+  useRoundStore(state => state.calculations.totalBetNetExpected);
+export const useTotalWinningOdds = () =>
+  useRoundStore(state => state.calculations.totalWinningOdds);
+export const useTotalWinningPayoff = () =>
+  useRoundStore(state => state.calculations.totalWinningPayoff);
+export const useTotalEnabledBets = () =>
+  useRoundStore(state => state.calculations.totalEnabledBets);
 
-export const useUpdateSelectedRound = (): ((round: number) => void) =>
-  useRoundDataStore(state => state.updateSelectedRound);
+export const useWinningBetBinary = () =>
+  useRoundStore(state => state.calculations.winningBetBinary);
+export const useArenaRatios = () => useRoundStore(state => state.calculations.arenaRatios);
+export const useUsedProbabilities = () =>
+  useRoundStore(state => state.calculations.usedProbabilities);
+export const useLegacyProbabilities = () =>
+  useRoundStore(state => state.calculations.legacyProbabilities);
+export const useLogitProbabilities = () =>
+  useRoundStore(state => state.calculations.logitProbabilities);
+export const usePirateFAs = () => useRoundStore(state => state.calculations.pirateFAs);
+export const usePayoutTables = () => useRoundStore(state => state.calculations.payoutTables);
 
-// New granular toggle hooks for better performance
-export const useToggleBigBrain = (): (() => void) =>
-  useRoundDataStore(state => state.toggleBigBrain);
+// =============================================================================
+// DERIVED/COMPUTED HOOKS
+// =============================================================================
 
-export const useToggleFaDetails = (): (() => void) =>
-  useRoundDataStore(state => state.toggleFaDetails);
+// These are commonly used patterns that components need
 
-export const useToggleOddsTimeline = (): (() => void) =>
-  useRoundDataStore(state => state.toggleOddsTimeline);
-
-export const useToggleCustomOddsMode = (): (() => void) =>
-  useRoundDataStore(state => state.toggleCustomOddsMode);
-
-export const useToggleUseLogitModel = (): (() => void) =>
-  useRoundDataStore(state => state.toggleUseLogitModel);
-
-// New optimized hooks for specific bet data to prevent re-renders
-export const useSpecificBetOdds = (betIndex: number): number =>
-  useCalculationsStore(state => state.calculations.betOdds.get(betIndex) ?? 0);
-
-export const useSpecificBetPayoff = (betIndex: number): number =>
-  useCalculationsStore(state => state.calculations.betPayoffs.get(betIndex) ?? 0);
-
-export const useSpecificBetProbability = (betIndex: number): number =>
-  useCalculationsStore(state => state.calculations.betProbabilities.get(betIndex) ?? 0);
-
-export const useSpecificBetBinary = (betIndex: number): number =>
-  useCalculationsStore(state => state.calculations.betBinaries.get(betIndex) ?? 0);
-
-export const useSpecificBetExpectedRatio = (betIndex: number): number =>
-  useCalculationsStore(state => state.calculations.betExpectedRatios.get(betIndex) ?? 0);
-
-export const useSpecificBetNetExpected = (betIndex: number): number =>
-  useCalculationsStore(state => state.calculations.betNetExpected.get(betIndex) ?? 0);
-
-export const useSpecificBetMaxBet = (betIndex: number): number =>
-  useCalculationsStore(state => state.calculations.betMaxBets.get(betIndex) ?? 0);
-
-// Hook for getting only the calculation status without the full calculations object
-export const useIsCalculated = (): boolean =>
-  useCalculationsStore(state => state.calculations.calculated);
-
-// Hook for getting only the round data status without the full round data
-export const useHasRoundData = (): boolean =>
-  useRoundDataStore(state => state.roundState.roundData !== null);
-
-export const useOptimizedBetAmount = (betIndex: number): number =>
-  useBetManagementStore(state => {
-    const currentBetAmounts = state.allBetAmounts.get(state.currentBet);
-    return currentBetAmounts?.get(betIndex) || 0;
+export const useBetLine = (betIndex: number) =>
+  useBetStore(state => {
+    const bets = state.allBets.get(state.currentBet);
+    return bets?.get(betIndex) ?? [0, 0, 0, 0, 0];
   });
 
-// Stable probability value hooks
-export const useStableUsedProbability = (arenaId: number, pirateIndex: number): number =>
-  useCalculationsStore(() =>
-    memoizedCalculations.getStableValue(
-      `usedProb_${arenaId}_${pirateIndex}`,
-      calc => calc.usedProbabilities?.[arenaId]?.[pirateIndex] ?? 0,
-    ),
-  );
-
-export const useStableLogitProbability = (arenaId: number, pirateIndex: number): number =>
-  useCalculationsStore(() =>
-    memoizedCalculations.getStableValue(
-      `logitProb_${arenaId}_${pirateIndex}`,
-      calc => calc.logitProbabilities?.prob?.[arenaId]?.[pirateIndex] ?? 0,
-    ),
-  );
-
-export const useStableLegacyProbabilityMin = (arenaId: number, pirateIndex: number): number =>
-  useCalculationsStore(() =>
-    memoizedCalculations.getStableValue(
-      `legacyProbMin_${arenaId}_${pirateIndex}`,
-      calc => calc.legacyProbabilities?.min?.[arenaId]?.[pirateIndex] ?? 0,
-    ),
-  );
-
-export const useStableLegacyProbabilityMax = (arenaId: number, pirateIndex: number): number =>
-  useCalculationsStore(() =>
-    memoizedCalculations.getStableValue(
-      `legacyProbMax_${arenaId}_${pirateIndex}`,
-      calc => calc.legacyProbabilities?.max?.[arenaId]?.[pirateIndex] ?? 0,
-    ),
-  );
-
-export const useStableLegacyProbabilityStd = (arenaId: number, pirateIndex: number): number =>
-  useCalculationsStore(() =>
-    memoizedCalculations.getStableValue(
-      `legacyProbStd_${arenaId}_${pirateIndex}`,
-      calc => calc.legacyProbabilities?.std?.[arenaId]?.[pirateIndex] ?? 0,
-    ),
-  );
-
-export const useStablePirateFA = (arenaId: number, pirateIndex: number): number =>
-  useCalculationsStore(() =>
-    memoizedCalculations.getStableValue(`pirateFA_${arenaId}_${pirateIndex}`, calc => {
-      const faArr = calc.pirateFAs?.get(arenaId)?.[pirateIndex];
-      return faArr ? faArr.reduce((acc, curr) => acc + curr, 0) : 0;
-    }),
-  );
-
-// Optimized hooks for custom values that will prevent cross-component re-renders
-export const useCustomOddsValue = (arenaIndex: number, pirateIndex: number): number | undefined =>
-  // Use this explicit subscription to ensure we rerender when this specific value changes
-  useRoundDataStore(state => {
-    // We need to access specific parts of the state directly to ensure proper subscription
-    const customOdds = state.roundState.customOdds;
-
-    // If there's no custom odds matrix or empty at this position, return undefined
-    if (!customOdds || !customOdds[arenaIndex]) {
-      return undefined;
-    }
-
-    // Return the specific value at this position
-    const arenaOdds = customOdds[arenaIndex];
-    return arenaOdds ? arenaOdds[pirateIndex] : undefined;
+export const useBetAmount = (betIndex: number) =>
+  useBetStore(state => {
+    const amounts = state.allBetAmounts.get(state.currentBet);
+    return amounts?.get(betIndex) ?? -1000;
   });
 
-export const useCustomProbsValue = (arenaIndex: number, pirateIndex: number): number | undefined =>
-  // Use this explicit subscription to ensure we rerender when this specific value changes
-  useRoundDataStore(state => {
-    // We need to access specific parts of the state directly to ensure proper subscription
-    const customProbs = state.roundState.customProbs;
-
-    // If there's no custom probs matrix or empty at this position, return undefined
-    if (!customProbs || !customProbs[arenaIndex]) {
-      return undefined;
-    }
-
-    // Return the specific value at this position
-    const arenaProbs = customProbs[arenaIndex];
-    return arenaProbs ? arenaProbs[pirateIndex] : undefined;
+export const useIsPirateSelected = (betIndex: number, arenaIndex: number, pirateIndex: number) =>
+  useBetStore(state => {
+    const bets = state.allBets.get(state.currentBet);
+    const betLine = bets?.get(betIndex);
+    return betLine ? betLine[arenaIndex] === pirateIndex : false;
   });
 
-// Optimized selectors for BetBadges component performance - cached empty objects to prevent recreation
-const emptyBetsMap = new Map() as Bet;
-const emptyBetAmountsMap = makeEmptyBetAmounts(10) as BetAmount;
+export const useBetOddsValue = (betIndex: number) =>
+  useRoundStore(state => state.calculations.betOdds.get(betIndex) ?? 0);
 
-export const useOptimizedBetsForIndex = (index: number): Bet =>
-  useBetManagementStore(state => state.allBets.get(index) || emptyBetsMap) as Bet;
+export const useBetPayoffValue = (betIndex: number) =>
+  useRoundStore(state => state.calculations.betPayoffs.get(betIndex) ?? 0);
 
-export const useOptimizedBetAmountsForIndex = (index: number): BetAmount =>
-  useBetManagementStore(state => state.allBetAmounts.get(index) || emptyBetAmountsMap) as BetAmount;
+export const useBetProbabilityValue = (betIndex: number) =>
+  useRoundStore(state => state.calculations.betProbabilities.get(betIndex) ?? 0);
+
+export const useBetBinaryValue = (betIndex: number) =>
+  useRoundStore(state => state.calculations.betBinaries.get(betIndex) ?? 0);
+
+export const useBetExpectedRatioValue = (betIndex: number) =>
+  useRoundStore(state => state.calculations.betExpectedRatios.get(betIndex) ?? 0);
+
+export const useBetNetExpectedValue = (betIndex: number) =>
+  useRoundStore(state => state.calculations.betNetExpected.get(betIndex) ?? 0);
+
+export const useBetMaxBetValue = (betIndex: number) =>
+  useRoundStore(state => state.calculations.betMaxBets.get(betIndex) ?? 0);
+
+export const usePirateForArena = (arenaId: number, pirateIndex: number) =>
+  useRoundStore(state => state.roundData.pirates?.[arenaId]?.[pirateIndex]);
+
+export const useFoodForArena = (arenaId: number, pirateIndex: number) =>
+  useRoundStore(state => state.roundData.foods?.[arenaId]?.[pirateIndex]);
+
+export const useOpeningOddsValue = (arenaId: number, pirateIndex: number) =>
+  useRoundStore(state => state.roundData.openingOdds?.[arenaId]?.[pirateIndex + 1]);
+
+export const useCurrentOddsValue = (arenaId: number, pirateIndex: number) =>
+  useRoundStore(state => state.roundData.currentOdds?.[arenaId]?.[pirateIndex + 1]);
+
+export const useCustomOddsValue = (arenaIndex: number, pirateIndex: number) =>
+  useRoundStore(state => state.customOdds?.[arenaIndex]?.[pirateIndex]);
+
+export const useCustomProbsValue = (arenaIndex: number, pirateIndex: number) =>
+  useRoundStore(state => state.customProbs?.[arenaIndex]?.[pirateIndex]);
+
+export const useUsedProbabilityValue = (arenaId: number, pirateIndex: number) =>
+  useRoundStore(state => state.calculations.usedProbabilities?.[arenaId]?.[pirateIndex] ?? 0);
+
+export const useLogitProbabilityValue = (arenaId: number, pirateIndex: number) =>
+  useRoundStore(
+    state => state.calculations.logitProbabilities?.prob?.[arenaId]?.[pirateIndex] ?? 0,
+  );
+
+export const useLegacyProbabilityMin = (arenaId: number, pirateIndex: number) =>
+  useRoundStore(
+    state => state.calculations.legacyProbabilities?.min?.[arenaId]?.[pirateIndex] ?? 0,
+  );
+
+export const useLegacyProbabilityMax = (arenaId: number, pirateIndex: number) =>
+  useRoundStore(
+    state => state.calculations.legacyProbabilities?.max?.[arenaId]?.[pirateIndex] ?? 0,
+  );
+
+export const useLegacyProbabilityStd = (arenaId: number, pirateIndex: number) =>
+  useRoundStore(
+    state => state.calculations.legacyProbabilities?.std?.[arenaId]?.[pirateIndex] ?? 0,
+  );
+
+export const usePirateFA = (arenaId: number, pirateIndex: number) =>
+  useRoundStore(state => {
+    const faArr = state.calculations.pirateFAs?.get(arenaId)?.[pirateIndex];
+    return faArr ? faArr.reduce((acc, curr) => acc + curr, 0) : 0;
+  });
+
+// Legacy aliases for backwards compatibility (will update components to use new names)
+export const useCalculationsStatus = useIsCalculated;
+export const useHasRoundData = () => useRoundStore(state => state.roundData !== null);
+export const useWinnersBinary = useRoundWinnersBinary;
+export const useRoundWinners = useWinners;
+export const useBetLineSpecific = useBetLine;
+export const useSpecificBetAmount = useBetAmount;
+export const useSpecificBetOdds = useBetOddsValue;
+export const useSpecificBetPayoff = useBetPayoffValue;
+export const useSpecificBetProbability = useBetProbabilityValue;
+export const useSpecificBetBinary = useBetBinaryValue;
+export const useSpecificBetExpectedRatio = useBetExpectedRatioValue;
+export const useSpecificBetNetExpected = useBetNetExpectedValue;
+export const useSpecificBetMaxBet = useBetMaxBetValue;
+export const usePirateId = usePirateForArena;
+export const usePiratesForArena = (arenaId: number) =>
+  useRoundStore(state => state.roundData.pirates?.[arenaId]);
+export const useFoodsForArena = (arenaId: number) =>
+  useRoundStore(state => state.roundData.foods?.[arenaId]);
+export const useTimestampValue = useTimestamp;
+export const useUpdateSinglePirate = useUpdatePirate;
+export const useUpdateSingleBetAmount = useUpdateBetAmount;
+export const useBatchUpdateBetAmounts = useUpdateBetAmounts;
+export const useStableUsedProbability = useUsedProbabilityValue;
+export const useStableLogitProbability = useLogitProbabilityValue;
+export const useStableLegacyProbabilityMin = useLegacyProbabilityMin;
+export const useStableLegacyProbabilityMax = useLegacyProbabilityMax;
+export const useStableLegacyProbabilityStd = useLegacyProbabilityStd;
+export const useStablePirateFA = usePirateFA;
+export const useOptimizedBetAmount = useBetAmount;
+export const useAllBetsForURLData = useAllBets;
+export const useAllBetAmountsForURLData = useAllBetAmounts;
+export const useCurrentBetForURL = useCurrentBet;
+
+// For components that need whole bet sets
+export const useOptimizedBetsForIndex = (index: number) =>
+  useBetStore(state => state.allBets.get(index) ?? new Map());
+
+export const useOptimizedBetAmountsForIndex = (index: number) =>
+  useBetStore(state => state.allBetAmounts.get(index) ?? new Map());
+
+// Pirate selection helpers (aliases for backwards compatibility)
+export const useRoundPirates = usePirates;
+export const useRoundOpeningOdds = () => useRoundStore(state => state.roundData.openingOdds);
+export const useRoundCurrentOdds = () => useRoundStore(state => state.roundData.currentOdds);

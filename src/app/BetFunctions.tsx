@@ -47,13 +47,14 @@ import { useBetManagement } from './hooks/useBetManagement';
 import { makeEmpty, computeBinaryToPirates, calculatePayoutTables } from './maths';
 import {
   useSelectedRound,
-  useRoundDataStore,
-  useBetManagementStore,
+  useRoundStore,
+  useBetStore,
+  useRoundData,
+  useUseWebDomain,
   useCalculationsStatus,
   useArenaRatios,
   useWinningBetBinary,
   useUsedProbabilities,
-  useCalculationsStore,
   useBetSetCount,
   useAllBetSetNames,
   useWinnersBinary,
@@ -63,11 +64,8 @@ import {
   useRoundPirates,
   useOptimizedBetsForIndex,
   useOptimizedBetAmountsForIndex,
-  useLogitModelSetting,
 } from './stores';
-import { memoizedCalculations } from './stores/calculationsStore';
 import {
-  makeEmptyBetAmounts,
   countNonZeroElements,
   shuffleArray,
   generateRandomPirateIndex,
@@ -77,7 +75,6 @@ import {
   isValidRound,
   displayAsPercent,
   makeBetValues,
-  makeEmptyBets,
   anyBetAmountsExist,
 } from './util';
 
@@ -389,9 +386,9 @@ const BetCopyButtons = React.memo(
   (props: { index: number; [key: string]: unknown }): React.ReactElement => {
     const { index, ...rest } = props;
     const currentSelectedRound = useSelectedRound();
-    const roundData = useRoundDataStore(state => state.roundState.roundData);
-    const useWebDomain = useRoundDataStore(state => state.roundState.useWebDomain);
-    const calculation = useCalculationsStore(state => state.calculations);
+    const roundData = useRoundData();
+    const useWebDomain = useUseWebDomain();
+    const calculation = useRoundStore(state => state.calculations);
     const bets = useOptimizedBetsForIndex(index);
     const betAmounts = useOptimizedBetAmountsForIndex(index);
 
@@ -575,7 +572,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
   const setCurrentBet = useSetCurrentBet();
   const deleteSet = useDeleteBetSet();
 
-  const roundData = useRoundDataStore(state => state.roundState.roundData);
+  const roundData = useRoundData();
   const arenaRatios = useArenaRatios();
   const winningBetBinary = useWinningBetBinary();
   const currentSelectedRound = useSelectedRound();
@@ -586,9 +583,8 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
   const clearOrDeleteSet = useCallback(() => {
     if (betSetCount === 1) {
       // If only one set, clear it instead of deleting
-      const store = useBetManagementStore.getState();
-      store.updateBet(currentBetIndex, makeEmptyBets(10));
-      store.updateBetAmounts(currentBetIndex, makeEmptyBetAmounts(10));
+      const store = useBetStore.getState();
+      store.clearAllBets();
       store.updateBetName(currentBetIndex, '');
     } else {
       // If multiple sets, delete the current one
@@ -613,7 +609,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
   const handleEditableSubmit = useCallback(
     (key: number) =>
       function onValueCommit(details: { value: string }): void {
-        const store = useBetManagementStore.getState();
+        const store = useBetStore.getState();
         store.updateBetName(key, details.value);
       },
     [],
@@ -644,9 +640,6 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
   const clearBets = useCallback(() => {
     clearOrDeleteSet();
     // Only clear probability-related cache since clearing bets affects probabilities
-    memoizedCalculations.clearCache('usedProb_');
-    memoizedCalculations.clearCache('logitProb_');
-    memoizedCalculations.clearCache('legacyProb');
   }, [clearOrDeleteSet]);
 
   const hasRoundData = isValidRound({ roundData, currentSelectedRound } as RoundState);
@@ -783,12 +776,12 @@ const BetBadges = React.memo(
   (props: { index: number; [key: string]: unknown }): React.ReactElement => {
     const { index, ...rest } = props;
     const currentSelectedRound = useSelectedRound();
-    const roundData = useRoundDataStore(state => state.roundState.roundData);
+    const roundData = useRoundData();
     const winnersBinary = useWinnersBinary();
     const isRoundOver = winnersBinary > 0;
 
     const usedProbabilities = useUsedProbabilities();
-    const odds = useRoundDataStore(state => state.roundState.roundData.currentOdds || []);
+    const odds = useRoundStore(state => state.roundData.currentOdds || []);
     const calculated = useCalculationsStatus();
     const winningBetBinary = useWinningBetBinary();
 
