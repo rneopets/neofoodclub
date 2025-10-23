@@ -172,12 +172,19 @@ test.describe('NeoFoodClub Bet Generation', () => {
     // Set max bet (this changes the setting but not the actual bet amounts)
     await setMaxBet(page, '2000');
 
+    // Wait for the bet amounts settings component to be visible
+    await page.waitForSelector('[data-testid="uncapped-bet-amounts-button"]', {
+      state: 'visible',
+      timeout: 10000,
+    });
+
     // Apply the max bet to bet amounts using uncapped button
     const uncappedButton = page.locator('[data-testid="uncapped-bet-amounts-button"]');
-    await uncappedButton.waitFor({ state: 'visible', timeout: 5000 });
     await expect(uncappedButton).toBeEnabled();
     await uncappedButton.click({ force: true });
-    await page.waitForTimeout(200);
+
+    // Wait for URL to be updated with bet amounts
+    await page.waitForFunction(() => window.location.href.includes('&a='), { timeout: 5000 });
 
     // URL should now contain bet amounts
     const url = page.url();
