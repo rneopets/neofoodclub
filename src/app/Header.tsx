@@ -31,7 +31,7 @@ import MaxBetLockToggle from './components/MaxBetLockToggle';
 import RoundInput from './components/RoundInput';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
-import { useRoundDataStore, useTimestampValue, useLastChange, useHasRoundWinners } from './stores';
+import { useRoundStore, useTimestampValue, useLastChange, useHasRoundWinners } from './stores';
 import { calculateBaseMaxBet, getMaxBet, getMaxBetLocked } from './util';
 
 import {
@@ -42,7 +42,7 @@ import {
 import { Tooltip } from '@/components/ui/tooltip';
 
 // Add a new selector for error state
-const useErrorState = (): string | null => useRoundDataStore(state => state.error);
+const useErrorState = (): string | null => useRoundStore(state => state.error);
 
 interface GoToCurrentRoundButtonProps {
   testId?: string;
@@ -50,8 +50,8 @@ interface GoToCurrentRoundButtonProps {
 
 const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo(
   ({ testId = 'go-to-current-round' }) => {
-    const currentRound = useRoundDataStore(state => state.roundState.currentRound);
-    const updateSelectedRound = useRoundDataStore(state => state.updateSelectedRound);
+    const currentRound = useRoundStore(state => state.currentRound);
+    const updateSelectedRound = useRoundStore(state => state.updateSelectedRound);
 
     const handleGoToCurrent = useCallback(() => {
       updateSelectedRound(currentRound);
@@ -79,7 +79,7 @@ const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo
 );
 
 const PreviousRoundInfo: React.FC = React.memo(() => {
-  const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
+  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
   const timestamp = useTimestampValue();
 
   const formattedDate = useMemo(() => {
@@ -112,7 +112,7 @@ const PreviousRoundInfo: React.FC = React.memo(() => {
 });
 
 const ErrorRoundInfo: React.FC = React.memo(() => {
-  const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
+  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
   const error = useErrorState();
 
   const isNotFoundError = useMemo(
@@ -168,7 +168,7 @@ const CurrentRoundProgress = React.memo((): React.ReactElement | null => {
 });
 
 const CurrentRoundInfo: React.FC = React.memo(() => {
-  const roundData = useRoundDataStore(state => state.roundState.roundData);
+  const roundData = useRoundStore(state => state.roundData);
   const timestamp = useTimestampValue();
   const lastChange = useLastChange();
 
@@ -238,7 +238,7 @@ interface RoundInfoProps {
 }
 
 const RoundInfo: React.FC<RoundInfoProps> = React.memo(({ display = 'block' }: RoundInfoProps) => {
-  const winners = useRoundDataStore(state => state.roundState.roundData.winners);
+  const winners = useRoundStore(state => state.roundData.winners);
   const timestamp = useTimestampValue();
   const error = useErrorState();
 
@@ -257,7 +257,7 @@ const RoundInfo: React.FC<RoundInfoProps> = React.memo(({ display = 'block' }: R
 });
 
 const MaxBetInput: React.FC = () => {
-  const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
+  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
   const [tempValue, setTempValue] = useState<string>(() =>
     getMaxBet(currentSelectedRound).toString(),
   );
@@ -464,13 +464,13 @@ interface TitleHeadingProps extends ButtonProps {
 }
 
 const TitleHeading: React.FC<TitleHeadingProps> = props => {
-  const setRoundState = useRoundDataStore(state => state.setRoundState);
-  const updateSelectedRound = useRoundDataStore(state => state.updateSelectedRound);
-  const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
-  const currentRound = useRoundDataStore(state => state.roundState.currentRound);
+  const setCustomOdds = useRoundStore(state => state.setCustomOdds);
+  const setCustomProbs = useRoundStore(state => state.setCustomProbs);
+  const updateSelectedRound = useRoundStore(state => state.updateSelectedRound);
+  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
+  const currentRound = useRoundStore(state => state.currentRound);
 
   const handleClick = (): void => {
-    setRoundState({ viewMode: false });
     const { scrollY } = window;
 
     if (scrollY !== 0) {
@@ -543,9 +543,9 @@ const HeaderContent: React.FC = () => {
   const hasWinners = useHasRoundWinners();
   const timestamp = useTimestampValue();
   const error = useErrorState();
-  const isRoundSwitching = useRoundDataStore(state => state.isRoundSwitching);
-  const roundData = useRoundDataStore(state => state.roundState.roundData);
-  const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
+  const isRoundSwitching = useRoundStore(state => state.isRoundSwitching);
+  const roundData = useRoundStore(state => state.roundData);
+  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
 
   const hasValidData = useMemo(() => {
     // If we're switching rounds, don't consider old data as valid

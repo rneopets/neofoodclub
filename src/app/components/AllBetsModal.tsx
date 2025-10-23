@@ -23,7 +23,7 @@ import {
   computeLogitProbabilities,
   computeLegacyProbabilities,
 } from '../maths';
-import { useRoundDataStore } from '../stores/roundDataStore';
+import { useRoundStore } from '../stores';
 import { getMaxBet } from '../util';
 
 interface AllBet {
@@ -143,9 +143,9 @@ const Row = React.memo(
 Row.displayName = 'AllBetsRow';
 
 export const AllBetsModal: React.FC<AllBetsModalProps> = ({ isOpen, onClose }) => {
-  const roundData = useRoundDataStore(state => state.roundState.roundData);
-  const globalUseLogitModel = useRoundDataStore(state => state.roundState.advanced.useLogitModel);
-  const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
+  const roundData = useRoundStore(state => state.roundData);
+  const globalUseLogitModel = useRoundStore(state => state.useLogitModel);
+  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
   const { calculateBets } = useBetManagement();
   const getPirateBgColor = useGetPirateBgColor();
 

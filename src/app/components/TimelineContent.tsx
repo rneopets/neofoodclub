@@ -27,7 +27,7 @@ import {
 import { OddsChange } from '../../types';
 import { PIRATE_NAMES, ARENA_NAMES } from '../constants';
 import { makeEmpty } from '../maths';
-import { useRoundDataStore } from '../stores';
+import { useRoundStore } from '../stores';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../utils/betUtils';
 
 import DateFormatter from './DateFormatter';
@@ -123,7 +123,7 @@ const OverallTimelineView = React.memo(
   }): React.ReactElement | null => {
     const { onPirateClick, onArenaClick, scrollContainerRef } = props;
 
-    const roundData = useRoundDataStore(state => state.roundState.roundData);
+    const roundData = useRoundStore(state => state.roundData);
     const start = roundData.start;
     const endTime = roundData.timestamp;
 
@@ -673,7 +673,7 @@ const ArenaTimelineView = React.memo(
   }): React.ReactElement | null => {
     const { arenaId, onPirateClick, onBackToOverall, scrollContainerRef } = props;
 
-    const roundData = useRoundDataStore(state => state.roundState.roundData);
+    const roundData = useRoundStore(state => state.roundData);
     const start = roundData.start;
     const endTime = roundData.timestamp;
 
@@ -977,7 +977,7 @@ const PirateTimelineView = React.memo(
   }): React.ReactElement | null => {
     const { arenaId, pirateIndex, onBackToOverall, onBackToArena } = props;
 
-    const roundData = useRoundDataStore(state => state.roundState.roundData);
+    const roundData = useRoundStore(state => state.roundData);
     const pirateId = roundData.pirates?.[arenaId]?.[pirateIndex];
     const start = roundData.start;
     const endTime = roundData.timestamp;

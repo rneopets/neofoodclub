@@ -1,7 +1,7 @@
 import { Box, Table } from '@chakra-ui/react';
 import React, { useMemo } from 'react';
 
-import { useRoundDataStore } from '../stores';
+import { useRoundStore } from '../stores';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../utils/betUtils';
 
 import { Tooltip } from '@/components/ui/tooltip';
@@ -99,7 +99,7 @@ const OddsTimeline = React.memo(
   (props: OddsTimelineProps): React.ReactElement => {
     const { onClick, arenaId, pirateIndex } = props;
 
-    const roundData = useRoundDataStore(state => state.roundState.roundData);
+    const roundData = useRoundStore(state => state.roundData);
     const openingOdds = roundData?.openingOdds?.[arenaId]?.[pirateIndex + 1];
     const start = roundData?.start;
     const endTime = roundData?.timestamp;

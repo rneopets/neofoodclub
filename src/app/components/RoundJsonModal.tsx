@@ -14,7 +14,7 @@ import * as React from 'react';
 import { FaCode } from 'react-icons/fa';
 import type { BundledLanguage, BundledTheme, HighlighterGeneric } from 'shiki';
 
-import { useRoundDataStore } from '../stores/roundDataStore';
+import { useRoundStore } from '../stores';
 
 const shikiAdapter = createShikiAdapter<HighlighterGeneric<BundledLanguage, BundledTheme>>({
   async load() {
@@ -99,7 +99,7 @@ const formatJsonWithDepth = (
 };
 
 export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose }) => {
-  const roundData = useRoundDataStore(state => state.roundState.roundData);
+  const roundData = useRoundStore(state => state.roundData);
 
   // Pretty-format the JSON with depth limit and special case for winners
   const formattedJson = formatJsonWithDepth(roundData, 2, ['winners']);

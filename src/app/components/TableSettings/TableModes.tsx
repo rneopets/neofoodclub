@@ -4,7 +4,7 @@ import { FaSquareCaretDown } from 'react-icons/fa6';
 import { LuTable } from 'react-icons/lu';
 import Cookies from 'universal-cookie';
 
-import { useRoundDataStore, useTableMode } from '../../stores';
+import { useRoundStore, useTableMode, useSetTableMode } from '../../stores';
 
 interface Option {
   value: string;
@@ -12,7 +12,7 @@ interface Option {
 }
 
 const TableModes = (): React.ReactElement => {
-  const setTableMode = useRoundDataStore(state => state.setTableMode);
+  const setTableMode = useSetTableMode();
   const tableMode = useTableMode();
   const cookiesRef = useRef(new Cookies());
 

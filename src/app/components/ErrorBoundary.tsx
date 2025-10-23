@@ -52,6 +52,24 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
               </Box>
             </Alert.Root>
 
+            {this.state.error && (
+              <Box
+                as="pre"
+                p={4}
+                bg="red.50"
+                borderRadius="md"
+                fontSize="sm"
+                overflow="auto"
+                maxW="100%"
+                w="100%"
+                color="red.900"
+              >
+                {this.state.error.toString()}
+                {'\n\n'}
+                {this.state.error.stack}
+              </Box>
+            )}
+
             <VStack gap={2}>
               <Button colorPalette="blue" onClick={this.handleReload}>
                 Reload Page
@@ -60,20 +78,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
                 Try Again
               </Button>
             </VStack>
-
-            {process.env['NODE_ENV'] === 'development' && this.state.error && (
-              <Box
-                as="pre"
-                p={4}
-                bg="gray.100"
-                borderRadius="md"
-                fontSize="sm"
-                overflow="auto"
-                maxW="100%"
-              >
-                {this.state.error.stack}
-              </Box>
-            )}
           </VStack>
         </Box>
       );

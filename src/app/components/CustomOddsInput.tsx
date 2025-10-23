@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { useCustomValueInput } from '../hooks/useCustomValueInput';
-import { useRoundDataStore, useCustomOddsValue } from '../stores';
+import { useRoundStore, useCustomOddsValue } from '../stores';
 
 import { NumberInputRoot, NumberInputField } from '@/components/ui/number-input';
 
@@ -18,8 +18,8 @@ const CustomOddsInput = function CustomOddsInput(props: CustomOddsInputProps): R
   const customOddsValue = useCustomOddsValue(arenaIndex, pirateIndex);
 
   // Get current odds from round data for this specific pirate
-  const currentOddsValue = useRoundDataStore(
-    state => state.roundState.roundData?.currentOdds?.[arenaIndex]?.[pirateIndex] ?? 2,
+  const currentOddsValue = useRoundStore(
+    state => state.roundData?.currentOdds?.[arenaIndex]?.[pirateIndex] ?? 2,
   );
 
   // Use the custom hook to handle all the input logic

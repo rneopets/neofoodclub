@@ -1,7 +1,7 @@
 import { Group, NumberInputControl, Text } from '@chakra-ui/react';
 import { useEffect, useState, FocusEvent, useMemo, useCallback } from 'react';
 
-import { useRoundDataStore } from '../stores';
+import { useRoundStore } from '../stores';
 
 import {
   NumberInputRoot,
@@ -10,14 +10,14 @@ import {
 } from '@/components/ui/number-input';
 
 // Hook to get error state from the store
-const useErrorState = (): string | null => useRoundDataStore(state => state.error);
+const useErrorState = (): string | null => useRoundStore(state => state.error);
 
 // this element is the number input to say which round's data you're viewing
 
 const RoundInput: React.FC = () => {
-  const currentSelectedRound = useRoundDataStore(state => state.roundState.currentSelectedRound);
-  const currentRound = useRoundDataStore(state => state.roundState.currentRound);
-  const updateSelectedRound = useRoundDataStore(state => state.updateSelectedRound);
+  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
+  const currentRound = useRoundStore(state => state.currentRound);
+  const updateSelectedRound = useRoundStore(state => state.updateSelectedRound);
   const error = useErrorState();
 
   const initialRoundNumber = useMemo(() => currentSelectedRound || 0, [currentSelectedRound]);

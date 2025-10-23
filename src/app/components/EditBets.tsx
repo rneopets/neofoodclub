@@ -14,7 +14,7 @@ import React, { useCallback, useMemo, useState, useRef, Suspense } from 'react';
 import { FaPenToSquare, FaGear } from 'react-icons/fa6';
 
 import BetFunctions from '../BetFunctions';
-import { useRoundDataStore, useViewMode, useTableMode, useHasAnyBets } from '../stores';
+import { useRoundStore, useViewMode, useTableMode, useHasAnyBets } from '../stores';
 
 import DropDownTable from './DropDownTable';
 import NormalTable from './NormalTable';
@@ -109,7 +109,7 @@ PirateTable.displayName = 'PirateTable';
 export default React.memo(function EditBets(): React.ReactElement {
   const viewMode = useViewMode();
   const anyBets = useHasAnyBets();
-  const setRoundState = useRoundDataStore(state => state.setRoundState);
+  const setViewMode = useRoundStore(state => state.setViewMode);
 
   const shadowValue = useColorModeValue(
     '0 1px 2px rgba(0,0,0,0.02)',
@@ -117,8 +117,8 @@ export default React.memo(function EditBets(): React.ReactElement {
   );
 
   const handleEditModeClick = useCallback(() => {
-    setRoundState({ viewMode: false });
-  }, [setRoundState]);
+    setViewMode(false);
+  }, [setViewMode]);
 
   return (
     <>

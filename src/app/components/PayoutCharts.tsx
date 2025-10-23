@@ -13,13 +13,7 @@ import React, { useCallback, useMemo } from 'react';
 import { Scatter } from 'react-chartjs-2';
 
 import { PayoutData } from '../../types';
-import {
-  useRoundDataStore,
-  useCalculationsStore,
-  useBetBinaries,
-  useWinningBetBinary,
-  useTotalBetAmounts,
-} from '../stores';
+import { useRoundStore, useBetBinaries, useWinningBetBinary, useTotalBetAmounts } from '../stores';
 import { amountAbbreviation, displayAsPercent } from '../util';
 
 import TextTooltip from './TextTooltip';
@@ -109,12 +103,12 @@ interface ChartOptions {
 // this element contains the odds/winnings tables + charts
 
 const PayoutCharts: React.FC = React.memo(() => {
-  const hasRoundData = useRoundDataStore(state => state.roundState.roundData !== null);
+  const hasRoundData = useRoundStore(state => state.roundData !== null);
 
   const betBinaries = useBetBinaries();
   const winningBetBinary = useWinningBetBinary();
 
-  const calculationsData = useCalculationsStore(state => state.calculations);
+  const calculationsData = useRoundStore(state => state.calculations);
 
   const totalBetAmount = useTotalBetAmounts();
   const { colorMode } = useColorMode();

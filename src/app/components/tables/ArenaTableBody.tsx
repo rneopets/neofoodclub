@@ -21,8 +21,8 @@ import {
   useFoodsForArena,
   useBetCount,
   usePirateId,
-  useOpeningOdds,
-  useCurrentOdds,
+  useOpeningOddsValue,
+  useCurrentOddsValue,
   useWinningBetBinary,
   useStableUsedProbability,
   useStableLogitProbability,
@@ -422,8 +422,8 @@ const PirateRow = React.memo(
     handleBetLineChange: (a: number, v: number) => void;
   }) => {
     const pirateId = usePirateId(arenaId, pirateIndex);
-    const openingOdds = useOpeningOdds(arenaId, pirateIndex);
-    const currentOdds = useCurrentOdds(arenaId, pirateIndex);
+    const openingOdds = useOpeningOddsValue(arenaId, pirateIndex);
+    const currentOdds = useCurrentOddsValue(arenaId, pirateIndex);
     const useLogitModel = useLogitModelSetting();
     const bigBrain = useBigBrain();
     const oddsTimeline = useOddsTimeline();

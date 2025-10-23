@@ -5,13 +5,14 @@ import { computePiratesBinary, computeBinaryToPirates, computePirateBinary } fro
 import {
   useAllBetsForURLData,
   useAllBetAmountsForURLData,
-  useRoundDataStore,
+  useRoundStore,
+  useRoundData,
   useSelectedRound,
   useCurrentBet,
   useCurrentBetName,
   useAddNewSet,
   useDeleteBetSet,
-  useBetManagementStore,
+  useBetStore,
   useArenaRatios,
   useUsedProbabilities,
   useRoundCurrentOdds,
@@ -77,8 +78,8 @@ export function useBetManagement(): {
 
   // Get actions separately to avoid re-renders
   const addNewSet = useAddNewSet();
-  const setAllBets = useBetManagementStore(state => state.setAllBets);
-  const setAllBetAmounts = useBetManagementStore(state => state.setAllBetAmounts);
+  const setAllBets = useBetStore(state => state.setAllBets);
+  const setAllBetAmounts = useBetStore(state => state.setAllBetAmounts);
 
   // Get the full data structures
   const allBets = useAllBetsForURLData();
@@ -94,7 +95,7 @@ export function useBetManagement(): {
     [allBetAmounts, currentBetIndex],
   );
 
-  const roundData = useRoundDataStore(state => state.roundState.roundData);
+  const roundData = useRoundData();
   const currentOdds = useRoundCurrentOdds();
   const positiveArenas = arenaRatios.filter(x => x > 0).length;
 
@@ -230,7 +231,7 @@ export function useBetManagement(): {
     const maxBet = getMaxBet(currentSelectedRound);
 
     // Get the current bet amounts
-    const store = useBetManagementStore.getState();
+    const store = useBetStore.getState();
     const betAmountsMap = store.allBetAmounts.get(store.currentBet) ?? new Map();
 
     const newBetAmounts = new Map(betAmountsMap);
@@ -238,17 +239,15 @@ export function useBetManagement(): {
       newBetAmounts.set(key, maxBet);
     });
 
-    store.updateBetAmounts(store.currentBet, newBetAmounts as BetAmount);
-    // after a short delay, clear the batch update flag
-    setTimeout(() => {
-      store.endBatchUpdate();
-    }, 0);
+    const newAllBetAmounts = new Map(store.allBetAmounts);
+    newAllBetAmounts.set(store.currentBet, newBetAmounts as BetAmount);
+    store.setAllBetAmounts(newAllBetAmounts);
   }, [currentSelectedRound]);
 
   // Increment bet amounts by 2
   const incrementBetAmounts = useCallback((): void => {
     // Get the current bet amounts
-    const store = useBetManagementStore.getState();
+    const store = useBetStore.getState();
     const betAmountsMap = store.allBetAmounts.get(store.currentBet) ?? new Map();
 
     const newBetAmounts = new Map(betAmountsMap);
@@ -258,16 +257,15 @@ export function useBetManagement(): {
       }
     });
 
-    store.updateBetAmounts(store.currentBet, newBetAmounts as BetAmount);
-    setTimeout(() => {
-      store.endBatchUpdate();
-    }, 0);
+    const newAllBetAmounts = new Map(store.allBetAmounts);
+    newAllBetAmounts.set(store.currentBet, newBetAmounts as BetAmount);
+    store.setAllBetAmounts(newAllBetAmounts);
   }, []);
 
   // Decrement bet amounts by 2
   const decrementBetAmounts = useCallback((): void => {
     // Get the current bet amounts
-    const store = useBetManagementStore.getState();
+    const store = useBetStore.getState();
     const betAmountsMap = store.allBetAmounts.get(store.currentBet) ?? new Map();
 
     const newBetAmounts = new Map(betAmountsMap);
@@ -277,10 +275,9 @@ export function useBetManagement(): {
       }
     });
 
-    store.updateBetAmounts(store.currentBet, newBetAmounts as BetAmount);
-    setTimeout(() => {
-      store.endBatchUpdate();
-    }, 0);
+    const newAllBetAmounts = new Map(store.allBetAmounts);
+    newAllBetAmounts.set(store.currentBet, newBetAmounts as BetAmount);
+    store.setAllBetAmounts(newAllBetAmounts);
   }, []);
 
   const calculateBets = useCallback(
