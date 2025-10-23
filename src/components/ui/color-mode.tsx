@@ -13,7 +13,7 @@ export function ColorModeProvider(props: ColorModeProviderProps): React.ReactEle
   return (
     <ThemeProvider
       attribute="data-theme"
-      defaultTheme="light"
+      defaultTheme="dark"
       enableSystem
       disableTransitionOnChange
       {...props}
