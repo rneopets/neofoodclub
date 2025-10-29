@@ -799,6 +799,112 @@ const ArenaTimelineView = React.memo(
     // Sort by time
     arenaTimelineEvents.sort((a, b) => a.time.getTime() - b.time.getTime());
 
+    // Consolidate consecutive single-pirate changes (same logic as OverallTimelineView)
+    const consolidatedArenaEvents: TimelineEvent[] = [];
+    let i = 0;
+
+    while (i < arenaTimelineEvents.length) {
+      const event = arenaTimelineEvents[i];
+
+      // Check if this is a single-pirate change event
+      if (event?.type === 'change' && event.pirates.length === 1 && event.pirates[0]) {
+        const firstPirateChange = event.pirates[0];
+        const consecutiveChanges: TimelineChangeEvent[] = [event];
+        let j = i + 1;
+
+        // Look ahead for consecutive changes of the same pirate
+        while (j < arenaTimelineEvents.length) {
+          const nextEvent = arenaTimelineEvents[j];
+
+          // Must be a change event
+          if (nextEvent?.type !== 'change') {
+            break;
+          }
+
+          // If it's a multi-pirate change, stop consolidating
+          if (nextEvent.pirates.length !== 1) {
+            break;
+          }
+
+          const nextPirate = nextEvent.pirates[0];
+          if (!nextPirate) {
+            break;
+          }
+
+          // If it's the same pirate, add it to consolidation
+          if (
+            nextPirate.arenaId === firstPirateChange.arenaId &&
+            nextPirate.pirateIndex === firstPirateChange.pirateIndex
+          ) {
+            consecutiveChanges.push(nextEvent);
+            j++;
+          } else {
+            // Different pirate, stop consolidating
+            break;
+          }
+        }
+
+        // If we found multiple consecutive changes for the same pirate, consolidate them
+        if (consecutiveChanges.length > 1) {
+          const firstChange = consecutiveChanges[0];
+          const lastChange = consecutiveChanges[consecutiveChanges.length - 1];
+          const firstOdds = firstChange?.pirates[0]?.oldOdds;
+          const lastOdds = lastChange?.pirates[0]?.newOdds;
+
+          if (firstChange && lastChange && firstOdds && lastOdds) {
+            const hasIncreases = consecutiveChanges.some(c => c.pirates[0]?.isIncrease);
+            const hasDecreases = consecutiveChanges.some(c => !c.pirates[0]?.isIncrease);
+
+            let color = 'gray';
+            let icon = <FaArrowUp />;
+
+            if (hasIncreases && hasDecreases) {
+              color = 'blue';
+              icon = <FaWaveSquare />;
+            } else if (lastOdds > firstOdds) {
+              color = 'green';
+              icon = <FaArrowUp />;
+            } else {
+              color = 'red';
+              icon = <FaArrowDown />;
+            }
+
+            const distinctChangesCount = consecutiveChanges.length;
+
+            consolidatedArenaEvents.push({
+              id: `consolidated-${firstChange.id}`,
+              icon,
+              title: `${firstPirateChange.pirateName}`,
+              description: `${distinctChangesCount} change${distinctChangesCount !== 1 ? 's' : ''}: ${firstOdds}:1 → ${lastOdds}:1`,
+              time: firstChange.time,
+              color,
+              type: 'consolidated' as const,
+              changes: consecutiveChanges,
+              pirate: {
+                arenaId: firstPirateChange.arenaId,
+                pirateIndex: firstPirateChange.pirateIndex,
+                pirateName: firstPirateChange.pirateName,
+                pirateId: firstPirateChange.pirateId,
+                arenaName: firstPirateChange.arenaName,
+              },
+            });
+          }
+
+          i = j; // Skip past all the consolidated events
+        } else {
+          // Single change, add as-is
+          consolidatedArenaEvents.push(event);
+          i++;
+        }
+      } else {
+        // Not a change event or not a single pirate, add as-is
+        if (event) {
+          consolidatedArenaEvents.push(event);
+        }
+        i++;
+      }
+    }
+
     return (
       <>
         <DrawerHeader>
@@ -837,7 +943,7 @@ const ArenaTimelineView = React.memo(
           <VStack align="stretch">
             <Box>
               <Timeline.Root size="xl" variant="subtle">
-                {arenaTimelineEvents.map(event => (
+                {consolidatedArenaEvents.map(event => (
                   <Timeline.Item key={event.id}>
                     <Timeline.Connector>
                       <Timeline.Separator />
@@ -854,6 +960,80 @@ const ArenaTimelineView = React.memo(
                           <Timeline.Description color="fg.muted" fontSize="sm">
                             <Text fontSize="sm">{event.description}</Text>
                           </Timeline.Description>
+
+                          {/* Consolidated changes (collapsible) */}
+                          {event.type === 'consolidated' && (
+                            <Box mt={2}>
+                              <Button
+                                size="xs"
+                                variant="ghost"
+                                onClick={() =>
+                                  onPirateClick(event.pirate.arenaId, event.pirate.pirateIndex)
+                                }
+                                mb={2}
+                              >
+                                <Avatar
+                                  name={event.pirate.pirateName}
+                                  src={`https://images.neopets.com/pirates/fc/fc_pirate_${event.pirate.pirateId}.gif`}
+                                  size="2xs"
+                                />
+                                View Timeline
+                              </Button>
+                              <Collapsible.Root>
+                                <Collapsible.Trigger asChild>
+                                  <Button size="xs" variant="outline">
+                                    <Text fontSize="xs">Show all changes</Text>
+                                    <Collapsible.Indicator
+                                      transition="transform 0.2s"
+                                      _open={{ transform: 'rotate(180deg)' }}
+                                    >
+                                      <FaChevronDown />
+                                    </Collapsible.Indicator>
+                                  </Button>
+                                </Collapsible.Trigger>
+                                <Collapsible.Content>
+                                  <VStack align="stretch" gap={2} mt={2} pl={4}>
+                                    {event.changes.map((change, idx) => {
+                                      const pirate = change.pirates[0];
+                                      if (!pirate) {
+                                        return null;
+                                      }
+
+                                      return (
+                                        <Flex
+                                          key={change.id}
+                                          gap={2}
+                                          alignItems="center"
+                                          fontSize="xs"
+                                        >
+                                          <Text color="fg.muted">#{idx + 1}:</Text>
+                                          <Text color="fg.muted">
+                                            {pirate.oldOdds}:1 →{' '}
+                                            <Text
+                                              as="span"
+                                              fontWeight="semibold"
+                                              color={pirate.isIncrease ? 'green.500' : 'red.500'}
+                                            >
+                                              {pirate.newOdds}:1
+                                            </Text>
+                                          </Text>
+                                          <Text color="fg.muted" fontSize="2xs">
+                                            <DateFormatter
+                                              format="LTS [NST]"
+                                              date={change.time}
+                                              tz="America/Los_Angeles"
+                                            />
+                                          </Text>
+                                        </Flex>
+                                      );
+                                    })}
+                                  </VStack>
+                                </Collapsible.Content>
+                              </Collapsible.Root>
+                            </Box>
+                          )}
+
+                          {/* Regular changes */}
                           {event.type === 'change' && (
                             <VStack align="stretch" gap={1} mt={2}>
                               {event.pirates.map(pirate => (
