@@ -10,6 +10,7 @@ import {
   Breadcrumb,
   Button,
   Collapsible,
+  ButtonGroup,
 } from '@chakra-ui/react';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
@@ -34,6 +35,305 @@ import DateFormatter from './DateFormatter';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Timeline } from '@/components/ui/timeline';
+import { Tooltip } from '@/components/ui/tooltip';
+
+// Helper function to consolidate consecutive single-pirate changes
+function consolidateTimelineEvents(events: TimelineEvent[]): TimelineEvent[] {
+  const consolidatedEvents: TimelineEvent[] = [];
+  let i = 0;
+
+  while (i < events.length) {
+    const event = events[i];
+
+    // Check if this is a single-pirate change event
+    if (event?.type === 'change' && event.pirates.length === 1 && event.pirates[0]) {
+      const firstPirateChange = event.pirates[0];
+      const consecutiveChanges: TimelineChangeEvent[] = [event];
+      let j = i + 1;
+
+      // Look ahead for consecutive changes of the same pirate
+      while (j < events.length) {
+        const nextEvent = events[j];
+
+        // Must be a change event
+        if (nextEvent?.type !== 'change') {
+          break;
+        }
+
+        // If it's a multi-pirate change, stop consolidating
+        if (nextEvent.pirates.length !== 1) {
+          break;
+        }
+
+        const nextPirate = nextEvent.pirates[0];
+        if (!nextPirate) {
+          break;
+        }
+
+        // If it's the same pirate, add it to consolidation
+        if (
+          nextPirate.arenaId === firstPirateChange.arenaId &&
+          nextPirate.pirateIndex === firstPirateChange.pirateIndex
+        ) {
+          consecutiveChanges.push(nextEvent);
+          j++;
+        } else {
+          // Different pirate, stop consolidating
+          break;
+        }
+      }
+
+      // If we found multiple consecutive changes for the same pirate, consolidate them
+      if (consecutiveChanges.length > 1) {
+        const firstChange = consecutiveChanges[0];
+        const lastChange = consecutiveChanges[consecutiveChanges.length - 1];
+        const firstOdds = firstChange?.pirates[0]?.oldOdds;
+        const lastOdds = lastChange?.pirates[0]?.newOdds;
+
+        if (firstChange && lastChange && firstOdds && lastOdds) {
+          const hasIncreases = consecutiveChanges.some(c => c.pirates[0]?.isIncrease);
+          const hasDecreases = consecutiveChanges.some(c => !c.pirates[0]?.isIncrease);
+
+          let color = 'gray';
+          let icon = <FaArrowUp />;
+
+          if (hasIncreases && hasDecreases) {
+            color = 'blue';
+            icon = <FaWaveSquare />;
+          } else if (lastOdds > firstOdds) {
+            color = 'green';
+            icon = <FaArrowUp />;
+          } else {
+            color = 'red';
+            icon = <FaArrowDown />;
+          }
+
+          const distinctChangesCount = consecutiveChanges.length;
+
+          consolidatedEvents.push({
+            id: `consolidated-${firstChange.id}`,
+            icon,
+            title: `${firstPirateChange.pirateName}${firstChange === consecutiveChanges[0] && firstPirateChange.arenaName ? ` - ${firstPirateChange.arenaName}` : ''}`,
+            description: `${distinctChangesCount} change${distinctChangesCount !== 1 ? 's' : ''}: ${firstOdds}:1 → ${lastOdds}:1`,
+            time: firstChange.time,
+            color,
+            type: 'consolidated' as const,
+            changes: consecutiveChanges,
+            pirate: {
+              arenaId: firstPirateChange.arenaId,
+              pirateIndex: firstPirateChange.pirateIndex,
+              pirateName: firstPirateChange.pirateName,
+              pirateId: firstPirateChange.pirateId,
+              arenaName: firstPirateChange.arenaName,
+            },
+          });
+        }
+
+        i = j; // Skip past all the consolidated events
+      } else {
+        // Single change, add as-is
+        consolidatedEvents.push(event);
+        i++;
+      }
+    } else {
+      // Not a change event or not a single pirate, add as-is
+      if (event) {
+        consolidatedEvents.push(event);
+      }
+      i++;
+    }
+  }
+
+  return consolidatedEvents;
+}
+
+// Component to render consolidated changes
+const ConsolidatedChangesContent = React.memo(
+  (props: {
+    event: TimelineConsolidatedEvent;
+    onPirateClick: (arenaId: number, pirateIndex: number) => void;
+  }): React.ReactElement => {
+    const { event, onPirateClick } = props;
+
+    return (
+      <Box mt={2}>
+        <Button
+          size="xs"
+          variant="ghost"
+          onClick={() => onPirateClick(event.pirate.arenaId, event.pirate.pirateIndex)}
+          mb={2}
+        >
+          <Avatar
+            name={event.pirate.pirateName}
+            src={`https://images.neopets.com/pirates/fc/fc_pirate_${event.pirate.pirateId}.gif`}
+            size="2xs"
+          />
+          View Timeline
+        </Button>
+        <Collapsible.Root>
+          <Collapsible.Trigger asChild>
+            <Button size="xs" variant="outline">
+              <Text fontSize="xs">Show all changes</Text>
+              <Collapsible.Indicator
+                transition="transform 0.2s"
+                _open={{ transform: 'rotate(180deg)' }}
+              >
+                <FaChevronDown />
+              </Collapsible.Indicator>
+            </Button>
+          </Collapsible.Trigger>
+          <Collapsible.Content>
+            <VStack align="stretch" gap={2} mt={2} pl={4}>
+              {event.changes.map((change, idx) => {
+                const pirate = change.pirates[0];
+                if (!pirate) {
+                  return null;
+                }
+
+                return (
+                  <Flex key={change.id} gap={2} alignItems="center" fontSize="xs">
+                    <Text color="fg.muted">#{idx + 1}:</Text>
+                    <Text color="fg.muted">
+                      {pirate.oldOdds}:1 →{' '}
+                      <Text
+                        as="span"
+                        fontWeight="semibold"
+                        color={pirate.isIncrease ? 'green.500' : 'red.500'}
+                      >
+                        {pirate.newOdds}:1
+                      </Text>
+                    </Text>
+                    <Text color="fg.muted" fontSize="2xs">
+                      <DateFormatter
+                        format="LTS [NST]"
+                        date={change.time}
+                        tz="America/Los_Angeles"
+                      />
+                    </Text>
+                  </Flex>
+                );
+              })}
+            </VStack>
+          </Collapsible.Content>
+        </Collapsible.Root>
+      </Box>
+    );
+  },
+);
+
+ConsolidatedChangesContent.displayName = 'ConsolidatedChangesContent';
+
+// Component to render regular change events
+const RegularChangesContent = React.memo(
+  (props: {
+    event: TimelineChangeEvent;
+    onPirateClick: (arenaId: number, pirateIndex: number) => void;
+    showArenaName?: boolean;
+  }): React.ReactElement => {
+    const { event, onPirateClick, showArenaName = false } = props;
+
+    return (
+      <VStack align="stretch" gap={1} mt={2}>
+        {event.pirates.map(pirate => (
+          <Flex
+            key={`${pirate.arenaId}-${pirate.pirateIndex}`}
+            gap={2}
+            alignItems="center"
+            flexWrap="wrap"
+          >
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={() => onPirateClick(pirate.arenaId, pirate.pirateIndex)}
+            >
+              <Avatar
+                name={pirate.pirateName}
+                src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirate.pirateId}.gif`}
+                size="2xs"
+              />
+              {pirate.pirateName}
+            </Button>
+            <Text fontSize="xs" color="fg.muted">
+              {showArenaName && `${pirate.arenaName}: `}
+              {pirate.oldOdds}:1 →{' '}
+              <Text
+                as="span"
+                fontWeight="semibold"
+                color={pirate.isIncrease ? 'green.500' : 'red.500'}
+              >
+                {pirate.newOdds}:1
+              </Text>
+            </Text>
+          </Flex>
+        ))}
+      </VStack>
+    );
+  },
+);
+
+RegularChangesContent.displayName = 'RegularChangesContent';
+
+// Component to render winner events
+const WinnersContent = React.memo(
+  (props: {
+    winners: WinningPirate[];
+    onPirateClick: (arenaId: number, pirateIndex: number) => void;
+    showArenaName?: boolean;
+  }): React.ReactElement => {
+    const { winners, onPirateClick, showArenaName = false } = props;
+
+    return (
+      <VStack align="stretch" gap={2} mt={3}>
+        {winners.map(winner => (
+          <Flex
+            key={`winner-${winner.arenaId}-${winner.pirateIndex}`}
+            gap={3}
+            alignItems="center"
+            p={2}
+            borderRadius="md"
+            bg="bg.muted"
+            _hover={{ bg: 'bg.emphasized' }}
+            transition="background 0.2s"
+          >
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onPirateClick(winner.arenaId, winner.pirateIndex)}
+              p={0}
+            >
+              <Avatar
+                name={winner.pirateName}
+                src={`https://images.neopets.com/pirates/fc/fc_pirate_${winner.pirateId}.gif`}
+                size="sm"
+              />
+            </Button>
+            <Box flex="1">
+              <Flex gap={2} alignItems="baseline" flexWrap="wrap">
+                <Text fontWeight="bold" fontSize="sm">
+                  {winner.pirateName}
+                </Text>
+                <Text fontSize="xs" color="fg.muted">
+                  {showArenaName ? winner.arenaName : `${winner.finalOdds}:1`}
+                </Text>
+              </Flex>
+              {showArenaName && (
+                <Text fontSize="xs" color="fg.muted">
+                  Won at{' '}
+                  <Text as="span" fontWeight="semibold" color="green.500">
+                    {winner.finalOdds}:1
+                  </Text>
+                </Text>
+              )}
+            </Box>
+            <Text fontSize="2xl">🏆</Text>
+          </Flex>
+        ))}
+      </VStack>
+    );
+  },
+);
+
+WinnersContent.displayName = 'WinnersContent';
 
 // Types for timeline events
 type TimelineStartEvent = {
@@ -269,111 +569,7 @@ const OverallTimelineView = React.memo(
     allTimelineEvents.sort((a, b) => a.time.getTime() - b.time.getTime());
 
     // Consolidate consecutive single-pirate changes
-    const consolidatedEvents: TimelineEvent[] = [];
-    let i = 0;
-
-    while (i < allTimelineEvents.length) {
-      const event = allTimelineEvents[i];
-
-      // Check if this is a single-pirate change event
-      if (event?.type === 'change' && event.pirates.length === 1 && event.pirates[0]) {
-        const firstPirateChange = event.pirates[0];
-        const consecutiveChanges: TimelineChangeEvent[] = [event];
-        let j = i + 1;
-
-        // Look ahead for consecutive changes of the same pirate
-        // Only consolidate if they're truly consecutive (no other events in between)
-        while (j < allTimelineEvents.length) {
-          const nextEvent = allTimelineEvents[j];
-
-          // Must be a change event
-          if (nextEvent?.type !== 'change') {
-            break;
-          }
-
-          // If it's a multi-pirate change, stop consolidating
-          if (nextEvent.pirates.length !== 1) {
-            break;
-          }
-
-          const nextPirate = nextEvent.pirates[0];
-          if (!nextPirate) {
-            break;
-          }
-
-          // If it's the same pirate, add it to consolidation
-          if (
-            nextPirate.arenaId === firstPirateChange.arenaId &&
-            nextPirate.pirateIndex === firstPirateChange.pirateIndex
-          ) {
-            consecutiveChanges.push(nextEvent);
-            j++;
-          } else {
-            // Different pirate, stop consolidating
-            break;
-          }
-        }
-
-        // If we found multiple consecutive changes for the same pirate, consolidate them
-        if (consecutiveChanges.length > 1) {
-          const firstChange = consecutiveChanges[0];
-          const lastChange = consecutiveChanges[consecutiveChanges.length - 1];
-          const firstOdds = firstChange?.pirates[0]?.oldOdds;
-          const lastOdds = lastChange?.pirates[0]?.newOdds;
-
-          if (firstChange && lastChange && firstOdds && lastOdds) {
-            const hasIncreases = consecutiveChanges.some(c => c.pirates[0]?.isIncrease);
-            const hasDecreases = consecutiveChanges.some(c => !c.pirates[0]?.isIncrease);
-
-            let color = 'gray';
-            let icon = <FaArrowUp />;
-
-            if (hasIncreases && hasDecreases) {
-              color = 'blue';
-              icon = <FaWaveSquare />;
-            } else if (lastOdds > firstOdds) {
-              color = 'green';
-              icon = <FaArrowUp />;
-            } else {
-              color = 'red';
-              icon = <FaArrowDown />;
-            }
-
-            const distinctChangesCount = consecutiveChanges.length;
-
-            consolidatedEvents.push({
-              id: `consolidated-${firstChange.id}`,
-              icon,
-              title: `${firstPirateChange.pirateName} - ${firstPirateChange.arenaName}`,
-              description: `${distinctChangesCount} change${distinctChangesCount !== 1 ? 's' : ''}: ${firstOdds}:1 → ${lastOdds}:1`,
-              time: firstChange.time,
-              color,
-              type: 'consolidated' as const,
-              changes: consecutiveChanges,
-              pirate: {
-                arenaId: firstPirateChange.arenaId,
-                pirateIndex: firstPirateChange.pirateIndex,
-                pirateName: firstPirateChange.pirateName,
-                pirateId: firstPirateChange.pirateId,
-                arenaName: firstPirateChange.arenaName,
-              },
-            });
-          }
-
-          i = j; // Skip past all the consolidated events
-        } else {
-          // Single change, add as-is
-          consolidatedEvents.push(event);
-          i++;
-        }
-      } else {
-        // Not a change event or not a single pirate, add as-is
-        if (event) {
-          consolidatedEvents.push(event);
-        }
-        i++;
-      }
-    }
+    const consolidatedEvents = consolidateTimelineEvents(allTimelineEvents);
 
     return (
       <>
@@ -406,16 +602,30 @@ const OverallTimelineView = React.memo(
                   View by Arena:
                 </Text>
                 <Flex gap={2} flexWrap="wrap">
-                  {ARENA_NAMES.map((arena, idx) => (
-                    <Button
-                      key={arena}
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onArenaClick(idx)}
-                    >
-                      {arena}
-                    </Button>
-                  ))}
+                  <ButtonGroup attached>
+                    {ARENA_NAMES.map((arena, idx) => {
+                      const arenaChangesCount = changes.filter(c => c.arena === idx).length;
+                      return (
+                        <Tooltip
+                          content={`${arenaChangesCount} odds change${arenaChangesCount !== 1 ? 's' : ''}`}
+                          showArrow
+                          placement="top"
+                          openDelay={600}
+                          key={arena}
+                        >
+                          <Button
+                            key={arena}
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onArenaClick(idx)}
+                            disabled={arenaChangesCount === 0}
+                          >
+                            {arena}
+                          </Button>
+                        </Tooltip>
+                      );
+                    })}
+                  </ButtonGroup>
                 </Flex>
               </Box>
             )}
@@ -456,163 +666,28 @@ const OverallTimelineView = React.memo(
 
                           {/* Consolidated changes (collapsible) */}
                           {event.type === 'consolidated' && (
-                            <Box mt={2}>
-                              <Button
-                                size="xs"
-                                variant="ghost"
-                                onClick={() =>
-                                  onPirateClick(event.pirate.arenaId, event.pirate.pirateIndex)
-                                }
-                                mb={2}
-                              >
-                                <Avatar
-                                  name={event.pirate.pirateName}
-                                  src={`https://images.neopets.com/pirates/fc/fc_pirate_${event.pirate.pirateId}.gif`}
-                                  size="2xs"
-                                />
-                                View Timeline
-                              </Button>
-                              <Collapsible.Root>
-                                <Collapsible.Trigger asChild>
-                                  <Button size="xs" variant="outline">
-                                    <Text fontSize="xs">Show all changes</Text>
-                                    <Collapsible.Indicator
-                                      transition="transform 0.2s"
-                                      _open={{ transform: 'rotate(180deg)' }}
-                                    >
-                                      <FaChevronDown />
-                                    </Collapsible.Indicator>
-                                  </Button>
-                                </Collapsible.Trigger>
-                                <Collapsible.Content>
-                                  <VStack align="stretch" gap={2} mt={2} pl={4}>
-                                    {event.changes.map((change, idx) => {
-                                      const pirate = change.pirates[0];
-                                      if (!pirate) {
-                                        return null;
-                                      }
-
-                                      return (
-                                        <Flex
-                                          key={change.id}
-                                          gap={2}
-                                          alignItems="center"
-                                          fontSize="xs"
-                                        >
-                                          <Text color="fg.muted">#{idx + 1}:</Text>
-                                          <Text color="fg.muted">
-                                            {pirate.oldOdds}:1 →{' '}
-                                            <Text
-                                              as="span"
-                                              fontWeight="semibold"
-                                              color={pirate.isIncrease ? 'green.500' : 'red.500'}
-                                            >
-                                              {pirate.newOdds}:1
-                                            </Text>
-                                          </Text>
-                                          <Text color="fg.muted" fontSize="2xs">
-                                            <DateFormatter
-                                              format="LTS [NST]"
-                                              date={change.time}
-                                              tz="America/Los_Angeles"
-                                            />
-                                          </Text>
-                                        </Flex>
-                                      );
-                                    })}
-                                  </VStack>
-                                </Collapsible.Content>
-                              </Collapsible.Root>
-                            </Box>
+                            <ConsolidatedChangesContent
+                              event={event}
+                              onPirateClick={onPirateClick}
+                            />
                           )}
 
                           {/* Regular changes */}
                           {event.type === 'change' && (
-                            <VStack align="stretch" gap={1} mt={2}>
-                              {event.pirates.map(pirate => (
-                                <Flex
-                                  key={`${pirate.arenaId}-${pirate.pirateIndex}`}
-                                  gap={2}
-                                  alignItems="center"
-                                  flexWrap="wrap"
-                                >
-                                  <Button
-                                    size="xs"
-                                    variant="ghost"
-                                    onClick={() =>
-                                      onPirateClick(pirate.arenaId, pirate.pirateIndex)
-                                    }
-                                  >
-                                    <Avatar
-                                      name={pirate.pirateName}
-                                      src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirate.pirateId}.gif`}
-                                      size="2xs"
-                                    />
-                                    {pirate.pirateName}
-                                  </Button>
-                                  <Text fontSize="xs" color="fg.muted">
-                                    {pirate.arenaName}: {pirate.oldOdds}:1 →{' '}
-                                    <Text
-                                      as="span"
-                                      fontWeight="semibold"
-                                      color={pirate.isIncrease ? 'green.500' : 'red.500'}
-                                    >
-                                      {pirate.newOdds}:1
-                                    </Text>
-                                  </Text>
-                                </Flex>
-                              ))}
-                            </VStack>
+                            <RegularChangesContent
+                              event={event}
+                              onPirateClick={onPirateClick}
+                              showArenaName
+                            />
                           )}
 
                           {/* Round ended with winners */}
                           {event.type === 'end' && event.winners && event.winners.length > 0 && (
-                            <VStack align="stretch" gap={2} mt={3}>
-                              {event.winners.map(winner => (
-                                <Flex
-                                  key={`winner-${winner.arenaId}-${winner.pirateIndex}`}
-                                  gap={3}
-                                  alignItems="center"
-                                  p={2}
-                                  borderRadius="md"
-                                  bg="bg.muted"
-                                  _hover={{ bg: 'bg.emphasized' }}
-                                  transition="background 0.2s"
-                                >
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() =>
-                                      onPirateClick(winner.arenaId, winner.pirateIndex)
-                                    }
-                                    p={0}
-                                  >
-                                    <Avatar
-                                      name={winner.pirateName}
-                                      src={`https://images.neopets.com/pirates/fc/fc_pirate_${winner.pirateId}.gif`}
-                                      size="sm"
-                                    />
-                                  </Button>
-                                  <Box flex="1">
-                                    <Flex gap={2} alignItems="baseline" flexWrap="wrap">
-                                      <Text fontWeight="bold" fontSize="sm">
-                                        {winner.pirateName}
-                                      </Text>
-                                      <Text fontSize="xs" color="fg.muted">
-                                        {winner.arenaName}
-                                      </Text>
-                                    </Flex>
-                                    <Text fontSize="xs" color="fg.muted">
-                                      Won at{' '}
-                                      <Text as="span" fontWeight="semibold" color="green.500">
-                                        {winner.finalOdds}:1
-                                      </Text>
-                                    </Text>
-                                  </Box>
-                                  <Text fontSize="2xl">🏆</Text>
-                                </Flex>
-                              ))}
-                            </VStack>
+                            <WinnersContent
+                              winners={event.winners}
+                              onPirateClick={onPirateClick}
+                              showArenaName
+                            />
                           )}
                         </Box>
                         <VStack
@@ -799,111 +874,8 @@ const ArenaTimelineView = React.memo(
     // Sort by time
     arenaTimelineEvents.sort((a, b) => a.time.getTime() - b.time.getTime());
 
-    // Consolidate consecutive single-pirate changes (same logic as OverallTimelineView)
-    const consolidatedArenaEvents: TimelineEvent[] = [];
-    let i = 0;
-
-    while (i < arenaTimelineEvents.length) {
-      const event = arenaTimelineEvents[i];
-
-      // Check if this is a single-pirate change event
-      if (event?.type === 'change' && event.pirates.length === 1 && event.pirates[0]) {
-        const firstPirateChange = event.pirates[0];
-        const consecutiveChanges: TimelineChangeEvent[] = [event];
-        let j = i + 1;
-
-        // Look ahead for consecutive changes of the same pirate
-        while (j < arenaTimelineEvents.length) {
-          const nextEvent = arenaTimelineEvents[j];
-
-          // Must be a change event
-          if (nextEvent?.type !== 'change') {
-            break;
-          }
-
-          // If it's a multi-pirate change, stop consolidating
-          if (nextEvent.pirates.length !== 1) {
-            break;
-          }
-
-          const nextPirate = nextEvent.pirates[0];
-          if (!nextPirate) {
-            break;
-          }
-
-          // If it's the same pirate, add it to consolidation
-          if (
-            nextPirate.arenaId === firstPirateChange.arenaId &&
-            nextPirate.pirateIndex === firstPirateChange.pirateIndex
-          ) {
-            consecutiveChanges.push(nextEvent);
-            j++;
-          } else {
-            // Different pirate, stop consolidating
-            break;
-          }
-        }
-
-        // If we found multiple consecutive changes for the same pirate, consolidate them
-        if (consecutiveChanges.length > 1) {
-          const firstChange = consecutiveChanges[0];
-          const lastChange = consecutiveChanges[consecutiveChanges.length - 1];
-          const firstOdds = firstChange?.pirates[0]?.oldOdds;
-          const lastOdds = lastChange?.pirates[0]?.newOdds;
-
-          if (firstChange && lastChange && firstOdds && lastOdds) {
-            const hasIncreases = consecutiveChanges.some(c => c.pirates[0]?.isIncrease);
-            const hasDecreases = consecutiveChanges.some(c => !c.pirates[0]?.isIncrease);
-
-            let color = 'gray';
-            let icon = <FaArrowUp />;
-
-            if (hasIncreases && hasDecreases) {
-              color = 'blue';
-              icon = <FaWaveSquare />;
-            } else if (lastOdds > firstOdds) {
-              color = 'green';
-              icon = <FaArrowUp />;
-            } else {
-              color = 'red';
-              icon = <FaArrowDown />;
-            }
-
-            const distinctChangesCount = consecutiveChanges.length;
-
-            consolidatedArenaEvents.push({
-              id: `consolidated-${firstChange.id}`,
-              icon,
-              title: `${firstPirateChange.pirateName}`,
-              description: `${distinctChangesCount} change${distinctChangesCount !== 1 ? 's' : ''}: ${firstOdds}:1 → ${lastOdds}:1`,
-              time: firstChange.time,
-              color,
-              type: 'consolidated' as const,
-              changes: consecutiveChanges,
-              pirate: {
-                arenaId: firstPirateChange.arenaId,
-                pirateIndex: firstPirateChange.pirateIndex,
-                pirateName: firstPirateChange.pirateName,
-                pirateId: firstPirateChange.pirateId,
-                arenaName: firstPirateChange.arenaName,
-              },
-            });
-          }
-
-          i = j; // Skip past all the consolidated events
-        } else {
-          // Single change, add as-is
-          consolidatedArenaEvents.push(event);
-          i++;
-        }
-      } else {
-        // Not a change event or not a single pirate, add as-is
-        if (event) {
-          consolidatedArenaEvents.push(event);
-        }
-        i++;
-      }
-    }
+    // Consolidate consecutive single-pirate changes
+    const consolidatedArenaEvents = consolidateTimelineEvents(arenaTimelineEvents);
 
     return (
       <>
@@ -963,156 +935,20 @@ const ArenaTimelineView = React.memo(
 
                           {/* Consolidated changes (collapsible) */}
                           {event.type === 'consolidated' && (
-                            <Box mt={2}>
-                              <Button
-                                size="xs"
-                                variant="ghost"
-                                onClick={() =>
-                                  onPirateClick(event.pirate.arenaId, event.pirate.pirateIndex)
-                                }
-                                mb={2}
-                              >
-                                <Avatar
-                                  name={event.pirate.pirateName}
-                                  src={`https://images.neopets.com/pirates/fc/fc_pirate_${event.pirate.pirateId}.gif`}
-                                  size="2xs"
-                                />
-                                View Timeline
-                              </Button>
-                              <Collapsible.Root>
-                                <Collapsible.Trigger asChild>
-                                  <Button size="xs" variant="outline">
-                                    <Text fontSize="xs">Show all changes</Text>
-                                    <Collapsible.Indicator
-                                      transition="transform 0.2s"
-                                      _open={{ transform: 'rotate(180deg)' }}
-                                    >
-                                      <FaChevronDown />
-                                    </Collapsible.Indicator>
-                                  </Button>
-                                </Collapsible.Trigger>
-                                <Collapsible.Content>
-                                  <VStack align="stretch" gap={2} mt={2} pl={4}>
-                                    {event.changes.map((change, idx) => {
-                                      const pirate = change.pirates[0];
-                                      if (!pirate) {
-                                        return null;
-                                      }
-
-                                      return (
-                                        <Flex
-                                          key={change.id}
-                                          gap={2}
-                                          alignItems="center"
-                                          fontSize="xs"
-                                        >
-                                          <Text color="fg.muted">#{idx + 1}:</Text>
-                                          <Text color="fg.muted">
-                                            {pirate.oldOdds}:1 →{' '}
-                                            <Text
-                                              as="span"
-                                              fontWeight="semibold"
-                                              color={pirate.isIncrease ? 'green.500' : 'red.500'}
-                                            >
-                                              {pirate.newOdds}:1
-                                            </Text>
-                                          </Text>
-                                          <Text color="fg.muted" fontSize="2xs">
-                                            <DateFormatter
-                                              format="LTS [NST]"
-                                              date={change.time}
-                                              tz="America/Los_Angeles"
-                                            />
-                                          </Text>
-                                        </Flex>
-                                      );
-                                    })}
-                                  </VStack>
-                                </Collapsible.Content>
-                              </Collapsible.Root>
-                            </Box>
+                            <ConsolidatedChangesContent
+                              event={event}
+                              onPirateClick={onPirateClick}
+                            />
                           )}
 
                           {/* Regular changes */}
                           {event.type === 'change' && (
-                            <VStack align="stretch" gap={1} mt={2}>
-                              {event.pirates.map(pirate => (
-                                <Flex
-                                  key={`${pirate.arenaId}-${pirate.pirateIndex}`}
-                                  gap={2}
-                                  alignItems="center"
-                                  flexWrap="wrap"
-                                >
-                                  <Button
-                                    size="xs"
-                                    variant="ghost"
-                                    onClick={() =>
-                                      onPirateClick(pirate.arenaId, pirate.pirateIndex)
-                                    }
-                                  >
-                                    <Avatar
-                                      name={pirate.pirateName}
-                                      src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirate.pirateId}.gif`}
-                                      size="2xs"
-                                    />
-                                    {pirate.pirateName}
-                                  </Button>
-                                  <Text fontSize="xs" color="fg.muted">
-                                    {pirate.oldOdds}:1 →{' '}
-                                    <Text
-                                      as="span"
-                                      fontWeight="semibold"
-                                      color={pirate.isIncrease ? 'green.500' : 'red.500'}
-                                    >
-                                      {pirate.newOdds}:1
-                                    </Text>
-                                  </Text>
-                                </Flex>
-                              ))}
-                            </VStack>
+                            <RegularChangesContent event={event} onPirateClick={onPirateClick} />
                           )}
 
                           {/* Round ended with winner */}
                           {event.type === 'end' && event.winners && event.winners.length > 0 && (
-                            <VStack align="stretch" gap={2} mt={3}>
-                              {event.winners.map(winner => (
-                                <Flex
-                                  key={`winner-${winner.arenaId}-${winner.pirateIndex}`}
-                                  gap={3}
-                                  alignItems="center"
-                                  p={2}
-                                  borderRadius="md"
-                                  bg="bg.muted"
-                                  _hover={{ bg: 'bg.emphasized' }}
-                                  transition="background 0.2s"
-                                >
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() =>
-                                      onPirateClick(winner.arenaId, winner.pirateIndex)
-                                    }
-                                    p={0}
-                                  >
-                                    <Avatar
-                                      name={winner.pirateName}
-                                      src={`https://images.neopets.com/pirates/fc/fc_pirate_${winner.pirateId}.gif`}
-                                      size="sm"
-                                    />
-                                  </Button>
-                                  <Box flex="1">
-                                    <Flex gap={2} alignItems="baseline" flexWrap="wrap">
-                                      <Text fontWeight="bold" fontSize="sm">
-                                        {winner.pirateName}
-                                      </Text>
-                                      <Text fontSize="xs" color="fg.muted">
-                                        {winner.finalOdds}:1
-                                      </Text>
-                                    </Flex>
-                                  </Box>
-                                </Flex>
-                              ))}
-                            </VStack>
+                            <WinnersContent winners={event.winners} onPirateClick={onPirateClick} />
                           )}
                         </Box>
                         <VStack
