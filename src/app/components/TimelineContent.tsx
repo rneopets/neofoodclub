@@ -90,7 +90,8 @@ function consolidateTimelineEvents(events: TimelineEvent[]): TimelineEvent[] {
         const firstOdds = firstChange?.pirates[0]?.oldOdds;
         const lastOdds = lastChange?.pirates[0]?.newOdds;
 
-        if (firstChange && lastChange && firstOdds && lastOdds) {
+        // Only consolidate if the odds actually changed overall
+        if (firstChange && lastChange && firstOdds && lastOdds && firstOdds !== lastOdds) {
           const hasIncreases = consecutiveChanges.some(c => c.pirates[0]?.isIncrease);
           const hasDecreases = consecutiveChanges.some(c => !c.pirates[0]?.isIncrease);
 
@@ -127,9 +128,15 @@ function consolidateTimelineEvents(events: TimelineEvent[]): TimelineEvent[] {
               arenaName: firstPirateChange.arenaName,
             },
           });
-        }
 
-        i = j; // Skip past all the consolidated events
+          i = j; // Skip past all the consolidated events
+        } else {
+          // Don't consolidate if odds end up the same - add each change individually
+          consecutiveChanges.forEach(change => {
+            consolidatedEvents.push(change);
+          });
+          i = j;
+        }
       } else {
         // Single change, add as-is
         consolidatedEvents.push(event);
@@ -1030,7 +1037,7 @@ const PirateTimelineView = React.memo(
     const oddsChangesCountLabel =
       thisPiratesChanges.length === 0
         ? ''
-        : ` • ${thisPiratesChanges.length} odds change${thisPiratesChanges.length > 1 ? 's' : ''}`;
+        : `${thisPiratesChanges.length} odds change${thisPiratesChanges.length > 1 ? 's' : ''}`;
 
     // Enhanced timeline events with more data
     const timelineEvents = [
@@ -1110,11 +1117,9 @@ const PirateTimelineView = React.memo(
                 size="xl"
               />
               <Box flex="1" minW="200px">
-                <Heading size="lg">
-                  {pirateName} {oddsChangesCountLabel}
-                </Heading>
+                <Heading size="lg">{pirateName}</Heading>
                 <Text as="i" fontSize="md" color="fg.muted" fontStyle="italic">
-                  {arenaName} - Round {roundData.round}
+                  {oddsChangesCountLabel}
                 </Text>
               </Box>
             </Flex>
@@ -1126,8 +1131,7 @@ const PirateTimelineView = React.memo(
               letterSpacing="wide"
             >
               <FaClock style={{ display: 'inline', marginRight: '8px' }} />
-              Timeline ({thisPiratesChanges.length} odds change
-              {thisPiratesChanges.length !== 1 ? 's' : ''})
+              Timeline
             </Text>
           </VStack>
         </DrawerHeader>
