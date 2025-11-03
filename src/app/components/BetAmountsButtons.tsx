@@ -33,53 +33,41 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
   const maxBet = getMaxBet(currentSelectedRound);
   const maxBetDisplay = maxBet === -1000 ? '(currently unset)' : maxBet.toLocaleString();
 
-  const setCappedBetAmounts = useCallback(() => {
-    const store = useBetStore.getState();
-    const maxBet = getMaxBet(currentSelectedRound);
-    const currentBets = store.allBets.get(store.currentBet) ?? new Map();
-    const currentAmounts = store.allBetAmounts.get(store.currentBet) ?? new Map();
+  const setBetAmountsWithMode = useCallback(
+    (capped: boolean) => {
+      const store = useBetStore.getState();
+      const maxBetValue = getMaxBet(currentSelectedRound);
+      const currentBets = store.allBets.get(store.currentBet) ?? new Map();
+      const currentAmounts = store.allBetAmounts.get(store.currentBet) ?? new Map();
 
-    const roundStore = useRoundStore.getState();
-    const betOdds = roundStore.calculations.betOdds;
+      const updates: Array<{ betIndex: number; amount: number }> = [];
 
-    const updates: Array<{ betIndex: number; amount: number }> = [];
+      // Get betOdds only if we need it for capped mode
+      const betOdds = capped ? useRoundStore.getState().calculations.betOdds : null;
 
-    for (const index of currentAmounts.keys()) {
-      const bet = currentBets.get(index) ?? [];
-      if (bet.some((pirate: number) => pirate > 0)) {
-        const amount = determineBetAmount(maxBet, Math.ceil(1_000_000 / (betOdds.get(index) ?? 1)));
-        updates.push({ betIndex: index, amount });
-      } else {
-        updates.push({ betIndex: index, amount: -1000 });
+      for (const index of currentAmounts.keys()) {
+        const bet = currentBets.get(index) ?? [];
+        if (bet.some((pirate: number) => pirate > 0)) {
+          if (capped && betOdds) {
+            const amount = determineBetAmount(
+              maxBetValue,
+              Math.ceil(1_000_000 / (betOdds.get(index) ?? 1)),
+            );
+            updates.push({ betIndex: index, amount });
+          } else {
+            updates.push({ betIndex: index, amount: maxBetValue });
+          }
+        } else {
+          updates.push({ betIndex: index, amount: -1000 });
+        }
       }
-    }
 
-    if (updates.length > 0) {
-      batchUpdateBetAmounts(updates);
-    }
-  }, [currentSelectedRound, batchUpdateBetAmounts]);
-
-  const setUncappedBetAmounts = useCallback(() => {
-    const store = useBetStore.getState();
-    const maxBet = getMaxBet(currentSelectedRound);
-    const currentBets = store.allBets.get(store.currentBet) ?? new Map();
-    const currentAmounts = store.allBetAmounts.get(store.currentBet) ?? new Map();
-
-    const updates: Array<{ betIndex: number; amount: number }> = [];
-
-    for (const index of currentAmounts.keys()) {
-      const bet = currentBets.get(index) ?? [];
-      if (bet.some((pirate: number) => pirate > 0)) {
-        updates.push({ betIndex: index, amount: maxBet });
-      } else {
-        updates.push({ betIndex: index, amount: -1000 });
+      if (updates.length > 0) {
+        batchUpdateBetAmounts(updates);
       }
-    }
-
-    if (updates.length > 0) {
-      batchUpdateBetAmounts(updates);
-    }
-  }, [currentSelectedRound, batchUpdateBetAmounts]);
+    },
+    [currentSelectedRound, batchUpdateBetAmounts],
+  );
 
   const clearBetAmounts = useCallback(() => {
     const emptyBetAmounts = makeEmptyBetAmounts(currentBetAmountsSize);
@@ -125,6 +113,9 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
     }
   }, [batchUpdateBetAmounts]);
 
+  const handleCapped = useCallback(() => setBetAmountsWithMode(true), [setBetAmountsWithMode]);
+  const handleUncapped = useCallback(() => setBetAmountsWithMode(false), [setBetAmountsWithMode]);
+
   return (
     <>
       <Stack>
@@ -141,7 +132,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
               size="sm"
               layerStyle="fill.surface"
               colorPalette="green"
-              onClick={setCappedBetAmounts}
+              onClick={handleCapped}
               data-testid="capped-bet-amounts-button"
               {...rest}
             >
@@ -158,7 +149,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
               size="sm"
               layerStyle="fill.surface"
               colorPalette="blue"
-              onClick={setUncappedBetAmounts}
+              onClick={handleUncapped}
               data-testid="uncapped-bet-amounts-button"
               {...rest}
             >
