@@ -46,9 +46,6 @@ export function useBetManagement(): {
   anyBetsExist: () => boolean;
   setBetAmount: (betIndex: number, amount: number) => void;
   setBetAmounts: (value: number, capped?: boolean) => void;
-  setUncappedBetAmounts: () => void;
-  incrementBetAmounts: () => void;
-  decrementBetAmounts: () => void;
   calculateBets: (...pirates: number[][]) => {
     betCaps: Map<number, number>;
     betOdds: Map<number, number>;
@@ -225,60 +222,6 @@ export function useBetManagement(): {
     },
     [currentBetIndex, currentBets, currentBetAmounts, allBetAmounts, setAllBetAmounts, roundData],
   );
-
-  // Set uncapped bet amounts
-  const setUncappedBetAmounts = useCallback((): void => {
-    const maxBet = getMaxBet(currentSelectedRound);
-
-    // Get the current bet amounts
-    const store = useBetStore.getState();
-    const betAmountsMap = store.allBetAmounts.get(store.currentBet) ?? new Map();
-
-    const newBetAmounts = new Map(betAmountsMap);
-    newBetAmounts.forEach((_value, key) => {
-      newBetAmounts.set(key, maxBet);
-    });
-
-    const newAllBetAmounts = new Map(store.allBetAmounts);
-    newAllBetAmounts.set(store.currentBet, newBetAmounts as BetAmount);
-    store.setAllBetAmounts(newAllBetAmounts);
-  }, [currentSelectedRound]);
-
-  // Increment bet amounts by 2
-  const incrementBetAmounts = useCallback((): void => {
-    // Get the current bet amounts
-    const store = useBetStore.getState();
-    const betAmountsMap = store.allBetAmounts.get(store.currentBet) ?? new Map();
-
-    const newBetAmounts = new Map(betAmountsMap);
-    newBetAmounts.forEach((value, key) => {
-      if (value > 0) {
-        newBetAmounts.set(key, value + 2);
-      }
-    });
-
-    const newAllBetAmounts = new Map(store.allBetAmounts);
-    newAllBetAmounts.set(store.currentBet, newBetAmounts as BetAmount);
-    store.setAllBetAmounts(newAllBetAmounts);
-  }, []);
-
-  // Decrement bet amounts by 2
-  const decrementBetAmounts = useCallback((): void => {
-    // Get the current bet amounts
-    const store = useBetStore.getState();
-    const betAmountsMap = store.allBetAmounts.get(store.currentBet) ?? new Map();
-
-    const newBetAmounts = new Map(betAmountsMap);
-    newBetAmounts.forEach((value, key) => {
-      if (value > 0) {
-        newBetAmounts.set(key, value - 2);
-      }
-    });
-
-    const newAllBetAmounts = new Map(store.allBetAmounts);
-    newAllBetAmounts.set(store.currentBet, newBetAmounts as BetAmount);
-    store.setAllBetAmounts(newAllBetAmounts);
-  }, []);
 
   const calculateBets = useCallback(
     (
@@ -675,9 +618,6 @@ export function useBetManagement(): {
 
     // Batch bet manipulation
     setBetAmounts,
-    setUncappedBetAmounts,
-    incrementBetAmounts,
-    decrementBetAmounts,
 
     // Calculations
     calculateBets,
