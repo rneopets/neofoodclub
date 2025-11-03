@@ -243,6 +243,7 @@ const PayoutTableRow = React.memo(
                   : 'Bet amount is 2+ NP over maxbet'
               }
               cursor="help"
+              textDecoration="underline dotted"
             />
           ) : (
             (maxBets?.toLocaleString() ?? '0')
