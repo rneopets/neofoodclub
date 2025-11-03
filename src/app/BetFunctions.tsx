@@ -279,26 +279,63 @@ const BuildSetMenu = React.memo((): React.ReactElement => {
 
 BuildSetMenu.displayName = 'BuildSetMenu';
 
+// Shared validation for table export
+function validateTableExport(
+  calculations: RoundCalculationResult,
+  currentSelectedRound: number,
+  roundData: RoundData,
+): boolean {
+  return !!(
+    calculations.payoutTables.odds &&
+    calculations.calculated &&
+    isValidRound({ roundData, currentSelectedRound } as RoundState)
+  );
+}
+
+// Process bets and collect data for table generation
+interface BetTableData {
+  betNum: number;
+  bet: number[];
+  odds: number;
+}
+
+function collectBetTableData(
+  bets: Bet,
+  calculations: RoundCalculationResult,
+): { bets: BetTableData[]; totalTER: number; betCount: number } {
+  let totalTER = 0;
+  let betCount = 0;
+  const betData: BetTableData[] = [];
+
+  for (const [betNum, bet] of bets.entries()) {
+    totalTER += calculations.betExpectedRatios.get(betNum) ?? 0;
+    if (calculations.betBinaries.get(betNum)) {
+      betCount += 1;
+      betData.push({
+        betNum,
+        bet,
+        odds: calculations.betOdds.get(betNum) ?? 0,
+      });
+    }
+  }
+
+  return { bets: betData, totalTER, betCount };
+}
+
 function createMarkdownTable(
   calculations: RoundCalculationResult,
   currentSelectedRound: number,
   roundData: RoundData,
   bets: Bet,
 ): string | null {
-  // specifically meant to not be posted on Neopets, so it includes a URL.
-  if (
-    !calculations.payoutTables.odds ||
-    calculations.calculated === false ||
-    !isValidRound({ roundData, currentSelectedRound } as RoundState)
-  ) {
+  if (!validateTableExport(calculations, currentSelectedRound, roundData)) {
     return null;
   }
 
-  let totalTER = 0;
-  let betCount = 0;
+  const { bets: betData, totalTER, betCount } = collectBetTableData(bets, calculations);
   const lines: string[] = [];
 
-  // bet table
+  // bet table header
   lines.push(
     `[${currentSelectedRound}](${window.location.origin}${makeBetURL(
       currentSelectedRound,
@@ -309,22 +346,24 @@ function createMarkdownTable(
   );
   lines.push(':-:|-|-|-|-|-|-:');
 
-  for (const [betNum, bet] of bets.entries()) {
-    totalTER += calculations.betExpectedRatios.get(betNum) ?? 0;
-    if (calculations.betBinaries.get(betNum)) {
-      betCount += 1;
-      let str = `${betNum}`;
-      for (const pirateId of bet) {
-        str += '|';
+  // bet table rows
+  for (const { betNum, bet, odds } of betData) {
+    let str = `${betNum}`;
+    for (let arenaIndex = 0; arenaIndex < bet.length; arenaIndex++) {
+      str += '|';
+      const piratePosition = bet[arenaIndex];
+      if (piratePosition) {
+        const pirateId = roundData.pirates[arenaIndex]?.[piratePosition - 1];
         if (pirateId) {
           str += PIRATE_NAMES.get(pirateId);
         }
       }
-      lines.push(`${str}|${calculations.betOdds.get(betNum) ?? 0}:1`);
     }
+    lines.push(`${str}|${odds}:1`);
   }
+
+  // stats section
   lines.push('\n');
-  // stats
   lines.push(`TER: ${totalTER.toFixed(3)}`);
   lines.push('\n');
   lines.push('Odds|Probability|Cumulative|Tail');
@@ -348,32 +387,32 @@ function createHtmlTable(
   bets: Bet,
 ): string | null {
   // specifically meant to be posted on Neopets, so it includes the bet hash
-  if (
-    !calculations.payoutTables.odds ||
-    calculations.calculated === false ||
-    !isValidRound({ roundData, currentSelectedRound } as RoundState)
-  ) {
+  if (!validateTableExport(calculations, currentSelectedRound, roundData)) {
     return null;
   }
+
+  const { bets: betData } = collectBetTableData(bets, calculations);
 
   // bet table
   let html =
     '<table><thead><tr><th>Bet</th><th>Shipwreck</th><th>Lagoon</th><th>Treasure</th><th>Hidden</th><th>Harpoon</th><th>Odds</th></tr></thead><tbody>';
 
-  for (const [betNum, bet] of bets.entries()) {
-    if (calculations.betBinaries.get(betNum)) {
-      let str = `<tr><td>${betNum}</td>`;
-      for (const pirateId of bet) {
-        str += '<td>';
+  for (const { betNum, bet, odds } of betData) {
+    let str = `<tr><td>${betNum}</td>`;
+    for (let arenaIndex = 0; arenaIndex < bet.length; arenaIndex++) {
+      str += '<td>';
+      const piratePosition = bet[arenaIndex];
+      if (piratePosition) {
+        const pirateId = roundData.pirates[arenaIndex]?.[piratePosition - 1];
         if (pirateId) {
           str += PIRATE_NAMES.get(pirateId);
         }
-        str += '</td>';
       }
-      html += str;
-      html += `<td>${calculations.betOdds.get(betNum)}:1</td>`;
-      html += '</tr>';
+      str += '</td>';
     }
+    html += str;
+    html += `<td>${odds}:1</td>`;
+    html += '</tr>';
   }
 
   const hash = makeBetURL(currentSelectedRound, bets, {} as BetAmount, false);
