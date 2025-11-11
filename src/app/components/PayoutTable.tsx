@@ -52,17 +52,17 @@ const PirateNameCell = React.memo(
     const getPirateBgColor = useGetPirateBgColor();
     const pirateId = usePirateId(arenaIndex, pirateIndex - 1);
     const pirateName = pirateId ? (PIRATE_NAMES.get(pirateId) ?? '') : '';
-    const openingOdds = useOpeningOdds(arenaIndex, pirateIndex - 1);
+    const openingOdds = useOpeningOdds();
     const winningBetBinary = useWinningBetBinary();
 
     let bgColor = undefined;
     const pirateBin = computePirateBinary(arenaIndex, pirateIndex);
 
     if (pirateBin > 0) {
-      if (winningBetBinary) {
+      if (winningBetBinary > 0) {
         bgColor = (winningBetBinary & pirateBin) === pirateBin ? 'green' : 'red';
       } else {
-        bgColor = getPirateBgColor(openingOdds);
+        bgColor = getPirateBgColor(openingOdds[arenaIndex]![pirateIndex]!);
       }
     }
 
