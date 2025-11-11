@@ -20,34 +20,64 @@ const DropZone = ({ children }: DropZoneProps): React.ReactElement => {
         return;
       }
 
+      // Get all available data types
       const url = e.dataTransfer.getData('text/uri-list');
-      if (!url) {
+      const textPlain = e.dataTransfer.getData('text/plain');
+      const textHtml = e.dataTransfer.getData('text/html');
+
+      // Use url first, fall back to textPlain if url is empty
+      const sourceUrl = url || textPlain;
+
+      if (!sourceUrl) {
         return;
       }
 
-      const hashPart = url.split('#')[1];
-      if (!hashPart) {
+      // Split by newlines to handle multiple URLs
+      const urls = sourceUrl
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line && line.includes('#'));
+
+      if (urls.length === 0) {
         return;
       }
 
-      const parsed = parseBetUrl(hashPart);
-
-      if (!anyBetsExist(parsed.bets)) {
-        return;
-      }
-
+      // Prevent default early if we detect URLs with hashes
+      // This prevents the browser from navigating
       e.preventDefault();
 
-      const dropped = e.dataTransfer.getData('text/html');
-      let name = removeHtmlTags(dropped || '').trim();
+      // Process each URL
+      urls.forEach((urlLine, index) => {
+        const hashPart = urlLine.split('#')[1];
 
-      if (name.startsWith('http')) {
-        name = `Dropped Set [Round ${parsed.round}]`;
-      }
+        if (!hashPart) {
+          return;
+        }
 
-      addNewSet(name, parsed.bets, parsed.betAmounts, true);
+        const parsed = parseBetUrl(hashPart);
+
+        if (!anyBetsExist(parsed.bets)) {
+          return;
+        }
+
+        // For single drops, try to extract name from HTML
+        // For multiple drops, use a numbered format
+        let name: string;
+        if (urls.length === 1) {
+          const dropped = textHtml || urlLine;
+          name = removeHtmlTags(dropped).trim();
+          if (name.startsWith('http')) {
+            name = `Dropped Set [Round ${parsed.round}]`;
+          }
+        } else {
+          name = `Dropped Set ${index + 1} [Round ${parsed.round}]`;
+        }
+
+        addNewSet(name, parsed.bets, parsed.betAmounts, true);
+      });
+
       // toast({
-      //   title: `Dropped bet imported!`,
+      //   title: `${importCount} bet${importCount > 1 ? 's' : ''} imported!`,
       //   duration: 2000,
       //   isClosable: true,
       // });
