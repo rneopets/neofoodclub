@@ -214,6 +214,29 @@ describe('DropZone', () => {
     expect(mockAddNewSet).not.toHaveBeenCalled();
   });
 
+  it('falls back to text/plain when text/uri-list is not available', () => {
+    render(
+      <DropZone>
+        <div>Test</div>
+      </DropZone>,
+    );
+
+    const dropEvent = createMockDragEvent('drop', {
+      'text/plain': 'https://example.com/#round=1234&b=123',
+      'text/html': '<a href="https://example.com/#round=1234&b=123">My Bet Set</a>',
+    });
+
+    document.dispatchEvent(dropEvent);
+
+    expect(mockParseBetUrl).toHaveBeenCalledWith('round=1234&b=123');
+    expect(mockAddNewSet).toHaveBeenCalledWith(
+      'My Bet Set',
+      new Map([[1, [1, 2, 3, 4, 5]]]),
+      new Map([[1, 1000]]),
+      true,
+    );
+  });
+
   it('does nothing when URL has no hash', () => {
     render(
       <DropZone>
@@ -288,7 +311,8 @@ describe('DropZone', () => {
 
     document.dispatchEvent(dropEvent);
 
-    // The implementation splits on '#' and takes everything after, including newlines
+    // The implementation takes the first URL and splits on '#'
+    // Multiple URLs are separated by newlines in text/uri-list
     expect(mockParseBetUrl).toHaveBeenCalledWith('round=1234&b=123\nhttps://other.com/');
     expect(mockAddNewSet).toHaveBeenCalledWith(
       'First Link',
@@ -296,5 +320,22 @@ describe('DropZone', () => {
       new Map([[1, 1000]]),
       true,
     );
+  });
+
+  it('does nothing when URL without hash is provided', () => {
+    render(
+      <DropZone>
+        <div>Test</div>
+      </DropZone>,
+    );
+
+    const dropEvent = createMockDragEvent('drop', {
+      'text/uri-list': 'https://example.com/no-hash',
+    });
+
+    document.dispatchEvent(dropEvent);
+
+    expect(mockParseBetUrl).not.toHaveBeenCalled();
+    expect(mockAddNewSet).not.toHaveBeenCalled();
   });
 });
