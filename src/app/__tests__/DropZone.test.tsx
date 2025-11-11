@@ -288,9 +288,9 @@ describe('DropZone', () => {
 
     document.dispatchEvent(dropEvent);
 
-    // Empty HTML content results in empty string name (doesn't start with 'http')
+    // Empty HTML content falls back to URL, which starts with 'http', so generates default name
     expect(mockAddNewSet).toHaveBeenCalledWith(
-      '',
+      'Dropped Set [Round 1234]',
       new Map([[1, [1, 2, 3, 4, 5]]]),
       new Map([[1, 1000]]),
       true,
@@ -311,11 +311,24 @@ describe('DropZone', () => {
 
     document.dispatchEvent(dropEvent);
 
-    // The implementation takes the first URL and splits on '#'
+    // The implementation processes each URL separately
     // Multiple URLs are separated by newlines in text/uri-list
-    expect(mockParseBetUrl).toHaveBeenCalledWith('round=1234&b=123\nhttps://other.com/');
-    expect(mockAddNewSet).toHaveBeenCalledWith(
-      'First Link',
+    expect(mockParseBetUrl).toHaveBeenCalledTimes(2);
+    expect(mockParseBetUrl).toHaveBeenNthCalledWith(1, 'round=1234&b=123');
+    expect(mockParseBetUrl).toHaveBeenNthCalledWith(2, 'round=5678&b=456');
+
+    // Each URL gets numbered since there are multiple
+    expect(mockAddNewSet).toHaveBeenCalledTimes(2);
+    expect(mockAddNewSet).toHaveBeenNthCalledWith(
+      1,
+      'Dropped Set 1 [Round 1234]',
+      new Map([[1, [1, 2, 3, 4, 5]]]),
+      new Map([[1, 1000]]),
+      true,
+    );
+    expect(mockAddNewSet).toHaveBeenNthCalledWith(
+      2,
+      'Dropped Set 2 [Round 1234]',
       new Map([[1, [1, 2, 3, 4, 5]]]),
       new Map([[1, 1000]]),
       true,
