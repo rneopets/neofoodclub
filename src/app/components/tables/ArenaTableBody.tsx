@@ -442,7 +442,7 @@ const PirateRow = React.memo(
     const getPirateBgColor = useGetPirateBgColor();
     const faDetails = useFaDetails();
     const useOdds = currentOdds;
-    const payout = useOdds * prob - 1;
+    const payout = useOdds! * prob - 1;
 
     const payoutBackground = useMemo(() => {
       if (payout > 0) {
@@ -634,7 +634,7 @@ const PirateRow = React.memo(
     }, [payout, payoutBackground, bigBrain]);
 
     // Odds comparison logic
-    const oddsIncreased = currentOdds > openingOdds;
+    const oddsIncreased = currentOdds! > openingOdds!;
     const oddsChanged = currentOdds !== openingOdds;
 
     // Return skeleton if no pirate ID
