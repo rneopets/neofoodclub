@@ -18,6 +18,12 @@ function calculatePercentages(timestamps: number[], endTime: number): number[] {
   const startTime = timestamps[0] as number;
   const totalDuration = endTime - startTime;
 
+  // If there's no duration (brand new round), just show equal segments
+  if (totalDuration === 0) {
+    const equalPercent = 100 / timestamps.length;
+    return timestamps.map(() => equalPercent);
+  }
+
   timestamps.forEach((timestamp: number, i: number) => {
     const currentTime = timestamp;
     const nextTime = i === timestamps.length - 1 ? endTime : (timestamps[i + 1] as number);
@@ -102,11 +108,10 @@ const OddsTimeline = React.memo(
     const roundData = useRoundStore(state => state.roundData);
     const openingOdds = roundData?.openingOdds?.[arenaId]?.[pirateIndex + 1];
     const start = roundData?.start;
-    const endTime = roundData?.timestamp;
+    const lastChange = roundData?.lastChange;
 
     // Calculate timeline data
     const startDate = useMemo(() => new Date(start as string), [start]);
-    const endTimeDate = useMemo(() => new Date(endTime as string), [endTime]);
     const changes = useMemo(() => roundData.changes || [], [roundData.changes]);
 
     // Get pirate odds history
@@ -116,18 +121,33 @@ const OddsTimeline = React.memo(
       const times = [startDate.getTime()];
 
       // Add all odds changes for this pirate
-      filterChangesByArenaPirate(changes, arenaId, pirateIndex).forEach(change => {
+      const pirateChanges = filterChangesByArenaPirate(changes, arenaId, pirateIndex);
+      pirateChanges.forEach(change => {
         odds.push(change.new);
         times.push(new Date(change.t).getTime());
       });
 
+      // For end time: use the last change time for this pirate if available,
+      // otherwise use lastChange, otherwise use start (no timeline growth)
+      let endTime: number;
+      if (pirateChanges.length > 0) {
+        // This pirate has changes, use the last one
+        endTime = times[times.length - 1] ?? startDate.getTime();
+      } else if (lastChange) {
+        // No changes for this pirate, but other pirates changed
+        endTime = new Date(lastChange).getTime();
+      } else {
+        // Brand new round, no changes at all - use start time (100% bar at a point)
+        endTime = startDate.getTime();
+      }
+
       // Calculate width percentages
-      const percentages = calculatePercentages(times, endTimeDate.getTime());
+      const percentages = calculatePercentages(times, endTime);
 
       return { odds, percentages, times };
-    }, [openingOdds, startDate, changes, arenaId, pirateIndex, endTimeDate]);
+    }, [openingOdds, startDate, changes, arenaId, pirateIndex, lastChange]);
 
-    if (!openingOdds || !start || !endTime) {
+    if (!openingOdds || !start) {
       return <Box>&nbsp;</Box>;
     }
 
