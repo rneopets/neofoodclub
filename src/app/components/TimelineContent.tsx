@@ -609,7 +609,7 @@ const OverallTimelineView = React.memo(
                   View by Arena:
                 </Text>
                 <Flex gap={2} flexWrap="wrap">
-                  <ButtonGroup attached>
+                  <ButtonGroup>
                     {ARENA_NAMES.map((arena, idx) => {
                       const arenaChangesCount = changes.filter(c => c.arena === idx).length;
                       return (
