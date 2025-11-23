@@ -109,6 +109,7 @@ const OddsTimeline = React.memo(
     const openingOdds = roundData?.openingOdds?.[arenaId]?.[pirateIndex + 1];
     const start = roundData?.start;
     const lastChange = roundData?.lastChange;
+    const timestamp = roundData?.timestamp;
 
     // Calculate timeline data
     const startDate = useMemo(() => new Date(start as string), [start]);
@@ -116,28 +117,39 @@ const OddsTimeline = React.memo(
 
     // Get pirate odds history
     const timelineData = useMemo(() => {
-      // Start with opening odds
-      const odds = [openingOdds as number];
-      const times = [startDate.getTime()];
+      // Build odds history: opening → changes → current
+      const odds: number[] = [];
+      const times: number[] = [];
 
-      // Add all odds changes for this pirate
+      // Start with opening odds
+      if (!openingOdds) {
+        return { odds: [], percentages: [], times: [] };
+      }
+
+      // Start with opening odds
+      odds.push(openingOdds);
+      times.push(startDate.getTime());
+
+      // Add all changes for this pirate
       const pirateChanges = filterChangesByArenaPirate(changes, arenaId, pirateIndex);
       pirateChanges.forEach(change => {
-        odds.push(change.new);
-        times.push(new Date(change.t).getTime());
+        const lastOdds = odds[odds.length - 1];
+        if (change.new !== lastOdds) {
+          odds.push(change.new);
+          times.push(new Date(change.t).getTime());
+        }
       });
 
-      // For end time: use the last change time for this pirate if available,
-      // otherwise use lastChange, otherwise use start (no timeline growth)
+      // Determine end time for the timeline
       let endTime: number;
       if (pirateChanges.length > 0) {
-        // This pirate has changes, use the last one
-        endTime = times[times.length - 1] ?? startDate.getTime();
+        // This pirate has had changes, use timestamp as end
+        endTime = new Date(timestamp as string).getTime();
       } else if (lastChange) {
-        // No changes for this pirate, but other pirates changed
+        // No changes for this pirate, but round has changes - use lastChange
         endTime = new Date(lastChange).getTime();
       } else {
-        // Brand new round, no changes at all - use start time (100% bar at a point)
+        // Brand new round, no changes at all - use start time
         endTime = startDate.getTime();
       }
 
@@ -145,7 +157,7 @@ const OddsTimeline = React.memo(
       const percentages = calculatePercentages(times, endTime);
 
       return { odds, percentages, times };
-    }, [openingOdds, startDate, changes, arenaId, pirateIndex, lastChange]);
+    }, [openingOdds, startDate, changes, arenaId, pirateIndex, lastChange, timestamp]);
 
     if (!openingOdds || !start) {
       return <Box>&nbsp;</Box>;
