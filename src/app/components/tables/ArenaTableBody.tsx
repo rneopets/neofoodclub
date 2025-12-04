@@ -384,7 +384,7 @@ const ArenaHeaderRow = React.memo(
 
     return (
       <Table.Row>
-        <Table.Cell rowSpan={5} p={2}>
+        <Table.Cell rowSpan={5} p={2} backgroundColor="bg.subtle">
           <VStack gap={1}>
             <Text fontWeight="bold">{ARENA_NAMES[arenaId]}</Text>
             <ArenaRatioDisplay arenaId={arenaId} />
