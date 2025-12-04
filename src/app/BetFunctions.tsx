@@ -146,26 +146,21 @@ const BuildSetMenu = React.memo((): React.ReactElement => {
   }, [mode, pirateIndices, generateTenbetSet, generateGambitWithPirates]);
 
   const randomizeIndices = useCallback(() => {
-    // generate a full set of random indices
-    const newIndices = [
-      generateRandomPirateIndex(),
-      generateRandomPirateIndex(),
-      generateRandomPirateIndex(),
-      generateRandomPirateIndex(),
-      generateRandomPirateIndex(),
-    ];
+    // Start with all zeros
+    const newIndices = makeEmpty(5);
 
-    // remove random indices as needed
-    if (max - min > 0) {
-      const indices = [0, 1, 2, 3, 4];
-      shuffleArray(indices);
-      const rand = generateRandomIntegerInRange(min, max);
-      const randomIndices = indices.slice(0, rand);
-      // set these indices to 0
-      randomIndices.forEach(index => {
-        newIndices[index] = 0;
-      });
-    }
+    // Pick a random number of pirates between min and max
+    const numPirates = generateRandomIntegerInRange(min, max);
+
+    // Select random arenas to assign pirates to
+    const indices = [0, 1, 2, 3, 4];
+    shuffleArray(indices);
+    const selectedArenas = indices.slice(0, numPirates);
+
+    // Assign random pirates to the selected arenas
+    selectedArenas.forEach(index => {
+      newIndices[index] = generateRandomPirateIndex();
+    });
 
     setPirateIndices(newIndices);
   }, [min, max]);
