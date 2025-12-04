@@ -134,6 +134,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
               colorPalette="green"
               onClick={handleCapped}
               data-testid="capped-bet-amounts-button"
+              disabled={maxBet === -1000}
               {...rest}
             >
               <FaFillDrip style={{ width: '1.4em', height: '1.4em' }} />
@@ -151,6 +152,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
               colorPalette="blue"
               onClick={handleUncapped}
               data-testid="uncapped-bet-amounts-button"
+              disabled={maxBet === -1000}
               {...rest}
             >
               <FaInfinity style={{ width: '1.4em', height: '1.4em' }} />
