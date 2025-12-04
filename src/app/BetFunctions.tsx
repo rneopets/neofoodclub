@@ -176,7 +176,7 @@ const BuildSetMenu = React.memo((): React.ReactElement => {
             aria-label="Generate New Bet Set"
             disabled={!hasRoundData}
             data-testid="build-set-button"
-            size="sm"
+            roundedStart={0}
           >
             <FaShapes />
             Build set
@@ -715,60 +715,62 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
             </Button>
           </ButtonGroup>
 
-          <Menu.Root>
-            <Menu.Trigger asChild>
-              <Button data-testid="generate-button" disabled={!hasRoundData} size="sm">
-                <FaWandMagicSparkles />
-                Generate
-                <FaChevronDown />
-              </Button>
-            </Menu.Trigger>
-            <Portal>
-              <Menu.Positioner>
-                <Menu.Content>
-                  <Menu.Item
-                    value="maxTer"
-                    onClick={generateMaxTERSet}
-                    data-testid="max-ter-set-menuitem"
-                  >
-                    Max TER set
-                  </Menu.Item>
-                  <Menu.Item
-                    value="gambit"
-                    onClick={generateGambitSet}
-                    data-testid="gambit-set-menuitem"
-                  >
-                    Gambit set
-                  </Menu.Item>
-                  <Menu.Item
-                    value="winningGambit"
-                    hidden={winningBetBinary === 0}
-                    onClick={generateWinningGambitSet}
-                    data-testid="winning-gambit-set-menuitem"
-                  >
-                    Winning Gambit set
-                  </Menu.Item>
-                  <Menu.Item
-                    value="randomCrazy"
-                    onClick={generateRandomCrazySet}
-                    data-testid="random-crazy-set-menuitem"
-                  >
-                    Random Crazy set
-                  </Menu.Item>
-                  <Menu.Item
-                    value="bustproof"
-                    onClick={generateBustproofSet}
-                    disabled={positiveArenas === 0}
-                    data-testid="bustproof-set-menuitem"
-                  >
-                    Bustproof Set
-                  </Menu.Item>
-                </Menu.Content>
-              </Menu.Positioner>
-            </Portal>
-          </Menu.Root>
+          <ButtonGroup size="sm" variant="surface" attached gap={0}>
+            <Menu.Root>
+              <Menu.Trigger asChild>
+                <Button data-testid="generate-button" disabled={!hasRoundData} roundedEnd={0}>
+                  <FaWandMagicSparkles />
+                  Generate
+                  <FaChevronDown />
+                </Button>
+              </Menu.Trigger>
+              <Portal>
+                <Menu.Positioner>
+                  <Menu.Content>
+                    <Menu.Item
+                      value="maxTer"
+                      onClick={generateMaxTERSet}
+                      data-testid="max-ter-set-menuitem"
+                    >
+                      Max TER set
+                    </Menu.Item>
+                    <Menu.Item
+                      value="gambit"
+                      onClick={generateGambitSet}
+                      data-testid="gambit-set-menuitem"
+                    >
+                      Gambit set
+                    </Menu.Item>
+                    <Menu.Item
+                      value="winningGambit"
+                      hidden={winningBetBinary === 0}
+                      onClick={generateWinningGambitSet}
+                      data-testid="winning-gambit-set-menuitem"
+                    >
+                      Winning Gambit set
+                    </Menu.Item>
+                    <Menu.Item
+                      value="randomCrazy"
+                      onClick={generateRandomCrazySet}
+                      data-testid="random-crazy-set-menuitem"
+                    >
+                      Random Crazy set
+                    </Menu.Item>
+                    <Menu.Item
+                      value="bustproof"
+                      onClick={generateBustproofSet}
+                      disabled={positiveArenas === 0}
+                      data-testid="bustproof-set-menuitem"
+                    >
+                      Bustproof Set
+                    </Menu.Item>
+                  </Menu.Content>
+                </Menu.Positioner>
+              </Portal>
+            </Menu.Root>
 
-          <BuildSetMenu />
+            <BuildSetMenu />
+          </ButtonGroup>
         </Wrap>
 
         <Wrap>{betCards}</Wrap>
