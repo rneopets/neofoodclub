@@ -27,9 +27,9 @@ dev-no-scan:
 build:
 	npm run build
 
-# Build app and copy public assets into build
+# Build app (Vite automatically copies public assets)
 build-assets:
-	npm run build && node copy-public-assets.js
+	npm run build
 
 # Preview production build locally
 preview:
@@ -97,7 +97,7 @@ check:
 	just lint
 	just test-run
 
-# Run Vercel build helper, then build & copy static assets
+# Run Vercel build helper (Vite automatically copies public assets)
 vercel-build:
 	just build-assets
 
