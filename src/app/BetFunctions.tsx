@@ -44,6 +44,7 @@ import PirateSelect from './components/PirateSelect';
 import SettingsBox from './components/SettingsBox';
 import { ARENA_NAMES, PIRATE_NAMES, SHORTHAND_PIRATE_NAMES } from './constants';
 import { useBetManagement } from './hooks/useBetManagement';
+import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { makeEmpty, computeBinaryToPirates, calculatePayoutTables } from './maths';
 import {
   useSelectedRound,
@@ -816,8 +817,7 @@ const BetBadges = React.memo(
     const { index, ...rest } = props;
     const currentSelectedRound = useSelectedRound();
     const roundData = useRoundData();
-    const winnersBinary = useWinnersBinary();
-    const isRoundOver = winnersBinary > 0;
+    const isRoundOver = useIsRoundOver();
 
     const usedProbabilities = useUsedProbabilities();
     const odds = useRoundStore(state => state.roundData.currentOdds || []);

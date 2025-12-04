@@ -10,6 +10,7 @@ import {
   useRoundPirates,
   useBetBinaries,
 } from '../stores';
+import { useIsRoundOver } from '../hooks/useIsRoundOver';
 import { generateBetLinkUrl, openBetLinkInNewTab } from '../utils/betUtils';
 
 // this element is the "Place Bet" button inside the PayoutTable
@@ -64,7 +65,7 @@ const PlaceThisBetButton = React.memo(
       setClicked(false);
     }, [bet, betAmount]);
 
-    const isRoundOver = winningBetBinary > 0;
+    const isRoundOver = useIsRoundOver();
 
     const generateBetLink = useCallback((): void => {
       const url = generateBetLinkUrl(

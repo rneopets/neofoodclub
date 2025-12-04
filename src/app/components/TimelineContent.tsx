@@ -14,7 +14,7 @@ import {
   defineStyle,
   Badge,
 } from '@chakra-ui/react';
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
   FaUtensils,
   FaSkullCrossbones,
@@ -30,6 +30,9 @@ import {
 import { OddsChange } from '../../types';
 import { PIRATE_NAMES, ARENA_NAMES } from '../constants';
 import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
+import { useIsRoundOver } from '../hooks/useIsRoundOver';
+import { useScrollPosition } from '../hooks/useScrollPosition';
+import { useTimelineViewState } from '../hooks/useTimelineViewState';
 import { makeEmpty } from '../maths';
 import { useRoundStore, useCurrentOddsValue, useOpeningOddsValue } from '../stores';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../utils/betUtils';
@@ -479,8 +482,6 @@ type TimelineEvent =
   | TimelineConsolidatedEvent
   | TimelineEndEvent;
 
-type ViewState = 'overall' | 'arena' | 'pirate';
-
 // Overall Timeline View Component
 const OverallTimelineView = React.memo(
   (props: {
@@ -491,6 +492,7 @@ const OverallTimelineView = React.memo(
     const { onPirateClick, onArenaClick, scrollContainerRef } = props;
 
     const roundData = useRoundStore(state => state.roundData);
+    const isRoundOver = useIsRoundOver();
     const start = roundData.start;
     const endTime = roundData.timestamp;
 
@@ -502,7 +504,6 @@ const OverallTimelineView = React.memo(
     const endDate = new Date(endTime);
     const changes = roundData.changes || [];
     const winners = roundData.winners || makeEmpty(5);
-    const isRoundOver = winners.some(w => w > 0);
 
     // Group changes by timestamp
     const changesByTimestamp = new Map<string, PirateChange[]>();
@@ -816,6 +817,7 @@ const ArenaTimelineView = React.memo(
     const { arenaId, onPirateClick, onBackToOverall, scrollContainerRef } = props;
 
     const roundData = useRoundStore(state => state.roundData);
+    const isRoundOver = useIsRoundOver();
     const start = roundData.start;
     const endTime = roundData.timestamp;
 
@@ -826,7 +828,6 @@ const ArenaTimelineView = React.memo(
     const arenaName = ARENA_NAMES[arenaId];
     const changes = roundData.changes || [];
     const winners = roundData.winners || makeEmpty(5);
-    const isRoundOver = winners.some(w => w > 0);
 
     // Filter changes for this arena only
     const arenaChanges = changes.filter(change => change.arena === arenaId);
@@ -1061,6 +1062,7 @@ const PirateTimelineView = React.memo(
     const { arenaId, pirateIndex, onBackToOverall, onBackToArena } = props;
 
     const roundData = useRoundStore(state => state.roundData);
+    const isRoundOver = useIsRoundOver();
     const pirateId = roundData.pirates?.[arenaId]?.[pirateIndex];
     const start = roundData.start;
     const endTime = roundData.timestamp;
@@ -1092,7 +1094,6 @@ const PirateTimelineView = React.memo(
 
     const winners = roundData.winners || makeEmpty(5);
     const winningPirate = winners[arenaId] ?? 0;
-    const isRoundOver = winningPirate > 0;
     const didPirateWin = winningPirate === pirateIndex + 1;
 
     // Memoized label calculation
@@ -1300,77 +1301,43 @@ const TimelineContent = React.memo(
   (props: { arenaId: number | null; pirateIndex: number | null }): React.ReactElement | null => {
     const { arenaId: initialArenaId, pirateIndex: initialPirateIndex } = props;
 
-    // Determine initial view based on props
-    const getInitialView = (): ViewState => {
-      if (initialArenaId !== null && initialPirateIndex !== null) {
-        return 'pirate';
-      }
-      if (initialArenaId !== null) {
-        return 'arena';
-      }
-      return 'overall';
-    };
-
-    const [view, setView] = useState<ViewState>(getInitialView());
-    const [selectedArena, setSelectedArena] = useState<number | null>(initialArenaId);
-    const [selectedPirate, setSelectedPirate] = useState<{
-      arenaId: number;
-      pirateIndex: number;
-    } | null>(
-      initialArenaId !== null && initialPirateIndex !== null
-        ? { arenaId: initialArenaId, pirateIndex: initialPirateIndex }
-        : null,
-    );
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const savedScrollPosition = useRef<number>(0);
 
-    const handleArenaClick = useCallback((arenaId: number) => {
-      // Save scroll position before navigating away
-      if (scrollContainerRef.current) {
-        savedScrollPosition.current = scrollContainerRef.current.scrollTop;
-      }
-      setSelectedArena(arenaId);
-      setView('arena');
-    }, []);
+    const {
+      view,
+      selectedArena,
+      selectedPirate,
+      handleArenaClick: baseHandleArenaClick,
+      handlePirateClick: baseHandlePirateClick,
+      handleBackToOverall,
+      handleBackToArena,
+    } = useTimelineViewState({
+      initialArenaId,
+      initialPirateIndex,
+    });
 
-    const handlePirateClick = useCallback((arenaId: number, pirateIndex: number) => {
-      // Save scroll position before navigating away
-      if (scrollContainerRef.current) {
-        savedScrollPosition.current = scrollContainerRef.current.scrollTop;
-      }
-      setSelectedArena(arenaId);
-      setSelectedPirate({ arenaId, pirateIndex });
-      setView('pirate');
-    }, []);
+    // Save scroll position before navigating
+    const saveScrollPosition = useScrollPosition(
+      view === 'overall' || view === 'arena',
+      scrollContainerRef,
+    );
 
-    const handleBackToOverall = useCallback(() => {
-      setView('overall');
-    }, []);
+    // Wrap handlers to save scroll position
+    const handleArenaClick = useCallback(
+      (arenaId: number) => {
+        saveScrollPosition();
+        baseHandleArenaClick(arenaId);
+      },
+      [saveScrollPosition, baseHandleArenaClick],
+    );
 
-    const handleBackToArena = useCallback((arenaId: number) => {
-      setSelectedArena(arenaId);
-      setView('arena');
-    }, []);
-
-    // Restore scroll position when returning to overall or arena view
-    useEffect(() => {
-      if (
-        (view === 'overall' || view === 'arena') &&
-        savedScrollPosition.current > 0 &&
-        scrollContainerRef.current
-      ) {
-        // Use setTimeout to ensure the content is rendered before scrolling
-        const timeoutId = setTimeout(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = savedScrollPosition.current;
-          }
-        }, 0);
-        return (): void => {
-          clearTimeout(timeoutId);
-        };
-      }
-      return undefined;
-    }, [view]);
+    const handlePirateClick = useCallback(
+      (arenaId: number, pirateIndex: number) => {
+        saveScrollPosition();
+        baseHandlePirateClick(arenaId, pirateIndex);
+      },
+      [saveScrollPosition, baseHandlePirateClick],
+    );
 
     if (view === 'overall') {
       return (
