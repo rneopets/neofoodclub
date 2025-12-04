@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import { useRoundStore } from '../stores';
+import { useSelectOnFocus } from './useSelectOnFocus';
 
 type CustomValueType = 'odds' | 'probs';
 
@@ -154,9 +155,7 @@ export function useCustomValueInput({
   ]);
 
   // Handle focus event
-  const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement>): void => {
-    e.target.select();
-  }, []);
+  const handleFocus = useSelectOnFocus();
 
   return {
     inputValue,

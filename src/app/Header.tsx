@@ -31,7 +31,8 @@ import MaxBetLockToggle from './components/MaxBetLockToggle';
 import RoundInput from './components/RoundInput';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
-import { useRoundStore, useTimestampValue, useLastChange, useHasRoundWinners } from './stores';
+import { useRoundStore, useTimestampValue, useLastChange } from './stores';
+import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { calculateBaseMaxBet, getMaxBet, getMaxBetLocked } from './util';
 
 import {
@@ -137,7 +138,7 @@ const ErrorRoundInfo: React.FC = React.memo(() => {
 const CurrentRoundProgress = React.memo((): React.ReactElement | null => {
   const roundPercentOver = useRoundProgress();
 
-  const hasWinners = useHasRoundWinners();
+  const hasWinners = useIsRoundOver();
 
   if (hasWinners) {
     return null;
@@ -540,7 +541,7 @@ const ColorModeToggle: React.FC = () => {
 const HeaderContent: React.FC = () => {
   const [isGlowing, setIsGlowing] = useState<boolean>(false);
   const prevTimestampRef = useRef<string | undefined>(undefined);
-  const hasWinners = useHasRoundWinners();
+  const hasWinners = useIsRoundOver();
   const timestamp = useTimestampValue();
   const error = useErrorState();
   const isRoundSwitching = useRoundStore(state => state.isRoundSwitching);

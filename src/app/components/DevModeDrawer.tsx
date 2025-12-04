@@ -2,6 +2,8 @@ import { Button, Drawer, Portal, Stack, CloseButton } from '@chakra-ui/react';
 import * as React from 'react';
 import { FaCode, FaTable } from 'react-icons/fa';
 
+import { useDisclosureState } from '../hooks/useDisclosureState';
+
 import { AllBetsModal } from './AllBetsModal';
 import { RoundJsonModal } from './RoundJsonModal';
 
@@ -11,8 +13,8 @@ interface DevModeDrawerProps {
 }
 
 export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose }) => {
-  const [isJsonModalOpen, setIsJsonModalOpen] = React.useState(false);
-  const [isAllBetsModalOpen, setIsAllBetsModalOpen] = React.useState(false);
+  const jsonModal = useDisclosureState(false);
+  const allBetsModal = useDisclosureState(false);
 
   return (
     <>
@@ -36,11 +38,11 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
               </Drawer.Header>
               <Drawer.Body>
                 <Stack gap={3}>
-                  <Button width="full" onClick={() => setIsJsonModalOpen(true)}>
+                  <Button width="full" onClick={jsonModal.onOpen}>
                     <FaCode />
                     View Current Round JSON
                   </Button>
-                  <Button width="full" onClick={() => setIsAllBetsModalOpen(true)}>
+                  <Button width="full" onClick={allBetsModal.onOpen}>
                     <FaTable />
                     View All Possible Bets
                   </Button>
@@ -56,8 +58,8 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
         </Portal>
       </Drawer.Root>
 
-      <RoundJsonModal isOpen={isJsonModalOpen} onClose={() => setIsJsonModalOpen(false)} />
-      <AllBetsModal isOpen={isAllBetsModalOpen} onClose={() => setIsAllBetsModalOpen(false)} />
+      <RoundJsonModal isOpen={jsonModal.isOpen} onClose={jsonModal.onClose} />
+      <AllBetsModal isOpen={allBetsModal.isOpen} onClose={allBetsModal.onClose} />
     </>
   );
 };

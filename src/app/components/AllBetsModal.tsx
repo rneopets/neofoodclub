@@ -18,11 +18,11 @@ import { List } from 'react-window';
 import { PIRATE_NAMES } from '../constants';
 import { useBetManagement } from '../hooks/useBetManagement';
 import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
-import {
-  computeBinaryToPirates,
-  computeLogitProbabilities,
-  computeLegacyProbabilities,
-} from '../maths';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useIsRoundOver } from '../hooks/useIsRoundOver';
+import { useProbabilities } from '../hooks/useProbabilities';
+import { useModalReset } from '../hooks/useModalReset';
+import { computeBinaryToPirates } from '../maths';
 import { useRoundStore } from '../stores';
 import { getMaxBet } from '../util';
 
@@ -154,7 +154,11 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = ({ isOpen, onClose }) =
   const initialMaxBet = userMaxBet > 0 ? userMaxBet.toString() : '10000';
 
   const [maxBetInput, setMaxBetInput] = React.useState(initialMaxBet);
-  const [debouncedMaxBet, setDebouncedMaxBet] = React.useState(userMaxBet > 0 ? userMaxBet : 10000);
+  const debouncedMaxBetInput = useDebouncedValue(maxBetInput, 300);
+  const debouncedMaxBet = React.useMemo(() => {
+    const value = Number(debouncedMaxBetInput);
+    return !isNaN(value) && value > 0 ? value : (userMaxBet > 0 ? userMaxBet : 10000);
+  }, [debouncedMaxBetInput, userMaxBet]);
   const [sortField, setSortField] = React.useState<SortField>('er');
   const [reverseSort, setReverseSort] = React.useState(true);
   const [useExperimentalLogit, setUseExperimentalLogit] = React.useState(globalUseLogitModel);
@@ -163,53 +167,25 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = ({ isOpen, onClose }) =
   const [isPending, startTransition] = React.useTransition();
 
   // Check if round is over
-  const isRoundOver = React.useMemo(() => {
-    const winners = roundData.winners;
-    return !!(winners && winners.some(w => w > 0));
-  }, [roundData.winners]);
+  const isRoundOver = useIsRoundOver();
+
+  // Compute both probability types independently
+  const { legacyProbabilities, logitProbabilities } = useProbabilities();
+
+  // Choose which probabilities to use based on toggle
+  const usedProbabilities = useExperimentalLogit ? logitProbabilities : legacyProbabilities;
 
   // Reset settings to global values when modal opens
-  React.useEffect(() => {
-    if (isOpen) {
+  useModalReset(
+    isOpen,
+    () => {
       setUseExperimentalLogit(globalUseLogitModel);
       const currentMaxBet = getMaxBet(currentSelectedRound);
       const maxBetValue = currentMaxBet > 0 ? currentMaxBet.toString() : '10000';
       setMaxBetInput(maxBetValue);
-      setDebouncedMaxBet(currentMaxBet > 0 ? currentMaxBet : 10000);
-    }
-  }, [isOpen, globalUseLogitModel, currentSelectedRound]);
-
-  // Debounce the max bet input
-  React.useEffect((): (() => void) => {
-    const timeout = setTimeout(() => {
-      const value = Number(maxBetInput);
-      if (!isNaN(value) && value > 0) {
-        setDebouncedMaxBet(value);
-      }
-    }, 300);
-
-    return (): void => {
-      clearTimeout(timeout);
-    };
-  }, [maxBetInput]);
-
-  // Compute both probability types independently
-  const legacyProbabilities = React.useMemo(() => {
-    if (!roundData) {
-      return [];
-    }
-    return computeLegacyProbabilities(roundData).used;
-  }, [roundData]);
-
-  const logitProbabilities = React.useMemo(() => {
-    if (!roundData) {
-      return [];
-    }
-    return computeLogitProbabilities(roundData).used;
-  }, [roundData]);
-
-  // Choose which probabilities to use based on toggle
-  const usedProbabilities = useExperimentalLogit ? logitProbabilities : legacyProbabilities;
+    },
+    [globalUseLogitModel, currentSelectedRound],
+  );
 
   // Calculate all possible bets using the pre-computed bet calculations
   const allBets = React.useMemo(() => {

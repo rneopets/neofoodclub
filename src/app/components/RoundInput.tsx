@@ -1,7 +1,8 @@
 import { Group, NumberInputControl, Text } from '@chakra-ui/react';
-import { useEffect, useState, FocusEvent, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 
 import { useRoundStore } from '../stores';
+import { useDebouncedValue, useSelectOnFocus } from '../hooks';
 
 import {
   NumberInputRoot,
@@ -24,11 +25,15 @@ const RoundInput: React.FC = () => {
 
   const [tempValue, setTempValue] = useState<string>(initialRoundNumber.toString());
 
+  // Debounce the input value
+  const debouncedValue = useDebouncedValue(tempValue, 400);
+
   // Check if there's an error related to the current round
   const hasError = Boolean(error);
 
+  // Handle debounced value changes
   useEffect(() => {
-    const trimmedValue = tempValue.trim();
+    const trimmedValue = debouncedValue.trim();
     if (trimmedValue === '') {
       return;
     }
@@ -38,29 +43,21 @@ const RoundInput: React.FC = () => {
       return;
     }
 
-    const timeoutId = setTimeout(() => {
-      const isSameRound = roundNumber === currentSelectedRound;
+    const isSameRound = roundNumber === currentSelectedRound;
+    if (isSameRound) {
+      return;
+    }
 
-      if (isSameRound) {
-        return;
-      }
+    // Use the new updateSelectedRound action which handles data fetching automatically
+    updateSelectedRound(roundNumber);
+  }, [debouncedValue, currentSelectedRound, updateSelectedRound]);
 
-      // Use the new updateSelectedRound action which handles data fetching automatically
-      updateSelectedRound(roundNumber);
-    }, 400);
-
-    return (): void => {
-      clearTimeout(timeoutId);
-    };
-  }, [tempValue, currentSelectedRound, updateSelectedRound]);
-
+  // Sync temp value when currentSelectedRound changes externally
   useEffect(() => {
     setTempValue((currentSelectedRound || 0).toString());
   }, [currentSelectedRound]);
 
-  const handleFocus = useCallback((e: FocusEvent<HTMLInputElement>): void => {
-    e.target.select();
-  }, []);
+  const handleFocus = useSelectOnFocus();
 
   const handleChange = useCallback((details: NumberInputValueChangeDetails): void => {
     setTempValue(details.value);

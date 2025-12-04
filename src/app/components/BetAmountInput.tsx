@@ -1,7 +1,8 @@
 import { NumberInputControl } from '@chakra-ui/react';
-import React, { useState, useEffect, useCallback, FocusEvent } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { useOptimizedBetAmount, useUpdateSingleBetAmount } from '../stores';
+import { useSelectOnFocus } from '../hooks';
 
 import {
   NumberInputRoot,
@@ -68,9 +69,7 @@ const BetAmountInput = React.memo(
       [betAmount, betIndex, sanitizeToInteger, updateSingleBetAmount],
     );
 
-    const handleFocus = useCallback((e: FocusEvent<HTMLInputElement>): void => {
-      e.target.select();
-    }, []);
+    const handleFocus = useSelectOnFocus();
 
     const handleBlur = useCallback((): void => {
       // Only commit if the input can be parsed as an integer
