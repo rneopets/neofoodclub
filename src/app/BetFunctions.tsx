@@ -59,7 +59,6 @@ import {
   useUsedProbabilities,
   useBetSetCount,
   useAllBetSetNames,
-  useWinnersBinary,
   useCurrentBet,
   useSetCurrentBet,
   useDeleteBetSet,
@@ -828,7 +827,8 @@ const BetBadges = React.memo(
   (props: { index: number; [key: string]: unknown }): React.ReactElement => {
     const { index, ...rest } = props;
     const currentSelectedRound = useSelectedRound();
-    const roundData = useRoundData();
+    const roundNumber = useRoundStore(state => state.roundData.round);
+    const roundDataPirates = useRoundPirates();
     const isRoundOver = useIsRoundOver();
 
     const usedProbabilities = useUsedProbabilities();
@@ -879,7 +879,7 @@ const BetBadges = React.memo(
       if (isRoundOver) {
         result.push(
           <Badge key="round-over" colorPalette="red" variant="surface">
-            Round {roundData?.round} is over
+            Round {roundNumber} is over
           </Badge>,
         );
       }
@@ -893,7 +893,7 @@ const BetBadges = React.memo(
       }
 
       return result;
-    }, [isRoundOver, calculated, roundData?.round, currentSelectedRound]);
+    }, [isRoundOver, calculated, roundNumber, currentSelectedRound]);
 
     const validationBadges = useMemo(() => {
       const result = [];
@@ -952,7 +952,7 @@ const BetBadges = React.memo(
           const names: string[] = [];
           computeBinaryToPirates(highest).forEach((pirate, pirateIndex) => {
             if (pirate > 0) {
-              const pirateId = roundData?.pirates?.[pirateIndex]?.[pirate - 1];
+              const pirateId = roundDataPirates?.[pirateIndex]?.[pirate - 1];
               if (pirateId) {
                 names.push(SHORTHAND_PIRATE_NAMES.get(pirateId) ?? '');
               }
@@ -977,7 +977,7 @@ const BetBadges = React.memo(
           const names: string[] = [];
           computeBinaryToPirates(tenbetBinary).forEach((pirate, pirateIndex) => {
             if (pirate > 0) {
-              const pirateId = roundData?.pirates?.[pirateIndex]?.[pirate - 1];
+              const pirateId = roundDataPirates?.[pirateIndex]?.[pirate - 1];
               if (pirateId) {
                 names.push(SHORTHAND_PIRATE_NAMES.get(pirateId) ?? '');
               }
@@ -1008,7 +1008,7 @@ const BetBadges = React.memo(
       }
 
       return result;
-    }, [betCount, betBinaries, hasDuplicateBets, calculated, roundData?.pirates]);
+    }, [betCount, betBinaries, hasDuplicateBets, calculated, roundDataPirates]);
 
     const performanceBadges: React.ReactElement[] = useMemo(() => {
       const result: React.ReactElement[] = [];
