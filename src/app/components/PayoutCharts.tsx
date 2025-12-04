@@ -194,7 +194,7 @@ const PayoutCharts: React.FC = React.memo(() => {
                 type: 'line',
                 xMin: breakEven,
                 xMax: breakEven,
-                borderColor: '#000',
+                borderColor: colorMode === 'dark' ? '#fff' : '#000',
                 borderWidth: 2,
               },
             },
