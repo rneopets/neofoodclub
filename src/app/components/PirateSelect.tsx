@@ -1,25 +1,45 @@
-import { NativeSelect } from '@chakra-ui/react';
+import { Select, Text, createListCollection, useSelectContext } from '@chakra-ui/react';
 import React, { useMemo } from 'react';
 
-import { PIRATE_NAMES, ARENA_NAMES } from '../constants';
+import { PIRATE_NAMES } from '../constants';
 import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
 import { usePiratesForArena, useRoundOpeningOdds } from '../stores';
+
+const CustomValueText = React.memo(() => {
+  const select = useSelectContext();
+  const items = select.selectedItems;
+  const isNoPirate = items.length > 0 && items[0]?.value === '0';
+
+  if (items.length === 0) {
+    return <Select.ValueText />;
+  }
+
+  return (
+    <Select.ValueText>
+      <Text
+        as="span"
+        color={isNoPirate ? 'fg.muted' : undefined}
+        fontStyle={isNoPirate ? 'italic' : undefined}
+      >
+        {select.collection.stringifyItem(items[0])}
+      </Text>
+    </Select.ValueText>
+  );
+});
+
+CustomValueText.displayName = 'CustomValueText';
 
 interface PirateSelectProps {
   arenaId: number;
   pirateValue: number;
-  showArenaName?: boolean;
   onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   [key: string]: unknown;
 }
 
 const PirateSelect = React.memo(
   (props: PirateSelectProps): React.ReactElement => {
-    const { arenaId, pirateValue, showArenaName = false, onChange, ...rest } = props;
+    const { arenaId, pirateValue, onChange, ...rest } = props;
     const getPirateBgColor = useGetPirateBgColor();
-
-    // showArenaName will fill the arena name into the select option as a placeholder if set to true
-    // only used this way for the bet builder tool.
 
     const openingOdds = useRoundOpeningOdds();
 
@@ -29,47 +49,114 @@ const PirateSelect = React.memo(
 
     const bgColor = pirateValue !== 0 ? getPirateBgColor(currentOpeningOdds) : undefined;
 
-    const useArenaName = showArenaName && pirateValue === 0;
+    const collection = useMemo(() => {
+      if (!pirates) {
+        return createListCollection({ items: [] });
+      }
 
-    const selectOptions = useMemo(
-      () =>
-        pirates?.map((pirateId: number, pirateIndex: number) => (
-          <option key={pirateId} value={pirateIndex + 1}>
-            {PIRATE_NAMES.get(pirateId)}
-          </option>
-        )),
-      [pirates],
-    );
+      const items = [
+        { label: '[no pirate]', value: '0' },
+        ...pirates.map((pirateId: number, pirateIndex: number) => ({
+          label: PIRATE_NAMES.get(pirateId) || '',
+          value: String(pirateIndex + 1),
+        })),
+      ];
+
+      return createListCollection({ items });
+    }, [pirates]);
+
+    const handleValueChange = useMemo(() => {
+      if (!onChange) {
+        return;
+      }
+
+      return (details: { value: string[] }): void => {
+        // If value is empty array (deselected) or contains "0", treat as "0"
+        const value =
+          details.value.length === 0 || details.value[0] === '0' ? '0' : details.value[0];
+        // Create a synthetic event to match the expected onChange signature
+        const syntheticEvent = {
+          target: { value },
+        } as React.ChangeEvent<HTMLSelectElement>;
+        onChange(syntheticEvent);
+      };
+    }, [onChange]);
 
     if (!pirates) {
       return (
-        <NativeSelect.Root disabled {...rest}>
-          <NativeSelect.Field placeholder="Loading..." />
-        </NativeSelect.Root>
+        <Select.Root disabled collection={collection} size="xs" {...rest}>
+          <Select.HiddenSelect />
+          <Select.Control>
+            <Select.Trigger>
+              <Select.ValueText placeholder="Loading..." />
+            </Select.Trigger>
+            <Select.IndicatorGroup>
+              <Select.Indicator />
+            </Select.IndicatorGroup>
+          </Select.Control>
+        </Select.Root>
       );
     }
 
     return (
-      <NativeSelect.Root size="xs" {...rest}>
-        <NativeSelect.Field
-          value={pirateValue}
-          onChange={onChange}
-          {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}
-        >
-          <option disabled={useArenaName} hidden={useArenaName} value="0">
-            {useArenaName ? ARENA_NAMES[arenaId] : ''}
-          </option>
-          <option hidden={!useArenaName} value="0"></option>
-          {selectOptions}
-        </NativeSelect.Field>
-        <NativeSelect.Indicator color="fg" />
-      </NativeSelect.Root>
+      <Select.Root
+        collection={collection}
+        size="xs"
+        value={pirateValue === 0 ? ['0'] : [String(pirateValue)]}
+        onValueChange={handleValueChange}
+        deselectable
+        minW="120px"
+        positioning={{ sameWidth: true }}
+        {...(bgColor && { colorPalette: bgColor })}
+        {...rest}
+      >
+        <Select.HiddenSelect />
+        <Select.Control {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}>
+          <Select.Trigger>
+            <CustomValueText />
+          </Select.Trigger>
+          <Select.IndicatorGroup>
+            <Select.Indicator />
+          </Select.IndicatorGroup>
+        </Select.Control>
+        <Select.Positioner>
+          <Select.Content>
+            {collection.items.map((item: { value: string; label: string }) => {
+              const isNoPirate = item.value === '0';
+              const pirateValueNum = item.value === '0' ? null : parseInt(item.value);
+              const itemOpeningOdds =
+                pirateValueNum !== null ? openingOdds[arenaId]?.[pirateValueNum] : undefined;
+              const itemBgColor =
+                pirateValueNum !== null && itemOpeningOdds
+                  ? getPirateBgColor(itemOpeningOdds)
+                  : undefined;
+              return (
+                <Select.Item
+                  item={item}
+                  key={item.value}
+                  {...(itemBgColor && { layerStyle: 'fill.subtle', colorPalette: itemBgColor })}
+                >
+                  <Select.ItemText>
+                    <Text
+                      as="span"
+                      color={isNoPirate ? 'fg.muted' : undefined}
+                      fontStyle={isNoPirate ? 'italic' : undefined}
+                    >
+                      {item.label}
+                    </Text>
+                  </Select.ItemText>
+                  <Select.ItemIndicator />
+                </Select.Item>
+              );
+            })}
+          </Select.Content>
+        </Select.Positioner>
+      </Select.Root>
     );
   },
   (prevProps, nextProps) =>
     prevProps.arenaId === nextProps.arenaId &&
     prevProps.pirateValue === nextProps.pirateValue &&
-    prevProps.showArenaName === nextProps.showArenaName &&
     prevProps.onChange === nextProps.onChange,
 );
 
