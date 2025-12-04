@@ -49,6 +49,14 @@ const formatJsonWithDepth = (
     }
 
     const entries = Object.entries(value as Record<string, unknown>);
+    // Move "changes" to the end if it exists
+    const changesIndex = entries.findIndex(([key]) => key === 'changes');
+    if (changesIndex !== -1) {
+      const changesEntry = entries.splice(changesIndex, 1)[0];
+      if (changesEntry) {
+        entries.push(changesEntry);
+      }
+    }
     const items = entries.map(([key, val]) => `${JSON.stringify(key)}: ${formatCompact(val)}`);
     return `{${items.join(', ')}}`;
   };
@@ -88,6 +96,14 @@ const formatJsonWithDepth = (
     const entries = Object.entries(value as Record<string, unknown>);
     if (entries.length === 0) {
       return '{}';
+    }
+    // Move "changes" to the end if it exists
+    const changesIndex = entries.findIndex(([key]) => key === 'changes');
+    if (changesIndex !== -1) {
+      const changesEntry = entries.splice(changesIndex, 1)[0];
+      if (changesEntry) {
+        entries.push(changesEntry);
+      }
     }
     const items = entries.map(
       ([key, val]) => `${JSON.stringify(key)}: ${formatValue(val, depth + 1, nextIndent, key)}`,
