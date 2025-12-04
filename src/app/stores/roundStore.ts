@@ -83,9 +83,9 @@ interface RoundStore {
 
   // Fetching state
   isLoading: boolean;
-  isRoundSwitching: boolean;
   error: string | null;
   pollingIntervalId: ReturnType<typeof setTimeout> | null;
+  fetchAbortController: AbortController | null;
 
   // Actions
   updateRoundData: (roundData: RoundData) => void;
@@ -138,37 +138,80 @@ export const useRoundStore = create<RoundStore>()(
 
     // Fetching state
     isLoading: false,
-    isRoundSwitching: false,
     error: null,
     pollingIntervalId: null,
+    fetchAbortController: null,
 
     updateRoundData: (roundData: RoundData) => {
-      set(state => {
-        const isCorrectRound = roundData.round === state.currentSelectedRound;
-        const hasValidData = roundData.pirates && roundData.pirates.length > 0;
-        const shouldClearSwitching = state.isRoundSwitching && isCorrectRound && hasValidData;
+      const state = get();
 
-        return {
-          roundData,
-          isRoundSwitching: shouldClearSwitching ? false : state.isRoundSwitching,
-        };
-      });
-      get().recalculate();
+      // Always ignore data for a different round - this prevents stale fetches from overwriting the current round
+      // Double-check right before updating to prevent race conditions
+      const verifyState = get();
+      if (roundData.round !== verifyState.currentSelectedRound) {
+        return;
+      }
+
+      // Compare current odds with new odds to detect if they've changed
+      const currentOdds = state.roundData.currentOdds || [];
+      const newOdds = roundData.currentOdds || [];
+      const oddsChanged =
+        currentOdds.length !== newOdds.length ||
+        currentOdds.some((arenaOdds, arenaIndex) => {
+          const newArenaOdds = newOdds[arenaIndex] || [];
+          return (
+            arenaOdds.length !== newArenaOdds.length ||
+            arenaOdds.some((odd, pirateIndex) => odd !== newArenaOdds[pirateIndex])
+          );
+        });
+
+      // Compare pirates to detect if they've changed (different round)
+      const currentPirates = state.roundData.pirates || [];
+      const newPirates = roundData.pirates || [];
+      const piratesChanged =
+        currentPirates.length !== newPirates.length ||
+        currentPirates.some((arenaPirates, arenaIndex) => {
+          const newArenaPirates = newPirates[arenaIndex] || [];
+          return (
+            arenaPirates.length !== newArenaPirates.length ||
+            arenaPirates.some((pirate, pirateIndex) => pirate !== newArenaPirates[pirateIndex])
+          );
+        });
+
+      // Always update roundData (for timestamp, lastChange, changes, etc.)
+      // but only recalculate if odds or pirates changed
+      set({ roundData });
+
+      // Only recalculate if odds or pirates changed (this is the expensive operation)
+      if (oddsChanged || piratesChanged || roundData.round !== state.roundData.round) {
+        get().recalculate();
+      }
     },
 
     updateSelectedRound: (round: number) => {
       const prev = get();
       const isSameRound = round === prev.currentSelectedRound;
 
+      // Don't do anything if it's the same round
+      if (isSameRound) {
+        return;
+      }
+
+      // Cancel any pending fetch to prevent stale data from overwriting the new round
+      if (prev.fetchAbortController) {
+        prev.fetchAbortController.abort();
+      }
+
       set({
         currentSelectedRound: round,
-        customOdds: isSameRound ? prev.customOdds : null,
-        customProbs: isSameRound ? prev.customProbs : null,
-        isRoundSwitching: !isSameRound,
+        customOdds: null,
+        customProbs: null,
         error: null,
+        fetchAbortController: null,
       });
 
       if (round > 0) {
+        // Always pass the round explicitly to avoid reading stale state
         get().fetchRoundData(round);
         get().startPolling();
       }
@@ -275,16 +318,29 @@ export const useRoundStore = create<RoundStore>()(
 
     fetchRoundData: async (round?: number) => {
       const state = get();
-      const selectedRound = round ?? state.currentSelectedRound;
+      // If round is explicitly provided, use it. Otherwise use currentSelectedRound.
+      // This prevents race conditions where currentSelectedRound might be stale.
+      const selectedRound = round !== undefined ? round : state.currentSelectedRound;
 
       if (!selectedRound || selectedRound === 0) {
         return false;
       }
 
+      // Double-check that the round still matches before starting fetch
+      // This prevents race conditions where the round changed between the check above and here
+      const currentState = get();
+      if (selectedRound !== currentState.currentSelectedRound) {
+        return false;
+      }
+
       try {
-        set({ isLoading: true, error: null });
+        // Cancel any existing fetch
+        if (currentState.fetchAbortController) {
+          currentState.fetchAbortController.abort();
+        }
 
         const controller = new AbortController();
+        set({ isLoading: true, error: null, fetchAbortController: controller });
         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         const response = await fetch(`https://cdn.neofood.club/rounds/${selectedRound}.json`, {
@@ -297,8 +353,16 @@ export const useRoundStore = create<RoundStore>()(
         }
 
         const data = await response.json();
+
+        // Verify the round still matches before updating (prevent stale data)
+        const verifyState = get();
+        if (data.round !== verifyState.currentSelectedRound) {
+          set({ isLoading: false, fetchAbortController: null });
+          return false;
+        }
+
         get().updateRoundData(data);
-        set({ isLoading: false });
+        set({ isLoading: false, fetchAbortController: null });
 
         // Check if round has winners
         if (data?.winners?.[0] > 0) {
@@ -312,13 +376,22 @@ export const useRoundStore = create<RoundStore>()(
 
         return false;
       } catch (error) {
-        get().updateRoundData(defaultRoundData);
-        set({
-          customOdds: null,
-          customProbs: null,
-          isLoading: false,
-          error: `Failed to fetch round ${selectedRound}`,
-        });
+        // Only update error state if this fetch is still relevant
+        const errorState = get();
+        if (selectedRound === errorState.currentSelectedRound && !errorState.fetchAbortController?.signal.aborted) {
+          // Don't call updateRoundData with defaultRoundData - it has round: 0 which could cause issues
+          // Just set the error state and clear switching flag
+          set({
+            customOdds: null,
+            customProbs: null,
+            isLoading: false,
+            error: `Failed to fetch round ${selectedRound}`,
+            fetchAbortController: null,
+          });
+        } else {
+          // Fetch was cancelled or round changed, just clean up
+          set({ isLoading: false, fetchAbortController: null });
+        }
 
         if (showToast) {
           showToast({
@@ -357,9 +430,20 @@ export const useRoundStore = create<RoundStore>()(
       };
 
       const pollingIntervalId = setTimeout(async () => {
-        const shouldStop = await get().fetchRoundData();
-        if (!shouldStop) {
-          get().startPolling();
+        // Capture the current selected round at the time the poll was scheduled
+        const pollState = get();
+        const pollRound = pollState.currentSelectedRound;
+
+        // Only fetch if we're still on the same round
+        if (pollRound === currentSelectedRound && pollRound > 0) {
+          const shouldStop = await get().fetchRoundData(pollRound);
+          if (!shouldStop) {
+            // Double-check round hasn't changed before restarting polling
+            const checkState = get();
+            if (checkState.currentSelectedRound === pollRound) {
+              get().startPolling();
+            }
+          }
         }
       }, getInterval());
 
@@ -410,31 +494,48 @@ export const useRoundStore = create<RoundStore>()(
 );
 
 // Subscribe to bet changes and recalculate
-useBetStore.subscribe(
-  state => {
-    const currentBets = state.allBets.get(state.currentBet) ?? new Map();
-    const currentBetAmounts = state.allBetAmounts.get(state.currentBet) ?? new Map();
-    return { currentBets, currentBetAmounts, currentBet: state.currentBet };
-  },
-  () => {
-    useRoundStore.getState().recalculate();
-  },
-  { fireImmediately: true },
-);
+// Use dynamic import to avoid circular dependency at module load time
+import('./betStore').then(({ useBetStore }) => {
+  useBetStore.subscribe(
+    state => {
+      const currentBets = state.allBets.get(state.currentBet) ?? new Map();
+      const currentBetAmounts = state.allBetAmounts.get(state.currentBet) ?? new Map();
+      return { currentBets, currentBetAmounts, currentBet: state.currentBet };
+    },
+    () => {
+      useRoundStore.getState().recalculate();
+    },
+    { fireImmediately: false },
+  );
+  // Trigger initial calculation manually
+  useRoundStore.getState().recalculate();
+});
 
 // Subscribe to round changes and update URL
 useRoundStore.subscribe(
-  state => ({ currentSelectedRound: state.currentSelectedRound }),
+  state => ({
+    currentSelectedRound: state.currentSelectedRound,
+  }),
   (data, prevData) => {
     if (prevData && data.currentSelectedRound !== prevData.currentSelectedRound) {
-      const currentHash = window.location.hash.slice(1);
-      const currentUrlData = parseBetUrl(currentHash);
+      // Get fresh state to ensure we have the latest round
+      const currentState = useRoundStore.getState();
+
+      // Verify the round hasn't changed again (prevent race conditions)
+      if (data.currentSelectedRound !== currentState.currentSelectedRound) {
+        return; // Don't update URL if round changed again
+      }
+
+      // Get current bets from bet store, not from URL hash, to avoid stale data
+      const betState = useBetStore.getState();
+      const currentBets = betState.allBets.get(betState.currentBet) ?? new Map();
+      const currentBetAmounts = betState.allBetAmounts.get(betState.currentBet) ?? new Map();
 
       const newUrl = makeBetURL(
-        data.currentSelectedRound,
-        currentUrlData.bets,
-        currentUrlData.betAmounts,
-        anyBetsExist(currentUrlData.bets) && anyBetAmountsExist(currentUrlData.betAmounts),
+        currentState.currentSelectedRound, // Use currentState to ensure we have latest
+        currentBets,
+        currentBetAmounts,
+        anyBetsExist(currentBets) && anyBetAmountsExist(currentBetAmounts),
       );
 
       window.history.replaceState(null, '', newUrl);

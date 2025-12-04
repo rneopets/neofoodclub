@@ -82,7 +82,6 @@ export const useRoundData = (): RoundData => useRoundStore(state => state.roundD
 export const useCurrentRound = (): number => useRoundStore(state => state.currentRound);
 export const useSelectedRound = (): number => useRoundStore(state => state.currentSelectedRound);
 export const useIsLoading = (): boolean => useRoundStore(state => state.isLoading);
-export const useIsRoundSwitching = (): boolean => useRoundStore(state => state.isRoundSwitching);
 
 export const usePirates = (): number[][] => useRoundStore(state => state.roundData.pirates);
 export const useFoods = (): number[][] => useRoundStore(state => state.roundData.foods);

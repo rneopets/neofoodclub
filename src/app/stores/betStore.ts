@@ -11,6 +11,17 @@ import {
   makeEmptyBetAmounts,
 } from '../util';
 
+// Lazy getter to avoid circular dependency
+let getRoundStore: (() => ReturnType<typeof import('./roundStore').useRoundStore.getState>) | null = null;
+const initRoundStoreGetter = async (): Promise<void> => {
+  if (!getRoundStore) {
+    const { useRoundStore } = await import('./roundStore');
+    getRoundStore = () => useRoundStore.getState();
+  }
+};
+// Initialize immediately but don't block
+initRoundStoreGetter();
+
 interface BetStore {
   // State
   currentBet: number;
@@ -252,18 +263,33 @@ useBetStore.subscribe(
     }
 
     const state = useBetStore.getState();
-    const currentHash = window.location.hash.slice(1);
-    const currentUrlData = parseBetUrl(currentHash);
+    // Use lazy getter to avoid circular dependency
+    if (!getRoundStore) {
+      // If not initialized yet, skip this update
+      return;
+    }
+    const roundState = getRoundStore();
+
+    // Don't update URL if round data doesn't match selected round (round is switching)
+    // This prevents URL updates during round transitions
+    if (roundState.roundData.round !== roundState.currentSelectedRound) {
+      return;
+    }
+
+    // Get the current selected round from the round store, not from URL hash
+    // This ensures we use the actual selected round, not what's in the URL
+    const currentSelectedRound = roundState.currentSelectedRound;
     const currentBets = state.allBets.get(state.currentBet) ?? new Map();
     const currentBetAmounts = state.allBetAmounts.get(state.currentBet) ?? new Map();
 
     const newUrl = makeBetURL(
-      currentUrlData.round || 0,
+      currentSelectedRound,
       currentBets,
       currentBetAmounts,
       anyBetsExist(currentBets) && anyBetAmountsExist(currentBetAmounts),
     );
 
+    const currentHash = window.location.hash.slice(1);
     if (currentHash !== newUrl.slice(1)) {
       window.history.replaceState(null, '', newUrl);
     }
