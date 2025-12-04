@@ -11,6 +11,8 @@ import {
   Button,
   Collapsible,
   ButtonGroup,
+  defineStyle,
+  Badge,
 } from '@chakra-ui/react';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
@@ -27,8 +29,9 @@ import {
 
 import { OddsChange } from '../../types';
 import { PIRATE_NAMES, ARENA_NAMES } from '../constants';
+import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
 import { makeEmpty } from '../maths';
-import { useRoundStore } from '../stores';
+import { useRoundStore, useCurrentOddsValue, useOpeningOddsValue } from '../stores';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../utils/betUtils';
 
 import DateFormatter from './DateFormatter';
@@ -36,6 +39,28 @@ import DateFormatter from './DateFormatter';
 import { Avatar } from '@/components/ui/avatar';
 import { Timeline } from '@/components/ui/timeline';
 import { Tooltip } from '@/components/ui/tooltip';
+
+const ringCss = defineStyle({
+  outlineWidth: '2px',
+  outlineColor: 'colorPalette.500',
+  outlineOffset: '2px',
+  outlineStyle: 'solid',
+});
+
+const avatarWrapperCss = defineStyle({
+  '& [data-part="image"]': {
+    width: '70.7%',
+    height: '70.7%',
+    objectFit: 'contain',
+    objectPosition: 'center',
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    borderRadius: '0',
+    aspectRatio: '1 / 1',
+  },
+});
 
 // Helper function to consolidate consecutive single-pirate changes
 function consolidateTimelineEvents(events: TimelineEvent[]): TimelineEvent[] {
@@ -161,6 +186,12 @@ const ConsolidatedChangesContent = React.memo(
     onPirateClick: (arenaId: number, pirateIndex: number) => void;
   }): React.ReactElement => {
     const { event, onPirateClick } = props;
+    const getPirateBgColor = useGetPirateBgColor();
+    const roundData = useRoundStore(state => state.roundData);
+    const openingOdds = roundData.openingOdds?.[event.pirate.arenaId]?.[
+      event.pirate.pirateIndex + 1
+    ] as number | undefined;
+    const colorPalette = openingOdds ? getPirateBgColor(openingOdds) : undefined;
 
     return (
       <Box mt={2}>
@@ -170,11 +201,16 @@ const ConsolidatedChangesContent = React.memo(
           onClick={() => onPirateClick(event.pirate.arenaId, event.pirate.pirateIndex)}
           mb={2}
         >
-          <Avatar
-            name={event.pirate.pirateName}
-            src={`https://images.neopets.com/pirates/fc/fc_pirate_${event.pirate.pirateId}.gif`}
-            size="2xs"
-          />
+          <Box css={avatarWrapperCss} display="inline-block">
+            <Avatar
+              name={event.pirate.pirateName}
+              src={`https://images.neopets.com/pirates/fc/fc_pirate_${event.pirate.pirateId}.gif`}
+              size="2xs"
+              bg="white"
+              css={colorPalette ? ringCss : undefined}
+              colorPalette={colorPalette}
+            />
+          </Box>
           View Timeline
         </Button>
         <Collapsible.Root>
@@ -238,41 +274,55 @@ const RegularChangesContent = React.memo(
     showArenaName?: boolean;
   }): React.ReactElement => {
     const { event, onPirateClick, showArenaName = false } = props;
+    const getPirateBgColor = useGetPirateBgColor();
+    const roundData = useRoundStore(state => state.roundData);
 
     return (
       <VStack align="stretch" gap={1} mt={2}>
-        {event.pirates.map(pirate => (
-          <Flex
-            key={`${pirate.arenaId}-${pirate.pirateIndex}`}
-            gap={2}
-            alignItems="center"
-            flexWrap="wrap"
-          >
-            <Button
-              size="xs"
-              variant="ghost"
-              onClick={() => onPirateClick(pirate.arenaId, pirate.pirateIndex)}
+        {event.pirates.map(pirate => {
+          const openingOdds = roundData.openingOdds?.[pirate.arenaId]?.[pirate.pirateIndex + 1] as
+            | number
+            | undefined;
+          const colorPalette = openingOdds ? getPirateBgColor(openingOdds) : undefined;
+
+          return (
+            <Flex
+              key={`${pirate.arenaId}-${pirate.pirateIndex}`}
+              gap={2}
+              alignItems="center"
+              flexWrap="wrap"
             >
-              <Avatar
-                name={pirate.pirateName}
-                src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirate.pirateId}.gif`}
-                size="2xs"
-              />
-              {pirate.pirateName}
-            </Button>
-            <Text fontSize="xs" color="fg.muted">
-              {showArenaName && `${pirate.arenaName}: `}
-              {pirate.oldOdds}:1 →{' '}
-              <Text
-                as="span"
-                fontWeight="semibold"
-                color={pirate.isIncrease ? 'green.500' : 'red.500'}
+              <Button
+                size="xs"
+                variant="ghost"
+                onClick={() => onPirateClick(pirate.arenaId, pirate.pirateIndex)}
               >
-                {pirate.newOdds}:1
+                <Box css={avatarWrapperCss} display="inline-block">
+                  <Avatar
+                    name={pirate.pirateName}
+                    src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirate.pirateId}.gif`}
+                    size="2xs"
+                    bg="white"
+                    css={colorPalette ? ringCss : undefined}
+                    colorPalette={colorPalette}
+                  />
+                </Box>
+                {pirate.pirateName}
+              </Button>
+              <Text fontSize="xs" color="fg.muted">
+                {showArenaName && `${pirate.arenaName}: `}
+                {pirate.oldOdds}:1 →{' '}
+                <Text
+                  as="span"
+                  fontWeight="semibold"
+                  color={pirate.isIncrease ? 'green.500' : 'red.500'}
+                >
+                  {pirate.newOdds}:1
+                </Text>
               </Text>
-            </Text>
-          </Flex>
-        ))}
+            </Flex>
+          );
+        })}
       </VStack>
     );
   },
@@ -288,53 +338,63 @@ const WinnersContent = React.memo(
     showArenaName?: boolean;
   }): React.ReactElement => {
     const { winners, onPirateClick, showArenaName = false } = props;
+    const getPirateBgColor = useGetPirateBgColor();
 
     return (
       <VStack align="stretch" gap={2} mt={3}>
-        {winners.map(winner => (
-          <Flex
-            key={`winner-${winner.arenaId}-${winner.pirateIndex}`}
-            gap={3}
-            alignItems="center"
-            p={2}
-            borderRadius="md"
-            bg="bg.muted"
-            _hover={{ bg: 'bg.emphasized' }}
-            transition="background 0.2s"
-          >
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onPirateClick(winner.arenaId, winner.pirateIndex)}
-              p={0}
+        {winners.map(winner => {
+          const colorPalette = getPirateBgColor(winner.finalOdds);
+
+          return (
+            <Flex
+              key={`winner-${winner.arenaId}-${winner.pirateIndex}`}
+              gap={3}
+              alignItems="center"
+              p={2}
+              borderRadius="md"
+              bg="bg.muted"
+              _hover={{ bg: 'bg.emphasized' }}
+              transition="background 0.2s"
             >
-              <Avatar
-                name={winner.pirateName}
-                src={`https://images.neopets.com/pirates/fc/fc_pirate_${winner.pirateId}.gif`}
+              <Button
                 size="sm"
-              />
-            </Button>
-            <Box flex="1">
-              <Flex gap={2} alignItems="baseline" flexWrap="wrap">
-                <Text fontWeight="bold" fontSize="sm">
-                  {winner.pirateName}
-                </Text>
-                <Text fontSize="xs" color="fg.muted">
-                  {showArenaName ? winner.arenaName : `${winner.finalOdds}:1`}
-                </Text>
-              </Flex>
-              {showArenaName && (
-                <Text fontSize="xs" color="fg.muted">
-                  Won at{' '}
-                  <Text as="span" fontWeight="semibold" color="green.500">
-                    {winner.finalOdds}:1
+                variant="ghost"
+                onClick={() => onPirateClick(winner.arenaId, winner.pirateIndex)}
+                p={0}
+              >
+                <Box css={avatarWrapperCss} display="inline-block">
+                  <Avatar
+                    name={winner.pirateName}
+                    src={`https://images.neopets.com/pirates/fc/fc_pirate_${winner.pirateId}.gif`}
+                    size="sm"
+                    bg="white"
+                    css={ringCss}
+                    colorPalette={colorPalette}
+                  />
+                </Box>
+              </Button>
+              <Box flex="1">
+                <Flex gap={2} alignItems="baseline" flexWrap="wrap">
+                  <Text fontWeight="bold" fontSize="sm">
+                    {winner.pirateName}
                   </Text>
-                </Text>
-              )}
-            </Box>
-            <Text fontSize="2xl">🏆</Text>
-          </Flex>
-        ))}
+                  <Text fontSize="xs" color="fg.muted">
+                    {showArenaName ? winner.arenaName : `${winner.finalOdds}:1`}
+                  </Text>
+                </Flex>
+                {showArenaName && (
+                  <Text fontSize="xs" color="fg.muted">
+                    Won at{' '}
+                    <Text as="span" fontWeight="semibold" color="green.500">
+                      {winner.finalOdds}:1
+                    </Text>
+                  </Text>
+                )}
+              </Box>
+              <Text fontSize="2xl">🏆</Text>
+            </Flex>
+          );
+        })}
       </VStack>
     );
   },
@@ -1004,6 +1064,9 @@ const PirateTimelineView = React.memo(
     const pirateId = roundData.pirates?.[arenaId]?.[pirateIndex];
     const start = roundData.start;
     const endTime = roundData.timestamp;
+    const getPirateBgColor = useGetPirateBgColor();
+    const currentOdds = useCurrentOddsValue(arenaId, pirateIndex);
+    const openingOdds = useOpeningOddsValue(arenaId, pirateIndex);
 
     if (!pirateId || !start || !endTime) {
       return null;
@@ -1011,7 +1074,6 @@ const PirateTimelineView = React.memo(
 
     const pirateName = PIRATE_NAMES.get(pirateId)!;
     const arenaName = ARENA_NAMES[arenaId]!;
-    const openingOdds = roundData.openingOdds?.[arenaId]?.[pirateIndex + 1] as number;
     const startDate = new Date(start!);
     const endDate = new Date(endTime!);
 
@@ -1034,10 +1096,7 @@ const PirateTimelineView = React.memo(
     const didPirateWin = winningPirate === pirateIndex + 1;
 
     // Memoized label calculation
-    const oddsChangesCountLabel =
-      thisPiratesChanges.length === 0
-        ? ''
-        : `${thisPiratesChanges.length} odds change${thisPiratesChanges.length > 1 ? 's' : ''}`;
+    const oddsChangesCountLabel = `${thisPiratesChanges.length} odds change${thisPiratesChanges.length !== 1 ? 's' : ''}`;
 
     // Enhanced timeline events with more data
     const timelineEvents = [
@@ -1111,16 +1170,45 @@ const PirateTimelineView = React.memo(
             </Breadcrumb.Root>
 
             <Flex gap="4" alignItems="center" flexWrap="wrap" mb={3}>
-              <Avatar
-                name={pirateName}
-                src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirateId}.gif`}
-                size="xl"
-              />
+              <Box css={avatarWrapperCss} display="inline-block">
+                <Avatar
+                  name={pirateName}
+                  src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirateId}.gif`}
+                  size="xl"
+                  bg="white"
+                  css={ringCss}
+                  colorPalette={getPirateBgColor(openingOdds!)}
+                />
+              </Box>
               <Box flex="1" minW="200px">
-                <Heading size="lg">{pirateName}</Heading>
-                <Text as="i" fontSize="md" color="fg.muted" fontStyle="italic">
-                  {oddsChangesCountLabel}
-                </Text>
+                <Flex gap={2} alignItems="center" flexWrap="wrap" mb={0.5}>
+                  <Heading size="lg">{pirateName}</Heading>
+                  {openingOdds !== undefined && (
+                    <Badge
+                      variant="subtle"
+                      fontSize="sm"
+                      colorPalette={getPirateBgColor(openingOdds)}
+                      textTransform="uppercase"
+                    >
+                      Open {openingOdds}:1
+                    </Badge>
+                  )}
+                  {currentOdds !== undefined && currentOdds !== openingOdds && (
+                    <Badge
+                      variant="subtle"
+                      fontSize="sm"
+                      colorPalette={getPirateBgColor(currentOdds)}
+                      textTransform="uppercase"
+                    >
+                      Current {currentOdds}:1
+                    </Badge>
+                  )}
+                </Flex>
+                {oddsChangesCountLabel && (
+                  <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+                    {oddsChangesCountLabel}
+                  </Text>
+                )}
               </Box>
             </Flex>
             <Text
