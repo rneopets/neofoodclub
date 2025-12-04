@@ -54,6 +54,7 @@ import {
   useUseWebDomain,
   useCalculationsStatus,
   useArenaRatios,
+  useBigBrain,
   useWinningBetBinary,
   useUsedProbabilities,
   useBetSetCount,
@@ -92,6 +93,8 @@ const BuildSetMenu = React.memo((): React.ReactElement => {
   const [buildButtonEnabled, setBuildButtonEnabled] = React.useState(false); // whether the build button is enabled, if we're within min/max to do so
 
   const { generateTenbetSet, generateGambitWithPirates } = useBetManagement();
+  const bigBrain = useBigBrain();
+  const arenaRatios = useArenaRatios();
 
   const handleChange = useCallback((arenaIndex: number, pirateIndex: number) => {
     setPirateIndices(prevIndices => {
@@ -231,16 +234,30 @@ const BuildSetMenu = React.memo((): React.ReactElement => {
                 )}
               </VStack>
               <Wrap justify="center">
-                {ARENA_NAMES.map((arena, index) => (
-                  <WrapItem key={arena}>
-                    <PirateSelect
-                      arenaId={index}
-                      pirateValue={pirateIndices[index] ?? 0}
-                      showArenaName={true}
-                      onChange={createOnChangeHandler(index)}
-                    />
-                  </WrapItem>
-                ))}
+                {ARENA_NAMES.map((arena, index) => {
+                  const arenaRatio = arenaRatios[index];
+                  return (
+                    <WrapItem key={arena}>
+                      <VStack gap={1} align="stretch">
+                        <HStack gap={2} justify="center">
+                          <Text fontSize="sm" fontWeight="semibold">
+                            {arena}
+                          </Text>
+                          {bigBrain && arenaRatio !== undefined && (
+                            <Badge fontSize="xs" variant="subtle">
+                              {displayAsPercent(arenaRatio, 1)}
+                            </Badge>
+                          )}
+                        </HStack>
+                        <PirateSelect
+                          arenaId={index}
+                          pirateValue={pirateIndices[index] ?? 0}
+                          onChange={createOnChangeHandler(index)}
+                        />
+                      </VStack>
+                    </WrapItem>
+                  );
+                })}
               </Wrap>
             </Dialog.Body>
             <Dialog.Footer>
