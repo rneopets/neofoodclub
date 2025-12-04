@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Any
 
 import polars as pl
 from constants import NEGATIVE_FAS, POSITIVE_FAS
@@ -10,7 +11,7 @@ columns = ["round", "arena", "pirate1", "pirate2", "pirate3", "pirate4", "fa1", 
 
 
 def get_df_from_file(path: Path) -> pl.DataFrame:
-    rows = []
+    rows: list[Any] = []
     data = json.loads(path.read_text())
     winners = data["winners"]
     if winners is None or not all(winners):
@@ -48,7 +49,7 @@ def get_df_from_file(path: Path) -> pl.DataFrame:
 
 
 pathlist = list(Path("raw_json").glob("**/*.json"))
-dfs = []
+dfs: list[pl.DataFrame] = []
 for path in pathlist:
     df = get_df_from_file(path)
     if df.height > 0:

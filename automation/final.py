@@ -382,7 +382,7 @@ Path("./output/javascript.js").write_text(
 
 print("Creating typescript.ts...")
 Path("./output/typescript.ts").write_text(
-    generate_typescript(per_pirate_fa_and_per_pirate_pos_mnl.params),
+    generate_typescript(params),
 )
 print("Creating rust.rs...")
 Path("./output/rust.rs").write_text(
