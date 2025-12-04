@@ -17,11 +17,11 @@ import { List } from 'react-window';
 
 import { PIRATE_NAMES } from '../constants';
 import { useBetManagement } from '../hooks/useBetManagement';
-import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
 import { useIsRoundOver } from '../hooks/useIsRoundOver';
-import { useProbabilities } from '../hooks/useProbabilities';
 import { useModalReset } from '../hooks/useModalReset';
+import { useProbabilities } from '../hooks/useProbabilities';
 import { computeBinaryToPirates } from '../maths';
 import { useRoundStore } from '../stores';
 import { getMaxBet } from '../util';
@@ -157,7 +157,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = ({ isOpen, onClose }) =
   const debouncedMaxBetInput = useDebouncedValue(maxBetInput, 300);
   const debouncedMaxBet = React.useMemo(() => {
     const value = Number(debouncedMaxBetInput);
-    return !isNaN(value) && value > 0 ? value : (userMaxBet > 0 ? userMaxBet : 10000);
+    return !isNaN(value) && value > 0 ? value : userMaxBet > 0 ? userMaxBet : 10000;
   }, [debouncedMaxBetInput, userMaxBet]);
   const [sortField, setSortField] = React.useState<SortField>('er');
   const [reverseSort, setReverseSort] = React.useState(true);
@@ -176,16 +176,12 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = ({ isOpen, onClose }) =
   const usedProbabilities = useExperimentalLogit ? logitProbabilities : legacyProbabilities;
 
   // Reset settings to global values when modal opens
-  useModalReset(
-    isOpen,
-    () => {
-      setUseExperimentalLogit(globalUseLogitModel);
-      const currentMaxBet = getMaxBet(currentSelectedRound);
-      const maxBetValue = currentMaxBet > 0 ? currentMaxBet.toString() : '10000';
-      setMaxBetInput(maxBetValue);
-    },
-    [globalUseLogitModel, currentSelectedRound],
-  );
+  useModalReset(isOpen, () => {
+    setUseExperimentalLogit(globalUseLogitModel);
+    const currentMaxBet = getMaxBet(currentSelectedRound);
+    const maxBetValue = currentMaxBet > 0 ? currentMaxBet.toString() : '10000';
+    setMaxBetInput(maxBetValue);
+  }, [globalUseLogitModel, currentSelectedRound]);
 
   // Calculate all possible bets using the pre-computed bet calculations
   const allBets = React.useMemo(() => {
