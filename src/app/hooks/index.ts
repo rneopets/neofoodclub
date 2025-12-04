@@ -4,6 +4,7 @@ export { useDuplicateBets } from './useDuplicateBets';
 export { useGetPirateBgColor } from './useGetPirateBgColor';
 export { useRoundProgress } from './useRoundProgress';
 export { useDebouncedValue } from './useDebouncedValue';
+export { useDebouncedRoundInput } from './useDebouncedRoundInput';
 export { useSelectOnFocus } from './useSelectOnFocus';
 export { useScrollPosition } from './useScrollPosition';
 export { useTimelineViewState } from './useTimelineViewState';

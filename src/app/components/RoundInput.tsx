@@ -2,7 +2,7 @@ import { Group, NumberInputControl, Text } from '@chakra-ui/react';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 
 import { useRoundStore } from '../stores';
-import { useDebouncedValue, useSelectOnFocus } from '../hooks';
+import { useSelectOnFocus, useDebouncedRoundInput } from '../hooks';
 
 import {
   NumberInputRoot,
@@ -25,32 +25,37 @@ const RoundInput: React.FC = () => {
 
   const [tempValue, setTempValue] = useState<string>(initialRoundNumber.toString());
 
-  // Debounce the input value
-  const debouncedValue = useDebouncedValue(tempValue, 400);
-
   // Check if there's an error related to the current round
   const hasError = Boolean(error);
 
-  // Handle debounced value changes
-  useEffect(() => {
-    const trimmedValue = debouncedValue.trim();
-    if (trimmedValue === '') {
-      return;
-    }
+  // Use custom hook to handle debouncing with cancellation on external changes
+  useDebouncedRoundInput(
+    tempValue,
+    currentSelectedRound.toString(),
+    400,
+    useCallback(
+      (debouncedValue: string) => {
+        const trimmedValue = debouncedValue.trim();
+        if (trimmedValue === '') {
+          return;
+        }
 
-    const roundNumber = parseInt(trimmedValue, 10);
-    if (isNaN(roundNumber) || roundNumber === 0) {
-      return;
-    }
+        const roundNumber = parseInt(trimmedValue, 10);
+        if (isNaN(roundNumber) || roundNumber === 0) {
+          return;
+        }
 
-    const isSameRound = roundNumber === currentSelectedRound;
-    if (isSameRound) {
-      return;
-    }
+        const isSameRound = roundNumber === currentSelectedRound;
+        if (isSameRound) {
+          return;
+        }
 
-    // Use the new updateSelectedRound action which handles data fetching automatically
-    updateSelectedRound(roundNumber);
-  }, [debouncedValue, currentSelectedRound, updateSelectedRound]);
+        // Use the new updateSelectedRound action which handles data fetching automatically
+        updateSelectedRound(roundNumber);
+      },
+      [currentSelectedRound, updateSelectedRound],
+    ),
+  );
 
   // Sync temp value when currentSelectedRound changes externally
   useEffect(() => {

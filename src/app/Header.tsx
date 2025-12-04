@@ -29,10 +29,10 @@ import DateFormatter from './components/DateFormatter';
 import GlowCard from './components/GlowCard';
 import MaxBetLockToggle from './components/MaxBetLockToggle';
 import RoundInput from './components/RoundInput';
+import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
 import { useRoundStore, useTimestampValue, useLastChange } from './stores';
-import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { calculateBaseMaxBet, getMaxBet, getMaxBetLocked } from './util';
 
 import {
@@ -465,23 +465,36 @@ interface TitleHeadingProps extends ButtonProps {
 }
 
 const TitleHeading: React.FC<TitleHeadingProps> = props => {
-  const setCustomOdds = useRoundStore(state => state.setCustomOdds);
-  const setCustomProbs = useRoundStore(state => state.setCustomProbs);
-  const updateSelectedRound = useRoundStore(state => state.updateSelectedRound);
-  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
-  const currentRound = useRoundStore(state => state.currentRound);
+  const isRoundOver = useIsRoundOver();
 
-  const handleClick = (): void => {
+  const handleClick = useCallback((): void => {
     const { scrollY } = window;
 
     if (scrollY !== 0) {
-      // scroll to top
+      // Scroll to top if scrolled down
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (currentSelectedRound !== currentRound) {
-      // TODO MAYBE: add a confirmation dialog?
-      updateSelectedRound(currentRound);
+    } else {
+      // Get fresh values from store to avoid stale closures
+      const roundState = useRoundStore.getState();
+
+      // Only fetch currentRound if the selected round is over (as a guardrail)
+      // If viewing an active round, we don't need to fetch since we're already on it
+      if (isRoundOver) {
+        roundState.fetchCurrentRound().then(() => {
+          const updatedState = useRoundStore.getState();
+          const freshCurrentRound = updatedState.currentRound;
+          // Only navigate if rounds differ and we're still at the top
+          if (
+            freshCurrentRound > 0 &&
+            updatedState.currentSelectedRound !== freshCurrentRound &&
+            window.scrollY === 0
+          ) {
+            updatedState.updateSelectedRound(freshCurrentRound);
+          }
+        });
+      }
     }
-  };
+  }, [isRoundOver]);
 
   return (
     <>
@@ -544,24 +557,20 @@ const HeaderContent: React.FC = () => {
   const hasWinners = useIsRoundOver();
   const timestamp = useTimestampValue();
   const error = useErrorState();
-  const isRoundSwitching = useRoundStore(state => state.isRoundSwitching);
   const roundData = useRoundStore(state => state.roundData);
   const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
 
-  const hasValidData = useMemo(() => {
-    // If we're switching rounds, don't consider old data as valid
-    if (isRoundSwitching) {
-      return false;
-    }
+  // Check if round is switching by comparing roundData.round to currentSelectedRound
+  const isRoundSwitching = roundData.round !== currentSelectedRound;
 
-    return (
+  const hasValidData = useMemo(
+    () =>
+      !isRoundSwitching &&
       timestamp !== undefined &&
-      roundData &&
-      roundData.round === currentSelectedRound &&
       roundData.pirates &&
-      roundData.pirates.length > 0
-    );
-  }, [timestamp, roundData, currentSelectedRound, isRoundSwitching]);
+      roundData.pirates.length > 0,
+    [timestamp, roundData.pirates, isRoundSwitching],
+  );
 
   useEffect(() => {
     // Don't trigger glow effects during round switching
