@@ -1,4 +1,5 @@
 import { Box, HStack, IconButton, Skeleton, Spacer, Table, Text } from '@chakra-ui/react';
+import { Tooltip } from '@/components/ui/tooltip';
 import React, { useCallback, useMemo } from 'react';
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa6';
 
@@ -30,6 +31,10 @@ import {
   useOpeningOdds,
   useViewMode,
   useSwapBets,
+  useCustomOddsValue,
+  useCustomProbsValue,
+  useCustomOddsMode,
+  useRoundStore,
 } from '../stores';
 import { displayAsPercent } from '../util';
 
@@ -54,6 +59,38 @@ const PirateNameCell = React.memo(
     const pirateName = pirateId ? (PIRATE_NAMES.get(pirateId) ?? '') : '';
     const openingOdds = useOpeningOdds();
     const winningBetBinary = useWinningBetBinary();
+    const customOddsMode = useCustomOddsMode();
+    const customOddsValue = useCustomOddsValue(arenaIndex, pirateIndex);
+    const customProbsValue = useCustomProbsValue(arenaIndex, pirateIndex);
+
+    // Get original values for comparison
+    const originalOdds = useRoundStore(
+      state => state.roundData?.currentOdds?.[arenaIndex]?.[pirateIndex],
+    );
+    const useLogitModel = useRoundStore(state => state.useLogitModel);
+    const originalProbs = useRoundStore(state => {
+      if (useLogitModel) {
+        return state.calculations.logitProbabilities?.used?.[arenaIndex]?.[pirateIndex];
+      }
+      return state.calculations.legacyProbabilities?.used?.[arenaIndex]?.[pirateIndex];
+    });
+
+    // Only show indicator if there's actually a pirate selected (pirateIndex > 0)
+    // and the custom value differs from the original value
+    const hasPirate = pirateIndex > 0 && pirateId !== undefined;
+    const hasCustomOdds =
+      hasPirate &&
+      customOddsMode &&
+      customOddsValue !== undefined &&
+      originalOdds !== undefined &&
+      customOddsValue !== originalOdds;
+    const hasCustomProbs =
+      hasPirate &&
+      customOddsMode &&
+      customProbsValue !== undefined &&
+      originalProbs !== undefined &&
+      Math.abs(customProbsValue - originalProbs) > 0.0001; // Use small epsilon for float comparison
+    const hasModifications = hasCustomOdds || hasCustomProbs;
 
     let bgColor = undefined;
     const pirateBin = computePirateBinary(arenaIndex, pirateIndex);
@@ -66,9 +103,33 @@ const PirateNameCell = React.memo(
       }
     }
 
+    const tooltipContent = useMemo(() => {
+      if (!hasModifications) return '';
+      const parts: string[] = [];
+      if (hasCustomOdds) parts.push('Custom odds');
+      if (hasCustomProbs) parts.push('Custom probability');
+      return parts.join(', ');
+    }, [hasModifications, hasCustomOdds, hasCustomProbs]);
+
     return (
       <Table.Cell {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}>
-        {pirateName}
+        <HStack gap={1} display="inline-flex" alignItems="center">
+          <Text>{pirateName}</Text>
+          {hasModifications && (
+            <Tooltip content={tooltipContent} placement="top">
+              <Box
+                as="span"
+                w="6px"
+                h="6px"
+                borderRadius="full"
+                bg="blue.500"
+                cursor="help"
+                display="inline-block"
+                flexShrink={0}
+              />
+            </Tooltip>
+          )}
+        </HStack>
       </Table.Cell>
     );
   },
