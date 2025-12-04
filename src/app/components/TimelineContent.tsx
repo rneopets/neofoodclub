@@ -204,7 +204,7 @@ const ConsolidatedChangesContent = React.memo(
           onClick={() => onPirateClick(event.pirate.arenaId, event.pirate.pirateIndex)}
           mb={2}
         >
-          <Box css={avatarWrapperCss} display="inline-block">
+          <Box css={avatarWrapperCss} display="inline-block" mr={2}>
             <Avatar
               name={event.pirate.pirateName}
               src={`https://images.neopets.com/pirates/fc/fc_pirate_${event.pirate.pirateId}.gif`}
@@ -300,7 +300,7 @@ const RegularChangesContent = React.memo(
                 variant="ghost"
                 onClick={() => onPirateClick(pirate.arenaId, pirate.pirateIndex)}
               >
-                <Box css={avatarWrapperCss} display="inline-block">
+                <Box css={avatarWrapperCss} display="inline-block" mr={2}>
                   <Avatar
                     name={pirate.pirateName}
                     src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirate.pirateId}.gif`}
