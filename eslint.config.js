@@ -20,7 +20,6 @@ export default [
       'vercel-build.ts',
       '.prettierrc.cjs',
       '.eslintrc.cjs',
-      'copy-public-assets.js',
       'vite.config.js',
       'vitest.config.ts',
       'eslint.config.js',
