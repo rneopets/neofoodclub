@@ -171,7 +171,7 @@ const PayoutTableRow = React.memo(
         <Td {...(betNumBgColor && { layerStyle: 'fill.subtle', colorPalette: betNumBgColor })}>
           <HStack px={2} gap={1}>
             <Spacer />
-            <Text>{betIndex + 1}</Text>
+            <Text minW="2ch" textAlign="center">{betIndex + 1}</Text>
 
             {viewMode === false && (
               <>
