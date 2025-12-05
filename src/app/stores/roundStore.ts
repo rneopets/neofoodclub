@@ -86,6 +86,7 @@ interface RoundStore {
   error: string | null;
   pollingIntervalId: ReturnType<typeof setTimeout> | null;
   fetchAbortController: AbortController | null;
+  isInitializing: boolean;
 
   // Actions
   updateRoundData: (roundData: RoundData) => void;
@@ -109,7 +110,7 @@ interface RoundStore {
   fetchRoundData: (round?: number) => Promise<boolean>;
   startPolling: () => void;
   stopPolling: () => void;
-  initialize: () => void;
+  initialize: () => Promise<void>;
 }
 
 const initialState = parseBetUrl(window.location.hash.slice(1));
@@ -141,6 +142,7 @@ export const useRoundStore = create<RoundStore>()(
     error: null,
     pollingIntervalId: null,
     fetchAbortController: null,
+    isInitializing: true,
 
     updateRoundData: (roundData: RoundData) => {
       const state = get();
@@ -180,7 +182,8 @@ export const useRoundStore = create<RoundStore>()(
 
       // Always update roundData (for timestamp, lastChange, changes, etc.)
       // but only recalculate if odds or pirates changed
-      set({ roundData });
+      // Clear any previous errors when successfully updating round data
+      set({ roundData, error: null });
 
       // Only recalculate if odds or pirates changed (this is the expensive operation)
       if (oddsChanged || piratesChanged || roundData.round !== state.roundData.round) {
@@ -362,7 +365,7 @@ export const useRoundStore = create<RoundStore>()(
         }
 
         get().updateRoundData(data);
-        set({ isLoading: false, fetchAbortController: null });
+        set({ isLoading: false, error: null, fetchAbortController: null });
 
         // Check if round has winners
         if (data?.winners?.[0] > 0) {
@@ -376,31 +379,40 @@ export const useRoundStore = create<RoundStore>()(
 
         return false;
       } catch (error) {
-        // Only update error state if this fetch is still relevant
+        // Only update error state if this fetch is still relevant and we're not initializing
         const errorState = get();
         if (selectedRound === errorState.currentSelectedRound && !errorState.fetchAbortController?.signal.aborted) {
-          // Don't call updateRoundData with defaultRoundData - it has round: 0 which could cause issues
-          // Just set the error state and clear switching flag
-          set({
-            customOdds: null,
-            customProbs: null,
-            isLoading: false,
-            error: `Failed to fetch round ${selectedRound}`,
-            fetchAbortController: null,
-          });
+          // Don't set errors during initialization - no data at first is not an error
+          if (!errorState.isInitializing) {
+            // Don't call updateRoundData with defaultRoundData - it has round: 0 which could cause issues
+            // Just set the error state and clear switching flag
+            set({
+              customOdds: null,
+              customProbs: null,
+              isLoading: false,
+              error: `Failed to fetch round ${selectedRound}`,
+              fetchAbortController: null,
+            });
+
+            if (showToast) {
+              showToast({
+                title: `Failed to fetch round ${selectedRound}`,
+                description: 'Please try again later.',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+              });
+            }
+          } else {
+            // During initialization, just clean up without setting error
+            set({
+              isLoading: false,
+              fetchAbortController: null,
+            });
+          }
         } else {
           // Fetch was cancelled or round changed, just clean up
           set({ isLoading: false, fetchAbortController: null });
-        }
-
-        if (showToast) {
-          showToast({
-            title: `Failed to fetch round ${selectedRound}`,
-            description: 'Please try again later.',
-            status: 'error',
-            duration: 3000,
-            isClosable: true,
-          });
         }
 
         console.error(`Failed to fetch round ${selectedRound}:`, error);
@@ -458,14 +470,22 @@ export const useRoundStore = create<RoundStore>()(
       }
     },
 
-    initialize: () => {
-      get().fetchCurrentRound();
+    initialize: async () => {
+      // Always wait for fetchCurrentRound to complete first to ensure we have the current round
+      // This prevents showing errors for stale rounds from the URL
+      await get().fetchCurrentRound();
 
-      const state = get();
-      if (state.currentSelectedRound > 0) {
-        get().fetchRoundData();
-        get().startPolling();
+      const updatedState = get();
+      if (updatedState.currentSelectedRound > 0) {
+        const fetchSucceeded = await get().fetchRoundData();
+        if (fetchSucceeded !== false) {
+          get().startPolling();
+        }
+        // If fetch failed during initialization, don't set error - no data at first is not an error
       }
+
+      // Mark initialization as complete
+      set({ isInitializing: false });
 
       // Trigger initial calculation
       get().recalculate();

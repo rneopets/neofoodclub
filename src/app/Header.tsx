@@ -242,9 +242,12 @@ const RoundInfo: React.FC<RoundInfoProps> = React.memo(({ display = 'block' }: R
   const winners = useRoundStore(state => state.roundData.winners);
   const timestamp = useTimestampValue();
   const error = useErrorState();
+  const isLoading = useRoundStore(state => state.isLoading);
+  const isInitializing = useRoundStore(state => state.isInitializing);
 
   const element = useMemo(() => {
-    if (error) {
+    // Don't show error while loading or during initial load - wait for the fetch to complete
+    if (error && !isLoading && !isInitializing) {
       return <ErrorRoundInfo />;
     } else if ((winners?.[0] ?? 0) > 0) {
       return <PreviousRoundInfo />;
@@ -252,7 +255,7 @@ const RoundInfo: React.FC<RoundInfoProps> = React.memo(({ display = 'block' }: R
       return <CurrentRoundInfo />;
     }
     return null;
-  }, [winners, timestamp, error]);
+  }, [winners, timestamp, error, isLoading, isInitializing]);
 
   return <Box display={display}>{element}</Box>;
 });
