@@ -9,8 +9,9 @@ import {
   useBetStore,
   useBatchUpdateBetAmounts,
   useSelectedRound,
+  useMaxBet,
 } from '../stores';
-import { getMaxBet, determineBetAmount, makeEmptyBetAmounts, isValidRound } from '../util';
+import { determineBetAmount, makeEmptyBetAmounts, isValidRound } from '../util';
 
 import { Tooltip } from '@/components/ui/tooltip';
 
@@ -29,14 +30,13 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
   const currentSelectedRound = useSelectedRound();
   const roundData = useRoundData();
   const hasRoundData = isValidRound({ roundData, currentSelectedRound } as RoundState);
-
-  const maxBet = getMaxBet(currentSelectedRound);
+  const maxBet = useMaxBet();
   const maxBetDisplay = maxBet === -1000 ? '(currently unset)' : maxBet.toLocaleString();
 
   const setBetAmountsWithMode = useCallback(
-    (capped: boolean) => {
+    (capped: boolean): void => {
       const store = useBetStore.getState();
-      const maxBetValue = getMaxBet(currentSelectedRound);
+      const maxBetValue = maxBet;
       const currentBets = store.allBets.get(store.currentBet) ?? new Map();
       const currentAmounts = store.allBetAmounts.get(store.currentBet) ?? new Map();
 
@@ -66,7 +66,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
         batchUpdateBetAmounts(updates);
       }
     },
-    [currentSelectedRound, batchUpdateBetAmounts],
+    [maxBet, batchUpdateBetAmounts],
   );
 
   const clearBetAmounts = useCallback(() => {

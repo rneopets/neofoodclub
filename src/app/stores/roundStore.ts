@@ -17,6 +17,7 @@ import {
   getOddsTimelineMode,
   anyBetAmountsExist,
   makeBetURL,
+  getMaxBet,
 } from '../util';
 
 import { useBetStore } from './betStore';
@@ -77,6 +78,7 @@ interface RoundStore {
   customOddsMode: boolean;
   oddsTimeline: boolean;
   useLogitModel: boolean;
+  maxBet: number;
 
   // Calculations
   calculations: RoundCalculationResult;
@@ -101,6 +103,7 @@ interface RoundStore {
   toggleOddsTimeline: () => void;
   toggleCustomOddsMode: () => void;
   toggleUseLogitModel: () => void;
+  setMaxBet: (maxBet: number) => void;
 
   // Calculations
   recalculate: () => void;
@@ -133,6 +136,7 @@ export const useRoundStore = create<RoundStore>()(
     customOddsMode: getCustomOddsMode(),
     oddsTimeline: getOddsTimelineMode(),
     useLogitModel: getUseLogitModel(),
+    maxBet: getMaxBet(initialState.round || 0),
 
     // Calculations
     calculations: emptyCalculations,
@@ -144,7 +148,7 @@ export const useRoundStore = create<RoundStore>()(
     fetchAbortController: null,
     isInitializing: true,
 
-    updateRoundData: (roundData: RoundData) => {
+    updateRoundData: (roundData: RoundData): void => {
       const state = get();
 
       // Always ignore data for a different round - this prevents stale fetches from overwriting the current round
@@ -167,31 +171,28 @@ export const useRoundStore = create<RoundStore>()(
           );
         });
 
-      // Compare pirates to detect if they've changed (different round)
-      const currentPirates = state.roundData.pirates || [];
-      const newPirates = roundData.pirates || [];
-      const piratesChanged =
-        currentPirates.length !== newPirates.length ||
-        currentPirates.some((arenaPirates, arenaIndex) => {
-          const newArenaPirates = newPirates[arenaIndex] || [];
-          return (
-            arenaPirates.length !== newArenaPirates.length ||
-            arenaPirates.some((pirate, pirateIndex) => pirate !== newArenaPirates[pirateIndex])
-          );
-        });
+      // Compare winners to detect if they've changed (round ended)
+      const currentWinners = state.roundData.winners || [];
+      const newWinners = roundData.winners || [];
+      const winnersChanged =
+        currentWinners.length !== newWinners.length ||
+        currentWinners.some((winner, index) => winner !== newWinners[index]);
 
       // Always update roundData (for timestamp, lastChange, changes, etc.)
-      // but only recalculate if odds or pirates changed
+      // but only recalculate if odds or winners changed
+      // Note: Pirates don't change within a round - if they're different, it's a different round
+      // which is already filtered by the round number check above
       // Clear any previous errors when successfully updating round data
       set({ roundData, error: null });
 
-      // Only recalculate if odds or pirates changed (this is the expensive operation)
-      if (oddsChanged || piratesChanged || roundData.round !== state.roundData.round) {
+      // Only recalculate if odds or winners changed (this is the expensive operation)
+      // Pirates are static for a round, so we don't need to check for pirate changes
+      if (oddsChanged || winnersChanged || roundData.round !== state.roundData.round) {
         get().recalculate();
       }
     },
 
-    updateSelectedRound: (round: number) => {
+    updateSelectedRound: (round: number): void => {
       const prev = get();
       const isSameRound = round === prev.currentSelectedRound;
 
@@ -211,6 +212,7 @@ export const useRoundStore = create<RoundStore>()(
         customProbs: null,
         error: null,
         fetchAbortController: null,
+        maxBet: getMaxBet(round),
       });
 
       if (round > 0) {
@@ -220,33 +222,35 @@ export const useRoundStore = create<RoundStore>()(
       }
     },
 
-    setCustomOdds: (odds: OddsData) => {
+    setCustomOdds: (odds: OddsData): void => {
       set({ customOdds: odds });
       get().recalculate();
     },
 
-    setCustomProbs: (probs: ProbabilitiesData) => {
+    setCustomProbs: (probs: ProbabilitiesData): void => {
       set({ customProbs: probs });
       get().recalculate();
     },
 
-    setTableMode: (mode: string) => set({ tableMode: mode }),
-    setViewMode: (viewMode: boolean) => set({ viewMode }),
-    setUseWebDomain: (useWebDomain: boolean) => set({ useWebDomain }),
+    setTableMode: (mode: string): void => set({ tableMode: mode }),
+    setViewMode: (viewMode: boolean): void => set({ viewMode }),
+    setUseWebDomain: (useWebDomain: boolean): void => set({ useWebDomain }),
 
-    toggleBigBrain: () => set(state => ({ bigBrain: !state.bigBrain })),
-    toggleFaDetails: () => set(state => ({ faDetails: !state.faDetails })),
-    toggleOddsTimeline: () => set(state => ({ oddsTimeline: !state.oddsTimeline })),
-    toggleCustomOddsMode: () => {
+    setMaxBet: (maxBet: number): void => set({ maxBet }),
+
+    toggleBigBrain: (): void => set(state => ({ bigBrain: !state.bigBrain })),
+    toggleFaDetails: (): void => set(state => ({ faDetails: !state.faDetails })),
+    toggleOddsTimeline: (): void => set(state => ({ oddsTimeline: !state.oddsTimeline })),
+    toggleCustomOddsMode: (): void => {
       set(state => ({ customOddsMode: !state.customOddsMode }));
       get().recalculate();
     },
-    toggleUseLogitModel: () => {
+    toggleUseLogitModel: (): void => {
       set(state => ({ useLogitModel: !state.useLogitModel }));
       get().recalculate();
     },
 
-    recalculate: () => {
+    recalculate: (): void => {
       const state = get();
       const betState = useBetStore.getState();
 
@@ -281,7 +285,7 @@ export const useRoundStore = create<RoundStore>()(
       set({ calculations });
     },
 
-    fetchCurrentRound: async () => {
+    fetchCurrentRound: async (): Promise<void> => {
       try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -319,7 +323,7 @@ export const useRoundStore = create<RoundStore>()(
       }
     },
 
-    fetchRoundData: async (round?: number) => {
+    fetchRoundData: async (round?: number): Promise<boolean> => {
       const state = get();
       // If round is explicitly provided, use it. Otherwise use currentSelectedRound.
       // This prevents race conditions where currentSelectedRound might be stale.
@@ -381,7 +385,10 @@ export const useRoundStore = create<RoundStore>()(
       } catch (error) {
         // Only update error state if this fetch is still relevant and we're not initializing
         const errorState = get();
-        if (selectedRound === errorState.currentSelectedRound && !errorState.fetchAbortController?.signal.aborted) {
+        if (
+          selectedRound === errorState.currentSelectedRound &&
+          !errorState.fetchAbortController?.signal.aborted
+        ) {
           // Don't set errors during initialization - no data at first is not an error
           if (!errorState.isInitializing) {
             // Don't call updateRoundData with defaultRoundData - it has round: 0 which could cause issues
@@ -420,7 +427,7 @@ export const useRoundStore = create<RoundStore>()(
       }
     },
 
-    startPolling: () => {
+    startPolling: (): void => {
       const state = get();
       if (state.pollingIntervalId) {
         clearTimeout(state.pollingIntervalId);
@@ -431,7 +438,7 @@ export const useRoundStore = create<RoundStore>()(
         return;
       }
 
-      const getInterval = () => {
+      const getInterval = (): number => {
         if (currentSelectedRound === currentRound) {
           return 10000;
         }
@@ -462,7 +469,7 @@ export const useRoundStore = create<RoundStore>()(
       set({ pollingIntervalId });
     },
 
-    stopPolling: () => {
+    stopPolling: (): void => {
       const state = get();
       if (state.pollingIntervalId) {
         clearTimeout(state.pollingIntervalId);
@@ -470,7 +477,7 @@ export const useRoundStore = create<RoundStore>()(
       }
     },
 
-    initialize: async () => {
+    initialize: async (): Promise<void> => {
       // Always wait for fetchCurrentRound to complete first to ensure we have the current round
       // This prevents showing errors for stale rounds from the URL
       await get().fetchCurrentRound();
@@ -490,7 +497,7 @@ export const useRoundStore = create<RoundStore>()(
       // Trigger initial calculation
       get().recalculate();
 
-      const handleVisibilityChange = () => {
+      const handleVisibilityChange = (): void => {
         const currentState = get();
         if (document.hidden) {
           currentState.stopPolling();
@@ -505,17 +512,18 @@ export const useRoundStore = create<RoundStore>()(
 
       document.addEventListener('visibilitychange', handleVisibilityChange);
 
-      (window as any).__roundDataCleanup = () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        get().stopPolling();
-      };
+      (window as unknown as Window & { __roundDataCleanup: () => void }).__roundDataCleanup =
+        (): void => {
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+          get().stopPolling();
+        };
     },
   })),
 );
 
 // Subscribe to bet changes and recalculate
 // Use dynamic import to avoid circular dependency at module load time
-import('./betStore').then(({ useBetStore }) => {
+import('./betStore').then(() => {
   useBetStore.subscribe(
     state => {
       const currentBets = state.allBets.get(state.currentBet) ?? new Map();
