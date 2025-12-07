@@ -142,6 +142,9 @@ export const useToggleCustomOddsMode = (): (() => void) =>
   useRoundStore(state => state.toggleCustomOddsMode);
 export const useToggleUseLogitModel = (): (() => void) =>
   useRoundStore(state => state.toggleUseLogitModel);
+export const useMaxBet = (): number => useRoundStore(state => state.maxBet);
+export const useSetMaxBet = (): ((maxBet: number) => void) =>
+  useRoundStore(state => state.setMaxBet);
 export const useSetCustomOdds = (): ((odds: OddsData) => void) =>
   useRoundStore(state => state.setCustomOdds);
 export const useSetCustomProbs = (): ((probs: ProbabilitiesData) => void) =>

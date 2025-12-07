@@ -32,7 +32,7 @@ import RoundInput from './components/RoundInput';
 import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
-import { useRoundStore, useTimestampValue, useLastChange } from './stores';
+import { useRoundStore, useTimestampValue, useLastChange, useSetMaxBet } from './stores';
 import { calculateBaseMaxBet, getMaxBet, getMaxBetLocked } from './util';
 
 import {
@@ -262,6 +262,7 @@ const RoundInfo: React.FC<RoundInfoProps> = React.memo(({ display = 'block' }: R
 
 const MaxBetInput: React.FC = () => {
   const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
+  const setMaxBet = useSetMaxBet();
   const [tempValue, setTempValue] = useState<string>(() =>
     getMaxBet(currentSelectedRound).toString(),
   );
@@ -274,7 +275,8 @@ const MaxBetInput: React.FC = () => {
   useEffect(() => {
     const cookieValue = getMaxBet(currentSelectedRound);
     setTempValue(cookieValue.toString());
-  }, [currentSelectedRound]);
+    setMaxBet(cookieValue);
+  }, [currentSelectedRound, setMaxBet]);
 
   useEffect(() => {
     const currentLockState = getMaxBetLocked();
@@ -314,10 +316,12 @@ const MaxBetInput: React.FC = () => {
         });
       }
 
+      setMaxBet(numValue);
+
       setIsAnimating(true);
       setTimeout(() => setIsAnimating(false), 600);
     }
-  }, [tempValue, currentSelectedRound]);
+  }, [tempValue, currentSelectedRound, setMaxBet]);
 
   const handleLockClick = useCallback((): void => {
     if (isLocked) {
