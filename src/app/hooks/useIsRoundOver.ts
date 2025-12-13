@@ -9,7 +9,5 @@ import { useRoundStore } from '../stores';
 export function useIsRoundOver(): boolean {
   const winners = useRoundStore(state => state.roundData.winners);
 
-  return useMemo(() => {
-    return !!(winners && winners.some(w => w > 0));
-  }, [winners]);
+  return useMemo(() => !!(winners && winners.some(w => w > 0)), [winners]);
 }

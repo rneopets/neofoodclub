@@ -6,9 +6,7 @@ import { useState, useCallback } from 'react';
  * @param defaultIsOpen - Default open state
  * @returns Object with isOpen state and handlers
  */
-export function useDisclosureState(
-  defaultIsOpen = false,
-): {
+export function useDisclosureState(defaultIsOpen = false): {
   isOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
