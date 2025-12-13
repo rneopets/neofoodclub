@@ -4,12 +4,19 @@ import { setupLocalDataMock, getReliableRound } from './test-helpers/local-data-
 
 // Helper to wait for betting interface to be ready
 async function waitForBettingReady(page: Page): Promise<void> {
+  // First wait for the root element and round input to be visible
+  await page.waitForSelector('#root', { timeout: 30000 });
+  const roundInput = page.locator('[data-testid="round-input-field"]');
+  await roundInput.waitFor({ state: 'visible', timeout: 20000 });
+
+  // Wait for round data to load by checking for the table (indicates round data is loaded)
+  await page.waitForSelector('table', { timeout: 20000 });
+
+  // Now wait for the generate button to be visible and enabled
   const generateButton = page.locator('[data-testid="generate-button"]');
   await generateButton.waitFor({ state: 'visible', timeout: 10000 });
-  await expect(generateButton).toBeEnabled({ timeout: 5000 });
+  await expect(generateButton).toBeEnabled({ timeout: 10000 });
 
-  const roundInput = page.locator('[data-testid="round-input-field"]');
-  await roundInput.waitFor({ state: 'visible', timeout: 5000 });
   await page.waitForTimeout(200);
 }
 
