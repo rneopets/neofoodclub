@@ -211,79 +211,83 @@ const BuildSetMenu = React.memo((): React.ReactElement => {
         lazyMount
         open={open}
         onOpenChange={(e: { open: boolean | ((prevState: boolean) => boolean) }) => setOpen(e.open)}
+        preventScroll
+        modal
       >
-        <Dialog.Backdrop />
-        <Dialog.Positioner>
-          <Dialog.Content>
-            <Dialog.Header>Custom {mode} builder</Dialog.Header>
-            <Dialog.CloseTrigger data-testid="build-modal-close-button" />
-            <Dialog.Body>
-              <VStack mb={3}>
-                {min === max ? (
-                  <Text as={'i'}>Please choose {max} pirates.</Text>
-                ) : (
-                  <Text as={'i'}>
-                    Please choose between {min} and {max} pirates.
-                  </Text>
-                )}
-              </VStack>
-              <Wrap justify="center">
-                {ARENA_NAMES.map((arena, index) => {
-                  const arenaRatio = arenaRatios[index];
-                  return (
-                    <WrapItem key={arena}>
-                      <VStack gap={1} align="stretch">
-                        <HStack gap={2} justify="center">
-                          <Text fontSize="sm" fontWeight="semibold">
-                            {arena}
-                          </Text>
-                          {bigBrain && arenaRatio !== undefined && (
-                            <Badge fontSize="xs" variant="subtle">
-                              {displayAsPercent(arenaRatio, 1)}
-                            </Badge>
-                          )}
-                        </HStack>
-                        <PirateSelect
-                          arenaId={index}
-                          pirateValue={pirateIndices[index] ?? 0}
-                          onChange={createOnChangeHandler(index)}
-                        />
-                      </VStack>
-                    </WrapItem>
-                  );
-                })}
-              </Wrap>
-            </Dialog.Body>
-            <Dialog.Footer>
-              <Flex width="2xl">
-                <HStack>
-                  <Button onClick={randomizeIndices} data-testid="randomize-button">
-                    <FaShuffle />
-                    Randomize
-                  </Button>
+        <Portal container={document.body}>
+          <Dialog.Backdrop />
+          <Dialog.Positioner>
+            <Dialog.Content>
+              <Dialog.Header>Custom {mode} builder</Dialog.Header>
+              <Dialog.CloseTrigger data-testid="build-modal-close-button" />
+              <Dialog.Body>
+                <VStack mb={3}>
+                  {min === max ? (
+                    <Text as={'i'}>Please choose {max} pirates.</Text>
+                  ) : (
+                    <Text as={'i'}>
+                      Please choose between {min} and {max} pirates.
+                    </Text>
+                  )}
+                </VStack>
+                <Wrap justify="center">
+                  {ARENA_NAMES.map((arena, index) => {
+                    const arenaRatio = arenaRatios[index];
+                    return (
+                      <WrapItem key={arena}>
+                        <VStack gap={1} align="stretch">
+                          <HStack gap={2} justify="center">
+                            <Text fontSize="sm" fontWeight="semibold">
+                              {arena}
+                            </Text>
+                            {bigBrain && arenaRatio !== undefined && (
+                              <Badge fontSize="xs" variant="subtle">
+                                {displayAsPercent(arenaRatio, 1)}
+                              </Badge>
+                            )}
+                          </HStack>
+                          <PirateSelect
+                            arenaId={index}
+                            pirateValue={pirateIndices[index] ?? 0}
+                            onChange={createOnChangeHandler(index)}
+                          />
+                        </VStack>
+                      </WrapItem>
+                    );
+                  })}
+                </Wrap>
+              </Dialog.Body>
+              <Dialog.Footer>
+                <Flex width="2xl">
+                  <HStack>
+                    <Button onClick={randomizeIndices} data-testid="randomize-button">
+                      <FaShuffle />
+                      Randomize
+                    </Button>
+                    <Button
+                      onClick={handleClearIndices}
+                      data-testid="modal-clear-button"
+                      disabled={pirateIndices.every(e => e === 0)}
+                    >
+                      <FaTrash />
+                      Clear
+                    </Button>
+                  </HStack>
+                  <Spacer />
                   <Button
-                    onClick={handleClearIndices}
-                    data-testid="modal-clear-button"
-                    disabled={pirateIndices.every(e => e === 0)}
+                    disabled={!buildButtonEnabled}
+                    variant="surface"
+                    colorPalette="gray"
+                    onClick={handleBuildClick}
+                    data-testid="build-modal-button"
                   >
-                    <FaTrash />
-                    Clear
+                    Build {mode} set
                   </Button>
-                </HStack>
-                <Spacer />
-                <Button
-                  disabled={!buildButtonEnabled}
-                  variant="surface"
-                  colorPalette="gray"
-                  onClick={handleBuildClick}
-                  data-testid="build-modal-button"
-                >
-                  Build {mode} set
-                </Button>
-              </Flex>
-            </Dialog.Footer>
-          </Dialog.Content>
-        </Dialog.Positioner>
+                </Flex>
+              </Dialog.Footer>
+            </Dialog.Content>
+          </Dialog.Positioner>
+        </Portal>
       </Dialog.Root>
     </>
   );

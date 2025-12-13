@@ -9,6 +9,7 @@ import {
   ScrollArea,
   Separator,
   Text,
+  Portal,
 } from '@chakra-ui/react';
 import React, { useCallback, useMemo, useState, useRef, Suspense } from 'react';
 import { FaPenToSquare, FaGear } from 'react-icons/fa6';
@@ -60,21 +61,25 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
         placement="end"
         onOpenChange={(e: { open: boolean }) => setOpen(e.open)}
         size="md"
+        preventScroll
+        modal
       >
-        <Drawer.Backdrop />
-        <Drawer.Positioner padding={2}>
-          <Drawer.Content rounded="md">
-            <Drawer.CloseTrigger asChild>
-              <CloseButton size="sm" />
-            </Drawer.CloseTrigger>
-            <Suspense fallback={null}>
-              <TimelineContent
-                arenaId={selectedTimeline.arenaId}
-                pirateIndex={selectedTimeline.pirateIndex}
-              />
-            </Suspense>
-          </Drawer.Content>
-        </Drawer.Positioner>
+        <Portal container={document.body}>
+          <Drawer.Backdrop />
+          <Drawer.Positioner padding={2}>
+            <Drawer.Content rounded="md">
+              <Drawer.CloseTrigger asChild>
+                <CloseButton size="sm" />
+              </Drawer.CloseTrigger>
+              <Suspense fallback={null}>
+                <TimelineContent
+                  arenaId={selectedTimeline.arenaId}
+                  pirateIndex={selectedTimeline.pirateIndex}
+                />
+              </Suspense>
+            </Drawer.Content>
+          </Drawer.Positioner>
+        </Portal>
       </Drawer.Root>
     ),
     [open, setOpen, selectedTimeline.arenaId, selectedTimeline.pirateIndex],
