@@ -3,7 +3,7 @@ import { memo, useMemo, useCallback } from 'react';
 import { FaGlobe } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
-import { useRoundStore, useUseWebDomain, useSetUseWebDomain } from '../../stores';
+import { useUseWebDomain, useSetUseWebDomain } from '../../stores';
 
 import MobileSwitchBox from './MobileSwitchBox';
 import ToolbarButton from './ToolbarButton';
