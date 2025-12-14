@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import { formatDate } from '../util';
+
 import { useInterval } from './useInterval';
 
 interface UseFormattedDateOptions {
