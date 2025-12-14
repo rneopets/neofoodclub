@@ -7,7 +7,6 @@ import {
   HStack,
   CloseButton,
   ScrollArea,
-  Separator,
   Text,
   Portal,
 } from '@chakra-ui/react';
