@@ -1,5 +1,4 @@
 import { Box, HStack, IconButton, Skeleton, Spacer, Table, Text } from '@chakra-ui/react';
-import { Tooltip } from '@/components/ui/tooltip';
 import React, { useCallback, useMemo } from 'react';
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa6';
 
@@ -42,6 +41,8 @@ import BetAmountInput from './BetAmountInput';
 import PlaceThisBetButton from './PlaceThisBetButton';
 import Td from './Td';
 import TextTooltip from './TextTooltip';
+
+import { Tooltip } from '@/components/ui/tooltip';
 
 // this element is the colorful and informative table full of your bet data
 
@@ -104,10 +105,16 @@ const PirateNameCell = React.memo(
     }
 
     const tooltipContent = useMemo(() => {
-      if (!hasModifications) return '';
+      if (!hasModifications) {
+        return '';
+      }
       const parts: string[] = [];
-      if (hasCustomOdds) parts.push('Custom odds');
-      if (hasCustomProbs) parts.push('Custom probability');
+      if (hasCustomOdds) {
+        parts.push('Custom odds');
+      }
+      if (hasCustomProbs) {
+        parts.push('Custom probability');
+      }
       return parts.join(', ');
     }, [hasModifications, hasCustomOdds, hasCustomProbs]);
 
@@ -232,7 +239,9 @@ const PayoutTableRow = React.memo(
         <Td {...(betNumBgColor && { layerStyle: 'fill.subtle', colorPalette: betNumBgColor })}>
           <HStack px={2} gap={1}>
             <Spacer />
-            <Text minW="2ch" textAlign="center">{betIndex + 1}</Text>
+            <Text minW="2ch" textAlign="center">
+              {betIndex + 1}
+            </Text>
 
             {viewMode === false && (
               <>
