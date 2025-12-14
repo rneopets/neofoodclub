@@ -2,6 +2,7 @@ import { Button, ButtonProps } from '@chakra-ui/react';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 
+import { useIsRoundOver } from '../hooks/useIsRoundOver';
 import {
   useBetOdds,
   useBetPayoffs,
@@ -10,7 +11,6 @@ import {
   useRoundPirates,
   useBetBinaries,
 } from '../stores';
-import { useIsRoundOver } from '../hooks/useIsRoundOver';
 import { generateBetLinkUrl, openBetLinkInNewTab } from '../utils/betUtils';
 
 // this element is the "Place Bet" button inside the PayoutTable
@@ -50,7 +50,6 @@ const PlaceThisBetButton = React.memo(
 
     const betOdds = useBetOdds();
     const betPayoffs = useBetPayoffs();
-    const winningBetBinary = useWinningBetBinary();
 
     const betAmount = useSpecificBetAmount(betNum);
     const betBinariesMap = useBetBinaries();
