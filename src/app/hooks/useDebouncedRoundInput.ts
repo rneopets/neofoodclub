@@ -15,7 +15,7 @@ export function useDebouncedRoundInput<T>(
   delay: number,
   onDebouncedChange: (debouncedValue: T) => void,
 ): void {
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastExternalValueRef = useRef<T>(externalValue);
   const isExternalUpdateRef = useRef<boolean>(false);
   const callbackRef = useRef(onDebouncedChange);
@@ -63,7 +63,7 @@ export function useDebouncedRoundInput<T>(
       timeoutRef.current = null;
     }, delay);
 
-    return () => {
+    return (): void => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
