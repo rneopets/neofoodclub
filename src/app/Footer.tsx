@@ -12,7 +12,6 @@ import {
   Image,
   HStack,
   BoxProps,
-  Button,
 } from '@chakra-ui/react';
 import * as React from 'react';
 
@@ -67,10 +66,11 @@ type FooterProps = BoxProps;
 
 const Footer: React.FC<FooterProps> = props => {
   const [isDevModeOpen, setIsDevModeOpen] = React.useState(false);
-  const [clickCount, setClickCount] = React.useState(0);
+  const [, setClickCount] = React.useState(0);
   const [rotation, setRotation] = React.useState(0);
-  const clickTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const hasOpenedBefore = React.useRef(
+  const clickTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasOpenedBefore = React.useRef<boolean>(
+    // eslint-disable-next-line no-undef
     typeof localStorage !== 'undefined' && localStorage.getItem('devModeOpened') === 'true',
   );
 
@@ -106,6 +106,7 @@ const Footer: React.FC<FooterProps> = props => {
         }
         // Mark that dev mode has been opened
         if (typeof localStorage !== 'undefined') {
+          // eslint-disable-next-line no-undef
           localStorage.setItem('devModeOpened', 'true');
           hasOpenedBefore.current = true;
         }
@@ -116,13 +117,14 @@ const Footer: React.FC<FooterProps> = props => {
   }, []);
 
   // Cleanup timeout on unmount
-  React.useEffect(() => {
-    return () => {
+  React.useEffect(
+    () => (): void => {
       if (clickTimeoutRef.current) {
         clearTimeout(clickTimeoutRef.current);
       }
-    };
-  }, []);
+    },
+    [],
+  );
 
   return (
     <>
