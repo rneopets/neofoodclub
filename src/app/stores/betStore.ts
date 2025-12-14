@@ -12,11 +12,12 @@ import {
 } from '../util';
 
 // Lazy getter to avoid circular dependency
-let getRoundStore: (() => ReturnType<typeof import('./roundStore').useRoundStore.getState>) | null = null;
+let getRoundStore: (() => ReturnType<typeof import('./roundStore').useRoundStore.getState>) | null =
+  null;
 const initRoundStoreGetter = async (): Promise<void> => {
   if (!getRoundStore) {
     const { useRoundStore } = await import('./roundStore');
-    getRoundStore = () => useRoundStore.getState();
+    getRoundStore = (): ReturnType<typeof useRoundStore.getState> => useRoundStore.getState();
   }
 };
 // Initialize immediately but don't block
@@ -36,6 +37,7 @@ interface BetStore {
   deleteBetSet: (index: number) => void;
   swapBets: (uiIndex1: number, uiIndex2: number) => void;
   updatePirate: (betIndex: number, arenaIndex: number, pirateIndex: number) => void;
+  swapPiratesForAllBets: (arenaIndex: number, pirateIndexA: number, pirateIndexB: number) => void;
   updateBetAmount: (betIndex: number, amount: number) => void;
   updateBetAmounts: (updates: Array<{ betIndex: number; amount: number }>) => void;
   setAllBets: (bets: Map<number, Bet>) => void;
@@ -174,6 +176,48 @@ export const useBetStore = create<BetStore>()(
         newBetLine[arenaIndex] = pirateIndex;
 
         const newBetsForSet = new Map(currentBetsForSet).set(betIndex, newBetLine);
+        return { allBets: new Map(state.allBets).set(state.currentBet, newBetsForSet) };
+      });
+    },
+
+    swapPiratesForAllBets: (
+      arenaIndex: number,
+      pirateIndexA: number,
+      pirateIndexB: number,
+    ): void => {
+      set(state => {
+        if (arenaIndex < 0 || arenaIndex > 4) {
+          return state;
+        }
+        if (pirateIndexA === pirateIndexB) {
+          return state;
+        }
+
+        const currentBetsForSet = state.allBets.get(state.currentBet);
+        if (!currentBetsForSet) {
+          return state;
+        }
+
+        let hasChanges = false;
+        const newBetsForSet = new Map(currentBetsForSet);
+
+        for (const [betIndex, betLine] of currentBetsForSet.entries()) {
+          const currentBetLine = betLine ?? [0, 0, 0, 0, 0];
+          const currentValue = currentBetLine[arenaIndex] ?? 0;
+          if (currentValue !== pirateIndexA && currentValue !== pirateIndexB) {
+            continue;
+          }
+
+          const newBetLine = [...currentBetLine];
+          newBetLine[arenaIndex] = currentValue === pirateIndexA ? pirateIndexB : pirateIndexA;
+          newBetsForSet.set(betIndex, newBetLine);
+          hasChanges = true;
+        }
+
+        if (!hasChanges) {
+          return state;
+        }
+
         return { allBets: new Map(state.allBets).set(state.currentBet, newBetsForSet) };
       });
     },

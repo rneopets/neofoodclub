@@ -63,6 +63,11 @@ export const useUpdatePirate = (): ((
   arenaIndex: number,
   pirateIndex: number,
 ) => void) => useBetStore(state => state.updatePirate);
+export const useSwapPiratesForAllBets = (): ((
+  arenaIndex: number,
+  pirateIndexA: number,
+  pirateIndexB: number,
+) => void) => useBetStore(state => state.swapPiratesForAllBets);
 export const useUpdateBetAmount = (): ((betIndex: number, amount: number) => void) =>
   useBetStore(state => state.updateBetAmount);
 export const useUpdateBetAmounts = (): ((

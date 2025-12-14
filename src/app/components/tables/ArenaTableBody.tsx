@@ -1,6 +1,19 @@
-import { Box, Button, Center, Icon, Skeleton, Table, Text, VStack } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Icon,
+  IconButton,
+  Popover,
+  Portal,
+  Skeleton,
+  Table,
+  Text,
+  VStack,
+} from '@chakra-ui/react';
 import React, { useCallback, useMemo, useEffect, useState, useRef } from 'react';
-import { FaCaretDown, FaCaretUp } from 'react-icons/fa6';
+import { FaCaretDown, FaCaretUp, FaFillDrip } from 'react-icons/fa6';
+import { LuArrowLeftRight } from 'react-icons/lu';
 
 import {
   PIRATE_NAMES,
@@ -32,6 +45,8 @@ import {
   useStablePirateFA,
   useCustomOddsMode,
   useFaDetails,
+  useSwapPiratesForAllBets,
+  useBetStore,
 } from '../../stores';
 import { displayAsPercent } from '../../util';
 import BetRadio, { ClearRadio } from '../BetRadio';
@@ -39,8 +54,13 @@ import CustomOddsInput from '../CustomOddsInput';
 import CustomProbsInput from '../CustomProbsInput';
 import FaDetailsElement from '../FaDetailsElement';
 import OddsTimeline from '../OddsTimeline';
+import PirateSelect from '../PirateSelect';
 import Td from '../Td';
 import TextTooltip from '../TextTooltip';
+
+import { Tooltip } from '@/components/ui/tooltip';
+
+const ROTATE_90_STYLE = { transform: 'rotate(90deg)' } as const;
 
 // Component to show Food Adjustment for a pirate and food
 const PirateFA = React.memo(
@@ -461,6 +481,53 @@ const PirateRow = React.memo(
       handleBetLineChange(arenaId, pirateIndex + 1);
     }, [handleBetLineChange, arenaId, pirateIndex]);
 
+    const swapPiratesForAllBets = useSwapPiratesForAllBets();
+    const [swapOpen, setSwapOpen] = useState(false);
+    const [swapToPirate, setSwapToPirate] = useState(0);
+    const fromPirateIndex = pirateIndex + 1;
+
+    const arenaHasAnyChosen = useBetStore(state => {
+      const bets = state.allBets.get(state.currentBet);
+      if (!bets) {
+        return false;
+      }
+      for (const betLine of bets.values()) {
+        const line = betLine ?? [0, 0, 0, 0, 0];
+        if ((line[arenaId] ?? 0) > 0) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    const canSwap = useMemo(
+      () => swapToPirate !== fromPirateIndex,
+      [swapToPirate, fromPirateIndex],
+    );
+
+    const handleSwapOpenChange = useCallback((e: { open: boolean }) => {
+      setSwapOpen(e.open);
+      if (e.open) {
+        setSwapToPirate(0);
+      }
+    }, []);
+
+    const handleSwapToPirateChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+      setSwapToPirate(parseInt(e.target.value));
+    }, []);
+
+    const handleCancelSwap = useCallback(() => {
+      setSwapOpen(false);
+    }, []);
+
+    const handleApplySwap = useCallback(() => {
+      if (!canSwap) {
+        return;
+      }
+      swapPiratesForAllBets(arenaId, fromPirateIndex, swapToPirate);
+      setSwapOpen(false);
+    }, [canSwap, swapPiratesForAllBets, arenaId, fromPirateIndex, swapToPirate]);
+
     const betRadios = useMemo(() => {
       const radios = [];
       for (let betNum = 0; betNum < betCount; betNum++) {
@@ -693,10 +760,82 @@ const PirateRow = React.memo(
         {customOddsInputElement}
         {timelineElement}
         {betRadios}
-        <Table.Cell py={0}>
-          <Button size="2xs" onClick={handleBetLineChangeLocal}>
-            {betCount}-Bet
-          </Button>
+        <Table.Cell py={0} whiteSpace="nowrap">
+          <Box display="flex" gap={1} justifyContent="center">
+            <Tooltip content="10-bet" openDelay={600} placement="top">
+              <IconButton
+                aria-label="10-bet"
+                size="2xs"
+                variant="ghost"
+                onClick={handleBetLineChangeLocal}
+              >
+                <FaFillDrip />
+              </IconButton>
+            </Tooltip>
+
+            <Popover.Root
+              open={swapOpen}
+              onOpenChange={handleSwapOpenChange}
+              positioning={{ placement: 'bottom-end' }}
+              lazyMount
+              unmountOnExit
+            >
+              <Popover.Trigger asChild>
+                <Box as="span" display="inline-flex">
+                  <Tooltip
+                    content="Swap pirate"
+                    openDelay={600}
+                    placement="top"
+                    disabled={!arenaHasAnyChosen}
+                  >
+                    <IconButton
+                      aria-label="Swap pirate"
+                      size="2xs"
+                      variant="ghost"
+                      disabled={!arenaHasAnyChosen}
+                    >
+                      <LuArrowLeftRight style={ROTATE_90_STYLE} />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Popover.Trigger>
+              <Portal container={document.body}>
+                <Popover.Positioner>
+                  <Popover.Content width="260px">
+                    <Popover.Arrow />
+                    <Popover.Body>
+                      <VStack align="stretch" gap={2}>
+                        <Text fontSize="sm" fontWeight="semibold">
+                          Swap {PIRATE_NAMES.get(pirateId) ?? 'pirate'}
+                        </Text>
+                        <Text fontSize="xs" color="fg.muted">
+                          Swaps this pirate with another across all bets in {ARENA_NAMES[arenaId]}.
+                        </Text>
+                        <PirateSelect
+                          arenaId={arenaId}
+                          pirateValue={swapToPirate}
+                          onChange={handleSwapToPirateChange}
+                        />
+                        <Box display="flex" justifyContent="flex-end" gap={2}>
+                          <Button size="xs" variant="outline" onClick={handleCancelSwap}>
+                            Cancel
+                          </Button>
+                          <Button
+                            size="xs"
+                            colorPalette="blue"
+                            disabled={!canSwap || !arenaHasAnyChosen}
+                            onClick={handleApplySwap}
+                          >
+                            Apply
+                          </Button>
+                        </Box>
+                      </VStack>
+                    </Popover.Body>
+                  </Popover.Content>
+                </Popover.Positioner>
+              </Portal>
+            </Popover.Root>
+          </Box>
         </Table.Cell>
       </Table.Row>
     );
