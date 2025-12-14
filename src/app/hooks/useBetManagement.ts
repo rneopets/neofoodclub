@@ -5,7 +5,6 @@ import { computePiratesBinary, computeBinaryToPirates, computePirateBinary } fro
 import {
   useAllBetsForURLData,
   useAllBetAmountsForURLData,
-  useRoundStore,
   useRoundData,
   useSelectedRound,
   useCurrentBet,
