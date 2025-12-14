@@ -242,9 +242,9 @@ test.describe('NeoFoodClub Bet Generation', () => {
       const maxBetCheck = await maxBetInputCheck.inputValue();
       if (maxBetCheck === '2000') {
         // Max bet is set correctly, try triggering another re-render
-        const incrementButton = page.locator('[data-testid="increment-bet-amounts-button"]');
-        if (await incrementButton.isVisible({ timeout: 1000 }).catch(() => false)) {
-          await incrementButton.click();
+        const incrementButton2 = page.locator('[data-testid="increment-bet-amounts-button"]');
+        if (await incrementButton2.isVisible({ timeout: 1000 }).catch(() => false)) {
+          await incrementButton2.click();
           await page.waitForTimeout(500);
           const decrementButton = page.locator('[data-testid="decrement-bet-amounts-button"]');
           await decrementButton.click();
