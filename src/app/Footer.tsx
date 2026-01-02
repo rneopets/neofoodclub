@@ -19,6 +19,8 @@ import { DevModeDrawer } from './components/DevModeDrawer';
 import { GitCommit } from './components/GitCommit';
 import { VercelCredit } from './components/VercelCredit';
 import NeopointIcon from './images/np-icon.svg';
+import { useSelectedRound, useCurrentBet, useAllBets, useAllBetAmounts } from './stores';
+import { makeBetURL } from './util';
 
 interface LogoProps {
   rotation: number;
@@ -73,6 +75,25 @@ const Footer: React.FC<FooterProps> = props => {
     // eslint-disable-next-line no-undef
     typeof localStorage !== 'undefined' && localStorage.getItem('devModeOpened') === 'true',
   );
+
+  const currentSelectedRound = useSelectedRound();
+  const currentBet = useCurrentBet();
+  const allBets = useAllBets();
+  const allBetAmounts = useAllBetAmounts();
+
+  const classicHref = React.useMemo(() => {
+    const baseUrl = 'https://foodclub.neocities.org';
+
+    if (!currentSelectedRound) return baseUrl;
+
+    const betPathHash = makeBetURL(
+      currentSelectedRound,
+      allBets.get(currentBet),
+      allBetAmounts.get(currentBet),
+      true,
+    );
+    return `${baseUrl}${betPathHash}`;
+  }, [currentSelectedRound, currentBet, allBets, allBetAmounts]);
 
   const handleLogoClick = React.useCallback(() => {
     // Trigger spin animation - increment rotation by 360 degrees
@@ -166,11 +187,7 @@ const Footer: React.FC<FooterProps> = props => {
 
             <Stack align={'flex-start'}>
               <ListHeader>NeoFoodClub Stuff</ListHeader>
-              <Link
-                href="https://foodclub.neocities.org/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <Link href={classicHref} target="_blank" rel="noopener noreferrer">
                 Classic NeoFoodClub
               </Link>
               <Link
