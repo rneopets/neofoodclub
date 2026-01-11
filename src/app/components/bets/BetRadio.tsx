@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 
-import { useIsPirateSelected, useUpdateSinglePirate } from '../stores';
+import { useIsPirateSelected, useUpdateSinglePirate } from '../../stores';
 
 import { Radio, RadioGroup } from '@/components/ui/radio';
 

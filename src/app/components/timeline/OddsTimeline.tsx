@@ -1,8 +1,8 @@
 import { Box, Table } from '@chakra-ui/react';
 import React, { useMemo } from 'react';
 
-import { useRoundStore } from '../stores';
-import { getOrdinalSuffix, filterChangesByArenaPirate } from '../utils/betUtils';
+import { useRoundStore } from '../../stores';
+import { getOrdinalSuffix, filterChangesByArenaPirate } from '../../utils/betUtils';
 
 import { Tooltip } from '@/components/ui/tooltip';
 

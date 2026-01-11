@@ -2,9 +2,9 @@ import { Box, HStack, IconButton, Skeleton, Spacer, Table, Text } from '@chakra-
 import React, { useCallback, useMemo } from 'react';
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa6';
 
-import { PIRATE_NAMES } from '../constants';
-import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
-import { computePirateBinary } from '../maths';
+import { PIRATE_NAMES } from '../../constants';
+import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
+import { computePirateBinary } from '../../maths';
 import {
   useCurrentBet,
   useSpecificBetAmount,
@@ -34,13 +34,13 @@ import {
   useCustomProbsValue,
   useCustomOddsMode,
   useRoundStore,
-} from '../stores';
-import { displayAsPercent } from '../util';
+} from '../../stores';
+import { displayAsPercent } from '../../util';
+import BetAmountInput from '../bets/BetAmountInput';
+import PlaceThisBetButton from '../bets/PlaceThisBetButton';
+import TextTooltip from '../ui/TextTooltip';
 
-import BetAmountInput from './BetAmountInput';
-import PlaceThisBetButton from './PlaceThisBetButton';
 import Td from './Td';
-import TextTooltip from './TextTooltip';
 
 import { Tooltip } from '@/components/ui/tooltip';
 

@@ -1,6 +1,6 @@
 import React, { HTMLAttributes } from 'react';
 
-import { useFormattedDate } from '../hooks/useFormattedDate';
+import { useFormattedDate } from '../../hooks/useFormattedDate';
 
 interface DateFormatterProps extends HTMLAttributes<HTMLSpanElement> {
   date: Date | string | number;

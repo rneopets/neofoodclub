@@ -2,10 +2,10 @@ import { Button, Drawer, Portal, Stack, CloseButton } from '@chakra-ui/react';
 import * as React from 'react';
 import { FaCode, FaTable } from 'react-icons/fa';
 
-import { useDisclosureState } from '../hooks/useDisclosureState';
+import { useDisclosureState } from '../../hooks/useDisclosureState';
 
-import { AllBetsModal } from './AllBetsModal';
-import { RoundJsonModal } from './RoundJsonModal';
+import { AllBetsModal } from '../modals/AllBetsModal';
+import { RoundJsonModal } from '../modals/RoundJsonModal';
 
 interface DevModeDrawerProps {
   isOpen: boolean;

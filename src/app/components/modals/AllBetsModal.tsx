@@ -15,16 +15,16 @@ import {
 import * as React from 'react';
 import { List } from 'react-window';
 
-import { PIRATE_NAMES } from '../constants';
-import { useBetManagement } from '../hooks/useBetManagement';
-import { useDebouncedValue } from '../hooks/useDebouncedValue';
-import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
-import { useIsRoundOver } from '../hooks/useIsRoundOver';
-import { useModalReset } from '../hooks/useModalReset';
-import { useProbabilities } from '../hooks/useProbabilities';
-import { computeBinaryToPirates } from '../maths';
-import { useRoundStore } from '../stores';
-import { getMaxBet } from '../util';
+import { PIRATE_NAMES } from '../../constants';
+import { useBetManagement } from '../../hooks/useBetManagement';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
+import { useIsRoundOver } from '../../hooks/useIsRoundOver';
+import { useModalReset } from '../../hooks/useModalReset';
+import { useProbabilities } from '../../hooks/useProbabilities';
+import { computeBinaryToPirates } from '../../maths';
+import { useRoundStore } from '../../stores';
+import { getMaxBet } from '../../util';
 
 interface AllBet {
   binary: number;

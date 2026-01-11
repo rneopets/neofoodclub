@@ -2,7 +2,7 @@ import { Button, ButtonGroup, Heading, Stack, Wrap } from '@chakra-ui/react';
 import React, { useCallback } from 'react';
 import { FaFillDrip, FaInfinity } from 'react-icons/fa6';
 
-import { RoundState } from '../../types';
+import { RoundState } from '../../../types';
 import {
   useRoundStore,
   useRoundData,
@@ -10,8 +10,8 @@ import {
   useBatchUpdateBetAmounts,
   useSelectedRound,
   useMaxBet,
-} from '../stores';
-import { determineBetAmount, makeEmptyBetAmounts, isValidRound } from '../util';
+} from '../../stores';
+import { determineBetAmount, makeEmptyBetAmounts, isValidRound } from '../../util';
 
 import { Tooltip } from '@/components/ui/tooltip';
 

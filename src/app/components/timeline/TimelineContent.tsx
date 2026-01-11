@@ -27,17 +27,16 @@ import {
   FaWaveSquare,
 } from 'react-icons/fa6';
 
-import { OddsChange } from '../../types';
-import { PIRATE_NAMES, ARENA_NAMES } from '../constants';
-import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
-import { useIsRoundOver } from '../hooks/useIsRoundOver';
-import { useScrollPosition } from '../hooks/useScrollPosition';
-import { useTimelineViewState } from '../hooks/useTimelineViewState';
-import { makeEmpty } from '../maths';
-import { useRoundStore, useCurrentOddsValue, useOpeningOddsValue } from '../stores';
-import { getOrdinalSuffix, filterChangesByArenaPirate } from '../utils/betUtils';
-
-import DateFormatter from './DateFormatter';
+import { OddsChange } from '../../../types';
+import { PIRATE_NAMES, ARENA_NAMES } from '../../constants';
+import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
+import { useIsRoundOver } from '../../hooks/useIsRoundOver';
+import { useScrollPosition } from '../../hooks/useScrollPosition';
+import { useTimelineViewState } from '../../hooks/useTimelineViewState';
+import { makeEmpty } from '../../maths';
+import { useRoundStore, useCurrentOddsValue, useOpeningOddsValue } from '../../stores';
+import { getOrdinalSuffix, filterChangesByArenaPirate } from '../../utils/betUtils';
+import DateFormatter from '../format/DateFormatter';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Timeline } from '@/components/ui/timeline';

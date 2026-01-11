@@ -1,6 +1,6 @@
 import { JSX, useEffect } from 'react';
 
-import ErrorBoundary from './components/ErrorBoundary';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 import HomePage from './HomePage';
 import { useInitializeRoundData } from './stores';
 

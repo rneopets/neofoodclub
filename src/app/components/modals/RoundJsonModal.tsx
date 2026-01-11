@@ -14,7 +14,7 @@ import * as React from 'react';
 import { FaCode } from 'react-icons/fa';
 import type { BundledLanguage, BundledTheme, HighlighterGeneric } from 'shiki';
 
-import { useRoundStore } from '../stores';
+import { useRoundStore } from '../../stores';
 
 const shikiAdapter = createShikiAdapter<HighlighterGeneric<BundledLanguage, BundledTheme>>({
   async load() {
