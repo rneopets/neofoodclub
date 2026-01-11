@@ -6,7 +6,6 @@ import { useIsRoundOver } from '../hooks/useIsRoundOver';
 import {
   useBetOdds,
   useBetPayoffs,
-  useWinningBetBinary,
   useSpecificBetAmount,
   useRoundPirates,
   useBetBinaries,
