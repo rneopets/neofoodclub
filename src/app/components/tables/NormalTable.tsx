@@ -2,7 +2,7 @@ import { Box, Button, Table } from '@chakra-ui/react';
 import React, { useCallback, useMemo } from 'react';
 import { FaChartLine } from 'react-icons/fa6';
 
-import { ARENA_NAMES } from '../constants';
+import { ARENA_NAMES } from '../../constants';
 import {
   useFaDetails,
   useBetCount,
@@ -12,11 +12,11 @@ import {
   useUpdateSinglePirate,
   useBigBrain,
   useCustomOddsMode,
-} from '../stores';
+} from '../../stores';
+import ClearBetsButton from '../bets/ClearBetsButton';
+import TextTooltip from '../ui/TextTooltip';
 
-import ClearBetsButton from './ClearBetsButton';
-import ArenaTableBody from './tables/ArenaTableBody';
-import TextTooltip from './TextTooltip';
+import ArenaTableBody from './ArenaTableBody';
 
 interface NormalTableProps {
   timelineHandlers: {

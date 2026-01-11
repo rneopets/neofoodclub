@@ -13,22 +13,21 @@ import {
 import React, { useCallback, useMemo, useState, useRef, Suspense } from 'react';
 import { FaPenToSquare, FaGear } from 'react-icons/fa6';
 
-import BetFunctions from '../BetFunctions';
-import { useRoundStore, useViewMode, useTableMode, useHasAnyBets } from '../stores';
-
-import DropDownTable from './DropDownTable';
-import NormalTable from './NormalTable';
-import CopyDomainToggle from './TableSettings/CopyDomainToggle';
-import Extras from './TableSettings/Extras';
-import LogitModelToggle from './TableSettings/LogitModelToggle';
-import TableModes from './TableSettings/TableModes';
+import BetFunctions from '../../BetFunctions';
+import { useRoundStore, useViewMode, useTableMode, useHasAnyBets } from '../../stores';
+import DropDownTable from '../tables/DropDownTable';
+import NormalTable from '../tables/NormalTable';
+import CopyDomainToggle from '../TableSettings/CopyDomainToggle';
+import Extras from '../TableSettings/Extras';
+import LogitModelToggle from '../TableSettings/LogitModelToggle';
+import TableModes from '../TableSettings/TableModes';
 
 import { useColorModeValue } from '@/components/ui/color-mode';
 
-const BetAmountsSettings = React.lazy(() => import('./BetAmountsSettings'));
-const PayoutCharts = React.lazy(() => import('./PayoutCharts'));
-const PayoutTable = React.lazy(() => import('./PayoutTable'));
-const TimelineContent = React.lazy(() => import('./TimelineContent'));
+const BetAmountsSettings = React.lazy(() => import('../bets/BetAmountsSettings'));
+const PayoutCharts = React.lazy(() => import('../charts/PayoutCharts'));
+const PayoutTable = React.lazy(() => import('../tables/PayoutTable'));
+const TimelineContent = React.lazy(() => import('../timeline/TimelineContent'));
 
 interface PirateTableProps {
   [key: string]: unknown; // Allow other props like m, px, etc.

@@ -1,9 +1,9 @@
 import { Select, Text, createListCollection, useSelectContext } from '@chakra-ui/react';
 import React, { useMemo } from 'react';
 
-import { PIRATE_NAMES } from '../constants';
-import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
-import { usePiratesForArena, useRoundOpeningOdds } from '../stores';
+import { PIRATE_NAMES } from '../../constants';
+import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
+import { usePiratesForArena, useRoundOpeningOdds } from '../../stores';
 
 const CustomValueText = React.memo(() => {
   const select = useSelectContext();

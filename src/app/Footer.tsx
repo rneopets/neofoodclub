@@ -15,9 +15,9 @@ import {
 } from '@chakra-ui/react';
 import * as React from 'react';
 
-import { DevModeDrawer } from './components/DevModeDrawer';
-import { GitCommit } from './components/GitCommit';
-import { VercelCredit } from './components/VercelCredit';
+import { DevModeDrawer } from './components/dev/DevModeDrawer';
+import { GitCommit } from './components/ui/GitCommit';
+import { VercelCredit } from './components/ui/VercelCredit';
 import NeopointIcon from './images/np-icon.svg';
 import { useSelectedRound, useCurrentBet, useAllBets, useAllBetAmounts } from './stores';
 import { makeBetURL } from './util';

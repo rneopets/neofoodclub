@@ -1,7 +1,7 @@
 import { Button } from '@chakra-ui/react';
 import React, { useCallback } from 'react';
 
-import { useBetStore } from '../stores';
+import { useBetStore } from '../../stores';
 
 // Isolated Button that only re-renders when disabled changes
 const ClearButtonComponent = React.memo(

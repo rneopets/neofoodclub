@@ -1,6 +1,6 @@
 import { Box, BoxProps } from '@chakra-ui/react';
 
-import { useFaDetails } from '../stores';
+import { useFaDetails } from '../../stores';
 
 // this element will only show children (which are only expected to be food data in the normal table) if they exist and the FA checkbox is checked
 

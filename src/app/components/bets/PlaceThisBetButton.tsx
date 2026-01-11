@@ -2,15 +2,15 @@ import { Button, ButtonProps } from '@chakra-ui/react';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 
-import { useIsRoundOver } from '../hooks/useIsRoundOver';
+import { useIsRoundOver } from '../../hooks/useIsRoundOver';
 import {
   useBetOdds,
   useBetPayoffs,
   useSpecificBetAmount,
   useRoundPirates,
   useBetBinaries,
-} from '../stores';
-import { generateBetLinkUrl, openBetLinkInNewTab } from '../utils/betUtils';
+} from '../../stores';
+import { generateBetLinkUrl, openBetLinkInNewTab } from '../../utils/betUtils';
 
 // this element is the "Place Bet" button inside the PayoutTable
 

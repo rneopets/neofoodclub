@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { useCustomValueInput } from '../hooks/useCustomValueInput';
-import { useRoundStore, useCustomOddsValue } from '../stores';
+import { useCustomValueInput } from '../../hooks/useCustomValueInput';
+import { useRoundStore, useCustomOddsValue } from '../../stores';
 
 import { NumberInputRoot, NumberInputField } from '@/components/ui/number-input';
 

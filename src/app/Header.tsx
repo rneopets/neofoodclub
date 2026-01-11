@@ -25,10 +25,10 @@ import Cookies from 'universal-cookie';
 
 import { useColorMode } from '../components/ui/color-mode';
 
-import DateFormatter from './components/DateFormatter';
-import GlowCard from './components/GlowCard';
-import MaxBetLockToggle from './components/MaxBetLockToggle';
-import RoundInput from './components/RoundInput';
+import MaxBetLockToggle from './components/bets/MaxBetLockToggle';
+import DateFormatter from './components/format/DateFormatter';
+import RoundInput from './components/inputs/RoundInput';
+import GlowCard from './components/ui/GlowCard';
 import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';

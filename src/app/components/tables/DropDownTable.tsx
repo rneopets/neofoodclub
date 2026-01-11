@@ -1,9 +1,9 @@
 import { Badge, Skeleton, Table, Text } from '@chakra-ui/react';
 import React, { useCallback, useMemo } from 'react';
 
-import { ARENA_NAMES, PIRATE_NAMES, FULL_PIRATE_NAMES } from '../constants';
-import { useGetPirateBgColor } from '../hooks/useGetPirateBgColor';
-import { computePirateBinary, makeEmpty } from '../maths';
+import { ARENA_NAMES, PIRATE_NAMES, FULL_PIRATE_NAMES } from '../../constants';
+import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
+import { computePirateBinary, makeEmpty } from '../../maths';
 import {
   useUpdateSinglePirate,
   useArenaRatios,
@@ -17,11 +17,11 @@ import {
   useIsCalculated,
   useWinningBetBinary,
   useBigBrain,
-} from '../stores';
-import { displayAsPercent } from '../util';
+} from '../../stores';
+import { displayAsPercent } from '../../util';
+import ClearBetsButton from '../bets/ClearBetsButton';
+import PirateSelect from '../bets/PirateSelect';
 
-import ClearBetsButton from './ClearBetsButton';
-import PirateSelect from './PirateSelect';
 import Td from './Td';
 
 interface DropDownTableProps {

@@ -40,8 +40,8 @@ import {
 import { PayoutData, RoundData, RoundState, RoundCalculationResult } from '../types';
 import { Bet, BetAmount } from '../types/bets';
 
-import PirateSelect from './components/PirateSelect';
-import SettingsBox from './components/SettingsBox';
+import PirateSelect from './components/bets/PirateSelect';
+import SettingsBox from './components/ui/SettingsBox';
 import { ARENA_NAMES, PIRATE_NAMES, SHORTHAND_PIRATE_NAMES } from './constants';
 import { useBetManagement } from './hooks/useBetManagement';
 import { useIsRoundOver } from './hooks/useIsRoundOver';

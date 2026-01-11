@@ -1,8 +1,8 @@
 import { NumberInputControl } from '@chakra-ui/react';
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { useSelectOnFocus } from '../hooks';
-import { useOptimizedBetAmount, useUpdateSingleBetAmount } from '../stores';
+import { useSelectOnFocus } from '../../hooks';
+import { useOptimizedBetAmount, useUpdateSingleBetAmount } from '../../stores';
 
 import {
   NumberInputRoot,

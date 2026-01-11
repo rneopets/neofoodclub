@@ -49,14 +49,15 @@ import {
   useBetStore,
 } from '../../stores';
 import { displayAsPercent } from '../../util';
-import BetRadio, { ClearRadio } from '../BetRadio';
-import CustomOddsInput from '../CustomOddsInput';
-import CustomProbsInput from '../CustomProbsInput';
-import FaDetailsElement from '../FaDetailsElement';
-import OddsTimeline from '../OddsTimeline';
-import PirateSelect from '../PirateSelect';
-import Td from '../Td';
-import TextTooltip from '../TextTooltip';
+import BetRadio, { ClearRadio } from '../bets/BetRadio';
+import CustomOddsInput from '../bets/CustomOddsInput';
+import CustomProbsInput from '../bets/CustomProbsInput';
+import PirateSelect from '../bets/PirateSelect';
+import OddsTimeline from '../timeline/OddsTimeline';
+import FaDetailsElement from '../ui/FaDetailsElement';
+import TextTooltip from '../ui/TextTooltip';
+
+import Td from './Td';
 
 import { Tooltip } from '@/components/ui/tooltip';
 

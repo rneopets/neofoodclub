@@ -1,7 +1,7 @@
-import { useColorModeValue } from '../../components/ui/color-mode';
-
 import BetAmountsButtons from './BetAmountsButtons';
-import SettingsBox from './SettingsBox';
+import SettingsBox from '../ui/SettingsBox';
+
+import { useColorModeValue } from '@/components/ui/color-mode';
 
 // these are the "Set all to max" + copy url buttons
 
