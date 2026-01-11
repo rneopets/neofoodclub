@@ -21,12 +21,11 @@ export function useScrollPosition(
 
   // Restore scroll position when returning to view
   useEffect(() => {
-    if (shouldRestore && savedScrollPosition.current > 0 && containerRef.current) {
+    const element = containerRef.current;
+    if (shouldRestore && savedScrollPosition.current > 0 && element) {
       // Use setTimeout to ensure the content is rendered before scrolling
       const timeoutId = setTimeout(() => {
-        if (containerRef.current) {
-          containerRef.current.scrollTop = savedScrollPosition.current;
-        }
+        element.scrollTop = savedScrollPosition.current;
       }, 0);
       return (): void => {
         clearTimeout(timeoutId);
