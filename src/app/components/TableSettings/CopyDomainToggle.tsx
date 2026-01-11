@@ -20,7 +20,7 @@ const CopyDomainToggle = memo(() => {
     setUseWebDomain(newValue);
   }, [useWebDomain, cookies, setUseWebDomain]);
 
-  const tooltipLabel = 'Copy Domain';
+  const tooltipLabel = 'Copy Domain With Bets';
 
   return (
     <>
@@ -28,11 +28,11 @@ const CopyDomainToggle = memo(() => {
       <Box display={{ base: 'block', md: 'none' }}>
         <MobileSwitchBox
           icon={FaGlobe}
-          label="Copy Domain"
+          label={tooltipLabel}
           colorPalette="blue"
           checked={useWebDomain ?? false}
           onChange={handleChange}
-          tooltipText={`Include domain when copying bets\n(${window.location.origin}/)`}
+          tooltipText={tooltipLabel}
         />
       </Box>
 
