@@ -484,33 +484,64 @@ const PirateRow = React.memo(
 
     const swapPiratesForAllBets = useSwapPiratesForAllBets();
     const [swapOpen, setSwapOpen] = useState(false);
+    const [swapFromPirate, setSwapFromPirate] = useState(0);
     const [swapToPirate, setSwapToPirate] = useState(0);
     const fromPirateIndex = pirateIndex + 1;
 
-    const arenaHasAnyChosen = useBetStore(state => {
-      const bets = state.allBets.get(state.currentBet);
-      if (!bets) {
-        return false;
+    const currentBetsForSet = useBetStore(state => state.allBets.get(state.currentBet));
+
+    const { swapFromBetCount, swapToBetCount, arenaHasAnyChosen } = useMemo(() => {
+      if (!currentBetsForSet) {
+        return { swapFromBetCount: 0, swapToBetCount: 0, arenaHasAnyChosen: false };
       }
-      for (const betLine of bets.values()) {
+
+      let swapFromBetCountLocal = 0;
+      let swapToBetCountLocal = 0;
+      let arenaHasAnyChosenLocal = false;
+
+      const hasSwapFrom = swapFromPirate !== 0;
+      const hasSwapTo = swapToPirate !== 0;
+
+      for (const betLine of currentBetsForSet.values()) {
         const line = betLine ?? [0, 0, 0, 0, 0];
-        if ((line[arenaId] ?? 0) > 0) {
-          return true;
+        const selected = line[arenaId] ?? 0;
+
+        if (!arenaHasAnyChosenLocal && selected > 0) {
+          arenaHasAnyChosenLocal = true;
+        }
+        if (hasSwapFrom && selected === swapFromPirate) {
+          swapFromBetCountLocal++;
+        }
+        if (hasSwapTo && selected === swapToPirate) {
+          swapToBetCountLocal++;
         }
       }
-      return false;
-    });
+
+      return {
+        swapFromBetCount: swapFromBetCountLocal,
+        swapToBetCount: swapToBetCountLocal,
+        arenaHasAnyChosen: arenaHasAnyChosenLocal,
+      };
+    }, [currentBetsForSet, arenaId, swapFromPirate, swapToPirate]);
 
     const canSwap = useMemo(
-      () => swapToPirate !== fromPirateIndex,
-      [swapToPirate, fromPirateIndex],
+      () => swapFromPirate !== 0 && swapToPirate !== 0 && swapFromPirate !== swapToPirate,
+      [swapFromPirate, swapToPirate],
     );
 
-    const handleSwapOpenChange = useCallback((e: { open: boolean }) => {
-      setSwapOpen(e.open);
-      if (e.open) {
-        setSwapToPirate(0);
-      }
+    const handleSwapOpenChange = useCallback(
+      (e: { open: boolean }) => {
+        setSwapOpen(e.open);
+        if (e.open) {
+          setSwapFromPirate(fromPirateIndex);
+          setSwapToPirate(0);
+        }
+      },
+      [fromPirateIndex],
+    );
+
+    const handleSwapFromPirateChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+      setSwapFromPirate(parseInt(e.target.value));
     }, []);
 
     const handleSwapToPirateChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -525,9 +556,9 @@ const PirateRow = React.memo(
       if (!canSwap) {
         return;
       }
-      swapPiratesForAllBets(arenaId, fromPirateIndex, swapToPirate);
+      swapPiratesForAllBets(arenaId, swapFromPirate, swapToPirate);
       setSwapOpen(false);
-    }, [canSwap, swapPiratesForAllBets, arenaId, fromPirateIndex, swapToPirate]);
+    }, [canSwap, swapPiratesForAllBets, arenaId, swapFromPirate, swapToPirate]);
 
     const betRadios = useMemo(() => {
       const radios = [];
@@ -802,29 +833,68 @@ const PirateRow = React.memo(
               </Popover.Trigger>
               <Portal container={document.body}>
                 <Popover.Positioner>
-                  <Popover.Content width="260px">
+                  <Popover.Content width="360px">
                     <Popover.Arrow />
                     <Popover.Body>
-                      <VStack align="stretch" gap={2}>
-                        <Text fontSize="sm" fontWeight="semibold">
-                          Swap {PIRATE_NAMES.get(pirateId) ?? 'pirate'}
+                      <VStack align="center" gap={2}>
+                        <Text fontSize="sm" fontWeight="semibold" textAlign="center">
+                          Swap pirates
                         </Text>
-                        <Text fontSize="xs" color="fg.muted">
-                          Swaps this pirate with another across all bets in {ARENA_NAMES[arenaId]}.
+                        <Text fontSize="xs" color="fg.muted" textAlign="center">
+                          Swaps the selected pirates across all bets in {ARENA_NAMES[arenaId]}.
                         </Text>
-                        <PirateSelect
-                          arenaId={arenaId}
-                          pirateValue={swapToPirate}
-                          onChange={handleSwapToPirateChange}
-                        />
-                        <Box display="flex" justifyContent="flex-end" gap={2}>
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          gap={2}
+                          flexWrap="wrap"
+                        >
+                          <Box>
+                            <Text fontSize="xs" color="fg.muted" mb={1} textAlign="center">
+                              From
+                            </Text>
+                            <PirateSelect
+                              arenaId={arenaId}
+                              pirateValue={swapFromPirate}
+                              includeNoPirate={false}
+                              deselectable={false}
+                              onChange={handleSwapFromPirateChange}
+                            />
+                            <Text fontSize="2xs" color="fg.muted" mt={1} textAlign="center">
+                              {swapFromBetCount} bets
+                            </Text>
+                          </Box>
+                          <Icon color="fg.muted" mt={5}>
+                            <LuArrowLeftRight />
+                          </Icon>
+                          <Box>
+                            <Text fontSize="xs" color="fg.muted" mb={1} textAlign="center">
+                              To
+                            </Text>
+                            <PirateSelect
+                              arenaId={arenaId}
+                              pirateValue={swapToPirate}
+                              includeNoPirate={false}
+                              onChange={handleSwapToPirateChange}
+                            />
+                            <Text fontSize="2xs" color="fg.muted" mt={1} textAlign="center">
+                              {swapToBetCount} bets
+                            </Text>
+                          </Box>
+                        </Box>
+                        <Box display="flex" justifyContent="center" gap={2} width="100%">
                           <Button size="xs" variant="outline" onClick={handleCancelSwap}>
                             Cancel
                           </Button>
                           <Button
                             size="xs"
                             colorPalette="blue"
-                            disabled={!canSwap || !arenaHasAnyChosen}
+                            disabled={
+                              !canSwap ||
+                              !arenaHasAnyChosen ||
+                              (swapFromBetCount === 0 && swapToBetCount === 0)
+                            }
                             onClick={handleApplySwap}
                           >
                             Apply
