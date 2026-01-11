@@ -84,7 +84,9 @@ const Footer: React.FC<FooterProps> = props => {
   const classicHref = React.useMemo(() => {
     const baseUrl = 'https://foodclub.neocities.org';
 
-    if (!currentSelectedRound) return baseUrl;
+    if (!currentSelectedRound) {
+      return baseUrl;
+    }
 
     const betPathHash = makeBetURL(
       currentSelectedRound,
