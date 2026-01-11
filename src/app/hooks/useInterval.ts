@@ -8,6 +8,11 @@ import { useEffect, useRef } from 'react';
 export function useInterval(callback: () => void, delay: number | null): void {
   const savedCallback = useRef<() => void>(callback);
 
+  // Keep the callback ref up to date
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
   // Set up the interval
   useEffect(() => {
     function tick(): void {
