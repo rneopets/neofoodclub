@@ -3,7 +3,6 @@ import * as React from 'react';
 import { FaCode, FaTable } from 'react-icons/fa';
 
 import { useDisclosureState } from '../../hooks/useDisclosureState';
-
 import { AllBetsModal } from '../modals/AllBetsModal';
 import { RoundJsonModal } from '../modals/RoundJsonModal';
 

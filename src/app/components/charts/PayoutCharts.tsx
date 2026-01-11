@@ -13,9 +13,13 @@ import React, { useCallback, useMemo } from 'react';
 import { Scatter } from 'react-chartjs-2';
 
 import { PayoutData } from '../../../types';
-import { useRoundStore, useBetBinaries, useWinningBetBinary, useTotalBetAmounts } from '../../stores';
+import {
+  useRoundStore,
+  useBetBinaries,
+  useWinningBetBinary,
+  useTotalBetAmounts,
+} from '../../stores';
 import { amountAbbreviation, displayAsPercent } from '../../util';
-
 import TextTooltip from '../ui/TextTooltip';
 
 import { useColorMode } from '@/components/ui/color-mode';

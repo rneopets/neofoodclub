@@ -1,5 +1,6 @@
-import BetAmountsButtons from './BetAmountsButtons';
 import SettingsBox from '../ui/SettingsBox';
+
+import BetAmountsButtons from './BetAmountsButtons';
 
 import { useColorModeValue } from '@/components/ui/color-mode';
 
