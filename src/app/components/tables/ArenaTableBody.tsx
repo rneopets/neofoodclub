@@ -466,13 +466,13 @@ const PirateRow = React.memo(
     const payout = useOdds! * prob - 1;
 
     const payoutBackground = useMemo(() => {
-      if (payout > 0) {
+      if (pirateWon || payout > 0) {
         return 'green';
       } else if (payout <= -0.1) {
         return 'red';
       }
       return undefined;
-    }, [payout]);
+    }, [payout, pirateWon]);
 
     const handleTimelineClickLocal = useCallback(() => {
       handleTimelineClick(arenaId, pirateIndex);
