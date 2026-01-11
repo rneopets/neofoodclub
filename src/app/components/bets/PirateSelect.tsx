@@ -103,13 +103,7 @@ const PirateSelect = React.memo(
       <Select.Root
         collection={collection}
         size="xs"
-        value={
-          pirateValue === 0
-            ? includeNoPirate
-              ? ['0']
-              : []
-            : [String(pirateValue)]
-        }
+        value={pirateValue === 0 ? (includeNoPirate ? ['0'] : []) : [String(pirateValue)]}
         onValueChange={handleValueChange}
         deselectable
         minW="120px"
