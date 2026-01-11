@@ -11,7 +11,7 @@ const CustomValueText = React.memo(() => {
   const isNoPirate = items.length > 0 && items[0]?.value === '0';
 
   if (items.length === 0) {
-    return <Select.ValueText />;
+    return <Select.ValueText placeholder="Select pirate..." />;
   }
 
   return (
@@ -32,13 +32,14 @@ CustomValueText.displayName = 'CustomValueText';
 interface PirateSelectProps {
   arenaId: number;
   pirateValue: number;
+  includeNoPirate?: boolean;
   onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   [key: string]: unknown;
 }
 
 const PirateSelect = React.memo(
   (props: PirateSelectProps): React.ReactElement => {
-    const { arenaId, pirateValue, onChange, ...rest } = props;
+    const { arenaId, pirateValue, includeNoPirate = true, onChange, ...rest } = props;
     const getPirateBgColor = useGetPirateBgColor();
 
     const openingOdds = useRoundOpeningOdds();
@@ -55,7 +56,7 @@ const PirateSelect = React.memo(
       }
 
       const items = [
-        { label: '[no pirate]', value: '0' },
+        ...(includeNoPirate ? [{ label: '[no pirate]', value: '0' }] : []),
         ...pirates.map((pirateId: number, pirateIndex: number) => ({
           label: PIRATE_NAMES.get(pirateId) || '',
           value: String(pirateIndex + 1),
@@ -63,7 +64,7 @@ const PirateSelect = React.memo(
       ];
 
       return createListCollection({ items });
-    }, [pirates]);
+    }, [pirates, includeNoPirate]);
 
     const handleValueChange = useMemo(() => {
       if (!onChange) {
@@ -102,7 +103,13 @@ const PirateSelect = React.memo(
       <Select.Root
         collection={collection}
         size="xs"
-        value={pirateValue === 0 ? ['0'] : [String(pirateValue)]}
+        value={
+          pirateValue === 0
+            ? includeNoPirate
+              ? ['0']
+              : []
+            : [String(pirateValue)]
+        }
         onValueChange={handleValueChange}
         deselectable
         minW="120px"
