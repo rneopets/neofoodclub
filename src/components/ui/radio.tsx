@@ -8,12 +8,15 @@ export interface RadioProps extends ChakraRadioGroup.ItemProps {
 }
 
 export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(function Radio(props, ref) {
-  const { children, inputProps, rootRef, ...rest } = props;
+  const { children, inputProps, rootRef, cursor, disabled, ...rest } = props;
+  const resolvedCursor = disabled ? 'not-allowed' : (cursor ?? 'pointer');
   return (
-    <ChakraRadioGroup.Item ref={rootRef} {...rest}>
+    <ChakraRadioGroup.Item ref={rootRef} {...rest} disabled={disabled} cursor={resolvedCursor}>
       <ChakraRadioGroup.ItemHiddenInput ref={ref} {...inputProps} />
-      <ChakraRadioGroup.ItemIndicator />
-      {children && <ChakraRadioGroup.ItemText>{children}</ChakraRadioGroup.ItemText>}
+      <ChakraRadioGroup.ItemIndicator cursor={resolvedCursor} />
+      {children && (
+        <ChakraRadioGroup.ItemText cursor={resolvedCursor}>{children}</ChakraRadioGroup.ItemText>
+      )}
     </ChakraRadioGroup.Item>
   );
 });
