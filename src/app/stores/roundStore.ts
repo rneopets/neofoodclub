@@ -484,8 +484,9 @@ export const useRoundStore = create<RoundStore>()(
 
       const updatedState = get();
       if (updatedState.currentSelectedRound > 0) {
-        const fetchSucceeded = await get().fetchRoundData();
-        if (fetchSucceeded !== false) {
+        // fetchRoundData returns true when polling should STOP, and false otherwise (including normal success)
+        const shouldStop = await get().fetchRoundData();
+        if (!shouldStop) {
           get().startPolling();
         }
         // If fetch failed during initialization, don't set error - no data at first is not an error
