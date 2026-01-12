@@ -388,24 +388,24 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = ({ isOpen, onClose }) =
                       }}
                     >
                       <HStack gap={3}>
-                        <RadioGroup.Item value="er">
+                        <RadioGroup.Item value="er" cursor="pointer">
                           <RadioGroup.ItemHiddenInput />
-                          <RadioGroup.ItemIndicator />
+                          <RadioGroup.ItemIndicator cursor="pointer" />
                           <RadioGroup.ItemText>ER</RadioGroup.ItemText>
                         </RadioGroup.Item>
-                        <RadioGroup.Item value="ne">
+                        <RadioGroup.Item value="ne" cursor="pointer">
                           <RadioGroup.ItemHiddenInput />
-                          <RadioGroup.ItemIndicator />
+                          <RadioGroup.ItemIndicator cursor="pointer" />
                           <RadioGroup.ItemText>NE</RadioGroup.ItemText>
                         </RadioGroup.Item>
-                        <RadioGroup.Item value="odds">
+                        <RadioGroup.Item value="odds" cursor="pointer">
                           <RadioGroup.ItemHiddenInput />
-                          <RadioGroup.ItemIndicator />
+                          <RadioGroup.ItemIndicator cursor="pointer" />
                           <RadioGroup.ItemText>Odds</RadioGroup.ItemText>
                         </RadioGroup.Item>
-                        <RadioGroup.Item value="maxBet">
+                        <RadioGroup.Item value="maxBet" cursor="pointer">
                           <RadioGroup.ItemHiddenInput />
-                          <RadioGroup.ItemIndicator />
+                          <RadioGroup.ItemIndicator cursor="pointer" />
                           <RadioGroup.ItemText>MaxBet</RadioGroup.ItemText>
                         </RadioGroup.Item>
                       </HStack>
