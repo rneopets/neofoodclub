@@ -316,7 +316,7 @@ export function useBetManagement(): {
       [0, 1, 2, 3, 4],
       [0, 1, 2, 3, 4],
     );
-    const topRatios = Array.from(pirateCombos.entries()).map(([k, v]) => [k, v]);
+    const topRatios = Array.from(pirateCombos.entries());
     topRatios.sort((a: number[], b: number[]) => (b[1] ?? 0) - (a[1] ?? 0));
 
     const newBets = new Map<number, number[]>();
