@@ -238,6 +238,8 @@ export function useBetManagement(): {
         return { betCaps, betOdds, pirateCombos };
       }
 
+      const maxBet = getMaxBet(currentSelectedRound);
+
       for (const p of cartesianProduct(...pirates)) {
         const [a, b, c, d, e] = p;
         const betBinary = computePiratesBinary(p);
@@ -270,7 +272,6 @@ export function useBetManagement(): {
           continue;
         }
 
-        const maxBet = getMaxBet(currentSelectedRound);
         const betCap = Math.ceil(1_000_000 / totalOdds);
         const winnings = Math.min(maxBet * totalOdds, 1_000_000);
 
