@@ -525,6 +525,33 @@ export const useRoundStore = create<RoundStore>()(
 // Subscribe to bet changes and recalculate
 // Use dynamic import to avoid circular dependency at module load time
 import('./betStore').then(() => {
+  let scheduledRecalc: number | null = null;
+  const scheduleRecalculate = (): void => {
+    if (scheduledRecalc !== null) {
+      // cancel any pending recalculation so rapid bet switching doesn't enqueue work
+      if (typeof cancelAnimationFrame !== 'undefined') {
+        // eslint-disable-next-line no-undef
+        cancelAnimationFrame(scheduledRecalc);
+      } else {
+        clearTimeout(scheduledRecalc);
+      }
+    }
+
+    // Defer the expensive recalculation to the next frame so the UI can paint
+    if (typeof requestAnimationFrame !== 'undefined') {
+      // eslint-disable-next-line no-undef
+      scheduledRecalc = requestAnimationFrame(() => {
+        scheduledRecalc = null;
+        useRoundStore.getState().recalculate();
+      });
+    } else {
+      scheduledRecalc = window.setTimeout(() => {
+        scheduledRecalc = null;
+        useRoundStore.getState().recalculate();
+      }, 0);
+    }
+  };
+
   useBetStore.subscribe(
     state => {
       const currentBets = state.allBets.get(state.currentBet) ?? new Map();
@@ -532,12 +559,12 @@ import('./betStore').then(() => {
       return { currentBets, currentBetAmounts, currentBet: state.currentBet };
     },
     () => {
-      useRoundStore.getState().recalculate();
+      scheduleRecalculate();
     },
     { fireImmediately: false },
   );
   // Trigger initial calculation manually
-  useRoundStore.getState().recalculate();
+  scheduleRecalculate();
 });
 
 // Subscribe to round changes and update URL
