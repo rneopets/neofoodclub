@@ -678,6 +678,106 @@ export function cartesianProduct<T>(...arrays: T[][]): T[][] {
   );
 }
 
+export interface CalculateBetMapsOptions {
+  /**
+   * When true, also computes `pirateCombos` using probabilities + maxBet.
+   * When false, `pirateCombos` will be empty (but `betOdds` and `betCaps` are still computed).
+   */
+  includePirateCombos?: boolean;
+}
+
+/**
+ * Pure helper to compute bet odds/caps (and optionally a score map) for a given set of pirate choices.
+ *
+ * Notes:
+ * - Odds/prob arrays in this app are treated as 1-indexed (0 is "clear"/no pirate).
+ * - `maxBet` is only used when `includePirateCombos` is true.
+ */
+export function calculateBetMaps(
+  pirateChoices: number[][],
+  odds: OddsData,
+  probabilities: ProbabilitiesData | null,
+  maxBet: number,
+  options: CalculateBetMapsOptions = {},
+): {
+  betCaps: Map<number, number>;
+  betOdds: Map<number, number>;
+  pirateCombos: Map<number, number>;
+} {
+  const betCaps: Map<number, number> = new Map();
+  const betOdds: Map<number, number> = new Map();
+  const pirateCombos: Map<number, number> = new Map();
+
+  if (!odds || odds.length === 0) {
+    return { betCaps, betOdds, pirateCombos };
+  }
+
+  const includePirateCombos = options.includePirateCombos === true;
+
+  // Hoist repeated lookups out of the hot loop.
+  const odds0 = odds[0] ?? [];
+  const odds1 = odds[1] ?? [];
+  const odds2 = odds[2] ?? [];
+  const odds3 = odds[3] ?? [];
+  const odds4 = odds[4] ?? [];
+
+  const probs0 = probabilities?.[0] ?? [];
+  const probs1 = probabilities?.[1] ?? [];
+  const probs2 = probabilities?.[2] ?? [];
+  const probs3 = probabilities?.[3] ?? [];
+  const probs4 = probabilities?.[4] ?? [];
+
+  for (const p of cartesianProduct(...pirateChoices)) {
+    const betBinary = computePiratesBinary(p);
+    if (betBinary === 0) {
+      continue;
+    }
+
+    const [a, b, c, d, e] = p;
+    const pirateA = a ?? 0;
+    const pirateB = b ?? 0;
+    const pirateC = c ?? 0;
+    const pirateD = d ?? 0;
+    const pirateE = e ?? 0;
+
+    const totalOdds =
+      (pirateA === 0 ? 1 : (odds0[pirateA] ?? 1)) *
+      (pirateB === 0 ? 1 : (odds1[pirateB] ?? 1)) *
+      (pirateC === 0 ? 1 : (odds2[pirateC] ?? 1)) *
+      (pirateD === 0 ? 1 : (odds3[pirateD] ?? 1)) *
+      (pirateE === 0 ? 1 : (odds4[pirateE] ?? 1));
+
+    if (totalOdds === 0) {
+      continue;
+    }
+
+    const betCap = Math.ceil(1_000_000 / totalOdds);
+    betCaps.set(betBinary, betCap);
+    betOdds.set(betBinary, totalOdds);
+
+    if (!includePirateCombos) {
+      continue;
+    }
+
+    const winChance =
+      (pirateA === 0 ? 1 : (probs0[pirateA] ?? 0)) *
+      (pirateB === 0 ? 1 : (probs1[pirateB] ?? 0)) *
+      (pirateC === 0 ? 1 : (probs2[pirateC] ?? 0)) *
+      (pirateD === 0 ? 1 : (probs3[pirateD] ?? 0)) *
+      (pirateE === 0 ? 1 : (probs4[pirateE] ?? 0));
+
+    if (maxBet > 0) {
+      const maxCap = Math.min(betCap, maxBet);
+      const winnings = Math.min(maxBet * totalOdds, 1_000_000);
+      pirateCombos.set(betBinary, ((winChance * winnings) / maxCap - 1) * maxCap);
+    } else {
+      pirateCombos.set(betBinary, totalOdds * winChance);
+    }
+  }
+
+  return { betCaps, betOdds, pirateCombos };
+}
+
 /**
  * Count non-zero elements in an array
  * @param array Array to check

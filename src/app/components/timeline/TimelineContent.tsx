@@ -4,6 +4,8 @@ import {
   DrawerBody,
   Flex,
   Heading,
+  Icon,
+  SimpleGrid,
   Text,
   VStack,
   Spacer,
@@ -13,6 +15,7 @@ import {
   ButtonGroup,
   defineStyle,
   Badge,
+  EmptyState,
 } from '@chakra-ui/react';
 import React, { useCallback, useRef } from 'react';
 import {
@@ -685,7 +688,6 @@ const OverallTimelineView = React.memo(
                             size="sm"
                             variant="outline"
                             onClick={() => onArenaClick(idx)}
-                            disabled={arenaChangesCount === 0}
                           >
                             {arena}
                           </Button>
@@ -819,6 +821,7 @@ const ArenaTimelineView = React.memo(
     const isRoundOver = useIsRoundOver();
     const start = roundData.start;
     const endTime = roundData.timestamp;
+    const getPirateBgColor = useGetPirateBgColor();
 
     if (!start || !endTime) {
       return null;
@@ -827,6 +830,7 @@ const ArenaTimelineView = React.memo(
     const arenaName = ARENA_NAMES[arenaId];
     const changes = roundData.changes || [];
     const winners = roundData.winners || makeEmpty(5);
+    const arenaPirates = roundData.pirates?.[arenaId] ?? [];
 
     // Filter changes for this arena only
     const arenaChanges = changes.filter(change => change.arena === arenaId);
@@ -965,6 +969,96 @@ const ArenaTimelineView = React.memo(
               </Breadcrumb.List>
             </Breadcrumb.Root>
 
+            {/* Pirate quick navigation */}
+
+            <Text
+              fontSize="sm"
+              fontWeight="bold"
+              color="fg.muted"
+              textTransform="uppercase"
+              letterSpacing="wide"
+            >
+              <FaSkullCrossbones style={{ display: 'inline', marginRight: '8px' }} />
+              Pirates in {arenaName}
+            </Text>
+            <SimpleGrid mb={4} columns={4} gap={{ base: 2, md: 3 }} w="full" justifyItems="center">
+              {arenaPirates.map((pirateId, pirateIndex) => {
+                if (!pirateId) {
+                  return null;
+                }
+
+                const pirateName = PIRATE_NAMES.get(pirateId) ?? `Pirate ${pirateIndex + 1}`;
+                const openingOdds = roundData.openingOdds?.[arenaId]?.[pirateIndex + 1] as number;
+                const currentOdds = roundData.currentOdds?.[arenaId]?.[pirateIndex + 1] as number;
+                const colorPalette = openingOdds ? getPirateBgColor(openingOdds) : undefined;
+
+                return (
+                  <Button
+                    key={`arena-${arenaId}-pirate-${pirateId}`}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onPirateClick(arenaId, pirateIndex)}
+                    w="full"
+                    maxW="132px"
+                    minW={0}
+                    h="auto"
+                    px={2}
+                    py={2}
+                    flexDir="column"
+                    justifyContent="center"
+                    gap={1.5}
+                    borderRadius="lg"
+                    _hover={{ bg: 'bg.subtle', transform: 'translateY(-1px)' }}
+                    _active={{ transform: 'translateY(0)' }}
+                  >
+                    <Box mt={1} css={avatarWrapperCss} display="inline-block">
+                      <Avatar
+                        name={pirateName}
+                        src={`https://images.neopets.com/pirates/fc/fc_pirate_${pirateId}.gif`}
+                        size="lg"
+                        bg="white"
+                        css={colorPalette ? ringCss : undefined}
+                        colorPalette={colorPalette}
+                      />
+                    </Box>
+
+                    <Text
+                      fontSize="md"
+                      fontWeight="semibold"
+                      textAlign="center"
+                      truncate
+                      maxW="full"
+                      lineHeight="short"
+                    >
+                      {pirateName}
+                    </Text>
+
+                    {openingOdds !== undefined ? (
+                      <VStack gap={1}>
+                        <Badge
+                          variant="subtle"
+                          fontSize="2xs"
+                          colorPalette={colorPalette}
+                          textTransform="uppercase"
+                        >
+                          Open {openingOdds}:1
+                        </Badge>
+
+                        <Badge
+                          variant="subtle"
+                          fontSize="2xs"
+                          colorPalette={getPirateBgColor(currentOdds)}
+                          textTransform="uppercase"
+                        >
+                          Now {currentOdds}:1
+                        </Badge>
+                      </VStack>
+                    ) : null}
+                  </Button>
+                );
+              })}
+            </SimpleGrid>
+
             <Text
               fontSize="sm"
               fontWeight="bold"
@@ -979,69 +1073,87 @@ const ArenaTimelineView = React.memo(
         </DrawerHeader>
 
         <DrawerBody ref={scrollContainerRef}>
-          <VStack align="stretch">
-            <Box>
-              <Timeline.Root size="xl" variant="subtle">
-                {consolidatedArenaEvents.map(event => (
-                  <Timeline.Item key={event.id}>
-                    <Timeline.Connector>
-                      <Timeline.Separator />
-                      <Timeline.Indicator layerStyle="fill.surface" colorPalette={event.color}>
-                        {event.icon}
-                      </Timeline.Indicator>
-                    </Timeline.Connector>
-                    <Timeline.Content>
-                      <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
-                        <Box flex="1">
-                          <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
-                            {event.title}
-                          </Timeline.Title>
-                          <Timeline.Description color="fg.muted" fontSize="sm">
-                            <Text fontSize="sm">{event.description}</Text>
-                          </Timeline.Description>
+          {arenaChanges.length === 0 ? (
+            <EmptyState.Root>
+              <EmptyState.Content>
+                <EmptyState.Indicator>
+                  <Icon as={FaClock} />
+                </EmptyState.Indicator>
+                <EmptyState.Title>No odds changes yet</EmptyState.Title>
+                <EmptyState.Description textAlign="center">
+                  {arenaName} has no recorded odds changes for this round. You can still jump to a
+                  pirate above to view their timeline.
+                </EmptyState.Description>
+              </EmptyState.Content>
+            </EmptyState.Root>
+          ) : (
+            <VStack align="stretch">
+              <Box>
+                <Timeline.Root size="xl" variant="subtle">
+                  {consolidatedArenaEvents.map(event => (
+                    <Timeline.Item key={event.id}>
+                      <Timeline.Connector>
+                        <Timeline.Separator />
+                        <Timeline.Indicator layerStyle="fill.surface" colorPalette={event.color}>
+                          {event.icon}
+                        </Timeline.Indicator>
+                      </Timeline.Connector>
+                      <Timeline.Content>
+                        <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
+                          <Box flex="1">
+                            <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
+                              {event.title}
+                            </Timeline.Title>
+                            <Timeline.Description color="fg.muted" fontSize="sm">
+                              <Text fontSize="sm">{event.description}</Text>
+                            </Timeline.Description>
 
-                          {/* Consolidated changes (collapsible) */}
-                          {event.type === 'consolidated' && (
-                            <ConsolidatedChangesContent
-                              event={event}
-                              onPirateClick={onPirateClick}
-                            />
-                          )}
+                            {/* Consolidated changes (collapsible) */}
+                            {event.type === 'consolidated' && (
+                              <ConsolidatedChangesContent
+                                event={event}
+                                onPirateClick={onPirateClick}
+                              />
+                            )}
 
-                          {/* Regular changes */}
-                          {event.type === 'change' && (
-                            <RegularChangesContent event={event} onPirateClick={onPirateClick} />
-                          )}
+                            {/* Regular changes */}
+                            {event.type === 'change' && (
+                              <RegularChangesContent event={event} onPirateClick={onPirateClick} />
+                            )}
 
-                          {/* Round ended with winner */}
-                          {event.type === 'end' && event.winners && event.winners.length > 0 && (
-                            <WinnersContent winners={event.winners} onPirateClick={onPirateClick} />
-                          )}
-                        </Box>
-                        <VStack
-                          gap={1}
-                          minH="100%"
-                          align="flex-end"
-                          justify="flex-end"
-                          alignItems="center"
-                        >
-                          <Text fontSize="sm" color="fg.muted" fontStyle="italic">
-                            <DateFormatter
-                              format="LTS [NST]"
-                              date={event.time}
-                              tz="America/Los_Angeles"
-                              withTitle
-                              titleFormat="LLL [NST]"
-                            />
-                          </Text>
-                        </VStack>
-                      </Flex>
-                    </Timeline.Content>
-                  </Timeline.Item>
-                ))}
-              </Timeline.Root>
-            </Box>
-          </VStack>
+                            {/* Round ended with winner */}
+                            {event.type === 'end' && event.winners && event.winners.length > 0 && (
+                              <WinnersContent
+                                winners={event.winners}
+                                onPirateClick={onPirateClick}
+                              />
+                            )}
+                          </Box>
+                          <VStack
+                            gap={1}
+                            minH="100%"
+                            align="flex-end"
+                            justify="flex-end"
+                            alignItems="center"
+                          >
+                            <Text fontSize="sm" color="fg.muted" fontStyle="italic">
+                              <DateFormatter
+                                format="LTS [NST]"
+                                date={event.time}
+                                tz="America/Los_Angeles"
+                                withTitle
+                                titleFormat="LLL [NST]"
+                              />
+                            </Text>
+                          </VStack>
+                        </Flex>
+                      </Timeline.Content>
+                    </Timeline.Item>
+                  ))}
+                </Timeline.Root>
+              </Box>
+            </VStack>
+          )}
         </DrawerBody>
       </>
     );
@@ -1186,7 +1298,7 @@ const PirateTimelineView = React.memo(
                   {openingOdds !== undefined && (
                     <Badge
                       variant="subtle"
-                      fontSize="sm"
+                      fontSize="2xs"
                       colorPalette={getPirateBgColor(openingOdds)}
                       textTransform="uppercase"
                     >
@@ -1196,11 +1308,11 @@ const PirateTimelineView = React.memo(
                   {currentOdds !== undefined && currentOdds !== openingOdds && (
                     <Badge
                       variant="subtle"
-                      fontSize="sm"
+                      fontSize="2xs"
                       colorPalette={getPirateBgColor(currentOdds)}
                       textTransform="uppercase"
                     >
-                      Current {currentOdds}:1
+                      Now {currentOdds}:1
                     </Badge>
                   )}
                 </Flex>

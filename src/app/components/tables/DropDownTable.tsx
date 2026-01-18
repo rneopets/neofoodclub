@@ -153,7 +153,7 @@ const PirateInfoRow = React.memo(
 PirateInfoRow.displayName = 'PirateInfoRow';
 
 const TableHeaderCell = React.memo(
-  ({ arenaId }: { arenaId: number }) => {
+  ({ arenaId, onArenaClick }: { arenaId: number; onArenaClick: (arenaId: number) => void }) => {
     const arenaRatios = useArenaRatios();
     const bigBrain = useBigBrain();
     const arenaRatioString = bigBrain
@@ -161,12 +161,19 @@ const TableHeaderCell = React.memo(
       : '';
 
     return (
-      <Table.ColumnHeader whiteSpace="nowrap">
+      <Table.ColumnHeader
+        whiteSpace="nowrap"
+        cursor="pointer"
+        onClick={() => onArenaClick(arenaId)}
+        title={`Click to view odds timeline for ${ARENA_NAMES[arenaId]}`}
+        _hover={{ bg: 'bg.subtle' }}
+      >
         {ARENA_NAMES[arenaId]} {arenaRatioString}
       </Table.ColumnHeader>
     );
   },
-  (prevProps, nextProps) => prevProps.arenaId === nextProps.arenaId,
+  (prevProps, nextProps) =>
+    prevProps.arenaId === nextProps.arenaId && prevProps.onArenaClick === nextProps.onArenaClick,
 );
 
 TableHeaderCell.displayName = 'TableHeaderCell';
@@ -297,6 +304,13 @@ const DropDownTable = React.memo(
 
     const { openTimelineDrawer } = timelineHandlers;
 
+    const handleArenaTimelineClick = useCallback(
+      (arenaId: number) => {
+        openTimelineDrawer(arenaId, null);
+      },
+      [openTimelineDrawer],
+    );
+
     const handleTimelineClick = useCallback(
       (arenaId: number, pirateIndex: number) => {
         openTimelineDrawer(arenaId, pirateIndex);
@@ -331,13 +345,17 @@ const DropDownTable = React.memo(
         <Table.Header>
           <Table.Row>
             {Array.from({ length: 5 }, (_, arenaId) => (
-              <TableHeaderCell key={`dropdown-arena-${arenaId}`} arenaId={arenaId} />
+              <TableHeaderCell
+                key={`dropdown-arena-${arenaId}`}
+                arenaId={arenaId}
+                onArenaClick={handleArenaTimelineClick}
+              />
             ))}
             <ClearButtonHeader />
           </Table.Row>
         </Table.Header>
       ),
-      [],
+      [handleArenaTimelineClick],
     );
 
     const allRowHandlers = useMemo(

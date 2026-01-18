@@ -17,11 +17,14 @@ import {
   Badge,
   Separator,
   Card,
+  SimpleGrid,
   useClipboard,
   Portal,
   Icon,
+  EmptyState,
 } from '@chakra-ui/react';
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
+import { FaSkullCrossbones } from 'react-icons/fa';
 import {
   FaMarkdown,
   FaCode,
@@ -62,6 +65,7 @@ import {
   useCurrentBet,
   useSetCurrentBet,
   useDeleteBetSet,
+  useHasAnyBets,
   useRoundPirates,
   useOptimizedBetsForIndex,
   useOptimizedBetAmountsForIndex,
@@ -81,217 +85,247 @@ import {
 
 import { Tooltip } from '@/components/ui/tooltip';
 
-const BuildSetMenu = React.memo((): React.ReactElement => {
-  const hasRoundData = useRoundPirates()?.[0]?.[0] !== undefined;
+function runAfterNextPaint(fn: () => void): void {
+  if (typeof window === 'undefined') {
+    fn();
+    return;
+  }
 
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = React.useState(''); // currently can only be "Ten-bet" or "Gambit"
-  const [pirateIndices, setPirateIndices] = React.useState(makeEmpty(5)); // indices of the pirates to be included in the set
-  const [min, setMin] = React.useState(0); // minimum pirate amount
-  const [max, setMax] = React.useState(0); // maximum pirate amount
-  const [buildButtonEnabled, setBuildButtonEnabled] = React.useState(false); // whether the build button is enabled, if we're within min/max to do so
+  const raf = window.requestAnimationFrame;
+  if (typeof raf !== 'function') {
+    setTimeout(fn, 0);
+    return;
+  }
 
-  const { generateTenbetSet, generateGambitWithPirates } = useBetManagement();
-  const bigBrain = useBigBrain();
-  const arenaRatios = useArenaRatios();
+  raf(() => raf(fn));
+}
 
-  const handleChange = useCallback((arenaIndex: number, pirateIndex: number) => {
-    setPirateIndices(prevIndices => {
-      const newPirateIndices = structuredClone(prevIndices);
-      newPirateIndices[arenaIndex] = pirateIndex;
-      return newPirateIndices;
-    });
-  }, []);
+const BuildSetMenu = React.memo(
+  (
+    {
+      attached = true,
+      ...buttonProps
+    }: { attached?: boolean } & React.ComponentProps<typeof Button> = {
+      attached: true,
+    },
+  ): React.ReactElement => {
+    const hasRoundData = useRoundPirates()?.[0]?.[0] !== undefined;
 
-  const createOnChangeHandler = useCallback(
-    (index: number): ((e: React.ChangeEvent<HTMLSelectElement>) => void) =>
-      (e: React.ChangeEvent<HTMLSelectElement>): void => {
-        handleChange(index, parseInt(e.target.value));
-      },
-    [handleChange],
-  );
+    const [open, setOpen] = useState(false);
+    const [mode, setMode] = React.useState(''); // currently can only be "Ten-bet" or "Gambit"
+    const [pirateIndices, setPirateIndices] = React.useState(makeEmpty(5)); // indices of the pirates to be included in the set
+    const [min, setMin] = React.useState(0); // minimum pirate amount
+    const [max, setMax] = React.useState(0); // maximum pirate amount
+    const [buildButtonEnabled, setBuildButtonEnabled] = React.useState(false); // whether the build button is enabled, if we're within min/max to do so
 
-  useEffect(() => {
-    // count the amount of non-zero elements in pirateIndices
-    const amount = countNonZeroElements(pirateIndices);
-    setBuildButtonEnabled(amount >= min && amount <= max);
-  }, [pirateIndices, min, max]);
+    const { generateTenbetSet, generateGambitWithPirates } = useBetManagement();
+    const bigBrain = useBigBrain();
+    const arenaRatios = useArenaRatios();
 
-  const handleTenBetClick = useCallback(() => {
-    setMode('Ten-bet');
-    // reset state
-    setMin(1);
-    setMax(3);
-    setPirateIndices(makeEmpty(5));
-    setOpen(true);
-  }, []);
+    const handleChange = useCallback((arenaIndex: number, pirateIndex: number) => {
+      setPirateIndices(prevIndices => {
+        const newPirateIndices = structuredClone(prevIndices);
+        newPirateIndices[arenaIndex] = pirateIndex;
+        return newPirateIndices;
+      });
+    }, []);
 
-  const handleGambitClick = useCallback(() => {
-    setMode('Gambit');
-    // reset state
-    setMin(5);
-    setMax(5);
-    setPirateIndices(makeEmpty(5));
-    setOpen(true);
-  }, []);
+    const createOnChangeHandler = useCallback(
+      (index: number): ((e: React.ChangeEvent<HTMLSelectElement>) => void) =>
+        (e: React.ChangeEvent<HTMLSelectElement>): void => {
+          handleChange(index, parseInt(e.target.value));
+        },
+      [handleChange],
+    );
 
-  const handleBuildClick = useCallback(() => {
-    if (mode === 'Ten-bet') {
-      generateTenbetSet(pirateIndices);
-    } else if (mode === 'Gambit') {
-      generateGambitWithPirates(pirateIndices);
-    }
-    setOpen(false);
-  }, [mode, pirateIndices, generateTenbetSet, generateGambitWithPirates]);
+    useEffect(() => {
+      // count the amount of non-zero elements in pirateIndices
+      const amount = countNonZeroElements(pirateIndices);
+      setBuildButtonEnabled(amount >= min && amount <= max);
+    }, [pirateIndices, min, max]);
 
-  const randomizeIndices = useCallback(() => {
-    // Start with all zeros
-    const newIndices = makeEmpty(5);
+    const handleTenBetClick = useCallback(() => {
+      setMode('Ten-bet');
+      // reset state
+      setMin(1);
+      setMax(3);
+      setPirateIndices(makeEmpty(5));
+      setOpen(true);
+    }, []);
 
-    // Pick a random number of pirates between min and max
-    const numPirates = generateRandomIntegerInRange(min, max);
+    const handleGambitClick = useCallback(() => {
+      setMode('Gambit');
+      // reset state
+      setMin(5);
+      setMax(5);
+      setPirateIndices(makeEmpty(5));
+      setOpen(true);
+    }, []);
 
-    // Select random arenas to assign pirates to
-    const indices = [0, 1, 2, 3, 4];
-    shuffleArray(indices);
-    const selectedArenas = indices.slice(0, numPirates);
+    const handleBuildClick = useCallback(() => {
+      // Close the dialog first, then do the heavy generation work.
+      setOpen(false);
+      runAfterNextPaint(() => {
+        if (mode === 'Ten-bet') {
+          generateTenbetSet(pirateIndices);
+        } else if (mode === 'Gambit') {
+          generateGambitWithPirates(pirateIndices);
+        }
+      });
+    }, [mode, pirateIndices, generateTenbetSet, generateGambitWithPirates]);
 
-    // Assign random pirates to the selected arenas
-    selectedArenas.forEach(index => {
-      newIndices[index] = generateRandomPirateIndex();
-    });
+    const randomizeIndices = useCallback(() => {
+      // Start with all zeros
+      const newIndices = makeEmpty(5);
 
-    setPirateIndices(newIndices);
-  }, [min, max]);
+      // Pick a random number of pirates between min and max
+      const numPirates = generateRandomIntegerInRange(min, max);
 
-  const handleClearIndices = useCallback(() => {
-    setPirateIndices(makeEmpty(5));
-  }, []);
+      // Select random arenas to assign pirates to
+      const indices = [0, 1, 2, 3, 4];
+      shuffleArray(indices);
+      const selectedArenas = indices.slice(0, numPirates);
 
-  return (
-    <>
-      <Menu.Root>
-        <Menu.Trigger asChild>
-          <Button
-            aria-label="Generate New Bet Set"
-            disabled={!hasRoundData}
-            data-testid="build-set-button"
-            roundedStart={0}
-          >
-            <FaShapes />
-            Build set
-            <FaChevronDown />
-          </Button>
-        </Menu.Trigger>
-        <Portal>
-          <Menu.Positioner>
-            <Menu.Content>
-              <Menu.Item
-                value="gambit"
-                onClick={handleGambitClick}
-                data-testid="build-gambit-set-menuitem"
-              >
-                Gambit set
-              </Menu.Item>
-              <Menu.Item
-                value="tenbet"
-                onClick={handleTenBetClick}
-                data-testid="build-tenbet-set-menuitem"
-              >
-                Ten-bet set
-              </Menu.Item>
-            </Menu.Content>
-          </Menu.Positioner>
-        </Portal>
-      </Menu.Root>
+      // Assign random pirates to the selected arenas
+      selectedArenas.forEach(index => {
+        newIndices[index] = generateRandomPirateIndex();
+      });
 
-      <Dialog.Root
-        placement="center"
-        size="xl"
-        lazyMount
-        open={open}
-        onOpenChange={(e: { open: boolean | ((prevState: boolean) => boolean) }) => setOpen(e.open)}
-        preventScroll
-        modal
-      >
-        <Portal container={document.body}>
-          <Dialog.Backdrop />
-          <Dialog.Positioner>
-            <Dialog.Content>
-              <Dialog.Header>Custom {mode} builder</Dialog.Header>
-              <Dialog.CloseTrigger data-testid="build-modal-close-button" />
-              <Dialog.Body>
-                <VStack mb={3}>
-                  {min === max ? (
-                    <Text as={'i'}>Please choose {max} pirates.</Text>
-                  ) : (
-                    <Text as={'i'}>
-                      Please choose between {min} and {max} pirates.
-                    </Text>
-                  )}
-                </VStack>
-                <Wrap justify="center">
-                  {ARENA_NAMES.map((arena, index) => {
-                    const arenaRatio = arenaRatios[index];
-                    return (
-                      <WrapItem key={arena}>
-                        <VStack gap={1} align="stretch">
-                          <HStack gap={2} justify="center">
-                            <Text fontSize="sm" fontWeight="semibold">
-                              {arena}
-                            </Text>
-                            {bigBrain && arenaRatio !== undefined && (
-                              <Badge fontSize="xs" variant="subtle">
-                                {displayAsPercent(arenaRatio, 1)}
-                              </Badge>
-                            )}
-                          </HStack>
-                          <PirateSelect
-                            arenaId={index}
-                            pirateValue={pirateIndices[index] ?? 0}
-                            onChange={createOnChangeHandler(index)}
-                          />
-                        </VStack>
-                      </WrapItem>
-                    );
-                  })}
-                </Wrap>
-              </Dialog.Body>
-              <Dialog.Footer>
-                <Flex width="2xl">
-                  <HStack>
-                    <Button onClick={randomizeIndices} data-testid="randomize-button">
-                      <FaShuffle />
-                      Randomize
-                    </Button>
+      setPirateIndices(newIndices);
+    }, [min, max]);
+
+    const handleClearIndices = useCallback(() => {
+      setPirateIndices(makeEmpty(5));
+    }, []);
+
+    return (
+      <>
+        <Menu.Root>
+          <Menu.Trigger asChild>
+            <Button
+              aria-label="Generate New Bet Set"
+              disabled={!hasRoundData}
+              data-testid="build-set-button"
+              {...(attached ? { roundedStart: 0 } : {})}
+              {...buttonProps}
+            >
+              <FaShapes />
+              Build set
+              <FaChevronDown />
+            </Button>
+          </Menu.Trigger>
+          <Portal>
+            <Menu.Positioner>
+              <Menu.Content>
+                <Menu.Item
+                  value="gambit"
+                  onClick={handleGambitClick}
+                  data-testid="build-gambit-set-menuitem"
+                >
+                  Gambit set
+                </Menu.Item>
+                <Menu.Item
+                  value="tenbet"
+                  onClick={handleTenBetClick}
+                  data-testid="build-tenbet-set-menuitem"
+                >
+                  Ten-bet set
+                </Menu.Item>
+              </Menu.Content>
+            </Menu.Positioner>
+          </Portal>
+        </Menu.Root>
+
+        <Dialog.Root
+          placement="center"
+          size="xl"
+          lazyMount
+          open={open}
+          onOpenChange={(e: { open: boolean | ((prevState: boolean) => boolean) }) =>
+            setOpen(e.open)
+          }
+          preventScroll
+          modal
+        >
+          <Portal container={document.body}>
+            <Dialog.Backdrop />
+            <Dialog.Positioner>
+              <Dialog.Content>
+                <Dialog.Header>Custom {mode} builder</Dialog.Header>
+                <Dialog.CloseTrigger data-testid="build-modal-close-button" />
+                <Dialog.Body>
+                  <VStack mb={3}>
+                    {min === max ? (
+                      <Text as={'i'}>Please choose {max} pirates.</Text>
+                    ) : (
+                      <Text as={'i'}>
+                        Please choose between {min} and {max} pirates.
+                      </Text>
+                    )}
+                  </VStack>
+                  <Wrap justify="center">
+                    {ARENA_NAMES.map((arena, index) => {
+                      const arenaRatio = arenaRatios[index];
+                      return (
+                        <WrapItem key={arena}>
+                          <VStack gap={1} align="stretch">
+                            <HStack gap={2} justify="center">
+                              <Text fontSize="sm" fontWeight="semibold">
+                                {arena}
+                              </Text>
+                              {bigBrain && arenaRatio !== undefined && (
+                                <Badge fontSize="xs" variant="subtle">
+                                  {displayAsPercent(arenaRatio, 1)}
+                                </Badge>
+                              )}
+                            </HStack>
+                            <PirateSelect
+                              arenaId={index}
+                              pirateValue={pirateIndices[index] ?? 0}
+                              onChange={createOnChangeHandler(index)}
+                            />
+                          </VStack>
+                        </WrapItem>
+                      );
+                    })}
+                  </Wrap>
+                </Dialog.Body>
+                <Dialog.Footer>
+                  <Flex width="2xl">
+                    <HStack>
+                      <Button onClick={randomizeIndices} data-testid="randomize-button">
+                        <FaShuffle />
+                        Randomize
+                      </Button>
+                      <Button
+                        onClick={handleClearIndices}
+                        data-testid="modal-clear-button"
+                        disabled={pirateIndices.every(e => e === 0)}
+                      >
+                        <FaTrash />
+                        Clear
+                      </Button>
+                    </HStack>
+                    <Spacer />
                     <Button
-                      onClick={handleClearIndices}
-                      data-testid="modal-clear-button"
-                      disabled={pirateIndices.every(e => e === 0)}
+                      disabled={!buildButtonEnabled}
+                      variant="surface"
+                      colorPalette="gray"
+                      onClick={handleBuildClick}
+                      data-testid="build-modal-button"
                     >
-                      <FaTrash />
-                      Clear
+                      Build {mode} set
                     </Button>
-                  </HStack>
-                  <Spacer />
-                  <Button
-                    disabled={!buildButtonEnabled}
-                    variant="surface"
-                    colorPalette="gray"
-                    onClick={handleBuildClick}
-                    data-testid="build-modal-button"
-                  >
-                    Build {mode} set
-                  </Button>
-                </Flex>
-              </Dialog.Footer>
-            </Dialog.Content>
-          </Dialog.Positioner>
-        </Portal>
-      </Dialog.Root>
-    </>
-  );
-});
+                  </Flex>
+                </Dialog.Footer>
+              </Dialog.Content>
+            </Dialog.Positioner>
+          </Portal>
+        </Dialog.Root>
+      </>
+    );
+  },
+);
 
 BuildSetMenu.displayName = 'BuildSetMenu';
 
@@ -608,11 +642,12 @@ const CopyIconButton = React.memo(
 CopyIconButton.displayName = 'CopyIconButton';
 
 interface BetFunctionsProps {
+  variant?: 'inline' | 'sidebar';
   [key: string]: unknown;
 }
 
 const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement => {
-  const { ...rest } = props;
+  const { variant = 'inline', ...rest } = props;
 
   const {
     newEmptySet,
@@ -634,6 +669,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
 
   const betSetCount = useBetSetCount();
   const allNames = useAllBetSetNames();
+  const hasAnyBetsInCurrentSet = useHasAnyBets();
 
   const clearOrDeleteSet = useCallback(() => {
     if (betSetCount === 1) {
@@ -687,37 +723,177 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
           currentName={currentName}
           onClick={handleCardClick(key)}
           onValueCommit={handleEditableSubmit(key)}
+          layout={variant === 'sidebar' ? 'stack' : 'wrap'}
         />
       );
     });
-  }, [betSetCount, allNames, currentBetIndex, handleCardClick, handleEditableSubmit]);
+  }, [betSetCount, allNames, currentBetIndex, handleCardClick, handleEditableSubmit, variant]);
 
   const clearBets = useCallback(() => {
     clearOrDeleteSet();
     // Only clear probability-related cache since clearing bets affects probabilities
   }, [clearOrDeleteSet]);
 
+  // These generation functions do heavy synchronous compute + a big store update.
+  // Run them after a paint so the menu can close and the UI feels responsive.
+  const handleGenerateMaxTERSet = useCallback(() => {
+    runAfterNextPaint(generateMaxTERSet);
+  }, [generateMaxTERSet]);
+  const handleGenerateGambitSet = useCallback(() => {
+    runAfterNextPaint(generateGambitSet);
+  }, [generateGambitSet]);
+  const handleGenerateWinningGambitSet = useCallback(() => {
+    runAfterNextPaint(generateWinningGambitSet);
+  }, [generateWinningGambitSet]);
+  const handleGenerateRandomCrazySet = useCallback(() => {
+    runAfterNextPaint(generateRandomCrazySet);
+  }, [generateRandomCrazySet]);
+  const handleGenerateBustproofSet = useCallback(() => {
+    runAfterNextPaint(generateBustproofSet);
+  }, [generateBustproofSet]);
+
   const hasRoundData = isValidRound({ roundData, currentSelectedRound } as RoundState);
 
-  return (
-    <SettingsBox p={2} {...rest}>
-      <Stack>
-        <Wrap>
-          <ButtonGroup size="sm" variant="surface">
-            <Button onClick={newEmptySet} data-testid="new-set-button">
-              <FaPlus />
-              New set
-            </Button>
+  const containerProps =
+    variant === 'sidebar'
+      ? {
+          direction: 'column' as const,
+          align: 'stretch' as const,
+          justify: 'flex-start' as const,
+        }
+      : {};
 
-            <Button onClick={cloneSet} data-testid="clone-set-button">
-              <FaClone />
-              Clone
-            </Button>
-            <Button onClick={clearBets} data-testid="clear-delete-button">
-              <FaTrash />
-              {betSetCount === 1 ? 'Clear' : 'Delete'}
-            </Button>
-          </ButtonGroup>
+  const header = (
+    <Stack gap={2} p={2} flexShrink={0} borderBottomWidth={variant === 'sidebar' ? '1px' : 0}>
+      {variant === 'sidebar' ? (
+        <VStack align="stretch" gap={2}>
+          {hasAnyBetsInCurrentSet ? (
+            <SimpleGrid columns={3} gap={2}>
+              <Button
+                onClick={newEmptySet}
+                data-testid="new-set-button"
+                size="sm"
+                variant="surface"
+                w="full"
+                justifyContent="center"
+              >
+                <FaPlus />
+                New set
+              </Button>
+              <Button
+                onClick={cloneSet}
+                data-testid="clone-set-button"
+                size="sm"
+                variant="surface"
+                w="full"
+                justifyContent="center"
+              >
+                <FaClone />
+                Clone
+              </Button>
+              <Button
+                onClick={clearBets}
+                data-testid="clear-delete-button"
+                size="sm"
+                variant="surface"
+                w="full"
+                justifyContent="center"
+              >
+                <FaTrash />
+                {betSetCount === 1 ? 'Clear' : 'Delete'}
+              </Button>
+            </SimpleGrid>
+          ) : null}
+
+          <SimpleGrid columns={2} gap={2}>
+            <Menu.Root>
+              <Menu.Trigger asChild>
+                <Button
+                  data-testid="generate-button"
+                  disabled={!hasRoundData}
+                  size="sm"
+                  variant="surface"
+                  w="full"
+                  justifyContent="center"
+                >
+                  <FaWandMagicSparkles />
+                  Generate
+                  <FaChevronDown />
+                </Button>
+              </Menu.Trigger>
+              <Portal>
+                <Menu.Positioner>
+                  <Menu.Content>
+                    <Menu.Item
+                      value="maxTer"
+                      onClick={handleGenerateMaxTERSet}
+                      data-testid="max-ter-set-menuitem"
+                    >
+                      Max TER set
+                    </Menu.Item>
+                    <Menu.Item
+                      value="gambit"
+                      onClick={handleGenerateGambitSet}
+                      data-testid="gambit-set-menuitem"
+                    >
+                      Gambit set
+                    </Menu.Item>
+                    <Menu.Item
+                      value="winningGambit"
+                      hidden={winningBetBinary === 0}
+                      onClick={handleGenerateWinningGambitSet}
+                      data-testid="winning-gambit-set-menuitem"
+                    >
+                      Winning Gambit set
+                    </Menu.Item>
+                    <Menu.Item
+                      value="randomCrazy"
+                      onClick={handleGenerateRandomCrazySet}
+                      data-testid="random-crazy-set-menuitem"
+                    >
+                      Random Crazy set
+                    </Menu.Item>
+                    <Menu.Item
+                      value="bustproof"
+                      onClick={handleGenerateBustproofSet}
+                      disabled={positiveArenas === 0}
+                      data-testid="bustproof-set-menuitem"
+                    >
+                      Bustproof Set
+                    </Menu.Item>
+                  </Menu.Content>
+                </Menu.Positioner>
+              </Portal>
+            </Menu.Root>
+
+            <BuildSetMenu
+              attached={false}
+              size="sm"
+              variant="surface"
+              w="full"
+              justifyContent="center"
+            />
+          </SimpleGrid>
+        </VStack>
+      ) : (
+        <Wrap>
+          {hasAnyBetsInCurrentSet ? (
+            <ButtonGroup size="sm" variant="surface">
+              <Button onClick={newEmptySet} data-testid="new-set-button">
+                <FaPlus />
+                New set
+              </Button>
+
+              <Button onClick={cloneSet} data-testid="clone-set-button">
+                <FaClone />
+                Clone
+              </Button>
+              <Button onClick={clearBets} data-testid="clear-delete-button">
+                <FaTrash />
+                {betSetCount === 1 ? 'Clear' : 'Delete'}
+              </Button>
+            </ButtonGroup>
+          ) : null}
 
           <ButtonGroup size="sm" variant="surface" attached gap={0}>
             <Menu.Root>
@@ -733,14 +909,14 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
                   <Menu.Content>
                     <Menu.Item
                       value="maxTer"
-                      onClick={generateMaxTERSet}
+                      onClick={handleGenerateMaxTERSet}
                       data-testid="max-ter-set-menuitem"
                     >
                       Max TER set
                     </Menu.Item>
                     <Menu.Item
                       value="gambit"
-                      onClick={generateGambitSet}
+                      onClick={handleGenerateGambitSet}
                       data-testid="gambit-set-menuitem"
                     >
                       Gambit set
@@ -748,21 +924,21 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
                     <Menu.Item
                       value="winningGambit"
                       hidden={winningBetBinary === 0}
-                      onClick={generateWinningGambitSet}
+                      onClick={handleGenerateWinningGambitSet}
                       data-testid="winning-gambit-set-menuitem"
                     >
                       Winning Gambit set
                     </Menu.Item>
                     <Menu.Item
                       value="randomCrazy"
-                      onClick={generateRandomCrazySet}
+                      onClick={handleGenerateRandomCrazySet}
                       data-testid="random-crazy-set-menuitem"
                     >
                       Random Crazy set
                     </Menu.Item>
                     <Menu.Item
                       value="bustproof"
-                      onClick={generateBustproofSet}
+                      onClick={handleGenerateBustproofSet}
                       disabled={positiveArenas === 0}
                       data-testid="bustproof-set-menuitem"
                     >
@@ -776,9 +952,44 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
             <BuildSetMenu />
           </ButtonGroup>
         </Wrap>
+      )}
+    </Stack>
+  );
 
-        <Wrap>{betCards}</Wrap>
-      </Stack>
+  return (
+    <SettingsBox p={variant === 'sidebar' ? 0 : 2} {...containerProps} {...rest}>
+      {header}
+
+      {variant === 'sidebar' ? (
+        <Stack
+          data-testid="bet-sidebar-list"
+          flex="1"
+          minH={0}
+          overflowY="auto"
+          overflowX="hidden"
+          p={2}
+          gap={3}
+          justifyContent={hasAnyBetsInCurrentSet ? 'flex-start' : 'center'}
+        >
+          {hasAnyBetsInCurrentSet ? (
+            betCards
+          ) : (
+            <EmptyState.Root>
+              <EmptyState.Content>
+                <EmptyState.Indicator>
+                  <Icon as={FaSkullCrossbones} />
+                </EmptyState.Indicator>
+                <EmptyState.Title>No bets created yet</EmptyState.Title>
+                <EmptyState.Description textAlign="center">
+                  Start choosing pirates in the table, or use Generate / Build buttons above.
+                </EmptyState.Description>
+              </EmptyState.Content>
+            </EmptyState.Root>
+          )}
+        </Stack>
+      ) : (
+        <Stack>{betCards}</Stack>
+      )}
     </SettingsBox>
   );
 });
@@ -790,41 +1001,72 @@ const BetCard = React.memo(
     currentName,
     onClick,
     onValueCommit,
+    layout = 'wrap',
   }: {
     cardKey: number;
     isCurrent: boolean;
     currentName: string;
     onClick: () => void;
     onValueCommit: (details: { value: string }) => void;
-  }) => (
-    <WrapItem>
+    layout?: 'wrap' | 'stack';
+  }) => {
+    const [editableName, setEditableName] = useState(currentName);
+
+    // Keep the editable value in sync with external updates (e.g. clearing/renaming from elsewhere)
+    useEffect(() => {
+      setEditableName(currentName);
+    }, [cardKey, currentName]);
+
+    const card = (
       <Card.Root
-        p={1}
-        opacity={isCurrent ? 1 : 0.5}
+        p={2}
+        opacity={isCurrent ? 1 : 0.82}
         cursor={isCurrent ? 'default' : 'pointer'}
         onClick={onClick}
         transition="all 0.2s ease-in-out"
-        boxShadow={isCurrent ? 'dark-lg' : 'xl'}
-        minW="260px"
+        bg={isCurrent ? 'bg' : 'bg.subtle'}
+        boxShadow={isCurrent ? 'md' : 'none'}
+        transform={isCurrent ? 'none' : 'scale(0.99)'}
+        {...(!isCurrent
+          ? {
+              _hover: {
+                bg: 'bg',
+                boxShadow: 'sm',
+                opacity: 1,
+                transform: 'none',
+              },
+            }
+          : {})}
+        {...(layout === 'wrap' ? { minW: '260px' } : { width: 'full' })}
       >
-        <VStack align="stretch" minW="200px" separator={<Separator />}>
+        <VStack align="stretch" w="full" minW={layout === 'wrap' ? '200px' : 0} gap={2}>
           <Editable.Root
-            key={`${cardKey}-${currentName}`}
             as={Heading}
-            defaultValue={currentName}
-            onValueCommit={onValueCommit}
+            value={editableName}
+            onValueChange={(details: { value: string }) => setEditableName(details.value)}
+            onValueCommit={(details: { value: string }) => {
+              setEditableName(details.value);
+              onValueCommit(details);
+            }}
             placeholder="Unnamed Set"
-            minW="100%"
+            pointerEvents={isCurrent ? 'auto' : 'none'}
           >
-            <Editable.Preview minW="100%" />
+            <Editable.Preview w="full" truncate />
             <Editable.Input />
           </Editable.Root>
           <BetBadges index={cardKey} />
-          {isCurrent && <BetCopyButtons index={cardKey} />}
+          {isCurrent && (
+            <>
+              <Separator />
+              <BetCopyButtons index={cardKey} />
+            </>
+          )}
         </VStack>
       </Card.Root>
-    </WrapItem>
-  ),
+    );
+
+    return layout === 'wrap' ? <WrapItem>{card}</WrapItem> : card;
+  },
 );
 
 BetCard.displayName = 'BetCard';
@@ -1134,9 +1376,9 @@ const BetBadges = React.memo(
     );
 
     return (
-      <VStack gap={1} userSelect="none" {...rest}>
+      <Wrap gap={1} userSelect="none" justify="center" w="full" {...rest}>
         {allBadges}
-      </VStack>
+      </Wrap>
     );
   },
 );

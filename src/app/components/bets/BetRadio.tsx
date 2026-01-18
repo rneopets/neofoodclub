@@ -1,13 +1,19 @@
+import { Box, Radiomark } from '@chakra-ui/react';
 import React, { useCallback } from 'react';
 
 import { useIsPirateSelected, useUpdateSinglePirate } from '../../stores';
-
-import { Radio, RadioGroup } from '@/components/ui/radio';
 
 interface BetRadioProps {
   betIndex: number;
   arenaIndex: number;
   pirateIndex: number;
+}
+
+function handleRadioKeyDown(e: React.KeyboardEvent, onActivate: () => void): void {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    onActivate();
+  }
 }
 
 const BetRadio = React.memo(
@@ -19,13 +25,27 @@ const BetRadio = React.memo(
       updateSinglePirate(betIndex, arenaIndex, pirateIndex);
     }, [betIndex, arenaIndex, pirateIndex, updateSinglePirate]);
 
-    const value = `${arenaIndex}-${pirateIndex}`;
-    const currentValue = isSelected ? value : '';
-
     return (
-      <RadioGroup value={currentValue} onValueChange={() => handleChange()}>
-        <Radio value={value} size="sm" colorPalette="gray" />
-      </RadioGroup>
+      <Box
+        as="button"
+        type="button"
+        onClick={handleChange}
+        onKeyDown={e => handleRadioKeyDown(e, handleChange)}
+        role="radio"
+        aria-checked={isSelected}
+        display="inline-flex"
+        alignItems="center"
+        justifyContent="center"
+        p={0}
+        bg="transparent"
+        border="none"
+        cursor="pointer"
+        css={{
+          '& *': { cursor: 'pointer' },
+        }}
+      >
+        <Radiomark checked={isSelected} size="sm" cursor="pointer" />
+      </Box>
     );
   },
   (prevProps, nextProps) =>
@@ -45,13 +65,27 @@ export const ClearRadio = React.memo(
       updateSinglePirate(betIndex, arenaIndex, 0);
     }, [betIndex, arenaIndex, updateSinglePirate]);
 
-    const value = `${arenaIndex}-0`;
-    const currentValue = isClearSelected ? value : '';
-
     return (
-      <RadioGroup value={currentValue} onValueChange={() => handleChange()}>
-        <Radio value={value} size="sm" colorPalette="gray" />
-      </RadioGroup>
+      <Box
+        as="button"
+        type="button"
+        onClick={handleChange}
+        onKeyDown={e => handleRadioKeyDown(e, handleChange)}
+        role="radio"
+        aria-checked={isClearSelected}
+        display="inline-flex"
+        alignItems="center"
+        justifyContent="center"
+        p={0}
+        bg="transparent"
+        border="none"
+        cursor="pointer"
+        css={{
+          '& *': { cursor: 'pointer' },
+        }}
+      >
+        <Radiomark checked={isClearSelected} size="sm" cursor="pointer" />
+      </Box>
     );
   },
   (prevProps, nextProps) =>

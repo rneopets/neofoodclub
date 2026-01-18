@@ -1,4 +1,4 @@
-import { HStack, Card, Table, Skeleton, Box } from '@chakra-ui/react';
+import { Stack, Card, Table, Skeleton, Box } from '@chakra-ui/react';
 import {
   Chart as ChartJS,
   LinearScale,
@@ -57,6 +57,8 @@ interface ScaleOptions {
 }
 
 interface ChartOptions {
+  responsive?: boolean;
+  maintainAspectRatio?: boolean;
   plugins: {
     legend: {
       display: boolean;
@@ -181,6 +183,8 @@ const PayoutCharts: React.FC = React.memo(() => {
       }
 
       const options: ChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             display: false,
@@ -271,9 +275,11 @@ const PayoutCharts: React.FC = React.memo(() => {
 
       return (
         <Table.Row>
-          <Table.Cell colSpan={4} pt={2} borderBottom="none">
-            {/* @ts-ignore */}
-            <Scatter data={chartData} options={options} />
+          <Table.Cell colSpan={4} pt={2} borderBottom="none" w="full">
+            <Box w="full" h={{ base: '220px', md: '240px' }}>
+              {/* @ts-ignore */}
+              <Scatter data={chartData} options={options} redraw />
+            </Box>
           </Table.Cell>
         </Table.Row>
       );
@@ -309,20 +315,22 @@ const PayoutCharts: React.FC = React.memo(() => {
             key={dataObj.value}
             {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}
           >
-            <Table.Cell style={{ textAlign: 'end' }}>{dataObj.value.toLocaleString()}</Table.Cell>
-            <Table.Cell style={{ textAlign: 'end' }}>
+            <Table.Cell textAlign="end" truncate>
+              {dataObj.value.toLocaleString()}
+            </Table.Cell>
+            <Table.Cell textAlign="end" truncate>
               <TextTooltip
                 text={displayAsPercent(dataObj.probability, 3)}
                 content={displayAsPercent(dataObj.probability)}
               />
             </Table.Cell>
-            <Table.Cell style={{ textAlign: 'end' }}>
+            <Table.Cell textAlign="end" truncate>
               <TextTooltip
                 text={displayAsPercent(dataObj.cumulative || 0, 3)}
                 content={displayAsPercent(dataObj.cumulative || 0)}
               />
             </Table.Cell>
-            <Table.Cell style={{ textAlign: 'end' }}>
+            <Table.Cell textAlign="end" truncate>
               <TextTooltip
                 text={displayAsPercent(dataObj.tail || 0, 3)}
                 content={displayAsPercent(dataObj.tail || 0)}
@@ -333,17 +341,17 @@ const PayoutCharts: React.FC = React.memo(() => {
       });
 
       return (
-        <Box>
-          <Card.Root boxShadow="2xl">
+        <Box w="full" flex="1" minW={0} maxW={{ base: 'full', lg: '400px' }}>
+          <Card.Root boxShadow="md" minW={0} w="full" maxW="full">
             <Card.Body p={1}>
               <Skeleton loading={!hasRoundData || !calculationsData.calculated}>
-                <Table.Root size="sm" width="auto" interactive>
+                <Table.Root size="sm" width="full" tableLayout="fixed" interactive>
                   <Table.Header>
                     <Table.Row>
-                      <Table.ColumnHeader>{title}</Table.ColumnHeader>
-                      <Table.ColumnHeader>Probability</Table.ColumnHeader>
-                      <Table.ColumnHeader>Cumulative</Table.ColumnHeader>
-                      <Table.ColumnHeader>Tail</Table.ColumnHeader>
+                      <Table.ColumnHeader truncate>{title}</Table.ColumnHeader>
+                      <Table.ColumnHeader truncate>Probability</Table.ColumnHeader>
+                      <Table.ColumnHeader truncate>Cumulative</Table.ColumnHeader>
+                      <Table.ColumnHeader truncate>Tail</Table.ColumnHeader>
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>
@@ -370,10 +378,19 @@ const PayoutCharts: React.FC = React.memo(() => {
   );
 
   return (
-    <HStack px={4} pb={4}>
+    <Stack
+      direction={{ base: 'column', lg: 'row' }}
+      px={0}
+      pb={0}
+      gap={4}
+      align="start"
+      justify="flex-start"
+      w="full"
+      minW={0}
+    >
       {oddsTable}
       {winningsTable}
-    </HStack>
+    </Stack>
   );
 });
 
