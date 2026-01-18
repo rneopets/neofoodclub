@@ -11,7 +11,7 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react';
-import React, { useCallback, useMemo, useEffect, useState, useRef } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { FaCaretDown, FaCaretUp, FaFillDrip } from 'react-icons/fa6';
 import { LuArrowLeftRight } from 'react-icons/lu';
 
@@ -108,59 +108,6 @@ PirateFA.displayName = 'PirateFA';
 const StickyTd = React.memo(
   (props: React.ComponentProps<typeof Table.Cell> & { cursor?: string }): React.ReactElement => {
     const { children, onClick, cursor = undefined, ...rest } = props;
-    const [isStuck, setIsStuck] = useState(false);
-    const tdRef = useRef<HTMLTableCellElement>(null);
-
-    useEffect(() => {
-      const element = tdRef.current;
-      if (!element) {
-        return;
-      }
-
-      const checkPosition = (): void => {
-        const rect = element.getBoundingClientRect();
-        // Element is stuck when its left position is at or very close to 0
-        setIsStuck(rect.left <= 1);
-      };
-
-      // Check on scroll using requestAnimationFrame for better performance
-      let rafId: number;
-      const handleScroll = (): void => {
-        if (rafId) {
-          window.cancelAnimationFrame(rafId);
-        }
-        rafId = window.requestAnimationFrame(checkPosition);
-      };
-
-      // Listen to all scroll events
-      window.addEventListener('scroll', handleScroll, { passive: true });
-      document.addEventListener('scroll', handleScroll, { passive: true });
-
-      // Find and listen to the scrollable container
-      let current = element.parentElement;
-      while (current) {
-        current.addEventListener('scroll', handleScroll, { passive: true });
-        current = current.parentElement;
-      }
-
-      // Initial check
-      checkPosition();
-
-      return (): void => {
-        if (rafId) {
-          window.cancelAnimationFrame(rafId);
-        }
-        window.removeEventListener('scroll', handleScroll);
-        document.removeEventListener('scroll', handleScroll);
-
-        // Remove listeners from parent elements
-        let currentCleanup = element.parentElement;
-        while (currentCleanup) {
-          currentCleanup.removeEventListener('scroll', handleScroll);
-          currentCleanup = currentCleanup.parentElement;
-        }
-      };
-    }, []);
 
     // Filter out undefined values to satisfy exactOptionalPropertyTypes
     const filteredRest = Object.fromEntries(
@@ -168,7 +115,6 @@ const StickyTd = React.memo(
     );
 
     const tdProps: React.ComponentProps<typeof Table.Cell> = {
-      ref: tdRef,
       style: {
         position: 'sticky',
         left: '0',
@@ -186,8 +132,7 @@ const StickyTd = React.memo(
         background: 'linear-gradient(to right, rgba(0,0,0,0.1), transparent)',
         pointerEvents: 'none',
         zIndex: 1,
-        opacity: isStuck ? 1 : 0,
-        transition: 'opacity 0.4s ease-in-out',
+        opacity: 1,
       },
       position: 'relative',
       ...filteredRest,
@@ -360,9 +305,11 @@ const ArenaHeaderRow = React.memo(
   ({
     arenaId,
     handleBetLineChange,
+    handleArenaTimelineClick,
   }: {
     arenaId: number;
     handleBetLineChange: (a: number, v: number) => void;
+    handleArenaTimelineClick: (arenaId: number) => void;
   }) => {
     const piratesForArena = usePiratesForArena(arenaId);
     const bigBrain = useBigBrain();
@@ -370,6 +317,10 @@ const ArenaHeaderRow = React.memo(
     const customOddsMode = useCustomOddsMode();
     const oddsTimeline = useOddsTimeline();
     const faDetails = useFaDetails();
+
+    const handleArenaTimelineClickLocal = useCallback(() => {
+      handleArenaTimelineClick(arenaId);
+    }, [handleArenaTimelineClick, arenaId]);
 
     const emptyColSpan = useMemo(() => {
       // because we have a bunch of columns that don't have a header TD tied to them
@@ -405,7 +356,15 @@ const ArenaHeaderRow = React.memo(
 
     return (
       <Table.Row>
-        <Table.Cell rowSpan={5} p={2} backgroundColor="bg.subtle">
+        <Table.Cell
+          rowSpan={5}
+          p={2}
+          backgroundColor="bg.subtle"
+          cursor="pointer"
+          onClick={handleArenaTimelineClickLocal}
+          title={`Click to view odds timeline for ${ARENA_NAMES[arenaId]}`}
+          _hover={{ bg: 'bg.emphasized' }}
+        >
           <VStack gap={1}>
             <Text fontWeight="bold">{ARENA_NAMES[arenaId]}</Text>
             <ArenaRatioDisplay arenaId={arenaId} />
@@ -922,18 +881,26 @@ const ArenaTableBody = React.memo(
   ({
     arenaId,
     handleTimelineClick,
+    handleArenaTimelineClick,
     handleBetLineChange,
   }: {
     arenaId: number;
     handleTimelineClick: (a: number, p: number) => void;
+    handleArenaTimelineClick: (arenaId: number) => void;
     handleBetLineChange: (a: number, v: number) => void;
   }) => {
     // Get all the data from the stores
     const piratesForArena = usePiratesForArena(arenaId);
 
     const headerRow = useMemo(
-      () => <ArenaHeaderRow arenaId={arenaId} handleBetLineChange={handleBetLineChange} />,
-      [arenaId, handleBetLineChange],
+      () => (
+        <ArenaHeaderRow
+          arenaId={arenaId}
+          handleBetLineChange={handleBetLineChange}
+          handleArenaTimelineClick={handleArenaTimelineClick}
+        />
+      ),
+      [arenaId, handleBetLineChange, handleArenaTimelineClick],
     );
 
     const pirateRows = useMemo(() => {
@@ -964,6 +931,7 @@ const ArenaTableBody = React.memo(
   (prevProps, nextProps) =>
     prevProps.arenaId === nextProps.arenaId &&
     prevProps.handleTimelineClick === nextProps.handleTimelineClick &&
+    prevProps.handleArenaTimelineClick === nextProps.handleArenaTimelineClick &&
     prevProps.handleBetLineChange === nextProps.handleBetLineChange,
 );
 

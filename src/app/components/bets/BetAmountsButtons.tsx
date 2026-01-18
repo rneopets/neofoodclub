@@ -1,4 +1,4 @@
-import { Button, ButtonGroup, Heading, Stack, Wrap } from '@chakra-ui/react';
+import { Button, ButtonGroup, Stack, Text, Wrap } from '@chakra-ui/react';
 import React, { useCallback } from 'react';
 import { FaFillDrip, FaInfinity } from 'react-icons/fa6';
 
@@ -119,10 +119,16 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
   return (
     <>
       <Stack>
-        <Heading size="sm" textTransform="uppercase">
+        <Text
+          fontSize="sm"
+          fontWeight="semibold"
+          letterSpacing="wide"
+          textTransform="uppercase"
+          color="fg.muted"
+        >
           Set bet amounts
-        </Heading>
-        <Wrap mt={2}>
+        </Text>
+        <Wrap mt={1}>
           <Tooltip
             content={`Sets all bet amounts to whichever is lower: your max bet (${maxBetDisplay}), or the value in the MAXBET column below + 1. This prevents you from betting more than necessary to earn 1M NP from the bet, given the current odds.`}
             openDelay={600}

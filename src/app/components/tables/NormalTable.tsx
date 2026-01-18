@@ -39,6 +39,13 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
 
   const amountOfChanges = changes?.length ?? 0;
 
+  const handleArenaTimelineClick = useCallback(
+    (arenaId: number) => {
+      openTimelineDrawer(arenaId, null);
+    },
+    [openTimelineDrawer],
+  );
+
   const handleBetLineChange = useCallback(
     (arenaIndex: number, pirateValue: number) => {
       for (let betIndex = 1; betIndex <= 10; betIndex++) {
@@ -218,10 +225,11 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
           key={`arena-${arenaId}`}
           arenaId={arenaId}
           handleTimelineClick={handleTimelineClick}
+          handleArenaTimelineClick={handleArenaTimelineClick}
           handleBetLineChange={handleBetLineChange}
         />
       )),
-    [handleBetLineChange, handleTimelineClick],
+    [handleBetLineChange, handleTimelineClick, handleArenaTimelineClick],
   );
 
   return (

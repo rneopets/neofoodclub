@@ -16,7 +16,6 @@ import * as React from 'react';
 import { List } from 'react-window';
 
 import { PIRATE_NAMES } from '../../constants';
-import { useBetManagement } from '../../hooks/useBetManagement';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
 import { useIsRoundOver } from '../../hooks/useIsRoundOver';
@@ -24,7 +23,7 @@ import { useModalReset } from '../../hooks/useModalReset';
 import { useProbabilities } from '../../hooks/useProbabilities';
 import { computeBinaryToPirates } from '../../maths';
 import { useRoundStore } from '../../stores';
-import { getMaxBet } from '../../util';
+import { calculateBetMaps, getMaxBet } from '../../util';
 
 interface AllBet {
   binary: number;
@@ -142,11 +141,10 @@ const Row = React.memo(
 
 Row.displayName = 'AllBetsRow';
 
-export const AllBetsModal: React.FC<AllBetsModalProps> = ({ isOpen, onClose }) => {
+export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, onClose }) => {
   const roundData = useRoundStore(state => state.roundData);
   const globalUseLogitModel = useRoundStore(state => state.useLogitModel);
   const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
-  const { calculateBets } = useBetManagement();
   const getPirateBgColor = useGetPirateBgColor();
 
   // Get user's max bet setting
@@ -189,13 +187,20 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = ({ isOpen, onClose }) =
       return [];
     }
 
-    // Get all possible bets (3124 combinations) using the existing calculateBets function
-    const { betOdds, betCaps } = calculateBets(
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
+    // Local calculation to avoid subscribing to bet-store changes.
+    // Odds/prob arrays in this app are 1-indexed (0 reserved for "clear").
+    const { betOdds, betCaps } = calculateBetMaps(
+      [
+        [0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4],
+      ],
+      roundData.currentOdds,
+      usedProbabilities,
+      debouncedMaxBet,
+      { includePirateCombos: false },
     );
 
     const bets: AllBet[] = [];
@@ -251,7 +256,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = ({ isOpen, onClose }) =
           return (b.er - a.er) * sortMultiplier;
       }
     });
-  }, [roundData, calculateBets, usedProbabilities, debouncedMaxBet, sortField, reverseSort]);
+  }, [roundData, usedProbabilities, debouncedMaxBet, sortField, reverseSort]);
 
   // Filter bets to only show winning bets if enabled
   const filteredBets = React.useMemo(() => {
@@ -536,4 +541,4 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = ({ isOpen, onClose }) =
       </Portal>
     </Dialog.Root>
   );
-};
+});

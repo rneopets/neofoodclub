@@ -25,7 +25,7 @@ import {
   getMaxBet,
   anyBetsExist as anyBetsExistInSet,
   shuffleArray,
-  cartesianProduct,
+  calculateBetMaps,
   sortedIndices,
 } from '../util';
 
@@ -230,62 +230,19 @@ export function useBetManagement(): {
       betOdds: Map<number, number>;
       pirateCombos: Map<number, number>;
     } => {
-      const betCaps: Map<number, number> = new Map();
-      const betOdds: Map<number, number> = new Map();
-      const pirateCombos: Map<number, number> = new Map();
-
       if (!roundData || !usedProbabilities || usedProbabilities.length === 0) {
-        return { betCaps, betOdds, pirateCombos };
+        return { betCaps: new Map(), betOdds: new Map(), pirateCombos: new Map() };
       }
 
-      const maxBet = getMaxBet(currentSelectedRound);
-
-      for (const p of cartesianProduct(...pirates)) {
-        const [a, b, c, d, e] = p;
-        const betBinary = computePiratesBinary(p);
-
-        if (betBinary === 0) {
-          continue;
-        }
-
-        const pirateA = a ?? 0;
-        const pirateB = b ?? 0;
-        const pirateC = c ?? 0;
-        const pirateD = d ?? 0;
-        const pirateE = e ?? 0;
-
-        const totalOdds =
-          (pirateA === 0 ? 1 : (roundData.currentOdds[0]?.[pirateA] ?? 1)) *
-          (pirateB === 0 ? 1 : (roundData.currentOdds[1]?.[pirateB] ?? 1)) *
-          (pirateC === 0 ? 1 : (roundData.currentOdds[2]?.[pirateC] ?? 1)) *
-          (pirateD === 0 ? 1 : (roundData.currentOdds[3]?.[pirateD] ?? 1)) *
-          (pirateE === 0 ? 1 : (roundData.currentOdds[4]?.[pirateE] ?? 1));
-
-        const winChance =
-          (pirateA === 0 ? 1 : (usedProbabilities[0]?.[pirateA] ?? 0)) *
-          (pirateB === 0 ? 1 : (usedProbabilities[1]?.[pirateB] ?? 0)) *
-          (pirateC === 0 ? 1 : (usedProbabilities[2]?.[pirateC] ?? 0)) *
-          (pirateD === 0 ? 1 : (usedProbabilities[3]?.[pirateD] ?? 0)) *
-          (pirateE === 0 ? 1 : (usedProbabilities[4]?.[pirateE] ?? 0));
-
-        if (totalOdds === 0) {
-          continue;
-        }
-
-        const betCap = Math.ceil(1_000_000 / totalOdds);
-        const winnings = Math.min(maxBet * totalOdds, 1_000_000);
-
-        betCaps.set(betBinary, betCap);
-        betOdds.set(betBinary, totalOdds);
-        if (maxBet > 0) {
-          const maxCap = Math.min(betCap, maxBet);
-          pirateCombos.set(betBinary, ((winChance * winnings) / maxCap - 1) * maxCap);
-        } else {
-          pirateCombos.set(betBinary, totalOdds * winChance);
-        }
-      }
-
-      return { betCaps, betOdds, pirateCombos };
+      return calculateBetMaps(
+        pirates,
+        roundData.currentOdds,
+        usedProbabilities,
+        getMaxBet(currentSelectedRound),
+        {
+          includePirateCombos: true,
+        },
+      );
     },
     [roundData, currentSelectedRound, usedProbabilities],
   );
