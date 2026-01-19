@@ -107,6 +107,45 @@ function runAfterNextPaint(fn: () => void): void {
   raf(() => raf(fn));
 }
 
+function useFadePresence(
+  isPresent: boolean,
+  durationMs: number,
+): {
+  mounted: boolean;
+  visible: boolean;
+  durationMs: number;
+} {
+  const [mounted, setMounted] = useState(isPresent);
+  const [visible, setVisible] = useState(isPresent);
+
+  useEffect(() => {
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (isPresent) {
+      setMounted(true);
+      if (prefersReducedMotion) {
+        setVisible(true);
+        return;
+      }
+      runAfterNextPaint(() => setVisible(true));
+      return;
+    }
+
+    setVisible(false);
+    if (prefersReducedMotion) {
+      setMounted(false);
+      return;
+    }
+    const t = window.setTimeout(() => setMounted(false), durationMs);
+    return (): void => window.clearTimeout(t);
+  }, [isPresent, durationMs]);
+
+  return { mounted, visible, durationMs };
+}
+
 const BuildSetMenu = React.memo(
   (
     {
@@ -679,6 +718,8 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
   const hasAnyBetsInCurrentSet = useHasAnyBets();
   const hasAnyBetsAnywhere = useHasAnyBetsAnywhere();
 
+  const emptyStatePresence = useFadePresence(!hasAnyBetsAnywhere, 160);
+
   const clearOrDeleteSet = useCallback(() => {
     if (betSetCount === 1) {
       // If only one set, clear it instead of deleting
@@ -995,8 +1036,20 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
           justifyContent="flex-start"
         >
           {betCards}
-          {!hasAnyBetsAnywhere ? (
-            <EmptyState.Root py={8}>
+          {emptyStatePresence.mounted ? (
+            <EmptyState.Root
+              py={8}
+              willChange="opacity, transform"
+              opacity={emptyStatePresence.visible ? 1 : 0}
+              transform={emptyStatePresence.visible ? 'translateY(0)' : 'translateY(-4px)'}
+              transition={`opacity ${emptyStatePresence.durationMs}ms ease-out, transform ${emptyStatePresence.durationMs}ms ease-out`}
+              css={{
+                '@media (prefers-reduced-motion: reduce)': {
+                  transition: 'none',
+                  transform: 'none',
+                },
+              }}
+            >
               <EmptyState.Content>
                 <EmptyState.Indicator>
                   <Stack>
