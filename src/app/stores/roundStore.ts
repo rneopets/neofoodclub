@@ -36,6 +36,13 @@ export const setToastFunction = (toastFn: typeof showToast): void => {
   showToast = toastFn;
 };
 
+const isAbortError = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+  return 'name' in error && (error as { name?: unknown }).name === 'AbortError';
+};
+
 const emptyCalculations: RoundCalculationResult = {
   calculated: false,
   legacyProbabilities: { min: [], std: [], max: [], used: [] },
@@ -203,7 +210,7 @@ export const useRoundStore = create<RoundStore>()(
 
       // Cancel any pending fetch to prevent stale data from overwriting the new round
       if (prev.fetchAbortController) {
-        prev.fetchAbortController.abort();
+        prev.fetchAbortController.abort('round_changed');
       }
 
       set({
@@ -340,20 +347,26 @@ export const useRoundStore = create<RoundStore>()(
         return false;
       }
 
+      let controller: AbortController | null = null;
       try {
         // Cancel any existing fetch
         if (currentState.fetchAbortController) {
-          currentState.fetchAbortController.abort();
+          currentState.fetchAbortController.abort('superseded');
         }
 
-        const controller = new AbortController();
-        set({ isLoading: true, error: null, fetchAbortController: controller });
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        controller = new AbortController();
+        const activeController = controller;
+        set({ isLoading: true, error: null, fetchAbortController: activeController });
+        const timeoutId = setTimeout(() => activeController.abort('timeout'), 15000);
 
-        const response = await fetch(`https://cdn.neofood.club/rounds/${selectedRound}.json`, {
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
+        let response: Response;
+        try {
+          response = await fetch(`https://cdn.neofood.club/rounds/${selectedRound}.json`, {
+            signal: activeController.signal,
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -363,6 +376,10 @@ export const useRoundStore = create<RoundStore>()(
 
         // Verify the round still matches before updating (prevent stale data)
         const verifyState = get();
+        // Also ensure this request is still the active one (prevent abort races)
+        if (!controller || verifyState.fetchAbortController !== controller) {
+          return false;
+        }
         if (data.round !== verifyState.currentSelectedRound) {
           set({ isLoading: false, fetchAbortController: null });
           return false;
@@ -383,11 +400,21 @@ export const useRoundStore = create<RoundStore>()(
 
         return false;
       } catch (error) {
-        // Only update error state if this fetch is still relevant and we're not initializing
+        // If we were aborted (superseded/timeout/navigation), treat as expected and don't log.
+        if (isAbortError(error)) {
+          const abortState = get();
+          if (controller && abortState.fetchAbortController === controller) {
+            set({ isLoading: false, fetchAbortController: null });
+          }
+          return false;
+        }
+
+        // Only update error state if this fetch is still the active one and we're not initializing
         const errorState = get();
         if (
           selectedRound === errorState.currentSelectedRound &&
-          !errorState.fetchAbortController?.signal.aborted
+          controller &&
+          errorState.fetchAbortController === controller
         ) {
           // Don't set errors during initialization - no data at first is not an error
           if (!errorState.isInitializing) {
@@ -419,7 +446,10 @@ export const useRoundStore = create<RoundStore>()(
           }
         } else {
           // Fetch was cancelled or round changed, just clean up
-          set({ isLoading: false, fetchAbortController: null });
+          // Only clean up if we are still the active request.
+          if (controller && errorState.fetchAbortController === controller) {
+            set({ isLoading: false, fetchAbortController: null });
+          }
         }
 
         console.error(`Failed to fetch round ${selectedRound}:`, error);
