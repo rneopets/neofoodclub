@@ -1,5 +1,6 @@
 import {
   Flex,
+  Box,
   Stack,
   VStack,
   HStack,
@@ -1102,57 +1103,87 @@ const BetCard = React.memo(
   }) => {
     const [editableName, setEditableName] = useState(currentName);
 
+    // Quick enter animation for newly created/cloned bet sets
+    const BET_CARD_ENTER_MS = 140;
+    const [hasEntered, setHasEntered] = useState(false);
+    useEffect(() => {
+      const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReducedMotion) {
+        setHasEntered(true);
+        return;
+      }
+
+      runAfterNextPaint(() => setHasEntered(true));
+    }, []);
+
     // Keep the editable value in sync with external updates (e.g. clearing/renaming from elsewhere)
     useEffect(() => {
       setEditableName(currentName);
     }, [cardKey, currentName]);
 
     const card = (
-      <Card.Root
-        p={2}
-        opacity={isCurrent ? 1 : 0.82}
-        cursor={isCurrent ? 'default' : 'pointer'}
-        onClick={onClick}
-        transition="all 0.2s ease-in-out"
-        bg={isCurrent ? 'bg' : 'bg.subtle'}
-        boxShadow={isCurrent ? 'md' : 'none'}
-        transform={isCurrent ? 'none' : 'scale(0.99)'}
-        {...(!isCurrent
-          ? {
-              _hover: {
-                bg: 'bg',
-                boxShadow: 'sm',
-                opacity: 1,
-                transform: 'none',
-              },
-            }
-          : {})}
-        {...(layout === 'wrap' ? { minW: '260px' } : { width: 'full' })}
+      <Box
+        willChange="opacity, transform"
+        opacity={hasEntered ? 1 : 0}
+        transform={hasEntered ? 'translateY(0)' : 'translateY(-6px)'}
+        transition={`opacity ${BET_CARD_ENTER_MS}ms ease-out, transform ${BET_CARD_ENTER_MS}ms ease-out`}
+        css={{
+          '@media (prefers-reduced-motion: reduce)': {
+            transition: 'none',
+            transform: 'none',
+          },
+        }}
       >
-        <VStack align="stretch" w="full" minW={layout === 'wrap' ? '200px' : 0} gap={2}>
-          <Editable.Root
-            as={Heading}
-            value={editableName}
-            onValueChange={(details: { value: string }) => setEditableName(details.value)}
-            onValueCommit={(details: { value: string }) => {
-              setEditableName(details.value);
-              onValueCommit(details);
-            }}
-            placeholder="Unnamed Set"
-            pointerEvents={isCurrent ? 'auto' : 'none'}
-          >
-            <Editable.Preview w="full" truncate />
-            <Editable.Input />
-          </Editable.Root>
-          <BetBadges index={cardKey} />
-          {isCurrent && (
-            <>
-              <Separator />
-              <BetCopyButtons index={cardKey} />
-            </>
-          )}
-        </VStack>
-      </Card.Root>
+        <Card.Root
+          p={2}
+          opacity={isCurrent ? 1 : 0.82}
+          cursor={isCurrent ? 'default' : 'pointer'}
+          onClick={onClick}
+          transition="all 0.2s ease-in-out"
+          bg={isCurrent ? 'bg' : 'bg.subtle'}
+          boxShadow={isCurrent ? 'md' : 'none'}
+          transform={isCurrent ? 'none' : 'scale(0.99)'}
+          {...(!isCurrent
+            ? {
+                _hover: {
+                  bg: 'bg',
+                  boxShadow: 'sm',
+                  opacity: 1,
+                  transform: 'none',
+                },
+              }
+            : {})}
+          {...(layout === 'wrap' ? { minW: '260px' } : { width: 'full' })}
+        >
+          <VStack align="stretch" w="full" minW={layout === 'wrap' ? '200px' : 0} gap={2}>
+            <Editable.Root
+              as={Heading}
+              value={editableName}
+              onValueChange={(details: { value: string }) => setEditableName(details.value)}
+              onValueCommit={(details: { value: string }) => {
+                setEditableName(details.value);
+                onValueCommit(details);
+              }}
+              placeholder="Unnamed Set"
+              pointerEvents={isCurrent ? 'auto' : 'none'}
+            >
+              <Editable.Preview w="full" truncate />
+              <Editable.Input />
+            </Editable.Root>
+            <BetBadges index={cardKey} />
+            {isCurrent && (
+              <>
+                <Separator />
+                <BetCopyButtons index={cardKey} />
+              </>
+            )}
+          </VStack>
+        </Card.Root>
+      </Box>
     );
 
     return layout === 'wrap' ? <WrapItem>{card}</WrapItem> : card;
