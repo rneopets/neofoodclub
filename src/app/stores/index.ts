@@ -7,6 +7,7 @@ import type {
 } from '../../types';
 import type { Bet, BetAmount, OddsData, ProbabilitiesData } from '../../types/bets';
 import { computePiratesBinary } from '../maths';
+import { anyBetsExist } from '../util';
 
 import { useBetStore } from './betStore';
 import { useRoundStore } from './roundStore';
@@ -43,6 +44,11 @@ export const useHasAnyBets = (): boolean =>
     Array.from(state.allBets.get(state.currentBet)?.values() ?? []).some(bet =>
       bet.some(pirate => pirate > 0),
     ),
+  );
+
+export const useHasAnyBetsAnywhere = (): boolean =>
+  useBetStore(state =>
+    Array.from(state.allBets.values()).some(betsForSet => anyBetsExist(betsForSet)),
   );
 
 // Actions

@@ -23,8 +23,9 @@ import {
   Icon,
   EmptyState,
 } from '@chakra-ui/react';
+import { keyframes } from '@emotion/react';
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
-import { FaSkullCrossbones } from 'react-icons/fa';
+import { FaArrowUp, FaSkullCrossbones } from 'react-icons/fa';
 import {
   FaMarkdown,
   FaCode,
@@ -66,6 +67,7 @@ import {
   useSetCurrentBet,
   useDeleteBetSet,
   useHasAnyBets,
+  useHasAnyBetsAnywhere,
   useRoundPirates,
   useOptimizedBetsForIndex,
   useOptimizedBetAmountsForIndex,
@@ -84,6 +86,11 @@ import {
 } from './util';
 
 import { Tooltip } from '@/components/ui/tooltip';
+
+const bounceUpAndDown = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+`;
 
 function runAfterNextPaint(fn: () => void): void {
   if (typeof window === 'undefined') {
@@ -670,6 +677,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
   const betSetCount = useBetSetCount();
   const allNames = useAllBetSetNames();
   const hasAnyBetsInCurrentSet = useHasAnyBets();
+  const hasAnyBetsAnywhere = useHasAnyBetsAnywhere();
 
   const clearOrDeleteSet = useCallback(() => {
     if (betSetCount === 1) {
@@ -763,47 +771,59 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
         }
       : {};
 
+  // The sidebar itself uses an emphasized background; ensure "surface" buttons don't
+  // blend into it when hovered/pressed (Chakra's default active bg can match).
+  const sidebarSurfaceButtonProps =
+    variant === 'sidebar'
+      ? {
+          bg: 'bg',
+          _hover: { bg: 'bg.subtle' },
+          _active: { bg: 'bg.muted' },
+        }
+      : {};
+
   const header = (
     <Stack gap={2} p={2} flexShrink={0} borderBottomWidth={variant === 'sidebar' ? '1px' : 0}>
       {variant === 'sidebar' ? (
         <VStack align="stretch" gap={2}>
-          {hasAnyBetsInCurrentSet ? (
-            <SimpleGrid columns={3} gap={2}>
-              <Button
-                onClick={newEmptySet}
-                data-testid="new-set-button"
-                size="sm"
-                variant="surface"
-                w="full"
-                justifyContent="center"
-              >
-                <FaPlus />
-                New set
-              </Button>
-              <Button
-                onClick={cloneSet}
-                data-testid="clone-set-button"
-                size="sm"
-                variant="surface"
-                w="full"
-                justifyContent="center"
-              >
-                <FaClone />
-                Clone
-              </Button>
-              <Button
-                onClick={clearBets}
-                data-testid="clear-delete-button"
-                size="sm"
-                variant="surface"
-                w="full"
-                justifyContent="center"
-              >
-                <FaTrash />
-                {betSetCount === 1 ? 'Clear' : 'Delete'}
-              </Button>
-            </SimpleGrid>
-          ) : null}
+          <SimpleGrid columns={3} gap={2}>
+            <Button
+              onClick={newEmptySet}
+              data-testid="new-set-button"
+              size="sm"
+              variant="surface"
+              w="full"
+              justifyContent="center"
+              {...sidebarSurfaceButtonProps}
+            >
+              <FaPlus />
+              New set
+            </Button>
+            <Button
+              onClick={cloneSet}
+              data-testid="clone-set-button"
+              size="sm"
+              variant="surface"
+              w="full"
+              justifyContent="center"
+              {...sidebarSurfaceButtonProps}
+            >
+              <FaClone />
+              Clone
+            </Button>
+            <Button
+              onClick={clearBets}
+              data-testid="clear-delete-button"
+              size="sm"
+              variant="surface"
+              w="full"
+              justifyContent="center"
+              {...sidebarSurfaceButtonProps}
+            >
+              <FaTrash />
+              {betSetCount === 1 ? 'Clear' : 'Delete'}
+            </Button>
+          </SimpleGrid>
 
           <SimpleGrid columns={2} gap={2}>
             <Menu.Root>
@@ -815,6 +835,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
                   variant="surface"
                   w="full"
                   justifyContent="center"
+                  {...sidebarSurfaceButtonProps}
                 >
                   <FaWandMagicSparkles />
                   Generate
@@ -872,28 +893,31 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
               variant="surface"
               w="full"
               justifyContent="center"
+              {...sidebarSurfaceButtonProps}
             />
           </SimpleGrid>
         </VStack>
       ) : (
         <Wrap>
-          {hasAnyBetsInCurrentSet ? (
-            <ButtonGroup size="sm" variant="surface">
-              <Button onClick={newEmptySet} data-testid="new-set-button">
-                <FaPlus />
-                New set
-              </Button>
+          <ButtonGroup size="sm" variant="surface">
+            <Button onClick={newEmptySet} data-testid="new-set-button">
+              <FaPlus />
+              New set
+            </Button>
 
-              <Button onClick={cloneSet} data-testid="clone-set-button">
-                <FaClone />
-                Clone
-              </Button>
-              <Button onClick={clearBets} data-testid="clear-delete-button">
-                <FaTrash />
-                {betSetCount === 1 ? 'Clear' : 'Delete'}
-              </Button>
-            </ButtonGroup>
-          ) : null}
+            <Button onClick={cloneSet} data-testid="clone-set-button">
+              <FaClone />
+              Clone
+            </Button>
+            <Button
+              onClick={clearBets}
+              data-testid="clear-delete-button"
+              disabled={betSetCount === 1 && !hasAnyBetsInCurrentSet}
+            >
+              <FaTrash />
+              {betSetCount === 1 ? 'Clear' : 'Delete'}
+            </Button>
+          </ButtonGroup>
 
           <ButtonGroup size="sm" variant="surface" attached gap={0}>
             <Menu.Root>
@@ -968,24 +992,37 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
           overflowY="auto"
           overflowX="hidden"
           p={2}
-          gap={3}
-          justifyContent={hasAnyBetsInCurrentSet ? 'flex-start' : 'center'}
+          justifyContent="flex-start"
         >
-          {hasAnyBetsInCurrentSet ? (
-            betCards
-          ) : (
-            <EmptyState.Root>
+          {betCards}
+          {!hasAnyBetsAnywhere ? (
+            <EmptyState.Root py={8}>
               <EmptyState.Content>
                 <EmptyState.Indicator>
-                  <Icon as={FaSkullCrossbones} />
+                  <Stack>
+                    <Icon
+                      as={FaArrowUp}
+                      display="inline-block"
+                      willChange="transform"
+                      animation={`${bounceUpAndDown} 1.6s ease-in-out infinite`}
+                      css={{
+                        '@media (prefers-reduced-motion: reduce)': {
+                          animation: 'none',
+                        },
+                      }}
+                    />
+                    <Icon as={FaSkullCrossbones} />
+                  </Stack>
                 </EmptyState.Indicator>
-                <EmptyState.Title>No bets created yet</EmptyState.Title>
+                <EmptyState.Title>
+                  {betSetCount > 1 ? 'These sets are empty' : 'This set is empty'}
+                </EmptyState.Title>
                 <EmptyState.Description textAlign="center">
-                  Start choosing pirates in the table, or use Generate / Build buttons above.
+                  Start by choosing pirates in the table, or use Generate / Build buttons above.
                 </EmptyState.Description>
               </EmptyState.Content>
             </EmptyState.Root>
-          )}
+          ) : null}
         </Stack>
       ) : (
         <Stack>{betCards}</Stack>
