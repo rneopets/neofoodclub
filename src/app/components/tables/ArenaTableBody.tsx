@@ -499,17 +499,6 @@ const PirateRow = React.memo(
       [fromPirateIndex],
     );
 
-    const handleSwapFromPirateChange = useCallback(
-      (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const next = parseInt(e.target.value);
-        if (next !== 0 && next === swapToPirate) {
-          return;
-        }
-        setSwapFromPirate(next);
-      },
-      [swapToPirate],
-    );
-
     const handleSwapToPirateChange = useCallback(
       (e: React.ChangeEvent<HTMLSelectElement>) => {
         const next = parseInt(e.target.value);
@@ -830,7 +819,7 @@ const PirateRow = React.memo(
                               disabledPirateValue={swapToPirate}
                               includeNoPirate={false}
                               deselectable={false}
-                              onChange={handleSwapFromPirateChange}
+                              disabled
                             />
                             <Text fontSize="2xs" color="fg.muted" mt={1} textAlign="center">
                               {swapFromBetCount} bets
