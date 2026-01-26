@@ -274,7 +274,6 @@ export default React.memo(function EditBets(): React.ReactElement {
           <Flex
             direction={{ base: 'column', lg: 'row' }}
             align={{ base: 'stretch', lg: 'stretch' }}
-            gap={4}
             px={{ base: 4, md: 5, lg: 0 }}
             w="full"
             data-testid="bets-layout"
