@@ -140,7 +140,7 @@ const PirateSelect = React.memo(
             <CustomValueText />
           </Select.Trigger>
           <Select.IndicatorGroup>
-            <Select.Indicator />
+            <Select.Indicator color="colorPalette.fg" />
           </Select.IndicatorGroup>
         </Select.Control>
         <Select.Positioner>
