@@ -719,7 +719,8 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
   const hasAnyBetsInCurrentSet = useHasAnyBets();
   const hasAnyBetsAnywhere = useHasAnyBetsAnywhere();
 
-  const emptyStatePresence = useFadePresence(!hasAnyBetsAnywhere, 160);
+  const isRoundOver = useIsRoundOver();
+  const emptyStatePresence = useFadePresence(!hasAnyBetsAnywhere && !isRoundOver, 160);
 
   const clearOrDeleteSet = useCallback(() => {
     if (betSetCount === 1) {
