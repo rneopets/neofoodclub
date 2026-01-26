@@ -32,6 +32,7 @@ CustomValueText.displayName = 'CustomValueText';
 interface PirateSelectProps {
   arenaId: number;
   pirateValue: number;
+  disabledPirateValue?: number;
   includeNoPirate?: boolean;
   onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   [key: string]: unknown;
@@ -39,7 +40,14 @@ interface PirateSelectProps {
 
 const PirateSelect = React.memo(
   (props: PirateSelectProps): React.ReactElement => {
-    const { arenaId, pirateValue, includeNoPirate = true, onChange, ...rest } = props;
+    const {
+      arenaId,
+      pirateValue,
+      disabledPirateValue,
+      includeNoPirate = true,
+      onChange,
+      ...rest
+    } = props;
     const getPirateBgColor = useGetPirateBgColor();
 
     const openingOdds = useRoundOpeningOdds();
@@ -57,14 +65,18 @@ const PirateSelect = React.memo(
 
       const items = [
         ...(includeNoPirate ? [{ label: '[no pirate]', value: '0' }] : []),
-        ...pirates.map((pirateId: number, pirateIndex: number) => ({
-          label: PIRATE_NAMES.get(pirateId) || '',
-          value: String(pirateIndex + 1),
-        })),
+        ...pirates.map((pirateId: number, pirateIndex: number) => {
+          const valueNum = pirateIndex + 1;
+          return {
+            label: PIRATE_NAMES.get(pirateId) || '',
+            value: String(valueNum),
+            disabled: disabledPirateValue !== 0 && disabledPirateValue === valueNum,
+          };
+        }),
       ];
 
       return createListCollection({ items });
-    }, [pirates, includeNoPirate]);
+    }, [pirates, includeNoPirate, disabledPirateValue]);
 
     const handleValueChange = useMemo(() => {
       if (!onChange) {
@@ -75,13 +87,24 @@ const PirateSelect = React.memo(
         // If value is empty array (deselected) or contains "0", treat as "0"
         const value =
           details.value.length === 0 || details.value[0] === '0' ? '0' : details.value[0];
+
+        // Robustness: even if the UI allows clicking a disabled option, don't propagate it.
+        if (
+          disabledPirateValue &&
+          disabledPirateValue !== 0 &&
+          value === String(disabledPirateValue) &&
+          pirateValue !== disabledPirateValue
+        ) {
+          return;
+        }
+
         // Create a synthetic event to match the expected onChange signature
         const syntheticEvent = {
           target: { value },
         } as React.ChangeEvent<HTMLSelectElement>;
         onChange(syntheticEvent);
       };
-    }, [onChange]);
+    }, [onChange, disabledPirateValue, pirateValue]);
 
     if (!pirates) {
       return (
@@ -122,8 +145,9 @@ const PirateSelect = React.memo(
         </Select.Control>
         <Select.Positioner>
           <Select.Content>
-            {collection.items.map((item: { value: string; label: string }) => {
+            {collection.items.map((item: { value: string; label: string; disabled?: boolean }) => {
               const isNoPirate = item.value === '0';
+              const isDisabled = item.disabled === true;
               const pirateValueNum = item.value === '0' ? null : parseInt(item.value);
               const itemOpeningOdds =
                 pirateValueNum !== null ? openingOdds[arenaId]?.[pirateValueNum] : undefined;
@@ -135,6 +159,7 @@ const PirateSelect = React.memo(
                 <Select.Item
                   item={item}
                   key={item.value}
+                  disabled={isDisabled}
                   {...(itemBgColor && { layerStyle: 'fill.subtle', colorPalette: itemBgColor })}
                 >
                   <Select.ItemText>
@@ -158,6 +183,8 @@ const PirateSelect = React.memo(
   (prevProps, nextProps) =>
     prevProps.arenaId === nextProps.arenaId &&
     prevProps.pirateValue === nextProps.pirateValue &&
+    prevProps.includeNoPirate === nextProps.includeNoPirate &&
+    prevProps.disabledPirateValue === nextProps.disabledPirateValue &&
     prevProps.onChange === nextProps.onChange,
 );
 
