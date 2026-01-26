@@ -118,7 +118,10 @@ export const useBetStore = create<BetStore>()(
 
         let newCurrentBet = state.currentBet;
         if (state.currentBet === index) {
-          newCurrentBet = Array.from(newBets.keys())[0] ?? 0;
+          const remainingKeys = Array.from(newBets.keys()).sort((a, b) => a - b);
+          const prevKey = remainingKeys.filter(k => k < index).at(-1);
+          const nextKey = remainingKeys.find(k => k > index);
+          newCurrentBet = prevKey ?? nextKey ?? remainingKeys[0] ?? 0;
         }
 
         return {
