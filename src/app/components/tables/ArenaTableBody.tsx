@@ -499,13 +499,27 @@ const PirateRow = React.memo(
       [fromPirateIndex],
     );
 
-    const handleSwapFromPirateChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-      setSwapFromPirate(parseInt(e.target.value));
-    }, []);
+    const handleSwapFromPirateChange = useCallback(
+      (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const next = parseInt(e.target.value);
+        if (next !== 0 && next === swapToPirate) {
+          return;
+        }
+        setSwapFromPirate(next);
+      },
+      [swapToPirate],
+    );
 
-    const handleSwapToPirateChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-      setSwapToPirate(parseInt(e.target.value));
-    }, []);
+    const handleSwapToPirateChange = useCallback(
+      (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const next = parseInt(e.target.value);
+        if (next !== 0 && next === swapFromPirate) {
+          return;
+        }
+        setSwapToPirate(next);
+      },
+      [swapFromPirate],
+    );
 
     const handleCancelSwap = useCallback(() => {
       setSwapOpen(false);
@@ -813,6 +827,7 @@ const PirateRow = React.memo(
                             <PirateSelect
                               arenaId={arenaId}
                               pirateValue={swapFromPirate}
+                              disabledPirateValue={swapToPirate}
                               includeNoPirate={false}
                               deselectable={false}
                               onChange={handleSwapFromPirateChange}
@@ -828,6 +843,7 @@ const PirateRow = React.memo(
                             <PirateSelect
                               arenaId={arenaId}
                               pirateValue={swapToPirate}
+                              disabledPirateValue={swapFromPirate}
                               includeNoPirate={false}
                               onChange={handleSwapToPirateChange}
                             />
