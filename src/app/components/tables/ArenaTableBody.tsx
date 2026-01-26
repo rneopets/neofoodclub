@@ -800,7 +800,7 @@ const PirateRow = React.memo(
                           Swap pirates
                         </Text>
                         <Text fontSize="xs" color="fg.muted" textAlign="center">
-                          Swaps the selected pirates across all bets in {ARENA_NAMES[arenaId]}.
+                          Swaps the two selected pirates in all bets for {ARENA_NAMES[arenaId]}.
                         </Text>
                         <Box
                           display="flex"
@@ -810,9 +810,6 @@ const PirateRow = React.memo(
                           flexWrap="wrap"
                         >
                           <Box>
-                            <Text fontSize="xs" color="fg.muted" mb={1} textAlign="center">
-                              From
-                            </Text>
                             <PirateSelect
                               arenaId={arenaId}
                               pirateValue={swapFromPirate}
@@ -828,9 +825,6 @@ const PirateRow = React.memo(
                             <LuArrowLeftRight />
                           </Icon>
                           <Box>
-                            <Text fontSize="xs" color="fg.muted" mb={1} textAlign="center">
-                              To
-                            </Text>
                             <PirateSelect
                               arenaId={arenaId}
                               pirateValue={swapToPirate}
