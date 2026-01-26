@@ -157,7 +157,7 @@ export default React.memo(function EditBets(): React.ReactElement {
 
     let cancelled = false;
     let idleId: number | null = null;
-    let timeoutId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const run = (): void => {
       if (cancelled) {
