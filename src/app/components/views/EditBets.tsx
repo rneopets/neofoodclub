@@ -9,6 +9,8 @@ import {
   ScrollArea,
   Text,
   Portal,
+  Accordion,
+  VStack,
 } from '@chakra-ui/react';
 import React, {
   useCallback,
@@ -26,6 +28,7 @@ import BetFunctions from '../../BetFunctions';
 import { useRoundStore, useViewMode, useTableMode, useHasAnyBets } from '../../stores';
 import DropDownTable from '../tables/DropDownTable';
 import NormalTable from '../tables/NormalTable';
+import ColorModeToggle from '../TableSettings/ColorModeToggle';
 import CopyDomainToggle from '../TableSettings/CopyDomainToggle';
 import Extras from '../TableSettings/Extras';
 import LogitModelToggle from '../TableSettings/LogitModelToggle';
@@ -233,41 +236,42 @@ export default React.memo(function EditBets(): React.ReactElement {
               bg={'bg'}
               boxShadow={shadowValue}
               borderRadius={{ base: 'md', lg: 0 }}
+              overflow="visible"
             >
-              {/* Mobile Layout (will be hidden on md and larger screens) */}
-              <Flex direction="column" px={4} py={1} display={{ base: 'flex', md: 'none' }}>
-                <Box mb={2}>
-                  <TableModes />
-                </Box>
+              <Accordion.Root collapsible variant="subtle" px={4} py={2}>
+                <Accordion.Item value="settings">
+                  <Accordion.ItemTrigger
+                    transition="all 0.2s ease-in-out"
+                    _hover={{
+                      bg: 'bg.emphasized',
+                      borderRadius: 'md',
+                    }}
+                  >
+                    <HStack gap={2} flex="1">
+                      <FaGear size={14} />
+                      <Text fontSize="sm" fontWeight="semibold">
+                        Settings
+                      </Text>
+                    </HStack>
+                    <Accordion.ItemIndicator />
+                  </Accordion.ItemTrigger>
+                  <Accordion.ItemContent overflow="visible">
+                    <Accordion.ItemBody>
+                      <VStack gap={2} align="stretch" width="100%">
+                        <TableModes />
 
-                <Box mb={2}>
-                  <LogitModelToggle />
-                </Box>
+                        <LogitModelToggle />
 
-                <Box mb={2}>
-                  <CopyDomainToggle />
-                </Box>
+                        <CopyDomainToggle />
 
-                <Box>
-                  <Extras />
-                </Box>
-              </Flex>
+                        <Extras />
 
-              {/* Desktop Layout (will be hidden on smaller than md screens) */}
-              <Flex px={5} py={2} display={{ base: 'none', md: 'flex' }} align="center" gap={4}>
-                <HStack gap={2} color="fg.muted">
-                  <FaGear size={14} />
-                  <Text fontSize="sm" fontWeight="semibold">
-                    View
-                  </Text>
-                </HStack>
-                <HStack gap={2}>
-                  <TableModes />
-                  <LogitModelToggle />
-                  <CopyDomainToggle />
-                  <Extras />
-                </HStack>
-              </Flex>
+                        <ColorModeToggle />
+                      </VStack>
+                    </Accordion.ItemBody>
+                  </Accordion.ItemContent>
+                </Accordion.Item>
+              </Accordion.Root>
             </Box>
           </Box>
 

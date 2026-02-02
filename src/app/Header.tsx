@@ -12,7 +12,6 @@ import {
   VStack,
   BoxProps,
   ButtonProps,
-  IconButton,
   Show,
   AbsoluteCenter,
   Group,
@@ -20,7 +19,7 @@ import {
 } from '@chakra-ui/react';
 import { addYears, differenceInMilliseconds } from 'date-fns';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { FaRotate, FaClockRotateLeft, FaPlay, FaMoon, FaSun } from 'react-icons/fa6';
+import { FaRotate, FaClockRotateLeft, FaPlay } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
 import { useColorMode } from '../components/ui/color-mode';
@@ -534,30 +533,6 @@ const TitleHeading: React.FC<TitleHeadingProps> = props => {
   );
 };
 
-const ColorModeToggle: React.FC = () => {
-  const { colorMode, setColorMode } = useColorMode();
-  const cookies = useMemo(() => new Cookies(), []);
-
-  const toggleColorMode = useCallback((): void => {
-    const newMode = colorMode === 'light' ? 'dark' : 'light';
-    setColorMode(newMode);
-    cookies.set('colorMode', newMode);
-  }, [colorMode, setColorMode, cookies]);
-
-  return (
-    <IconButton
-      aria-label="Toggle color mode"
-      onClick={toggleColorMode}
-      variant="ghost"
-      size="md"
-      data-testid="color-mode-toggle"
-      title={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
-    >
-      {colorMode === 'light' ? <FaMoon /> : <FaSun />}
-    </IconButton>
-  );
-};
-
 const HeaderContent: React.FC = () => {
   const [isGlowing, setIsGlowing] = useState<boolean>(false);
   const prevTimestampRef = useRef<string | undefined>(undefined);
@@ -616,7 +591,6 @@ const HeaderContent: React.FC = () => {
           </HStack>
         </GlowCard>
         <Spacer display={{ base: 'none', md: 'block' }} />
-        <ColorModeToggle />
       </HStack>
     </>
   );

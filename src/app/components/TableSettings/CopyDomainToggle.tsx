@@ -1,4 +1,3 @@
-import { Box } from '@chakra-ui/react';
 import { memo, useMemo, useCallback } from 'react';
 import { FaGlobe } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
@@ -6,7 +5,6 @@ import Cookies from 'universal-cookie';
 import { useUseWebDomain, useSetUseWebDomain } from '../../stores';
 
 import MobileSwitchBox from './MobileSwitchBox';
-import ToolbarButton from './ToolbarButton';
 
 const CopyDomainToggle = memo(() => {
   const useWebDomain = useUseWebDomain();
@@ -23,30 +21,14 @@ const CopyDomainToggle = memo(() => {
   const tooltipLabel = 'Copy Domain With Bets';
 
   return (
-    <>
-      {/* Mobile view */}
-      <Box display={{ base: 'block', md: 'none' }}>
-        <MobileSwitchBox
-          icon={FaGlobe}
-          label={tooltipLabel}
-          colorPalette="blue"
-          checked={useWebDomain ?? false}
-          onChange={handleChange}
-          tooltipText={tooltipLabel}
-        />
-      </Box>
-
-      {/* Desktop view */}
-      <Box display={{ base: 'none', md: 'block' }}>
-        <ToolbarButton
-          icon={FaGlobe}
-          colorPalette="blue"
-          isActive={useWebDomain ?? false}
-          onChange={handleChange}
-          tooltipLabel={tooltipLabel}
-        />
-      </Box>
-    </>
+    <MobileSwitchBox
+      icon={FaGlobe}
+      label={tooltipLabel}
+      colorPalette="blue"
+      checked={useWebDomain ?? false}
+      onChange={handleChange}
+      tooltipText={tooltipLabel}
+    />
   );
 });
 

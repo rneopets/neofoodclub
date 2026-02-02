@@ -1,4 +1,4 @@
-import { HStack, VStack } from '@chakra-ui/react';
+import { VStack } from '@chakra-ui/react';
 import { memo, useCallback, useMemo } from 'react';
 import { FaSliders, FaBrain, FaTimeline, FaCookieBite } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
@@ -16,7 +16,6 @@ import {
 } from '../../stores';
 
 import MobileSwitchBox from './MobileSwitchBox';
-import ToolbarButton from './ToolbarButton';
 
 const Extras = memo(() => {
   const bigBrain = useBigBrain();
@@ -64,94 +63,49 @@ const Extras = memo(() => {
   }, [customOddsMode, cookies, toggleCustomOddsMode]);
 
   return (
-    <>
-      {/* Mobile view */}
-      <VStack gap={2} align="stretch" width="100%" display={{ base: 'flex', md: 'none' }}>
+    <VStack gap={2} align="stretch" width="100%">
+      <MobileSwitchBox
+        icon={FaBrain}
+        label="Big Brain Mode"
+        colorPalette="pink"
+        checked={bigBrain}
+        onChange={handleBigBrainChange}
+      />
+
+      {isBigBrainAndNormalMode && (
         <MobileSwitchBox
-          icon={FaBrain}
-          label="Big Brain Mode"
-          colorPalette="pink"
-          checked={bigBrain}
-          onChange={handleBigBrainChange}
+          icon={FaTimeline}
+          label="Odds Timeline"
+          colorPalette="purple"
+          checked={oddsTimeline}
+          onChange={handleOddsTimelineChange}
+          disabled={!isBigBrainAndNormalMode}
+          tooltipText="Odds Timeline"
         />
-
-        {isBigBrainAndNormalMode && (
-          <MobileSwitchBox
-            icon={FaTimeline}
-            label="Odds Timeline"
-            colorPalette="purple"
-            checked={oddsTimeline}
-            onChange={handleOddsTimelineChange}
-            disabled={!isBigBrainAndNormalMode}
-            tooltipText="Odds Timeline"
-          />
-        )}
-        {isBigBrainAndNormalMode && (
-          <MobileSwitchBox
-            icon={FaCookieBite}
-            label="FA Details"
-            colorPalette="orange"
-            checked={faDetails}
-            onChange={handleFaDetailsChange}
-            disabled={!isBigBrainAndNormalMode}
-            tooltipText="FA Details"
-          />
-        )}
-        {isBigBrainAndNormalMode && (
-          <MobileSwitchBox
-            icon={FaSliders}
-            label="Custom Probs/Odds"
-            colorPalette="cyan"
-            checked={customOddsMode}
-            onChange={handleCustomOddsModeChange}
-            disabled={!isBigBrainAndNormalMode}
-            tooltipText="Custom Probs/Odds"
-          />
-        )}
-      </VStack>
-
-      {/* Desktop view */}
-      <HStack display={{ base: 'none', md: 'flex' }} gap={1}>
-        <ToolbarButton
-          icon={FaBrain}
-          colorPalette="pink"
-          isActive={bigBrain}
-          onChange={handleBigBrainChange}
-          tooltipLabel="Big Brain Mode"
+      )}
+      {isBigBrainAndNormalMode && (
+        <MobileSwitchBox
+          icon={FaCookieBite}
+          label="FA Details"
+          colorPalette="orange"
+          checked={faDetails}
+          onChange={handleFaDetailsChange}
+          disabled={!isBigBrainAndNormalMode}
+          tooltipText="FA Details"
         />
-
-        {isNormalMode && (
-          <ToolbarButton
-            icon={FaTimeline}
-            colorPalette="purple"
-            isActive={oddsTimeline}
-            onChange={handleOddsTimelineChange}
-            disabled={!isBigBrainAndNormalMode}
-            tooltipLabel="Odds Timeline"
-          />
-        )}
-        {isNormalMode && (
-          <ToolbarButton
-            icon={FaCookieBite}
-            colorPalette="orange"
-            isActive={faDetails}
-            onChange={handleFaDetailsChange}
-            disabled={!isBigBrainAndNormalMode}
-            tooltipLabel="FA Details"
-          />
-        )}
-        {isNormalMode && (
-          <ToolbarButton
-            icon={FaSliders}
-            colorPalette="cyan"
-            isActive={customOddsMode}
-            onChange={handleCustomOddsModeChange}
-            disabled={!isBigBrainAndNormalMode}
-            tooltipLabel="Custom Probs/Odds"
-          />
-        )}
-      </HStack>
-    </>
+      )}
+      {isBigBrainAndNormalMode && (
+        <MobileSwitchBox
+          icon={FaSliders}
+          label="Custom Probs/Odds"
+          colorPalette="cyan"
+          checked={customOddsMode}
+          onChange={handleCustomOddsModeChange}
+          disabled={!isBigBrainAndNormalMode}
+          tooltipText="Custom Probs/Odds"
+        />
+      )}
+    </VStack>
   );
 });
 
