@@ -210,7 +210,7 @@ const CurrentRoundInfo: React.FC = React.memo(() => {
   ) : null;
 
   return (
-    <VStack separator={<Separator />} gap={1}>
+    <VStack separator={<Separator width="100%" />} gap={1}>
       <HStack>
         <Tooltip content="Last Update">
           <FaRotate />
