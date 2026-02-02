@@ -1,4 +1,4 @@
-import { VStack } from '@chakra-ui/react';
+import { Box, VStack } from '@chakra-ui/react';
 import { memo, useCallback, useMemo } from 'react';
 import { FaSliders, FaBrain, FaTimeline, FaCookieBite } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
@@ -73,37 +73,43 @@ const Extras = memo(() => {
       />
 
       {isBigBrainAndNormalMode && (
-        <SettingsSwitch
-          icon={FaTimeline}
-          label="Odds Timeline"
-          colorPalette="purple"
-          checked={oddsTimeline}
-          onChange={handleOddsTimelineChange}
-          disabled={!isBigBrainAndNormalMode}
-          tooltipText="Odds Timeline"
-        />
-      )}
-      {isBigBrainAndNormalMode && (
-        <SettingsSwitch
-          icon={FaCookieBite}
-          label="FA Details"
-          colorPalette="orange"
-          checked={faDetails}
-          onChange={handleFaDetailsChange}
-          disabled={!isBigBrainAndNormalMode}
-          tooltipText="FA Details"
-        />
-      )}
-      {isBigBrainAndNormalMode && (
-        <SettingsSwitch
-          icon={FaSliders}
-          label="Custom Probs/Odds"
-          colorPalette="cyan"
-          checked={customOddsMode}
-          onChange={handleCustomOddsModeChange}
-          disabled={!isBigBrainAndNormalMode}
-          tooltipText="Custom Probs/Odds"
-        />
+        <>
+          <Box pl={8}>
+            <SettingsSwitch
+              icon={FaTimeline}
+              label="Odds Timeline"
+              colorPalette="purple"
+              checked={oddsTimeline}
+              onChange={handleOddsTimelineChange}
+              disabled={!isBigBrainAndNormalMode}
+              tooltipText="Odds Timeline"
+            />
+          </Box>
+
+          <Box pl={8}>
+            <SettingsSwitch
+              icon={FaCookieBite}
+              label="FA Details"
+              colorPalette="orange"
+              checked={faDetails}
+              onChange={handleFaDetailsChange}
+              disabled={!isBigBrainAndNormalMode}
+              tooltipText="FA Details"
+            />
+          </Box>
+
+          <Box pl={8}>
+            <SettingsSwitch
+              icon={FaSliders}
+              label="Custom Probs/Odds"
+              colorPalette="cyan"
+              checked={customOddsMode}
+              onChange={handleCustomOddsModeChange}
+              disabled={!isBigBrainAndNormalMode}
+              tooltipText="Custom Probs/Odds"
+            />
+          </Box>
+        </>
       )}
     </VStack>
   );
