@@ -572,21 +572,34 @@ const HeaderContent: React.FC = () => {
 
   return (
     <>
-      <HStack p={4} gap={4}>
+      <HStack p={4} gap={{ base: 1.5, md: 4 }} alignItems="center">
         <TitleHeading />
         <Spacer display={{ base: 'none', md: 'block' }} />
-        <GlowCard p={2} maxW="lg" animate={isGlowing} mx="auto">
-          <HStack gap={2}>
-            <VStack gap={1} minW="170px" maxW="170px">
+        <GlowCard
+          p={{ base: 1.5, md: 2 }}
+          maxW={{ base: '100%', sm: 'lg' }}
+          animate={isGlowing}
+          mx="auto"
+          flexShrink={1}
+        >
+          <HStack gap={{ base: 1, md: 2 }} alignItems="center" flexWrap="nowrap">
+            <VStack gap={1} w="170px" flexShrink={0}>
               <RoundInput />
               <MaxBetInput />
             </VStack>
-            <Show when={hasValidData}>
-              <CurrentRoundProgress />
-            </Show>
+            <Box display={{ base: 'none', md: 'block' }}>
+              <Show when={hasValidData}>
+                <CurrentRoundProgress />
+              </Show>
+            </Box>
 
-            <Show when={hasValidData || error} fallback={<SkeletonText minW="140px" />}>
-              <RoundInfo />
+            <Show
+              when={hasValidData || error}
+              fallback={<SkeletonText minW={{ base: '100px', md: '140px' }} />}
+            >
+              <Box flexShrink={1} minW={0} pl={1}>
+                <RoundInfo />
+              </Box>
             </Show>
           </HStack>
         </GlowCard>
