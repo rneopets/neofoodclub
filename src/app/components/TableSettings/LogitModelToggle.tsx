@@ -4,7 +4,7 @@ import Cookies from 'universal-cookie';
 
 import { useLogitModelSetting, useToggleUseLogitModel, useTableMode } from '../../stores';
 
-import MobileSwitchBox from './MobileSwitchBox';
+import SettingsSwitch from './SettingsSwitch';
 
 const LogitModelToggle = memo(() => {
   const useLogitModel = useLogitModelSetting();
@@ -25,7 +25,7 @@ const LogitModelToggle = memo(() => {
   }
 
   return (
-    <MobileSwitchBox
+    <SettingsSwitch
       icon={FaVial}
       label="Experimental Model"
       colorPalette="green"

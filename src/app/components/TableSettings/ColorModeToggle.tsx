@@ -2,7 +2,7 @@ import { ChangeEvent, MouseEvent, memo, useMemo, useCallback } from 'react';
 import { FaMoon, FaSun } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
-import MobileSwitchBox from './MobileSwitchBox';
+import SettingsSwitch from './SettingsSwitch';
 
 import { useColorMode } from '@/components/ui/color-mode';
 
@@ -22,7 +22,7 @@ const ColorModeToggle = memo(() => {
   const isDarkMode = colorMode === 'dark';
 
   return (
-    <MobileSwitchBox
+    <SettingsSwitch
       icon={!isDarkMode ? FaSun : FaMoon}
       label="Dark Mode"
       colorPalette="yellow"

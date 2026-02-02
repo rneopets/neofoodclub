@@ -12,7 +12,7 @@ interface SwitchBoxProps {
   tooltipText?: string;
 }
 
-const MobileSwitchBox: React.FC<SwitchBoxProps> = ({
+const SettingsSwitch: React.FC<SwitchBoxProps> = ({
   icon,
   label,
   colorPalette,
@@ -34,4 +34,4 @@ const MobileSwitchBox: React.FC<SwitchBoxProps> = ({
   return <SettingsRow {...settingsRowProps} />;
 };
 
-export default MobileSwitchBox;
+export default SettingsSwitch;
