@@ -724,8 +724,8 @@ const OverallTimelineView = React.memo(
                       </Timeline.Indicator>
                     </Timeline.Connector>
                     <Timeline.Content>
-                      <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
-                        <Box flex="1">
+                      <Flex flex="1" gap="4" alignItems="flex-start" flexWrap="wrap">
+                        <Box flex="1" minW={0}>
                           <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
                             {event.title}
                           </Timeline.Title>
@@ -761,10 +761,10 @@ const OverallTimelineView = React.memo(
                         </Box>
                         <VStack
                           gap={1}
-                          minH="100%"
                           align="flex-end"
-                          justify="flex-end"
-                          alignItems="center"
+                          alignSelf="flex-start"
+                          textAlign="right"
+                          minW="max-content"
                         >
                           <Text fontSize="sm" color="fg.muted" fontStyle="italic">
                             <DateFormatter
@@ -1099,8 +1099,8 @@ const ArenaTimelineView = React.memo(
                         </Timeline.Indicator>
                       </Timeline.Connector>
                       <Timeline.Content>
-                        <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
-                          <Box flex="1">
+                        <Flex flex="1" gap="4" alignItems="flex-start" flexWrap="wrap">
+                          <Box flex="1" minW={0}>
                             <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
                               {event.title}
                             </Timeline.Title>
@@ -1131,10 +1131,10 @@ const ArenaTimelineView = React.memo(
                           </Box>
                           <VStack
                             gap={1}
-                            minH="100%"
                             align="flex-end"
-                            justify="flex-end"
-                            alignItems="center"
+                            alignSelf="flex-start"
+                            textAlign="right"
+                            minW="max-content"
                           >
                             <Text fontSize="sm" color="fg.muted" fontStyle="italic">
                               <DateFormatter
@@ -1349,7 +1349,7 @@ const PirateTimelineView = React.memo(
                       </Timeline.Indicator>
                     </Timeline.Connector>
                     <Timeline.Content>
-                      <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
+                      <Flex flex="1" gap="4" alignItems="flex-start" flexWrap="wrap">
                         <Box>
                           <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
                             {event.title}
@@ -1361,10 +1361,10 @@ const PirateTimelineView = React.memo(
                         <Spacer />
                         <VStack
                           gap={1}
-                          minH="100%"
                           align="flex-end"
-                          justify="flex-end"
-                          alignItems="center"
+                          alignSelf="flex-start"
+                          textAlign="right"
+                          minW="max-content"
                         >
                           <Text fontSize="sm" color="fg.muted" fontStyle="italic">
                             <DateFormatter
