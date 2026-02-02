@@ -1,4 +1,4 @@
-import { HStack, SegmentGroup } from '@chakra-ui/react';
+import { HStack, SegmentGroup, Text, Spacer, Box } from '@chakra-ui/react';
 import React, { useCallback, useMemo, useRef } from 'react';
 import { FaSquareCaretDown } from 'react-icons/fa6';
 import { LuTable } from 'react-icons/lu';
@@ -61,30 +61,26 @@ const TableModes = (): React.ReactElement => {
   );
 
   return (
-    <>
-      {/* Mobile view */}
-      <SegmentGroup.Root
-        {...sharedProps}
-        width="100%"
-        mb={2}
-        display={{ base: 'flex', md: 'none' }}
-        data-testid="table-mode-mobile-segmented-control"
-      >
-        <SegmentGroup.Indicator />
-        <SegmentGroup.Items items={options} />
-      </SegmentGroup.Root>
-
-      {/* Desktop view */}
-      <SegmentGroup.Root
-        {...sharedProps}
-        size="sm"
-        display={{ base: 'none', md: 'flex' }}
-        data-testid="table-mode-desktop-segmented-control"
-      >
-        <SegmentGroup.Indicator />
-        <SegmentGroup.Items items={options} />
-      </SegmentGroup.Root>
-    </>
+    <HStack
+      display="flex"
+      width="100%"
+      layerStyle="fill.surface"
+      px="2"
+      py="2"
+      rounded="l1"
+      colorPalette="gray"
+      mb={2}
+    >
+      <LuTable />
+      <Text>View Mode</Text>
+      <Spacer />
+      <Box flexShrink={0}>
+        <SegmentGroup.Root {...sharedProps} size="sm" data-testid="table-mode-segmented-control">
+          <SegmentGroup.Indicator />
+          <SegmentGroup.Items items={options} />
+        </SegmentGroup.Root>
+      </Box>
+    </HStack>
   );
 };
 
