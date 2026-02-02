@@ -23,6 +23,7 @@ import React, {
   useTransition,
 } from 'react';
 import { FaPenToSquare, FaGear } from 'react-icons/fa6';
+import Cookies from 'universal-cookie';
 
 import BetFunctions from '../../BetFunctions';
 import { useRoundStore, useViewMode, useTableMode, useHasAnyBets } from '../../stores';
@@ -126,6 +127,12 @@ export default React.memo(function EditBets(): React.ReactElement {
   const setViewMode = useRoundStore(state => state.setViewMode);
   const [isPending, startTransition] = useTransition();
   const [isEditorPrefetched, setIsEditorPrefetched] = useState(false);
+
+  // Accordion state persistence with cookies
+  const cookies = useMemo(() => new Cookies(), []);
+  const [accordionValue, setAccordionValue] = useState<string[]>(() => {
+    return cookies.get('settingsAccordionExpanded') ? ['settings'] : [];
+  });
 
   const viewBetAmountsContainerRef = useRef<HTMLDivElement>(null);
   const editBetAmountsContainerRef = useRef<HTMLDivElement>(null);
@@ -238,7 +245,17 @@ export default React.memo(function EditBets(): React.ReactElement {
               borderRadius={{ base: 'md', lg: 0 }}
               overflow="visible"
             >
-              <Accordion.Root collapsible variant="subtle" px={4} py={2}>
+              <Accordion.Root
+                collapsible
+                variant="subtle"
+                px={4}
+                py={2}
+                value={accordionValue}
+                onValueChange={details => {
+                  setAccordionValue(details.value);
+                  cookies.set('settingsAccordionExpanded', details.value.includes('settings'));
+                }}
+              >
                 <Accordion.Item value="settings">
                   <Accordion.ItemTrigger
                     transition="all 0.2s ease-in-out"
