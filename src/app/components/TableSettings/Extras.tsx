@@ -15,7 +15,7 @@ import {
   useToggleCustomOddsMode,
 } from '../../stores';
 
-import MobileSwitchBox from './MobileSwitchBox';
+import SettingsSwitch from './SettingsSwitch';
 
 const Extras = memo(() => {
   const bigBrain = useBigBrain();
@@ -64,7 +64,7 @@ const Extras = memo(() => {
 
   return (
     <VStack gap={2} align="stretch" width="100%">
-      <MobileSwitchBox
+      <SettingsSwitch
         icon={FaBrain}
         label="Big Brain Mode"
         colorPalette="pink"
@@ -73,7 +73,7 @@ const Extras = memo(() => {
       />
 
       {isBigBrainAndNormalMode && (
-        <MobileSwitchBox
+        <SettingsSwitch
           icon={FaTimeline}
           label="Odds Timeline"
           colorPalette="purple"
@@ -84,7 +84,7 @@ const Extras = memo(() => {
         />
       )}
       {isBigBrainAndNormalMode && (
-        <MobileSwitchBox
+        <SettingsSwitch
           icon={FaCookieBite}
           label="FA Details"
           colorPalette="orange"
@@ -95,7 +95,7 @@ const Extras = memo(() => {
         />
       )}
       {isBigBrainAndNormalMode && (
-        <MobileSwitchBox
+        <SettingsSwitch
           icon={FaSliders}
           label="Custom Probs/Odds"
           colorPalette="cyan"

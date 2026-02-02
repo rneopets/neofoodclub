@@ -4,7 +4,7 @@ import Cookies from 'universal-cookie';
 
 import { useUseWebDomain, useSetUseWebDomain } from '../../stores';
 
-import MobileSwitchBox from './MobileSwitchBox';
+import SettingsSwitch from './SettingsSwitch';
 
 const CopyDomainToggle = memo(() => {
   const useWebDomain = useUseWebDomain();
@@ -21,7 +21,7 @@ const CopyDomainToggle = memo(() => {
   const tooltipLabel = 'Copy Domain With Bets';
 
   return (
-    <MobileSwitchBox
+    <SettingsSwitch
       icon={FaGlobe}
       label={tooltipLabel}
       colorPalette="blue"
