@@ -236,10 +236,9 @@ export default React.memo(function EditBets(): React.ReactElement {
       {!viewMode && (
         <>
           {/* View / table mode controls (above sidebar + content) */}
-          <Box w="full" px={{ base: 4, md: 5, lg: 0 }} mb={0} data-testid="view-controls">
+          <Box w="full" mb={0} data-testid="view-controls">
             <Box
               w="100%"
-              py={{ base: 2, md: 2.5 }}
               bg={'bg'}
               boxShadow={shadowValue}
               borderRadius={{ base: 'md', lg: 0 }}
@@ -251,7 +250,7 @@ export default React.memo(function EditBets(): React.ReactElement {
                 px={4}
                 py={2}
                 value={accordionValue}
-                onValueChange={details => {
+                onValueChange={(details: { value: React.SetStateAction<string[]> }) => {
                   setAccordionValue(details.value);
                   cookies.set('settingsAccordionExpanded', details.value.includes('settings'));
                 }}
@@ -295,7 +294,6 @@ export default React.memo(function EditBets(): React.ReactElement {
           <Flex
             direction={{ base: 'column', lg: 'row' }}
             align={{ base: 'stretch', lg: 'stretch' }}
-            px={{ base: 4, md: 5, lg: 0 }}
             w="full"
             data-testid="bets-layout"
           >
@@ -369,8 +367,8 @@ export default React.memo(function EditBets(): React.ReactElement {
           <Suspense fallback={null}>
             <ScrollArea.Root width="full">
               <ScrollArea.Viewport>
-                <ScrollArea.Content pb={6}>
-                  <PayoutCharts />
+                <ScrollArea.Content>
+                  <PayoutCharts px={4} />
                 </ScrollArea.Content>
               </ScrollArea.Viewport>
               <ScrollArea.Scrollbar orientation="horizontal" />
