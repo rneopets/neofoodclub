@@ -380,13 +380,11 @@ const PayoutCharts: React.FC = React.memo(() => {
   return (
     <Stack
       direction={{ base: 'column', lg: 'row' }}
-      px={0}
-      pb={0}
-      gap={4}
       align="start"
       justify="flex-start"
       w="full"
       minW={0}
+      px={4}
     >
       {oddsTable}
       {winningsTable}
