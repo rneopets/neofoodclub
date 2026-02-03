@@ -130,9 +130,9 @@ export default React.memo(function EditBets(): React.ReactElement {
 
   // Accordion state persistence with cookies
   const cookies = useMemo(() => new Cookies(), []);
-  const [accordionValue, setAccordionValue] = useState<string[]>(() => {
-    return cookies.get('settingsAccordionExpanded') ? ['settings'] : [];
-  });
+  const [accordionValue, setAccordionValue] = useState<string[]>(() =>
+    cookies.get('settingsAccordionExpanded') ? ['settings'] : [],
+  );
 
   const viewBetAmountsContainerRef = useRef<HTMLDivElement>(null);
   const editBetAmountsContainerRef = useRef<HTMLDivElement>(null);
