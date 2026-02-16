@@ -385,6 +385,7 @@ const PayoutCharts: React.FC = React.memo(() => {
       w="full"
       minW={0}
       px={2}
+      pb={2}
     >
       {oddsTable}
       {winningsTable}
