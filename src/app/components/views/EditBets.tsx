@@ -353,27 +353,28 @@ export default React.memo(function EditBets(): React.ReactElement {
 
       {anyBets && payoutPortalContainerRef && (
         <Portal container={payoutPortalContainerRef}>
-          <Suspense fallback={null}>
-            <ScrollArea.Root width="full">
-              <ScrollArea.Viewport>
-                <ScrollArea.Content py={4}>
-                  <PayoutTable />
-                </ScrollArea.Content>
-              </ScrollArea.Viewport>
-              <ScrollArea.Scrollbar orientation="horizontal" />
-            </ScrollArea.Root>
-          </Suspense>
-
-          <Suspense fallback={null}>
-            <ScrollArea.Root width="full">
-              <ScrollArea.Viewport>
-                <ScrollArea.Content>
-                  <PayoutCharts px={4} />
-                </ScrollArea.Content>
-              </ScrollArea.Viewport>
-              <ScrollArea.Scrollbar orientation="horizontal" />
-            </ScrollArea.Root>
-          </Suspense>
+          <VStack align="stretch" gap={0} w="full">
+            <Suspense fallback={null}>
+              <>
+                <ScrollArea.Root width="full">
+                  <ScrollArea.Viewport>
+                    <ScrollArea.Content py={4}>
+                      <PayoutTable />
+                    </ScrollArea.Content>
+                  </ScrollArea.Viewport>
+                  <ScrollArea.Scrollbar orientation="horizontal" />
+                </ScrollArea.Root>
+                <ScrollArea.Root width="full">
+                  <ScrollArea.Viewport>
+                    <ScrollArea.Content>
+                      <PayoutCharts />
+                    </ScrollArea.Content>
+                  </ScrollArea.Viewport>
+                  <ScrollArea.Scrollbar orientation="horizontal" />
+                </ScrollArea.Root>
+              </>
+            </Suspense>
+          </VStack>
         </Portal>
       )}
     </>
