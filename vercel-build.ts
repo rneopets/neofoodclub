@@ -39,7 +39,7 @@ if (isPreview) {
       trackUnnecessaryRenders: true,
     };
   </script>
-  <script src="https://unpkg.com/react-scan/dist/auto.global.js"></script>
+  <script src="https://unpkg.com/react-scan@0.4.3/dist/auto.global.js"></script>
   </head>`,
     );
 
