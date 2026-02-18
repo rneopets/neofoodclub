@@ -33,7 +33,7 @@ function reactScanPlugin() {
             animationSpeed: "fast"
           };
         </script>
-        <script src="https://unpkg.com/react-scan/dist/auto.global.js"></script></head>`,
+        <script src="https://unpkg.com/react-scan@0.4.3/dist/auto.global.js"></script></head>`,
       );
     },
   };
