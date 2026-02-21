@@ -104,7 +104,7 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
     [openTimelineDrawer, timelineRef],
   );
 
-  const isDropdownMode = useMemo(() => tableMode === 'dropdown', [tableMode]);
+  const isDropdownMode = tableMode === 'dropdown';
   // const isNormalMode = useMemo(() => tableMode === 'normal', [tableMode]);
 
   return (
