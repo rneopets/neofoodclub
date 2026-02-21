@@ -12,7 +12,7 @@ const LogitModelToggle = memo(() => {
   const tableMode = useTableMode();
 
   const cookies = useMemo(() => new Cookies(), []);
-  const isNormalMode = useMemo(() => tableMode === 'normal', [tableMode]);
+  const isNormalMode = tableMode === 'normal';
 
   const handleChange = useCallback((): void => {
     const newValue = !useLogitModel;
