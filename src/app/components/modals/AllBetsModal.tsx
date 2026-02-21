@@ -95,7 +95,7 @@ const Row = React.memo(
               const color = pirateColors.get(key);
               return (
                 <Text
-                  key={`${index}-${key}`}
+                  key={key}
                   width="70px"
                   fontSize="2xs"
                   truncate
