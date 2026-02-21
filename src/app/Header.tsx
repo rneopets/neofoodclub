@@ -617,7 +617,7 @@ const Header: React.FC<HeaderProps> = props => {
   useEffect(() => {
     const handleScroll = (): void => setY(window.scrollY);
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return (): void => window.removeEventListener('scroll', handleScroll);
   }, []);
 
