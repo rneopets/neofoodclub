@@ -30,9 +30,8 @@ const Extras = memo(() => {
 
   const tableMode = useTableMode();
 
-  // Memoize computed values
-  const isNormalMode = useMemo(() => tableMode === 'normal', [tableMode]);
-  const isBigBrainAndNormalMode = useMemo(() => bigBrain && isNormalMode, [bigBrain, isNormalMode]);
+  const isNormalMode = tableMode === 'normal';
+  const isBigBrainAndNormalMode = bigBrain && isNormalMode;
 
   // Memoize cookies instance
   const cookies = useMemo(() => new Cookies(), []);
