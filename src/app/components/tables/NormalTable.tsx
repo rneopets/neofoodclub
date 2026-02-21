@@ -185,16 +185,15 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
           </Table.ColumnHeader>
           {customOddsHeader}
           {oddsTimelineHeader}
-          {[...Array(betCount)].map((_e, i) => (
+          {Array.from({ length: betCount }, (_, i) => i + 1).map(betNum => (
             <Table.ColumnHeader
-              // eslint-disable-next-line react/no-array-index-key
-              key={`bet-header-${i}`}
+              key={betNum}
               whiteSpace="normal"
               textAlign="center"
               px={2}
             >
               <Box as="span" display="inline-block" maxW="100%">
-                Bet {i + 1}
+                Bet {betNum}
               </Box>
             </Table.ColumnHeader>
           ))}
