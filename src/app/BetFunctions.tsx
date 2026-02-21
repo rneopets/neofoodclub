@@ -734,10 +734,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
     }
   }, [deleteSet, currentBetIndex, betSetCount]);
 
-  const positiveArenas = useMemo(
-    () => arenaRatios.filter((x: number) => x > 0).length,
-    [arenaRatios],
-  );
+  const positiveArenas = arenaRatios.filter((x: number) => x > 0).length;
 
   const handleCardClick = useCallback(
     (key: number) => (): void => {
