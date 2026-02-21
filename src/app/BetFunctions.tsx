@@ -163,11 +163,13 @@ const BuildSetMenu = React.memo(
     const [pirateIndices, setPirateIndices] = React.useState(makeEmpty(5)); // indices of the pirates to be included in the set
     const [min, setMin] = React.useState(0); // minimum pirate amount
     const [max, setMax] = React.useState(0); // maximum pirate amount
-    const [buildButtonEnabled, setBuildButtonEnabled] = React.useState(false); // whether the build button is enabled, if we're within min/max to do so
-
     const { generateTenbetSet, generateGambitWithPirates } = useBetManagement();
     const bigBrain = useBigBrain();
     const arenaRatios = useArenaRatios();
+
+    const buildButtonEnabled =
+      countNonZeroElements(pirateIndices) >= min &&
+      countNonZeroElements(pirateIndices) <= max;
 
     const handleChange = useCallback((arenaIndex: number, pirateIndex: number) => {
       setPirateIndices(prevIndices => {
@@ -184,12 +186,6 @@ const BuildSetMenu = React.memo(
         },
       [handleChange],
     );
-
-    useEffect(() => {
-      // count the amount of non-zero elements in pirateIndices
-      const amount = countNonZeroElements(pirateIndices);
-      setBuildButtonEnabled(amount >= min && amount <= max);
-    }, [pirateIndices, min, max]);
 
     const handleTenBetClick = useCallback(() => {
       setMode('Ten-bet');
