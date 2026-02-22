@@ -543,9 +543,48 @@ export const useRoundStore = create<RoundStore>()(
 
       document.addEventListener('visibilitychange', handleVisibilityChange);
 
+      const handleHashChange = (): void => {
+        const hash = window.location.hash.slice(1);
+        if (!hash) return;
+
+        const parsed = parseBetUrl(hash);
+        const currentState = get();
+        const betState = useBetStore.getState();
+
+        const currentBets = betState.allBets.get(betState.currentBet) ?? new Map();
+        const currentBetAmounts = betState.allBetAmounts.get(betState.currentBet) ?? new Map();
+
+        // Check if the round changed
+        if (parsed.round > 0 && parsed.round !== currentState.currentSelectedRound) {
+          currentState.updateSelectedRound(parsed.round);
+        }
+
+        // Check if bets changed
+        const currentBetUrl = makeBetURL(
+          currentState.currentSelectedRound,
+          currentBets,
+          currentBetAmounts,
+          anyBetsExist(currentBets) && anyBetAmountsExist(currentBetAmounts),
+        );
+        const currentBetHash = currentBetUrl.slice(2); // strip "/#"
+        if (hash !== currentBetHash) {
+          // Replace bets in the current bet set
+          const betsForSet = new Map(betState.allBets).set(betState.currentBet, parsed.bets);
+          const amountsForSet = new Map(betState.allBetAmounts).set(
+            betState.currentBet,
+            parsed.betAmounts,
+          );
+          betState.setAllBets(betsForSet);
+          betState.setAllBetAmounts(amountsForSet);
+        }
+      };
+
+      window.addEventListener('hashchange', handleHashChange);
+
       (window as unknown as Window & { __roundDataCleanup: () => void }).__roundDataCleanup =
         (): void => {
           document.removeEventListener('visibilitychange', handleVisibilityChange);
+          window.removeEventListener('hashchange', handleHashChange);
           get().stopPolling();
         };
     },
