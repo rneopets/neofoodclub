@@ -11,17 +11,19 @@ import {
   makeEmptyBetAmounts,
 } from '../util';
 
-// Lazy getter to avoid circular dependency
-let getRoundStore: (() => ReturnType<typeof import('./roundStore').useRoundStore.getState>) | null =
-  null;
-const initRoundStoreGetter = async (): Promise<void> => {
-  if (!getRoundStore) {
-    const { useRoundStore } = await import('./roundStore');
-    getRoundStore = (): ReturnType<typeof useRoundStore.getState> => useRoundStore.getState();
-  }
+// Lazy getter to avoid circular dependency.
+// We store the module reference and look up useRoundStore at call time so that
+// even if the dynamic import resolves before the other module finishes
+// initialising (circular deps), the getter picks up the fully-initialised export.
+let roundStoreModule: typeof import('./roundStore') | null = null;
+const getRoundStore = (): ReturnType<
+  typeof import('./roundStore').useRoundStore.getState
+> | null => {
+  return roundStoreModule?.useRoundStore?.getState() ?? null;
 };
-// Initialize immediately but don't block
-initRoundStoreGetter();
+import('./roundStore').then(mod => {
+  roundStoreModule = mod;
+});
 
 interface BetStore {
   // State
@@ -311,11 +313,10 @@ useBetStore.subscribe(
 
     const state = useBetStore.getState();
     // Use lazy getter to avoid circular dependency
-    if (!getRoundStore) {
-      // If not initialized yet, skip this update
+    const roundState = getRoundStore();
+    if (!roundState) {
       return;
     }
-    const roundState = getRoundStore();
 
     // Don't update URL if round data doesn't match selected round (round is switching)
     // This prevents URL updates during round transitions
