@@ -4,17 +4,16 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-// Custom plugin to inject react-scan in development
+// Custom plugin to inject react-scan in development and Vercel preview
 function reactScanPlugin() {
   return {
     name: 'vite-plugin-react-scan',
     transformIndexHtml(html, { command }) {
-      // Check if we're in development mode using Vite's command or NODE_ENV
       const isDevelopment = command === 'serve' || process.env.NODE_ENV === 'development';
+      const isPreview = process.env.VERCEL_ENV === 'preview';
 
-      // Simple check: only inject in development and not in any test environment
       if (
-        !isDevelopment ||
+        (!isDevelopment && !isPreview) ||
         process.env.PLAYWRIGHT_TEST === 'true' ||
         process.env.DISABLE_REACT_SCAN === 'true' ||
         html.includes('react-scan')
@@ -22,16 +21,14 @@ function reactScanPlugin() {
         return html;
       }
 
+      const optionsScript = isPreview
+        ? `{ enabled: false, log: false, showToolbar: true, animationSpeed: "fast", trackUnnecessaryRenders: true }`
+        : `{ enabled: window.location.hostname === "localhost" && !window.navigator.webdriver, log: false, showToolbar: true, trackUnnecessaryRenders: true, animationSpeed: "fast" }`;
+
       return html.replace(
         '</head>',
         `<script>
-          window.REACT_SCAN_OPTIONS = {
-            enabled: window.location.hostname === 'localhost' && !window.navigator.webdriver,
-            log: false,
-            showToolbar: true,
-            trackUnnecessaryRenders: true,
-            animationSpeed: "fast"
-          };
+          window.REACT_SCAN_OPTIONS = ${optionsScript};
         </script>
         <script src="https://unpkg.com/react-scan@0.4.3/dist/auto.global.js"></script></head>`,
       );
@@ -101,7 +98,9 @@ export default defineConfig({
   },
   define: {
     'process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA': JSON.stringify(
-      process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA,
+      process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA ||
+        process.env.VERCEL_GIT_COMMIT_SHA ||
+        'development',
     ),
   },
   // Configure the public directory to serve static assets
