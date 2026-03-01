@@ -4,16 +4,16 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-// Custom plugin to inject react-scan in development and Vercel preview
+// Custom plugin to inject react-scan in development and Vercel deployments
 function reactScanPlugin() {
   return {
     name: 'vite-plugin-react-scan',
     transformIndexHtml(html, { command }) {
       const isDevelopment = command === 'serve' || process.env.NODE_ENV === 'development';
-      const isPreview = process.env.VERCEL_ENV === 'preview';
+      const isVercel = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'production';
 
       if (
-        (!isDevelopment && !isPreview) ||
+        (!isDevelopment && !isVercel) ||
         process.env.PLAYWRIGHT_TEST === 'true' ||
         process.env.DISABLE_REACT_SCAN === 'true' ||
         html.includes('react-scan')
@@ -21,7 +21,8 @@ function reactScanPlugin() {
         return html;
       }
 
-      const optionsScript = isPreview
+      // Vercel: disabled by default (user can enable via toolbar). Localhost: enabled
+      const optionsScript = isVercel
         ? `{ enabled: false, log: false, showToolbar: true, animationSpeed: "fast", trackUnnecessaryRenders: true }`
         : `{ enabled: window.location.hostname === "localhost" && !window.navigator.webdriver, log: false, showToolbar: true, trackUnnecessaryRenders: true, animationSpeed: "fast" }`;
 
