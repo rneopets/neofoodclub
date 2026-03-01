@@ -157,13 +157,13 @@ test.describe('NeoFoodClub Bet Generation', () => {
     expect(maxBetValue).toBe('1000');
   });
 
-  test('should work with default -1000 max bet (unset)', async ({ page }) => {
-    // Verify max bet is -1000 by default
+  test('should work with default unset max bet', async ({ page }) => {
+    // Verify max bet shows BET_AMOUNT_DEFAULT (-1000) when unset
     const maxBetInput = page.locator('[data-testid="max-bet-input-field-input"]');
     const maxBetValue = await maxBetInput.inputValue();
-    expect(maxBetValue).toBe('-1000');
+    expect(maxBetValue).toBe('-1000'); // BET_AMOUNT_DEFAULT
 
-    // Generate bets with default -1000 max bet
+    // Generate bets with default unset max bet
     await generateBets(page, 'gambit');
 
     const url = page.url();

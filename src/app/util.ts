@@ -12,6 +12,7 @@ import {
 } from '../types';
 import { Bet, BetAmount, BetValues, OddsData, ProbabilitiesData } from '../types/bets';
 
+import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX, BET_AMOUNT_MIN } from './constants';
 import {
   calculateArenaRatios,
   calculatePayoutTables,
@@ -110,7 +111,7 @@ export function parseBetUrl(url: string): ParsedBetUrl {
     Math.max(Object.keys(tempBets).length, tempBetAmounts.size, 10) > 10 ? 15 : 10;
   for (let index = 1; index <= amountOfBets; index++) {
     bets.set(index, tempBets[index] || makeEmpty(5));
-    betAmounts.set(index, tempBetAmounts.get(index) || -1000);
+    betAmounts.set(index, tempBetAmounts.get(index) || BET_AMOUNT_DEFAULT);
   }
 
   const round = Number(urlParams.get('round')) || 0;
@@ -193,8 +194,8 @@ export function getMaxBet(currentSelectedRound: number): number {
     const lockedMaxBet = cookies.get('lockedMaxBet');
     if (lockedMaxBet !== undefined && lockedMaxBet !== null) {
       const value = parseInt(lockedMaxBet);
-      if (value >= 1) {
-        return Math.min(500_000, value);
+      if (value >= BET_AMOUNT_MIN) {
+        return Math.min(BET_AMOUNT_MAX, value);
       }
     }
   }
@@ -202,18 +203,18 @@ export function getMaxBet(currentSelectedRound: number): number {
   // When unlocked or no locked value, use the base calculation
   const baseMaxBet = cookies.get('baseMaxBet');
 
-  // If no cookie is set, return -1000 (no max bet)
+  // If no cookie is set, return BET_AMOUNT_DEFAULT (no max bet)
   if (baseMaxBet === undefined || baseMaxBet === null) {
-    return -1000;
+    return BET_AMOUNT_DEFAULT;
   }
 
   const value = calculateMaxBet(parseInt(baseMaxBet), currentSelectedRound);
 
-  if (value < 1) {
-    return -1000;
+  if (value < BET_AMOUNT_MIN) {
+    return BET_AMOUNT_DEFAULT;
   }
 
-  return Math.min(500_000, value);
+  return Math.min(BET_AMOUNT_MAX, value);
 }
 
 export function getTableMode(): string {
@@ -351,7 +352,7 @@ export function makeEmptyBets(length: number): Bet {
 }
 
 export function makeEmptyBetAmounts(length: number): BetAmount {
-  return makeEmptyMap(length, () => -1000);
+  return makeEmptyMap(length, () => BET_AMOUNT_DEFAULT);
 }
 
 export function shuffleArray<T>(array: T[]): void {
@@ -370,14 +371,14 @@ export function determineBetAmount(maxBet: number, betCap: number): number {
   // maxBet is the user-set max bet amount for a round.
   // betCap is the highest bet amount for a bet (1,000,000 / odds + 1) // (the +1 is so we cross the 1M line)
 
-  // first, determine if there IS a max bet set. If not, just return -1000.
-  if (maxBet < 1) {
-    return -1000;
+  // first, determine if there IS a max bet set. If not, just return BET_AMOUNT_DEFAULT.
+  if (maxBet < BET_AMOUNT_MIN) {
+    return BET_AMOUNT_DEFAULT;
   }
 
   // if we've made it this far,
-  // we must go with the smallest of maxBet, betCap, or 500K
-  return Math.min(maxBet, betCap, 500_000);
+  // we must go with the smallest of maxBet, betCap, or BET_AMOUNT_MAX
+  return Math.min(maxBet, betCap, BET_AMOUNT_MAX);
 }
 
 export function amountAbbreviation(value: number): string {
@@ -466,7 +467,7 @@ export function makeBetValues(
       probProduct = 0;
     }
 
-    const amount = betAmounts.get(betIndex) ?? -1000;
+    const amount = betAmounts.get(betIndex) ?? BET_AMOUNT_DEFAULT;
     const payoff = Math.min(1_000_000, amount * oddsProduct);
 
     betOdds.set(betIndex, oddsProduct);

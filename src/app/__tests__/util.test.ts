@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { RoundState } from '../../types';
 import { Bet, BetAmount } from '../../types/bets';
+import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX } from '../constants';
 import {
   generateRandomIntegerInRange,
   generateRandomPirateIndex,
@@ -188,14 +189,14 @@ describe('Utility Functions', () => {
     it('returns true when positive bet amounts exist', () => {
       const betAmounts: BetAmount = new Map([
         [1, 1000],
-        [2, -1000],
+        [2, BET_AMOUNT_DEFAULT],
       ]);
       expect(anyBetAmountsExist(betAmounts)).toBe(true);
     });
 
     it('returns false when no positive bet amounts exist', () => {
       const betAmounts: BetAmount = new Map([
-        [1, -1000],
+        [1, BET_AMOUNT_DEFAULT],
         [2, 0],
         [3, -500],
       ]);
@@ -590,7 +591,7 @@ describe('Utility Functions', () => {
       expect(mockGetCookie).toHaveBeenCalledWith('baseMaxBet');
     });
 
-    it('returns -1000 when calculated value is too low', () => {
+    it('returns BET_AMOUNT_DEFAULT when calculated value is too low', () => {
       mockGetCookie.mockImplementation(key => {
         if (key === 'maxBetLocked') {
           return false;
@@ -602,10 +603,10 @@ describe('Utility Functions', () => {
       });
 
       const result = getMaxBet(8500);
-      expect(result).toBe(-1000);
+      expect(result).toBe(BET_AMOUNT_DEFAULT);
     });
 
-    it('caps max bet at 500,000', () => {
+    it('caps max bet at BET_AMOUNT_MAX', () => {
       mockGetCookie.mockImplementation(key => {
         if (key === 'maxBetLocked') {
           return false;
@@ -617,10 +618,10 @@ describe('Utility Functions', () => {
       });
 
       const result = getMaxBet(8500);
-      expect(result).toBe(500000);
+      expect(result).toBe(BET_AMOUNT_MAX);
     });
 
-    it('returns -1000 when no cookie is set (undefined)', () => {
+    it('returns BET_AMOUNT_DEFAULT when no cookie is set (undefined)', () => {
       mockGetCookie.mockImplementation(key => {
         if (key === 'maxBetLocked') {
           return false;
@@ -629,11 +630,10 @@ describe('Utility Functions', () => {
       });
 
       const result = getMaxBet(8500);
-      // When no cookie is set, should return -1000 (no max bet)
-      expect(result).toBe(-1000);
+      expect(result).toBe(BET_AMOUNT_DEFAULT);
     });
 
-    it('returns -1000 when no cookie is set (null)', () => {
+    it('returns BET_AMOUNT_DEFAULT when no cookie is set (null)', () => {
       mockGetCookie.mockImplementation(key => {
         if (key === 'maxBetLocked') {
           return false;
@@ -645,8 +645,7 @@ describe('Utility Functions', () => {
       });
 
       const result = getMaxBet(8500);
-      // When no cookie is set, should return -1000 (no max bet)
-      expect(result).toBe(-1000);
+      expect(result).toBe(BET_AMOUNT_DEFAULT);
     });
   });
 
@@ -714,11 +713,11 @@ describe('Utility Functions', () => {
       expect(result).toBeInstanceOf(Map);
     });
 
-    it('creates -1000 values for each index', () => {
+    it('creates BET_AMOUNT_DEFAULT values for each index', () => {
       const result = makeEmptyBetAmounts(3);
-      expect(result.get(1)).toBe(-1000);
-      expect(result.get(2)).toBe(-1000);
-      expect(result.get(3)).toBe(-1000);
+      expect(result.get(1)).toBe(BET_AMOUNT_DEFAULT);
+      expect(result.get(2)).toBe(BET_AMOUNT_DEFAULT);
+      expect(result.get(3)).toBe(BET_AMOUNT_DEFAULT);
     });
 
     it('handles zero length', () => {
@@ -729,20 +728,20 @@ describe('Utility Functions', () => {
     it('handles large length', () => {
       const result = makeEmptyBetAmounts(15);
       expect(result.size).toBe(15);
-      expect(result.get(15)).toBe(-1000);
+      expect(result.get(15)).toBe(BET_AMOUNT_DEFAULT);
     });
   });
 
   describe('determineBetAmount', () => {
-    it('returns smallest of maxBet, betCap, and 500K', () => {
+    it('returns smallest of maxBet, betCap, and BET_AMOUNT_MAX', () => {
       expect(determineBetAmount(10000, 20000)).toBe(10000); // maxBet smallest
       expect(determineBetAmount(20000, 10000)).toBe(10000); // betCap smallest
-      expect(determineBetAmount(600000, 700000)).toBe(500000); // 500K cap
+      expect(determineBetAmount(600000, 700000)).toBe(BET_AMOUNT_MAX); // cap
     });
 
-    it('returns -1000 when maxBet is less than 1', () => {
-      expect(determineBetAmount(0, 10000)).toBe(-1000);
-      expect(determineBetAmount(-5000, 10000)).toBe(-1000);
+    it('returns BET_AMOUNT_DEFAULT when maxBet is less than 1', () => {
+      expect(determineBetAmount(0, 10000)).toBe(BET_AMOUNT_DEFAULT);
+      expect(determineBetAmount(-5000, 10000)).toBe(BET_AMOUNT_DEFAULT);
     });
 
     it('handles edge case where maxBet equals 1', () => {
@@ -750,11 +749,11 @@ describe('Utility Functions', () => {
     });
 
     it('handles all values being equal', () => {
-      expect(determineBetAmount(500000, 500000)).toBe(500000);
+      expect(determineBetAmount(BET_AMOUNT_MAX, BET_AMOUNT_MAX)).toBe(BET_AMOUNT_MAX);
     });
 
     it('handles very large numbers', () => {
-      expect(determineBetAmount(1000000, 2000000)).toBe(500000);
+      expect(determineBetAmount(1000000, 2000000)).toBe(BET_AMOUNT_MAX);
     });
   });
 

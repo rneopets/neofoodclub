@@ -1,6 +1,7 @@
 import { NumberInputControl } from '@chakra-ui/react';
 import React, { useState, useEffect, useCallback } from 'react';
 
+import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX, BET_AMOUNT_MIN } from '../../constants';
 import { useSelectOnFocus } from '../../hooks';
 import { useOptimizedBetAmount, useUpdateSingleBetAmount } from '../../stores';
 
@@ -37,19 +38,17 @@ const BetAmountInput = React.memo(
 
     const sanitizeToInteger = useCallback((raw: string): number => {
       const trimmed = raw.trim();
-      const MIN = -1000;
-      const MAX = 500_000;
       if (trimmed === '') {
-        return MIN;
+        return BET_AMOUNT_DEFAULT;
       }
       // Remove common formatting characters (commas, spaces, underscores)
       const cleaned = trimmed.replace(/[,_\s]/g, '');
       const parsed = parseInt(cleaned, 10);
-      if (Number.isNaN(parsed) || parsed < 1) {
-        return MIN;
+      if (Number.isNaN(parsed) || parsed < BET_AMOUNT_MIN) {
+        return BET_AMOUNT_DEFAULT;
       }
       // Clamp to allowed range
-      return Math.min(Math.max(parsed, MIN), MAX);
+      return Math.min(Math.max(parsed, BET_AMOUNT_MIN), BET_AMOUNT_MAX);
     }, []);
 
     const handleChange = useCallback(
@@ -97,8 +96,8 @@ const BetAmountInput = React.memo(
         size="xs"
         value={tempValue}
         onValueChange={handleChange}
-        min={-1000}
-        max={500000}
+        min={BET_AMOUNT_DEFAULT}
+        max={BET_AMOUNT_MAX}
         step={1}
         clampValueOnBlur
         allowMouseWheel

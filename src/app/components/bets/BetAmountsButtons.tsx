@@ -3,6 +3,7 @@ import React, { useCallback } from 'react';
 import { FaFillDrip, FaInfinity } from 'react-icons/fa6';
 
 import { RoundState } from '../../../types';
+import { BET_AMOUNT_DEFAULT } from '../../constants';
 import {
   useRoundStore,
   useRoundData,
@@ -31,7 +32,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
   const roundData = useRoundData();
   const hasRoundData = isValidRound({ roundData, currentSelectedRound } as RoundState);
   const maxBet = useMaxBet();
-  const maxBetDisplay = maxBet === -1000 ? '(currently unset)' : maxBet.toLocaleString();
+  const maxBetDisplay = maxBet === BET_AMOUNT_DEFAULT ? '(currently unset)' : maxBet.toLocaleString();
 
   const setBetAmountsWithMode = useCallback(
     (capped: boolean): void => {
@@ -58,7 +59,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
             updates.push({ betIndex: index, amount: maxBetValue });
           }
         } else {
-          updates.push({ betIndex: index, amount: -1000 });
+          updates.push({ betIndex: index, amount: BET_AMOUNT_DEFAULT });
         }
       }
 
@@ -84,8 +85,8 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
     const updates: Array<{ betIndex: number; amount: number }> = [];
 
     for (const [index, amount] of currentAmounts.entries()) {
-      if (amount === -1000) {
-        // Bump -1000 to 0 before incrementing
+      if (amount === BET_AMOUNT_DEFAULT) {
+        // Unset: set to 2 (can't add 2 to -1000)
         updates.push({ betIndex: index, amount: 2 });
       } else if (amount > 0) {
         updates.push({ betIndex: index, amount: amount + 2 });
@@ -140,7 +141,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
               colorPalette="green"
               onClick={handleCapped}
               data-testid="capped-bet-amounts-button"
-              disabled={maxBet === -1000}
+              disabled={maxBet === BET_AMOUNT_DEFAULT}
               {...rest}
             >
               <FaFillDrip style={{ width: '1.4em', height: '1.4em' }} />
@@ -158,7 +159,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
               colorPalette="blue"
               onClick={handleUncapped}
               data-testid="uncapped-bet-amounts-button"
-              disabled={maxBet === -1000}
+              disabled={maxBet === BET_AMOUNT_DEFAULT}
               {...rest}
             >
               <FaInfinity style={{ width: '1.4em', height: '1.4em' }} />

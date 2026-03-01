@@ -7,6 +7,7 @@ import type {
 } from '../../types';
 import type { Bet, BetAmount, OddsData, ProbabilitiesData } from '../../types/bets';
 import { computePiratesBinary } from '../maths';
+import { BET_AMOUNT_DEFAULT } from '../constants';
 import { anyBetsExist } from '../util';
 
 import { useBetStore } from './betStore';
@@ -230,7 +231,7 @@ export const useBetLine = (betIndex: number): number[] =>
 export const useBetAmount = (betIndex: number): number =>
   useBetStore(state => {
     const amounts = state.allBetAmounts.get(state.currentBet);
-    return amounts?.get(betIndex) ?? -1000;
+    return amounts?.get(betIndex) ?? BET_AMOUNT_DEFAULT;
   });
 
 export const useIsPirateSelected = (

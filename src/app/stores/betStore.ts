@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
 import { Bet, BetAmount } from '../../types/bets';
+import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MIN } from '../constants';
 import {
   parseBetUrl,
   anyBetsExist,
@@ -147,8 +148,8 @@ export const useBetStore = create<BetStore>()(
 
         const bet1 = currentBetData.get(betIndex1) ?? [0, 0, 0, 0, 0];
         const bet2 = currentBetData.get(betIndex2) ?? [0, 0, 0, 0, 0];
-        const amount1 = currentAmounts.get(betIndex1) ?? -1000;
-        const amount2 = currentAmounts.get(betIndex2) ?? -1000;
+        const amount1 = currentAmounts.get(betIndex1) ?? BET_AMOUNT_DEFAULT;
+        const amount2 = currentAmounts.get(betIndex2) ?? BET_AMOUNT_DEFAULT;
 
         const newBetData = new Map(currentBetData);
         newBetData.set(betIndex1, bet2);
@@ -255,7 +256,7 @@ export const useBetStore = create<BetStore>()(
         let hasChanges = false;
 
         for (const { betIndex, amount } of updates) {
-          const finalAmount = amount < 1 ? -1000 : amount;
+          const finalAmount = amount < BET_AMOUNT_MIN ? BET_AMOUNT_DEFAULT : amount;
           if (newAmountsForSet.get(betIndex) !== finalAmount) {
             newAmountsForSet.set(betIndex, finalAmount);
             hasChanges = true;
@@ -300,7 +301,7 @@ useBetStore.subscribe(
       .join('|');
 
     const amountHash = Array.from(currentBetAmounts.entries())
-      .filter(([, amount]) => amount > -1000)
+      .filter(([, amount]) => amount > BET_AMOUNT_DEFAULT)
       .map(([key, amount]) => `${key}:${amount}`)
       .join('|');
 

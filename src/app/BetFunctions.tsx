@@ -47,7 +47,13 @@ import { Bet, BetAmount } from '../types/bets';
 
 import PirateSelect from './components/bets/PirateSelect';
 import SettingsBox from './components/ui/SettingsBox';
-import { ARENA_NAMES, PIRATE_NAMES, SHORTHAND_PIRATE_NAMES } from './constants';
+import {
+  ARENA_NAMES,
+  BET_AMOUNT_DEFAULT,
+  BET_AMOUNT_MIN,
+  PIRATE_NAMES,
+  SHORTHAND_PIRATE_NAMES,
+} from './constants';
 import { useBetManagement } from './hooks/useBetManagement';
 import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { makeEmpty, computeBinaryToPirates, calculatePayoutTables } from './maths';
@@ -1272,8 +1278,8 @@ const BetBadges = React.memo(
 
       const invalidBetAmounts = Array.from(betOdds.entries()).filter(
         ([betIndex, oddsTest]: [number, number]) => {
-          const betAmount = betAmounts.get(betIndex) ?? -1000;
-          return oddsTest > 0 && betAmount < 1;
+          const betAmount = betAmounts.get(betIndex) ?? BET_AMOUNT_DEFAULT;
+          return oddsTest > 0 && betAmount < BET_AMOUNT_MIN;
         },
       );
 
@@ -1405,7 +1411,7 @@ const BetBadges = React.memo(
       // guaranteed profit badge
       let betAmountsTotal = 0;
       betAmounts.forEach((amount: number) => {
-        if (amount !== -1000) {
+        if (amount !== BET_AMOUNT_DEFAULT) {
           betAmountsTotal += amount;
         }
       });
