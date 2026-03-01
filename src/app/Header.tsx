@@ -24,6 +24,7 @@ import Cookies from 'universal-cookie';
 
 import { useColorMode } from '../components/ui/color-mode';
 
+import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX, BET_AMOUNT_MIN } from './constants';
 import MaxBetLockToggle from './components/bets/MaxBetLockToggle';
 import DateFormatter from './components/format/DateFormatter';
 import RoundInput from './components/inputs/RoundInput';
@@ -289,9 +290,9 @@ const MaxBetInput: React.FC = () => {
   }, []);
 
   const handleBlur = useCallback((): void => {
-    let numValue = parseInt(tempValue) || -1000;
-    if (numValue < 1) {
-      numValue = -1000;
+    let numValue = parseInt(tempValue) || BET_AMOUNT_DEFAULT;
+    if (numValue < BET_AMOUNT_MIN) {
+      numValue = BET_AMOUNT_DEFAULT;
     }
 
     const currentMaxBet = getMaxBet(currentSelectedRound);
@@ -417,8 +418,8 @@ const MaxBetInput: React.FC = () => {
         size="xs"
         value={tempValue}
         onValueChange={handleChange}
-        min={-1000}
-        max={500000}
+        min={BET_AMOUNT_DEFAULT}
+        max={BET_AMOUNT_MAX}
         clampValueOnBlur={true}
         allowMouseWheel={true}
         showControl={isNumberInputFocused && !isLocked}

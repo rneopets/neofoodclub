@@ -2,6 +2,7 @@ import { IconButton } from '@chakra-ui/react';
 import { memo } from 'react';
 import { FaLock, FaLockOpen } from 'react-icons/fa6';
 
+import { BET_AMOUNT_DEFAULT } from '../../constants';
 import { Tooltip } from '@/components/ui/tooltip';
 
 interface MaxBetLockToggleProps {
@@ -13,7 +14,7 @@ interface MaxBetLockToggleProps {
 const MaxBetLockToggle = memo(({ isLocked: locked, onToggle, maxBet }: MaxBetLockToggleProps) => {
   const tooltipLabel = locked
     ? 'Max bet is locked - will not increase with round number'
-    : maxBet === -1000
+    : maxBet === BET_AMOUNT_DEFAULT
       ? 'Max bet is unlocked'
       : 'Max bet is unlocked - will increase by 2 per round';
 

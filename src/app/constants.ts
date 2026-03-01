@@ -1800,6 +1800,13 @@ export const FOODS = new Map<number, string>([
   [40, 'Worm and Leech Pizza'],
 ]);
 
+/** Sentinel value for "no max bet set" - used as default bet amount */
+export const BET_AMOUNT_DEFAULT = -1000;
+/** Minimum valid bet amount (NP) */
+export const BET_AMOUNT_MIN = 1;
+/** Maximum bet cap (NP) */
+export const BET_AMOUNT_MAX = 500_000;
+
 // Default RoundData object to avoid undefined values
 export const defaultRoundData: RoundData = {
   round: 0,

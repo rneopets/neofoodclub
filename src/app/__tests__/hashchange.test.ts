@@ -12,6 +12,7 @@ vi.mock('universal-cookie', () => ({
 const mockFetch = vi.fn();
 globalThis.fetch = mockFetch;
 
+import { BET_AMOUNT_DEFAULT } from '../constants';
 import { useRoundStore } from '../stores/roundStore';
 import { useBetStore } from '../stores/betStore';
 import { makeBetURL, parseBetUrl } from '../util';
@@ -31,10 +32,10 @@ function makeBetsForHash(pirates: number[][]): Bet {
 function makeAmountsForHash(amounts: number[]): BetAmount {
   const result: BetAmount = new Map();
   for (let i = 0; i < amounts.length; i++) {
-    result.set(i + 1, amounts[i] ?? -1000);
+    result.set(i + 1, amounts[i] ?? BET_AMOUNT_DEFAULT);
   }
   for (let i = amounts.length; i < 10; i++) {
-    result.set(i + 1, -1000);
+    result.set(i + 1, BET_AMOUNT_DEFAULT);
   }
   return result;
 }

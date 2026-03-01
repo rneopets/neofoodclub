@@ -1,6 +1,7 @@
 import { useMemo, useCallback } from 'react';
 
 import { Bet, BetAmount } from '../../types/bets';
+import { BET_AMOUNT_DEFAULT } from '../constants';
 import { computePiratesBinary, computeBinaryToPirates, computePirateBinary } from '../maths';
 import {
   useAllBetsForURLData,
@@ -119,7 +120,7 @@ export function useBetManagement(): {
 
   // Optimized bet amount getter
   const getBetAmount = useCallback(
-    (betIndex: number): number => currentBetAmounts.get(betIndex) ?? -1000,
+    (betIndex: number): number => currentBetAmounts.get(betIndex) ?? BET_AMOUNT_DEFAULT,
     [currentBetAmounts],
   );
 
@@ -157,8 +158,8 @@ export function useBetManagement(): {
     (index1: number, index2: number): void => {
       const bet1 = currentBets.get(index1) ?? [];
       const bet2 = currentBets.get(index2) ?? [];
-      const amount1 = currentBetAmounts.get(index1) ?? -1000;
-      const amount2 = currentBetAmounts.get(index2) ?? -1000;
+      const amount1 = currentBetAmounts.get(index1) ?? BET_AMOUNT_DEFAULT;
+      const amount2 = currentBetAmounts.get(index2) ?? BET_AMOUNT_DEFAULT;
 
       const bets = new Map(currentBets);
       bets.set(index1, bet2);
