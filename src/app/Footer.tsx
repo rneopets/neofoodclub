@@ -193,7 +193,7 @@ const Footer: React.FC<FooterProps> = props => {
                 Classic NeoFoodClub
               </Link>
               <Link
-                href="https://github.com/diceroll123/neofoodclub"
+                href="https://github.com/rneopets/neofoodclub"
                 target="_blank"
                 rel="noopener noreferrer"
               >
