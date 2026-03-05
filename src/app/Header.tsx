@@ -22,13 +22,11 @@ import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { FaRotate, FaClockRotateLeft, FaPlay } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
-import { useColorMode } from '../components/ui/color-mode';
-
-import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX, BET_AMOUNT_MIN } from './constants';
 import MaxBetLockToggle from './components/bets/MaxBetLockToggle';
 import DateFormatter from './components/format/DateFormatter';
 import RoundInput from './components/inputs/RoundInput';
 import GlowCard from './components/ui/GlowCard';
+import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX, BET_AMOUNT_MIN } from './constants';
 import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
