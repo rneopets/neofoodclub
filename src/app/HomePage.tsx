@@ -1,10 +1,10 @@
 import { Box } from '@chakra-ui/react';
 import React from 'react';
 
+import TopProgressBar from './components/ui/TopProgressBar';
 import EditBets from './components/views/EditBets';
 import Footer from './Footer';
 import Header from './Header';
-import TopProgressBar from './components/ui/TopProgressBar';
 
 const HomePage = React.memo(
   (): React.ReactElement => (
