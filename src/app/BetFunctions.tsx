@@ -174,8 +174,7 @@ const BuildSetMenu = React.memo(
     const arenaRatios = useArenaRatios();
 
     const buildButtonEnabled =
-      countNonZeroElements(pirateIndices) >= min &&
-      countNonZeroElements(pirateIndices) <= max;
+      countNonZeroElements(pirateIndices) >= min && countNonZeroElements(pirateIndices) <= max;
 
     const handleChange = useCallback((arenaIndex: number, pirateIndex: number) => {
       setPirateIndices(prevIndices => {
