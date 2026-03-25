@@ -1014,7 +1014,7 @@ const BetBadges = (props) => {
   let bets = allBets[index];
   let betAmounts = allBetAmounts[index];
 
-  let { betOdds, betPayoffs, betBinaries } = makeBetValues(
+  let { betOdds, betPayoffs, betBinaries, betExpectedRatios } = makeBetValues(
     bets,
     betAmounts,
     odds,
@@ -1065,6 +1065,20 @@ const BetBadges = (props) => {
       </Badge>
     );
     isInvalid = true;
+  }
+
+  if (betCount > 0 && roundState.roundData) {
+    let totalTer = 0;
+    for (let betIndex in betBinaries) {
+      if (betBinaries[betIndex] > 0) {
+        totalTer += betExpectedRatios[betIndex];
+      }
+    }
+    badges.push(
+      <Badge colorScheme="teal" variant="subtle">
+        TER: {totalTer.toFixed(3)}
+      </Badge>
+    );
   }
 
   // round-over badges
