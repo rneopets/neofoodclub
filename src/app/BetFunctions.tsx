@@ -1212,7 +1212,7 @@ const BetBadges = React.memo(
       [bets, betAmounts, odds, usedProbabilities],
     );
 
-    const { betOdds, betPayoffs, betBinaries } = betValues;
+    const { betOdds, betPayoffs, betBinaries, betExpectedRatios } = betValues;
 
     const payoutTables = useMemo(() => {
       if (!calculated) {
@@ -1239,6 +1239,19 @@ const BetBadges = React.memo(
     }, [betBinaries]);
 
     const { betCount, hasDuplicateBets } = betInfo;
+
+    const totalTer = useMemo(() => {
+      if (!calculated || betCount === 0 || hasDuplicateBets) {
+        return null;
+      }
+      let sum = 0;
+      for (const betKey of bets.keys()) {
+        if ((betBinaries.get(betKey) ?? 0) > 0) {
+          sum += betExpectedRatios.get(betKey) ?? 0;
+        }
+      }
+      return sum;
+    }, [calculated, betCount, hasDuplicateBets, bets, betBinaries, betExpectedRatios]);
 
     const statusBadges = useMemo(() => {
       const result = [];
@@ -1382,6 +1395,14 @@ const BetBadges = React.memo(
       const result: React.ReactElement[] = [];
       const isInvalid = hasDuplicateBets || !calculated;
 
+      if (totalTer !== null) {
+        result.push(
+          <Badge key="ter" colorPalette="teal" variant="surface">
+            TER: {totalTer.toFixed(3)}
+          </Badge>,
+        );
+      }
+
       if (betCount === 0 || isRoundOver || isInvalid || !payoutTables.odds?.length) {
         return result;
       }
@@ -1424,7 +1445,15 @@ const BetBadges = React.memo(
       }
 
       return result;
-    }, [betCount, isRoundOver, hasDuplicateBets, calculated, payoutTables, betAmounts]);
+    }, [
+      betCount,
+      isRoundOver,
+      hasDuplicateBets,
+      calculated,
+      payoutTables,
+      betAmounts,
+      totalTer,
+    ]);
 
     const resultsBadges: React.ReactElement[] = useMemo(() => {
       const result: React.ReactElement[] = [];
