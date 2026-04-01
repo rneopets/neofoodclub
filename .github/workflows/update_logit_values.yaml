@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "0 0 1 * *"
 
+# GITHUB_TOKEN needs write access to push the automated commit
+permissions:
+  contents: write
+
 concurrency:
   # since this runs on an interval this should be fine
   # but we want concurrency failures since we're doing commits
@@ -31,7 +35,7 @@ jobs:
           git add .
           git commit -m "[Automated] Update logit values"
 
-      - name: push
+      - name: Push changes
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
