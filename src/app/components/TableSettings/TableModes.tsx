@@ -75,8 +75,40 @@ const TableModes = (): React.ReactElement => {
       <Text>View Mode</Text>
       <Spacer />
       <Box flexShrink={0}>
-        <SegmentGroup.Root {...sharedProps} size="sm" data-testid="table-mode-segmented-control">
-          <SegmentGroup.Indicator />
+        <SegmentGroup.Root
+          {...sharedProps}
+          size="sm"
+          data-testid="table-mode-segmented-control"
+          css={{
+            bg: 'bg.subtle',
+            borderWidth: '1px',
+            borderColor: 'border',
+            '& [data-state=unchecked]': {
+              color: 'fg.muted',
+            },
+            '& [data-state=checked]': {
+              color: 'fg',
+              fontWeight: 'semibold',
+            },
+            _dark: {
+              borderColor: 'border.emphasized',
+              '& [data-state=unchecked]': {
+                color: 'fg.subtle',
+              },
+            },
+          }}
+        >
+          <SegmentGroup.Indicator
+            css={{
+              borderWidth: '1px',
+              borderColor: 'border',
+              bg: { base: 'bg', _dark: 'bg.emphasized' },
+              _dark: {
+                borderColor: 'border.emphasized',
+                shadow: 'sm',
+              },
+            }}
+          />
           <SegmentGroup.Items items={options} />
         </SegmentGroup.Root>
       </Box>
