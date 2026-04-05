@@ -44,10 +44,31 @@ interface AllBetsModalProps {
 
 type SortField = 'er' | 'ne' | 'odds' | 'maxBet';
 
+/** `pirateIdx` is 1–4 (matches computeBinaryToPirates and 1-indexed odds arrays). */
+function pirateNameForSlot(
+  piratesByArena: number[][] | undefined,
+  arenaIdx: number,
+  pirateIdx: number,
+): string {
+  const pirateId = piratesByArena?.[arenaIdx]?.[pirateIdx - 1];
+  return pirateId ? PIRATE_NAMES.get(pirateId) || '' : '';
+}
+
+function pirateColorForOpeningOdds(
+  openingOdds: number[][] | undefined,
+  arenaIdx: number,
+  pirateIdx: number,
+  getPirateBgColor: (odds: number) => string,
+): string | undefined {
+  const odds = openingOdds?.[arenaIdx]?.[pirateIdx];
+  return odds ? getPirateBgColor(odds) : undefined;
+}
+
 interface RowData {
   allBets: AllBet[];
-  pirateNames: Map<string, string>;
-  pirateColors: Map<string, string>;
+  piratesByArena: number[][];
+  openingOdds: number[][] | undefined;
+  getPirateBgColor: (odds: number) => string;
   showBinaryAsHex: boolean;
 }
 
@@ -56,8 +77,9 @@ const Row = React.memo(
     index,
     style,
     allBets,
-    pirateNames,
-    pirateColors,
+    piratesByArena,
+    openingOdds,
+    getPirateBgColor,
     showBinaryAsHex,
   }: {
     index: number;
@@ -93,7 +115,10 @@ const Row = React.memo(
           <HStack width="350px" gap={1} flexShrink={0}>
             {bet.pirates.map((p, arenaIdx) => {
               const key = `${arenaIdx}-${p}`;
-              const color = pirateColors.get(key);
+              const color =
+                p > 0
+                  ? pirateColorForOpeningOdds(openingOdds, arenaIdx, p, getPirateBgColor)
+                  : undefined;
               return (
                 <Text
                   key={key}
@@ -103,7 +128,7 @@ const Row = React.memo(
                   flexShrink={0}
                   {...(color && { layerStyle: 'fill.subtle', colorPalette: color })}
                 >
-                  {pirateNames.get(key) || ''}
+                  {p > 0 ? pirateNameForSlot(piratesByArena, arenaIdx, p) : ''}
                 </Text>
               );
             })}
@@ -297,59 +322,16 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
     });
   }, [pirateFilteredBets, showOnlyWinningBets, isRoundOver, roundData.winners]);
 
-  // Pre-compute pirate names and colors map for fast lookups
-  // Note: computeBinaryToPirates returns 1-4
-  // pirates array is 0-indexed, odds arrays are 1-indexed
-  const pirateNames = React.useMemo(() => {
-    const names = new Map<string, string>();
-    for (let arenaIdx = 0; arenaIdx < 5; arenaIdx++) {
-      const arena = roundData.pirates[arenaIdx];
-      if (!arena) {
-        continue;
-      }
-      for (let pirateIdx = 1; pirateIdx <= 4; pirateIdx++) {
-        const pirateId = arena[pirateIdx - 1]; // pirates array is 0-indexed
-        if (pirateId) {
-          const name = PIRATE_NAMES.get(pirateId) || '';
-          names.set(`${arenaIdx}-${pirateIdx}`, name);
-        }
-      }
-    }
-    return names;
-  }, [roundData.pirates]);
-
-  const pirateColors = React.useMemo(() => {
-    const colors = new Map<string, string>();
-    const openingOdds = roundData.openingOdds;
-    if (!openingOdds) {
-      return colors;
-    }
-
-    for (let arenaIdx = 0; arenaIdx < 5; arenaIdx++) {
-      const arenaOdds = openingOdds[arenaIdx];
-      if (!arenaOdds) {
-        continue;
-      }
-      for (let pirateIdx = 1; pirateIdx <= 4; pirateIdx++) {
-        const odds = arenaOdds[pirateIdx]; // odds arrays are 1-indexed
-        if (odds) {
-          const color = getPirateBgColor(odds);
-          colors.set(`${arenaIdx}-${pirateIdx}`, color);
-        }
-      }
-    }
-    return colors;
-  }, [roundData.openingOdds, getPirateBgColor]);
-
   // Item data for react-window
   const itemData = React.useMemo<RowData>(
     () => ({
       allBets: filteredBets,
-      pirateNames,
-      pirateColors,
+      piratesByArena: roundData.pirates,
+      openingOdds: roundData.openingOdds,
+      getPirateBgColor,
       showBinaryAsHex,
     }),
-    [filteredBets, pirateNames, pirateColors, showBinaryAsHex],
+    [filteredBets, roundData.pirates, roundData.openingOdds, getPirateBgColor, showBinaryAsHex],
   );
 
   return (
@@ -568,8 +550,15 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                             >
                               {ARENA_NAMES.map((arenaName, arenaIdx) => {
                                 const key = `${arenaIdx}-${pirateIdx}`;
-                                const name = pirateNames.get(key) || `P${pirateIdx}`;
-                                const color = pirateColors.get(key);
+                                const name =
+                                  pirateNameForSlot(roundData.pirates, arenaIdx, pirateIdx) ||
+                                  `P${pirateIdx}`;
+                                const color = pirateColorForOpeningOdds(
+                                  roundData.openingOdds,
+                                  arenaIdx,
+                                  pirateIdx,
+                                  getPirateBgColor,
+                                );
                                 const curOdds = roundData.currentOdds?.[arenaIdx]?.[pirateIdx];
                                 const blockLabel = `Block ${name} (${arenaName})`;
                                 return (
