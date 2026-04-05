@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Dialog,
   Portal,
@@ -15,7 +16,7 @@ import {
 import * as React from 'react';
 import { List } from 'react-window';
 
-import { PIRATE_NAMES } from '../../constants';
+import { ARENA_NAMES, PIRATE_NAMES } from '../../constants';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
 import { useIsRoundOver } from '../../hooks/useIsRoundOver';
@@ -162,6 +163,8 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
   const [useExperimentalLogit, setUseExperimentalLogit] = React.useState(globalUseLogitModel);
   const [showOnlyWinningBets, setShowOnlyWinningBets] = React.useState(false);
   const [showBinaryAsHex, setShowBinaryAsHex] = React.useState(true);
+  /** Keys `${arenaIdx}-${pirateIdx}` (pirateIdx 1–4). Bets containing any blocked pirate are hidden. */
+  const [blockedPirates, setBlockedPirates] = React.useState<Set<string>>(() => new Set());
   const [isPending, startTransition] = React.useTransition();
 
   // Check if round is over
@@ -258,14 +261,29 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
     });
   }, [roundData, usedProbabilities, debouncedMaxBet, sortField, reverseSort]);
 
+  const pirateFilteredBets = React.useMemo(() => {
+    if (blockedPirates.size === 0) {
+      return allBets;
+    }
+    return allBets.filter(bet => {
+      for (let arenaIdx = 0; arenaIdx < 5; arenaIdx++) {
+        const p = bet.pirates[arenaIdx];
+        if (p && p > 0 && blockedPirates.has(`${arenaIdx}-${p}`)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [allBets, blockedPirates]);
+
   // Filter bets to only show winning bets if enabled
   const filteredBets = React.useMemo(() => {
     if (!showOnlyWinningBets || !isRoundOver || !roundData.winners) {
-      return allBets;
+      return pirateFilteredBets;
     }
 
     // Filter to only bets where all selected pirates are winners
-    return allBets.filter(bet => {
+    return pirateFilteredBets.filter(bet => {
       for (let arenaIdx = 0; arenaIdx < 5; arenaIdx++) {
         const selectedPirate = bet.pirates[arenaIdx];
         const winner = roundData.winners?.[arenaIdx];
@@ -277,7 +295,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
       }
       return true;
     });
-  }, [allBets, showOnlyWinningBets, isRoundOver, roundData.winners]);
+  }, [pirateFilteredBets, showOnlyWinningBets, isRoundOver, roundData.winners]);
 
   // Pre-compute pirate names and colors map for fast lookups
   // Note: computeBinaryToPirates returns 1-4
@@ -349,7 +367,8 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
             <Dialog.Header>
               <Dialog.Title>
                 All Possible Bets ({filteredBets.length}
-                {showOnlyWinningBets && allBets.length !== filteredBets.length
+                {(showOnlyWinningBets || blockedPirates.size > 0) &&
+                allBets.length !== filteredBets.length
                   ? ` of ${allBets.length}`
                   : ''}
                 )
@@ -473,6 +492,144 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                       )}
                     </HStack>
                   </HStack>
+
+                  <Box
+                    flexShrink={0}
+                    mt={2}
+                    pt={3}
+                    pb={3}
+                    px={3}
+                    borderWidth="1px"
+                    borderRadius="md"
+                    borderColor="border.muted"
+                    bg="bg.subtle"
+                  >
+                    <Stack gap={3}>
+                      <Stack gap={1}>
+                        <HStack justify="space-between" align="flex-start" flexWrap="wrap" gap={2}>
+                          <Text fontSize="sm" fontWeight="semibold">
+                            Pirate exclusions
+                          </Text>
+                          {blockedPirates.size > 0 && (
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              onClick={() => {
+                                startTransition(() => setBlockedPirates(new Set()));
+                              }}
+                            >
+                              Allow all pirates
+                            </Button>
+                          )}
+                        </HStack>
+                        <Text fontSize="xs" color="fg.muted" lineHeight="short">
+                          Bets that include a checked pirate are hidden. Nothing is excluded by
+                          default.
+                        </Text>
+                      </Stack>
+                      <Box overflowX="auto" pb={1} width="fit-content" maxWidth="100%">
+                        <Box
+                          display="grid"
+                          gridTemplateColumns="repeat(5, 6rem)"
+                          gap={1.5}
+                          alignItems="end"
+                          px={1}
+                          pb={2}
+                          borderBottomWidth="1px"
+                          borderColor="border.muted"
+                        >
+                          {ARENA_NAMES.map(arenaName => (
+                            <Text
+                              key={arenaName}
+                              fontSize="xs"
+                              fontWeight="medium"
+                              color="fg.muted"
+                              textAlign="center"
+                              lineHeight="short"
+                            >
+                              {arenaName}
+                            </Text>
+                          ))}
+                        </Box>
+                        <Box as="ul" listStyleType="none" margin={0} padding={0} fontSize="xs">
+                          {[1, 2, 3, 4].map(pirateIdx => (
+                            <Box
+                              as="li"
+                              key={pirateIdx}
+                              display="grid"
+                              gridTemplateColumns="repeat(5, 6rem)"
+                              gap={1.5}
+                              alignItems="start"
+                              py={1.5}
+                              px={1}
+                              borderBottomWidth="1px"
+                              borderColor="border.muted"
+                              _last={{ borderBottomWidth: '0' }}
+                            >
+                              {ARENA_NAMES.map((arenaName, arenaIdx) => {
+                                const key = `${arenaIdx}-${pirateIdx}`;
+                                const name = pirateNames.get(key) || `P${pirateIdx}`;
+                                const color = pirateColors.get(key);
+                                const blockLabel = `Block ${name} (${arenaName})`;
+                                return (
+                                  <Checkbox.Root
+                                    key={key}
+                                    checked={blockedPirates.has(key)}
+                                    display="flex"
+                                    flexDirection="row"
+                                    alignItems="center"
+                                    gap={1}
+                                    minWidth={0}
+                                    title={blockLabel}
+                                    onCheckedChange={() => {
+                                      startTransition(() => {
+                                        setBlockedPirates(prev => {
+                                          const next = new Set(prev);
+                                          if (next.has(key)) {
+                                            next.delete(key);
+                                          } else {
+                                            next.add(key);
+                                          }
+                                          return next;
+                                        });
+                                      });
+                                    }}
+                                    aria-label={blockLabel}
+                                  >
+                                    <Checkbox.HiddenInput />
+                                    <Checkbox.Control flexShrink={0} />
+                                    <Checkbox.Label
+                                      flex={1}
+                                      minWidth={0}
+                                      marginInlineStart={0}
+                                      cursor="pointer"
+                                      userSelect="none"
+                                    >
+                                      <Badge
+                                        fontSize="2xs"
+                                        variant="subtle"
+                                        maxWidth="100%"
+                                        px={1}
+                                        py={0.5}
+                                        lineHeight="short"
+                                        {...(color
+                                          ? { colorPalette: color }
+                                          : { colorPalette: 'gray' })}
+                                      >
+                                        <Text as="span" truncate display="block">
+                                          {name}
+                                        </Text>
+                                      </Badge>
+                                    </Checkbox.Label>
+                                  </Checkbox.Root>
+                                );
+                              })}
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    </Stack>
+                  </Box>
                 </Stack>
 
                 <Box flex={1} minHeight={0} display="flex" flexDirection="column">
