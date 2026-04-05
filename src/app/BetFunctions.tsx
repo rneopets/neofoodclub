@@ -711,6 +711,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
   const deleteSet = useDeleteBetSet();
 
   const roundData = useRoundData();
+  const roundNumber = roundData.round;
   const arenaRatios = useArenaRatios();
   const winningBetBinary = useWinningBetBinary();
   const currentSelectedRound = useSelectedRound();
@@ -937,6 +938,21 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
               {...sidebarSurfaceButtonProps}
             />
           </SimpleGrid>
+
+          {isRoundOver && (
+            <Badge
+              w="full"
+              colorPalette="red"
+              variant="surface"
+              size="sm"
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              data-testid="round-over-banner"
+            >
+              Round {roundNumber} is over
+            </Badge>
+          )}
         </VStack>
       ) : (
         <Wrap>
@@ -960,62 +976,78 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
             </Button>
           </ButtonGroup>
 
-          <ButtonGroup size="sm" variant="surface" attached gap={0}>
-            <Menu.Root>
-              <Menu.Trigger asChild>
-                <Button data-testid="generate-button" disabled={!hasRoundData} roundedEnd={0}>
-                  <FaWandMagicSparkles />
-                  Generate
-                  <FaChevronDown />
-                </Button>
-              </Menu.Trigger>
-              <Portal>
-                <Menu.Positioner>
-                  <Menu.Content>
-                    <Menu.Item
-                      value="maxTer"
-                      onClick={handleGenerateMaxTERSet}
-                      data-testid="max-ter-set-menuitem"
-                    >
-                      Max TER set
-                    </Menu.Item>
-                    <Menu.Item
-                      value="gambit"
-                      onClick={handleGenerateGambitSet}
-                      data-testid="gambit-set-menuitem"
-                    >
-                      Gambit set
-                    </Menu.Item>
-                    <Menu.Item
-                      value="winningGambit"
-                      hidden={winningBetBinary === 0}
-                      onClick={handleGenerateWinningGambitSet}
-                      data-testid="winning-gambit-set-menuitem"
-                    >
-                      Winning Gambit set
-                    </Menu.Item>
-                    <Menu.Item
-                      value="randomCrazy"
-                      onClick={handleGenerateRandomCrazySet}
-                      data-testid="random-crazy-set-menuitem"
-                    >
-                      Random Crazy set
-                    </Menu.Item>
-                    <Menu.Item
-                      value="bustproof"
-                      onClick={handleGenerateBustproofSet}
-                      disabled={positiveArenas === 0}
-                      data-testid="bustproof-set-menuitem"
-                    >
-                      Bustproof Set
-                    </Menu.Item>
-                  </Menu.Content>
-                </Menu.Positioner>
-              </Portal>
-            </Menu.Root>
+          <VStack align="stretch" gap={1}>
+            <ButtonGroup size="sm" variant="surface" attached gap={0}>
+              <Menu.Root>
+                <Menu.Trigger asChild>
+                  <Button data-testid="generate-button" disabled={!hasRoundData} roundedEnd={0}>
+                    <FaWandMagicSparkles />
+                    Generate
+                    <FaChevronDown />
+                  </Button>
+                </Menu.Trigger>
+                <Portal>
+                  <Menu.Positioner>
+                    <Menu.Content>
+                      <Menu.Item
+                        value="maxTer"
+                        onClick={handleGenerateMaxTERSet}
+                        data-testid="max-ter-set-menuitem"
+                      >
+                        Max TER set
+                      </Menu.Item>
+                      <Menu.Item
+                        value="gambit"
+                        onClick={handleGenerateGambitSet}
+                        data-testid="gambit-set-menuitem"
+                      >
+                        Gambit set
+                      </Menu.Item>
+                      <Menu.Item
+                        value="winningGambit"
+                        hidden={winningBetBinary === 0}
+                        onClick={handleGenerateWinningGambitSet}
+                        data-testid="winning-gambit-set-menuitem"
+                      >
+                        Winning Gambit set
+                      </Menu.Item>
+                      <Menu.Item
+                        value="randomCrazy"
+                        onClick={handleGenerateRandomCrazySet}
+                        data-testid="random-crazy-set-menuitem"
+                      >
+                        Random Crazy set
+                      </Menu.Item>
+                      <Menu.Item
+                        value="bustproof"
+                        onClick={handleGenerateBustproofSet}
+                        disabled={positiveArenas === 0}
+                        data-testid="bustproof-set-menuitem"
+                      >
+                        Bustproof Set
+                      </Menu.Item>
+                    </Menu.Content>
+                  </Menu.Positioner>
+                </Portal>
+              </Menu.Root>
 
-            <BuildSetMenu />
-          </ButtonGroup>
+              <BuildSetMenu />
+            </ButtonGroup>
+            {isRoundOver && (
+              <Badge
+                w="full"
+                colorPalette="red"
+                variant="surface"
+                size="sm"
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                data-testid="round-over-banner"
+              >
+                Round {roundNumber} is over
+              </Badge>
+            )}
+          </VStack>
         </Wrap>
       )}
     </Stack>
@@ -1195,7 +1227,6 @@ const BetBadges = React.memo(
   (props: { index: number; [key: string]: unknown }): React.ReactElement => {
     const { index, ...rest } = props;
     const currentSelectedRound = useSelectedRound();
-    const roundNumber = useRoundStore(state => state.roundData.round);
     const roundDataPirates = useRoundPirates();
     const isRoundOver = useIsRoundOver();
 
@@ -1256,15 +1287,6 @@ const BetBadges = React.memo(
     const statusBadges = useMemo(() => {
       const result = [];
 
-      // round-over badge
-      if (isRoundOver) {
-        result.push(
-          <Badge key="round-over" colorPalette="red" variant="surface">
-            Round {roundNumber} is over
-          </Badge>,
-        );
-      }
-
       if (!calculated) {
         result.push(
           <Badge key="no-round-data" colorPalette="red" variant="surface">
@@ -1274,7 +1296,7 @@ const BetBadges = React.memo(
       }
 
       return result;
-    }, [isRoundOver, calculated, roundNumber, currentSelectedRound]);
+    }, [calculated, currentSelectedRound]);
 
     const validationBadges = useMemo(() => {
       const result = [];
@@ -1445,15 +1467,7 @@ const BetBadges = React.memo(
       }
 
       return result;
-    }, [
-      betCount,
-      isRoundOver,
-      hasDuplicateBets,
-      calculated,
-      payoutTables,
-      betAmounts,
-      totalTer,
-    ]);
+    }, [betCount, isRoundOver, hasDuplicateBets, calculated, payoutTables, betAmounts, totalTer]);
 
     const resultsBadges: React.ReactElement[] = useMemo(() => {
       const result: React.ReactElement[] = [];
@@ -1512,22 +1526,29 @@ const BetBadges = React.memo(
       calculated,
     ]);
 
-    // Combine all badges
-    const allBadges = useMemo(
-      () => [
-        ...statusBadges,
-        ...validationBadges,
-        ...strategyBadges,
-        ...performanceBadges,
-        ...resultsBadges,
-      ],
-      [statusBadges, validationBadges, strategyBadges, performanceBadges, resultsBadges],
+    const prefixBadges = useMemo(
+      () => [...statusBadges, ...validationBadges, ...strategyBadges, ...performanceBadges],
+      [statusBadges, validationBadges, strategyBadges, performanceBadges],
     );
 
+    const showRoundEndSeparator = prefixBadges.length > 0 && resultsBadges.length > 0;
+
     return (
-      <Wrap gap={1} userSelect="none" justify="center" w="full" {...rest}>
-        {allBadges}
-      </Wrap>
+      <VStack align="stretch" gap={showRoundEndSeparator ? 2 : 0} w="full" {...rest}>
+        {prefixBadges.length > 0 ? (
+          <Wrap gap={1} userSelect="none" justify="center" w="full">
+            {prefixBadges}
+          </Wrap>
+        ) : null}
+        {resultsBadges.length > 0 ? (
+          <>
+            {showRoundEndSeparator ? <Separator /> : null}
+            <Wrap gap={1} userSelect="none" justify="center" w="full">
+              {resultsBadges}
+            </Wrap>
+          </>
+        ) : null}
+      </VStack>
     );
   },
 );
