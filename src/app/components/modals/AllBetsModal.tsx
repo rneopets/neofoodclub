@@ -530,7 +530,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                       <Box overflowX="auto" pb={1} width="fit-content" maxWidth="100%">
                         <Box
                           display="grid"
-                          gridTemplateColumns="repeat(5, 6rem)"
+                          gridTemplateColumns="repeat(5, 8rem)"
                           gap={1.5}
                           alignItems="end"
                           px={1}
@@ -557,7 +557,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                               as="li"
                               key={pirateIdx}
                               display="grid"
-                              gridTemplateColumns="repeat(5, 6rem)"
+                              gridTemplateColumns="repeat(5, 8rem)"
                               gap={1.5}
                               alignItems="start"
                               py={1.5}
@@ -570,6 +570,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                                 const key = `${arenaIdx}-${pirateIdx}`;
                                 const name = pirateNames.get(key) || `P${pirateIdx}`;
                                 const color = pirateColors.get(key);
+                                const curOdds = roundData.currentOdds?.[arenaIdx]?.[pirateIdx];
                                 const blockLabel = `Block ${name} (${arenaName})`;
                                 return (
                                   <Checkbox.Root
@@ -616,9 +617,27 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                                           ? { colorPalette: color }
                                           : { colorPalette: 'gray' })}
                                       >
-                                        <Text as="span" truncate display="block">
-                                          {name}
-                                        </Text>
+                                        <HStack gap={0.5} maxW="100%" minW={0} lineHeight="short">
+                                          <Text
+                                            as="span"
+                                            truncate
+                                            display="block"
+                                            flex={1}
+                                            minW={0}
+                                          >
+                                            {name}
+                                          </Text>
+                                          {curOdds !== undefined && curOdds > 0 ? (
+                                            <Text
+                                              as="span"
+                                              color="fg"
+                                              flexShrink={0}
+                                              whiteSpace="nowrap"
+                                            >
+                                              - {curOdds}:1
+                                            </Text>
+                                          ) : null}
+                                        </HStack>
                                       </Badge>
                                     </Checkbox.Label>
                                   </Checkbox.Root>
