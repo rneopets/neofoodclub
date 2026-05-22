@@ -6,10 +6,16 @@ on:
       - 'automation/**/*.py'
       - 'automation/pyproject.toml'
       - 'automation/uv.lock'
+  workflow_run:
+    workflows: ['Automation Output Check']
+    types: [completed]
 
 jobs:
   check-outputs:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout code
@@ -23,7 +29,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
-          version: "latest"
+          version: 'latest'
 
       - name: Install dependencies
         working-directory: automation
@@ -51,6 +57,9 @@ jobs:
         run: |
           echo "Comparing generated python.py with existing file..."
 
+          HAS_DIFF=false
+          ORIGINAL_EXISTS=false
+
           # Check if file was generated
           if [ ! -f "output/python.py" ]; then
             echo "Error: output/python.py was not generated"
@@ -59,8 +68,10 @@ jobs:
 
           # Compare the file and capture diff
           if [ -f "original_outputs/python.py" ]; then
+            ORIGINAL_EXISTS=true
             diff -u "original_outputs/python.py" "output/python.py" > diff_output.txt 2>&1 || true
             if [ -s diff_output.txt ]; then
+              HAS_DIFF=true
               echo "has_diff=true" >> $GITHUB_OUTPUT
               echo "Error: output/python.py differs from expected"
               exit 1
@@ -74,62 +85,106 @@ jobs:
             echo "Warning: output/python.py was not present in repository, cannot compare"
           fi
 
+          echo "{\"has_diff\":${HAS_DIFF},\"original_exists\":${ORIGINAL_EXISTS}}" > compare-result.json
+
           echo "Output file matches expected value."
 
-      - name: Comment diff on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+      - name: Upload comparison results
+        if: always()
+        working-directory: automation
+        uses: actions/upload-artifact@v4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-
-            const diffPath = path.join('automation', 'diff_output.txt');
-            const originalPath = path.join('automation', 'original_outputs', 'python.py');
-            const hasDiff = fs.existsSync(diffPath) && fs.statSync(diffPath).size > 0;
-            const originalExists = fs.existsSync(originalPath);
-            let diffContent = '';
-
-            if (hasDiff) {
-              diffContent = fs.readFileSync(diffPath, 'utf8');
-            }
-
-            // Only comment if original exists (so we can compare)
-            if (!originalExists) {
-              console.log('No original file found, skipping comment');
-              return;
-            }
-
-            let comment;
-            if (hasDiff) {
-              comment = `## ⚠️ Automation Output Diff Detected
-
-            The generated \`output/python.py\` differs from the expected output.
-
-            <details>
-            <summary>View diff</summary>
-
-            \`\`\`diff
-            ${diffContent}
-            \`\`\`
-
-            </details>
-
-            Please review the changes and update \`output/python.py\` if the changes are intentional.`;
-            } else {
-              comment = `## ✅ Automation Output Check Passed
-
-            The generated \`output/python.py\` matches the expected output.`;
-            }
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
+          name: automation-output-check
+          path: |
+            compare-result.json
+            diff_output.txt
+          if-no-files-found: ignore
 
       - name: Fail if diff detected
         if: steps.compare.outcome == 'failure'
         run: exit 1
+
+  post-pr-comment:
+    if: >
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion != 'cancelled'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Download comparison results
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const pullRequests = context.payload.workflow_run.pull_requests;
+            if (!pullRequests?.length) {
+              console.log('No pull request associated with workflow run, skipping comment');
+              return;
+            }
+
+            const resultPath = path.join('compare-result.json');
+            if (!fs.existsSync(resultPath)) {
+              console.log('No compare-result.json artifact, skipping comment');
+              return;
+            }
+
+            const { has_diff: hasDiff, original_exists: originalExists } = JSON.parse(
+              fs.readFileSync(resultPath, 'utf8')
+            );
+
+            if (!originalExists) {
+              console.log('No original file to compare against, skipping comment');
+              return;
+            }
+
+            const diffPath = path.join('diff_output.txt');
+            let diffContent = '';
+            if (hasDiff && fs.existsSync(diffPath) && fs.statSync(diffPath).size > 0) {
+              diffContent = fs.readFileSync(diffPath, 'utf8');
+            }
+
+            let comment;
+            if (hasDiff) {
+              comment = [
+                '## ⚠️ Automation Output Diff Detected',
+                '',
+                'The generated `output/python.py` differs from the expected output.',
+                '',
+                '<details>',
+                '<summary>View diff</summary>',
+                '',
+                '```diff',
+                diffContent,
+                '```',
+                '',
+                '</details>',
+                '',
+                'Please review the changes and update `output/python.py` if the changes are intentional.',
+              ].join('\n');
+            } else {
+              comment = [
+                '## ✅ Automation Output Check Passed',
+                '',
+                'The generated `output/python.py` matches the expected output.',
+              ].join('\n');
+            }
+
+            await github.rest.issues.createComment({
+              issue_number: pullRequests[0].number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment,
+            });
