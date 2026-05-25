@@ -26,9 +26,16 @@ import { FaPenToSquare, FaGear } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
 import BetFunctions from '../../BetFunctions';
-import { useRoundStore, useViewMode, useTableMode, useHasAnyBets } from '../../stores';
+import {
+  useBetSetPosition,
+  useHasAnyBets,
+  useRoundStore,
+  useTableMode,
+  useViewMode,
+} from '../../stores';
 import DropDownTable from '../tables/DropDownTable';
 import NormalTable from '../tables/NormalTable';
+import BetSetPosition from '../TableSettings/BetSetPosition';
 import ColorModeToggle from '../TableSettings/ColorModeToggle';
 import CopyDomainToggle from '../TableSettings/CopyDomainToggle';
 import Extras from '../TableSettings/Extras';
@@ -142,6 +149,7 @@ export default React.memo(function EditBets(): React.ReactElement {
     useState<React.RefObject<HTMLElement | null> | null>(null);
   const [payoutPortalContainerRef, setPayoutPortalContainerRef] =
     useState<React.RefObject<HTMLElement | null> | null>(null);
+  const betSetPosition = useBetSetPosition();
 
   const shadowValue = useColorModeValue(
     '0 1px 2px rgba(0,0,0,0.02)',
@@ -207,6 +215,74 @@ export default React.memo(function EditBets(): React.ReactElement {
     );
     setPayoutPortalContainerRef(viewMode ? viewPayoutContainerRef : editPayoutContainerRef);
   }, [viewMode]);
+
+  const isSideBetSetPosition = betSetPosition === 'left' || betSetPosition === 'right';
+  const sideBetSetsPanel = isSideBetSetPosition ? (
+    <Box
+      w={{ base: 'full', lg: '360px' }}
+      flexShrink={0}
+      bg="bg.emphasized"
+      borderWidth="1px"
+      borderColor="border"
+      borderRadius={0}
+      p={0}
+      // Background + border should extend down the full content height (until the footer),
+      // while the inner content remains sticky and scrollable.
+      alignSelf={{ lg: 'stretch' }}
+      data-testid="bet-sidebar"
+    >
+      <Box
+        position={{ base: 'static', lg: 'sticky' }}
+        top={{ lg: '7.5rem' }}
+        maxH={{ lg: 'calc(100vh - 8rem)' }}
+        overflowX="hidden"
+        overflowY={{ base: 'visible', lg: 'auto' }}
+        display="flex"
+        flexDirection="column"
+      >
+        <BetFunctions variant="sidebar" flex="1" minH={0} />
+      </Box>
+    </Box>
+  ) : null;
+
+  const inlineBetSetsPanel = isSideBetSetPosition ? null : (
+    <Box
+      w="full"
+      bg="bg.emphasized"
+      borderWidth="1px"
+      borderColor="border"
+      borderRadius={0}
+      data-testid="bet-sets-inline"
+    >
+      <BetFunctions />
+    </Box>
+  );
+
+  const tablePanel = (
+    <Box overflowX="auto" width="full" pb={4}>
+      <PirateTable m={4} />
+    </Box>
+  );
+
+  const mainPanel = (
+    <Box flex="1" minW={0} minH={0} data-testid="bet-main">
+      {betSetPosition === 'above' ? inlineBetSetsPanel : null}
+      {/* Horizontal scrolling for wide tables, but let the page handle vertical scroll so the sidebar sticky works */}
+      {tablePanel}
+      {betSetPosition === 'below' ? inlineBetSetsPanel : null}
+
+      {/* Bet amounts should appear below the bet table */}
+      <Box ref={editBetAmountsContainerRef} />
+      {/* Portal target for payout UI while in edit mode */}
+      <Box ref={editPayoutContainerRef} />
+    </Box>
+  );
+
+  const sideLayoutDirection = {
+    base: 'column',
+    lg: betSetPosition === 'right' ? 'row-reverse' : 'row',
+  } as const;
+  const layoutDirection = isSideBetSetPosition ? sideLayoutDirection : ('column' as const);
 
   return (
     <>
@@ -276,6 +352,8 @@ export default React.memo(function EditBets(): React.ReactElement {
                       <VStack gap={2} align="stretch" width="100%">
                         <TableModes />
 
+                        <BetSetPosition />
+
                         <LogitModelToggle />
 
                         <CopyDomainToggle />
@@ -292,48 +370,13 @@ export default React.memo(function EditBets(): React.ReactElement {
           </Box>
 
           <Flex
-            direction={{ base: 'column', lg: 'row' }}
+            direction={layoutDirection}
             align={{ base: 'stretch', lg: 'stretch' }}
             w="full"
             data-testid="bets-layout"
           >
-            <Box
-              w={{ base: 'full', lg: '360px' }}
-              flexShrink={0}
-              bg="bg.emphasized"
-              borderWidth="1px"
-              borderColor="border"
-              borderRadius={0}
-              p={0}
-              // Background + border should extend down the full content height (until the footer),
-              // while the inner content remains sticky and scrollable.
-              alignSelf={{ lg: 'stretch' }}
-              data-testid="bet-sidebar"
-            >
-              <Box
-                position={{ base: 'static', lg: 'sticky' }}
-                top={{ lg: '7.5rem' }}
-                maxH={{ lg: 'calc(100vh - 8rem)' }}
-                overflowX="hidden"
-                overflowY={{ base: 'visible', lg: 'auto' }}
-                display="flex"
-                flexDirection="column"
-              >
-                <BetFunctions variant="sidebar" flex="1" minH={0} />
-              </Box>
-            </Box>
-
-            <Box flex="1" minW={0} minH={0} data-testid="bet-main">
-              {/* Horizontal scrolling for wide tables, but let the page handle vertical scroll so the sidebar sticky works */}
-              <Box overflowX="auto" width="full" pb={4}>
-                <PirateTable m={4} />
-              </Box>
-
-              {/* Bet amounts should appear below the bet table */}
-              <Box ref={editBetAmountsContainerRef} />
-              {/* Portal target for payout UI while in edit mode */}
-              <Box ref={editPayoutContainerRef} />
-            </Box>
+            {sideBetSetsPanel}
+            {mainPanel}
           </Flex>
         </>
       )}

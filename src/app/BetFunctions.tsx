@@ -804,14 +804,11 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
 
   const hasRoundData = isValidRound({ roundData, currentSelectedRound } as RoundState);
 
-  const containerProps =
-    variant === 'sidebar'
-      ? {
-          direction: 'column' as const,
-          align: 'stretch' as const,
-          justify: 'flex-start' as const,
-        }
-      : {};
+  const containerProps = {
+    direction: 'column' as const,
+    align: 'stretch' as const,
+    justify: 'flex-start' as const,
+  };
 
   // The sidebar itself uses an emphasized background; ensure "surface" buttons don't
   // blend into it when hovered/pressed (Chakra's default active bg can match).
@@ -1110,7 +1107,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
           ) : null}
         </Stack>
       ) : (
-        <Stack>{betCards}</Stack>
+        <Wrap>{betCards}</Wrap>
       )}
     </SettingsBox>
   );

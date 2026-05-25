@@ -6,6 +6,7 @@ import { OddsData, ProbabilitiesData } from '../../types/bets';
 import { defaultRoundData } from '../constants';
 import {
   calculateRoundData,
+  getBetSetPosition,
   parseBetUrl,
   getTableMode,
   getUseWebDomain,
@@ -18,6 +19,7 @@ import {
   anyBetAmountsExist,
   makeBetURL,
   getMaxBet,
+  type BetSetPosition,
 } from '../util';
 
 import { useBetStore } from './betStore';
@@ -78,6 +80,7 @@ interface RoundStore {
   customOdds: OddsData | null;
   customProbs: ProbabilitiesData | null;
   tableMode: string;
+  betSetPosition: BetSetPosition;
   viewMode: boolean;
   useWebDomain: boolean;
   bigBrain: boolean;
@@ -103,6 +106,7 @@ interface RoundStore {
   setCustomOdds: (odds: OddsData) => void;
   setCustomProbs: (probs: ProbabilitiesData) => void;
   setTableMode: (mode: string) => void;
+  setBetSetPosition: (position: BetSetPosition) => void;
   setViewMode: (viewMode: boolean) => void;
   setUseWebDomain: (useWebDomain: boolean) => void;
   toggleBigBrain: () => void;
@@ -136,6 +140,7 @@ export const useRoundStore = create<RoundStore>()(
     customOdds: null,
     customProbs: null,
     tableMode: getTableMode(),
+    betSetPosition: getBetSetPosition(),
     viewMode: anyBetsExist(initialState.bets),
     useWebDomain: getUseWebDomain(),
     bigBrain: getBigBrainMode(),
@@ -240,6 +245,7 @@ export const useRoundStore = create<RoundStore>()(
     },
 
     setTableMode: (mode: string): void => set({ tableMode: mode }),
+    setBetSetPosition: (position: BetSetPosition): void => set({ betSetPosition: position }),
     setViewMode: (viewMode: boolean): void => set({ viewMode }),
     setUseWebDomain: (useWebDomain: boolean): void => set({ useWebDomain }),
 
@@ -545,7 +551,9 @@ export const useRoundStore = create<RoundStore>()(
 
       const handleHashChange = (): void => {
         const hash = window.location.hash.slice(1);
-        if (!hash) return;
+        if (!hash) {
+          return;
+        }
 
         const parsed = parseBetUrl(hash);
         const currentState = get();
