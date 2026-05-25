@@ -118,6 +118,7 @@ const PayoutCharts: React.FC = React.memo(() => {
 
   const totalBetAmount = useTotalBetAmounts();
   const { colorMode } = useColorMode();
+  const isDarkLikeMode = colorMode !== 'light';
 
   const makeChart = useCallback(
     (title: string, data: PayoutData[] | undefined): React.ReactElement | null => {
@@ -146,7 +147,7 @@ const PayoutCharts: React.FC = React.memo(() => {
 
       // Create colors array for the points
       const pointColors = Array(points.length).fill(
-        colorMode === 'dark' ? '#ff79c6' : 'rgb(255, 85, 85)',
+        isDarkLikeMode ? '#ff79c6' : 'rgb(255, 85, 85)',
       );
 
       // Set winning point color if it exists
@@ -158,8 +159,8 @@ const PayoutCharts: React.FC = React.memo(() => {
         datasets: [
           {
             data: points,
-            borderColor: colorMode === 'dark' ? '#ff79c6' : 'rgb(255, 85, 85)',
-            backgroundColor: colorMode === 'dark' ? '#ff79c6' : 'rgb(255, 85, 85)',
+            borderColor: isDarkLikeMode ? '#ff79c6' : 'rgb(255, 85, 85)',
+            backgroundColor: isDarkLikeMode ? '#ff79c6' : 'rgb(255, 85, 85)',
             pointBackgroundColor: pointColors,
             pointBorderColor: pointColors,
           },
@@ -202,7 +203,7 @@ const PayoutCharts: React.FC = React.memo(() => {
                 type: 'line',
                 xMin: breakEven,
                 xMax: breakEven,
-                borderColor: colorMode === 'dark' ? '#fff' : '#000',
+                borderColor: isDarkLikeMode ? '#fff' : '#000',
                 borderWidth: 2,
               },
             },
@@ -245,7 +246,7 @@ const PayoutCharts: React.FC = React.memo(() => {
       };
 
       // add custom dark mode changes to options
-      if (colorMode === 'dark') {
+      if (isDarkLikeMode) {
         // Update grid colors but no need to update point colors as they're already set
         const gridLineColor = '#6272a4';
         const textColor = '#ffffff';
@@ -284,7 +285,7 @@ const PayoutCharts: React.FC = React.memo(() => {
         </Table.Row>
       );
     },
-    [betBinaries, totalBetAmount, colorMode, winningBetBinary, calculationsData],
+    [betBinaries, totalBetAmount, isDarkLikeMode, winningBetBinary, calculationsData],
   );
 
   const makeTable = useCallback(
