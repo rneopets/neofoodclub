@@ -218,13 +218,24 @@ export function getMaxBet(currentSelectedRound: number): number {
 }
 
 export function getTableMode(): string {
-  const validModes = ['normal', 'dropdown'];
+  return getCookieOption('tableMode', ['normal', 'dropdown'] as const, 'normal');
+}
+
+export const BET_SET_POSITIONS = ['above', 'below', 'left', 'right'] as const;
+export type BetSetPosition = (typeof BET_SET_POSITIONS)[number];
+
+export function getBetSetPosition(): BetSetPosition {
+  return getCookieOption('betSetPosition', BET_SET_POSITIONS, 'below');
+}
+
+function getCookieOption<const T extends readonly string[]>(
+  key: string,
+  validOptions: T,
+  defaultValue: T[number],
+): T[number] {
   const cookies = new Cookies();
-  let mode = cookies.get('tableMode');
-  if (validModes.includes(mode) === false) {
-    mode = 'normal';
-  }
-  return mode;
+  const value = cookies.get(key);
+  return validOptions.includes(value) ? value : defaultValue;
 }
 
 function getBooleanCookie(key: string, defaultValue: boolean = false): boolean {

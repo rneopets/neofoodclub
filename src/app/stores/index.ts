@@ -6,9 +6,9 @@ import type {
   RoundData,
 } from '../../types';
 import type { Bet, BetAmount, OddsData, ProbabilitiesData } from '../../types/bets';
-import { computePiratesBinary } from '../maths';
 import { BET_AMOUNT_DEFAULT } from '../constants';
-import { anyBetsExist } from '../util';
+import { computePiratesBinary } from '../maths';
+import { anyBetsExist, type BetSetPosition } from '../util';
 
 import { useBetStore } from './betStore';
 import { useRoundStore } from './roundStore';
@@ -122,6 +122,7 @@ export const useRoundWinnersBinary = (): number =>
 
 // Settings
 export const useTableMode = (): string => useRoundStore(state => state.tableMode);
+export const useBetSetPosition = (): BetSetPosition => useRoundStore(state => state.betSetPosition);
 export const useViewMode = (): boolean => useRoundStore(state => state.viewMode);
 export const useUseWebDomain = (): boolean => useRoundStore(state => state.useWebDomain);
 export const useBigBrain = (): boolean => useRoundStore(state => state.bigBrain);
@@ -142,6 +143,8 @@ export const useUpdateSelectedRound = (): ((round: number) => void) =>
   useRoundStore(state => state.updateSelectedRound);
 export const useSetTableMode = (): ((mode: string) => void) =>
   useRoundStore(state => state.setTableMode);
+export const useSetBetSetPosition = (): ((position: BetSetPosition) => void) =>
+  useRoundStore(state => state.setBetSetPosition);
 export const useSetViewMode = (): ((viewMode: boolean) => void) =>
   useRoundStore(state => state.setViewMode);
 export const useSetUseWebDomain = (): ((useWebDomain: boolean) => void) =>

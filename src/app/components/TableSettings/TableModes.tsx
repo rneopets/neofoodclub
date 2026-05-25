@@ -1,10 +1,12 @@
-import { HStack, SegmentGroup, Text, Spacer, Box } from '@chakra-ui/react';
+import { HStack } from '@chakra-ui/react';
 import React, { useCallback, useMemo, useRef } from 'react';
 import { FaSquareCaretDown } from 'react-icons/fa6';
 import { LuTable } from 'react-icons/lu';
 import Cookies from 'universal-cookie';
 
 import { useTableMode, useSetTableMode } from '../../stores';
+
+import { SegmentedSettingsRow } from './SegmentedSettingsRow';
 
 interface Option {
   value: string;
@@ -51,68 +53,15 @@ const TableModes = (): React.ReactElement => {
     [setTableMode],
   );
 
-  // Memoize the shared props to prevent re-creation
-  const sharedProps = useMemo(
-    () => ({
-      value: tableMode,
-      onValueChange: ({ value }: { value: string }): void => handleChange(value),
-    }),
-    [tableMode, handleChange],
-  );
-
   return (
-    <HStack
-      display="flex"
-      width="100%"
-      layerStyle="fill.surface"
-      px="2"
-      py="2"
-      rounded="l1"
-      colorPalette="gray"
-      mb={2}
-    >
-      <LuTable />
-      <Text>View Mode</Text>
-      <Spacer />
-      <Box flexShrink={0}>
-        <SegmentGroup.Root
-          {...sharedProps}
-          size="sm"
-          data-testid="table-mode-segmented-control"
-          css={{
-            bg: 'bg.subtle',
-            borderWidth: '1px',
-            borderColor: 'border',
-            '& [data-state=unchecked]': {
-              color: 'fg.muted',
-            },
-            '& [data-state=checked]': {
-              color: 'fg',
-              fontWeight: 'semibold',
-            },
-            _dark: {
-              borderColor: 'border.emphasized',
-              '& [data-state=unchecked]': {
-                color: 'fg.subtle',
-              },
-            },
-          }}
-        >
-          <SegmentGroup.Indicator
-            css={{
-              borderWidth: '1px',
-              borderColor: 'border',
-              bg: { base: 'bg', _dark: 'bg.emphasized' },
-              _dark: {
-                borderColor: 'border.emphasized',
-                shadow: 'sm',
-              },
-            }}
-          />
-          <SegmentGroup.Items items={options} />
-        </SegmentGroup.Root>
-      </Box>
-    </HStack>
+    <SegmentedSettingsRow
+      icon={LuTable}
+      label="View Mode"
+      value={tableMode}
+      options={options}
+      onChange={handleChange}
+      testId="table-mode-segmented-control"
+    />
   );
 };
 
