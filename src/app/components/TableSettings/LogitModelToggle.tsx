@@ -2,27 +2,21 @@ import { memo, useMemo, useCallback } from 'react';
 import { FaVial } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
-import { useLogitModelSetting, useToggleUseLogitModel, useTableMode } from '../../stores';
+import { useLogitModelSetting, useToggleUseLogitModel } from '../../stores';
 
 import SettingsSwitch from './SettingsSwitch';
 
 const LogitModelToggle = memo(() => {
   const useLogitModel = useLogitModelSetting();
   const toggleUseLogitModel = useToggleUseLogitModel();
-  const tableMode = useTableMode();
 
   const cookies = useMemo(() => new Cookies(), []);
-  const isNormalMode = tableMode === 'normal';
 
   const handleChange = useCallback((): void => {
     const newValue = !useLogitModel;
     cookies.set('useLogitModel', newValue);
     toggleUseLogitModel();
   }, [useLogitModel, cookies, toggleUseLogitModel]);
-
-  if (!isNormalMode) {
-    return null;
-  }
 
   return (
     <SettingsSwitch
