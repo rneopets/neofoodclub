@@ -1008,7 +1008,7 @@ const ArenaTimelineView = React.memo(
                     justifyContent="center"
                     gap={1.5}
                     borderRadius="lg"
-                    _hover={{ bg: 'bg.subtle', transform: 'translateY(-1px)' }}
+                    _hover={{ bg: 'bg.muted', transform: 'translateY(-1px)' }}
                     _active={{ transform: 'translateY(0)' }}
                   >
                     <Box mt={1} css={avatarWrapperCss} display="inline-block">

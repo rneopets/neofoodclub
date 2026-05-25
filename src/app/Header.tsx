@@ -513,6 +513,7 @@ const TitleHeading: React.FC<TitleHeadingProps> = props => {
         onClick={handleClick}
         px={2}
         py={1}
+        _hover={{ bg: 'bg.muted' }}
         data-testid="title-heading"
         {...props}
       >

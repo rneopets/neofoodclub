@@ -166,7 +166,7 @@ const TableHeaderCell = React.memo(
         cursor="pointer"
         onClick={() => onArenaClick(arenaId)}
         title={`Click to view odds timeline for ${ARENA_NAMES[arenaId]}`}
-        _hover={{ bg: 'bg.subtle' }}
+        _hover={{ bg: 'bg.muted' }}
       >
         {ARENA_NAMES[arenaId]} {arenaRatioString}
       </Table.ColumnHeader>
