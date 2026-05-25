@@ -819,8 +819,8 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
     variant === 'sidebar'
       ? {
           bg: 'bg',
-          _hover: { bg: 'bg.subtle' },
-          _active: { bg: 'bg.muted' },
+          _hover: { bg: 'bg.muted' },
+          _active: { bg: 'bg.emphasized' },
         }
       : {};
 

@@ -158,6 +158,7 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
           display="flex"
           alignItems="center"
           gap={2}
+          _hover={{ bg: 'bg.muted' }}
         >
           <FaChartLine />
           Odds Timeline ({amountOfChanges} change{amountOfChanges === 1 ? '' : 's'})
@@ -186,12 +187,7 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
           {customOddsHeader}
           {oddsTimelineHeader}
           {Array.from({ length: betCount }, (_, i) => i + 1).map(betNum => (
-            <Table.ColumnHeader
-              key={betNum}
-              whiteSpace="normal"
-              textAlign="center"
-              px={2}
-            >
+            <Table.ColumnHeader key={betNum} whiteSpace="normal" textAlign="center" px={2}>
               <Box as="span" display="inline-block" maxW="100%">
                 Bet {betNum}
               </Box>
