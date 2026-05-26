@@ -6,4 +6,6 @@ updates:
       interval: daily
       time: "21:00"
       timezone: "America/New_York"
+    cooldown:
+      default-days: 14
     open-pull-requests-limit: 10
