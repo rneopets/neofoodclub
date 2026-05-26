@@ -25,8 +25,8 @@ import {
   EmptyState,
 } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
-import React, { useEffect, useMemo, useCallback, useState } from 'react';
-import { FaArrowUp, FaSkullCrossbones } from 'react-icons/fa';
+import React, { useEffect, useLayoutEffect, useMemo, useCallback, useRef, useState } from 'react';
+import { FaArrowLeft, FaArrowUp, FaSkullCrossbones } from 'react-icons/fa';
 import {
   FaMarkdown,
   FaCode,
@@ -97,6 +97,16 @@ import { Tooltip } from '@/components/ui/tooltip';
 const bounceUpAndDown = keyframes`
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
+`;
+
+const bounceLeftAndRight = keyframes`
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-6px); }
+`;
+
+const bounceInlineUpAndDown = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 `;
 
 function runAfterNextPaint(fn: () => void): void {
@@ -691,11 +701,12 @@ CopyIconButton.displayName = 'CopyIconButton';
 
 interface BetFunctionsProps {
   variant?: 'inline' | 'sidebar';
+  tableLocation?: 'above' | 'below';
   [key: string]: unknown;
 }
 
 const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement => {
-  const { variant = 'inline', ...rest } = props;
+  const { variant = 'inline', tableLocation = 'below', ...rest } = props;
 
   const {
     newEmptySet,
@@ -723,6 +734,41 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
 
   const isRoundOver = useIsRoundOver();
   const emptyStatePresence = useFadePresence(!hasAnyBetsAnywhere && !isRoundOver, 160);
+  const cardsWrapRef = useRef<HTMLDivElement>(null);
+  const inlineEmptyStateRef = useRef<HTMLDivElement>(null);
+  const [inlineArrowDirection, setInlineArrowDirection] = useState<'left' | 'up'>('left');
+
+  useLayoutEffect(() => {
+    if (variant === 'sidebar' || !emptyStatePresence.mounted) {
+      return;
+    }
+
+    const updateArrowDirection = (): void => {
+      const cardsRect = cardsWrapRef.current?.getBoundingClientRect();
+      const emptyRect = inlineEmptyStateRef.current?.getBoundingClientRect();
+      if (!cardsRect || !emptyRect) {
+        return;
+      }
+
+      setInlineArrowDirection(emptyRect.left > cardsRect.left + 24 ? 'left' : 'up');
+    };
+
+    updateArrowDirection();
+
+    const resizeObserver = new ResizeObserver(updateArrowDirection);
+    if (cardsWrapRef.current) {
+      resizeObserver.observe(cardsWrapRef.current);
+    }
+    if (inlineEmptyStateRef.current) {
+      resizeObserver.observe(inlineEmptyStateRef.current);
+    }
+
+    window.addEventListener('resize', updateArrowDirection);
+    return (): void => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateArrowDirection);
+    };
+  }, [emptyStatePresence.mounted, variant]);
 
   const clearOrDeleteSet = useCallback(() => {
     if (betSetCount === 1) {
@@ -1050,6 +1096,102 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
     </Stack>
   );
 
+  const emptyStateDescription =
+    variant === 'sidebar'
+      ? 'Start by choosing pirates in the table, or use Generate / Build buttons above.'
+      : `Choose pirates in the table ${tableLocation}, or use Generate / Build.`;
+
+  const emptyState = emptyStatePresence.mounted ? (
+    <EmptyState.Root
+      py={8}
+      willChange="opacity, transform"
+      opacity={emptyStatePresence.visible ? 1 : 0}
+      transform={emptyStatePresence.visible ? 'translateY(0)' : 'translateY(-4px)'}
+      transition={`opacity ${emptyStatePresence.durationMs}ms ease-out, transform ${emptyStatePresence.durationMs}ms ease-out`}
+      css={{
+        '@media (prefers-reduced-motion: reduce)': {
+          transition: 'none',
+          transform: 'none',
+        },
+      }}
+    >
+      <EmptyState.Content>
+        <EmptyState.Indicator>
+          <Stack>
+            <Icon
+              as={FaArrowUp}
+              display="inline-block"
+              willChange="transform"
+              animation={`${bounceUpAndDown} 1.6s ease-in-out infinite`}
+              css={{
+                '@media (prefers-reduced-motion: reduce)': {
+                  animation: 'none',
+                },
+              }}
+            />
+            <Icon as={FaSkullCrossbones} />
+          </Stack>
+        </EmptyState.Indicator>
+        <EmptyState.Title>
+          {betSetCount > 1 ? 'These sets are empty' : 'This set is empty'}
+        </EmptyState.Title>
+        <EmptyState.Description textAlign="center">{emptyStateDescription}</EmptyState.Description>
+      </EmptyState.Content>
+    </EmptyState.Root>
+  ) : null;
+
+  const inlineEmptyState = emptyStatePresence.mounted ? (
+    <HStack
+      ref={inlineEmptyStateRef}
+      maxW="280px"
+      px={1}
+      py={0}
+      color="fg.muted"
+      fontSize="sm"
+      gap={3}
+      align="center"
+      alignSelf="center"
+      flexBasis={{ base: '100%', md: 'auto' }}
+      opacity={emptyStatePresence.visible ? 1 : 0}
+      transform={emptyStatePresence.visible ? 'translateY(0)' : 'translateY(-4px)'}
+      transition={`opacity ${emptyStatePresence.durationMs}ms ease-out, transform ${emptyStatePresence.durationMs}ms ease-out`}
+    >
+      <HStack gap={1.5} color="fg.subtle" flexShrink={0} fontSize="lg">
+        <Icon
+          as={FaArrowUp}
+          display={inlineArrowDirection === 'up' ? 'inline-block' : 'none'}
+          willChange="transform"
+          animation={`${bounceInlineUpAndDown} 1.6s ease-in-out infinite`}
+          css={{
+            '@media (prefers-reduced-motion: reduce)': {
+              animation: 'none',
+            },
+          }}
+        />
+        <Icon
+          as={FaArrowLeft}
+          display={inlineArrowDirection === 'left' ? 'inline-block' : 'none'}
+          willChange="transform"
+          animation={`${bounceLeftAndRight} 1.6s ease-in-out infinite`}
+          css={{
+            '@media (prefers-reduced-motion: reduce)': {
+              animation: 'none',
+            },
+          }}
+        />
+        <Icon as={FaSkullCrossbones} />
+      </HStack>
+      <Box minW={0}>
+        <Text fontSize="md" fontWeight="semibold" color="fg" lineHeight="short">
+          {betSetCount > 1 ? 'These sets are empty' : 'This set is empty'}
+        </Text>
+        <Text fontSize="sm" lineHeight="short">
+          {emptyStateDescription}
+        </Text>
+      </Box>
+    </HStack>
+  ) : null;
+
   return (
     <SettingsBox p={variant === 'sidebar' ? 0 : 2} {...containerProps} {...rest}>
       {header}
@@ -1065,49 +1207,13 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
           justifyContent="flex-start"
         >
           {betCards}
-          {emptyStatePresence.mounted ? (
-            <EmptyState.Root
-              py={8}
-              willChange="opacity, transform"
-              opacity={emptyStatePresence.visible ? 1 : 0}
-              transform={emptyStatePresence.visible ? 'translateY(0)' : 'translateY(-4px)'}
-              transition={`opacity ${emptyStatePresence.durationMs}ms ease-out, transform ${emptyStatePresence.durationMs}ms ease-out`}
-              css={{
-                '@media (prefers-reduced-motion: reduce)': {
-                  transition: 'none',
-                  transform: 'none',
-                },
-              }}
-            >
-              <EmptyState.Content>
-                <EmptyState.Indicator>
-                  <Stack>
-                    <Icon
-                      as={FaArrowUp}
-                      display="inline-block"
-                      willChange="transform"
-                      animation={`${bounceUpAndDown} 1.6s ease-in-out infinite`}
-                      css={{
-                        '@media (prefers-reduced-motion: reduce)': {
-                          animation: 'none',
-                        },
-                      }}
-                    />
-                    <Icon as={FaSkullCrossbones} />
-                  </Stack>
-                </EmptyState.Indicator>
-                <EmptyState.Title>
-                  {betSetCount > 1 ? 'These sets are empty' : 'This set is empty'}
-                </EmptyState.Title>
-                <EmptyState.Description textAlign="center">
-                  Start by choosing pirates in the table, or use Generate / Build buttons above.
-                </EmptyState.Description>
-              </EmptyState.Content>
-            </EmptyState.Root>
-          ) : null}
+          {emptyState}
         </Stack>
       ) : (
-        <Wrap>{betCards}</Wrap>
+        <HStack align="start" justify="flex-start" gap={2} flexWrap="wrap">
+          <Wrap ref={cardsWrapRef}>{betCards}</Wrap>
+          {inlineEmptyState}
+        </HStack>
       )}
     </SettingsBox>
   );
