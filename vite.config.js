@@ -51,9 +51,11 @@ function reactScanPlugin() {
         '</head>',
         `<script>
           ${resetPersistedOptionsScript}
-          window.REACT_SCAN_OPTIONS = ${optionsScript};
         </script>
-        <script src="https://unpkg.com/react-scan@0.4.3/dist/auto.global.js"></script></head>`,
+        <script src="https://unpkg.com/react-scan@0.4.3/dist/auto.global.js"></script>
+        <script>
+          window.reactScan?.(${optionsScript});
+        </script></head>`,
       );
     },
   };
