@@ -4,27 +4,38 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-// Custom plugin to inject react-scan in development and Vercel deployments
+const isReactScanDisabled =
+  process.env.NODE_ENV === 'test' ||
+  process.env.PLAYWRIGHT_TEST === 'true' ||
+  process.env.VITEST === 'true' ||
+  process.env.DISABLE_REACT_SCAN === 'true';
+
+// Custom plugin to inject react-scan locally and in Vercel PR previews.
 function reactScanPlugin() {
+  let viteCommand = 'build';
+
   return {
     name: 'vite-plugin-react-scan',
-    transformIndexHtml(html, { command }) {
-      const isDevelopment = command === 'serve' || process.env.NODE_ENV === 'development';
-      const isVercel = process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'production';
+    configResolved(config) {
+      viteCommand = config.command;
+    },
+    transformIndexHtml(html) {
+      const isLocalDev = viteCommand === 'serve';
+      const isVercelPreview = process.env.VERCEL_ENV === 'preview';
 
       if (
-        (!isDevelopment && !isVercel) ||
-        process.env.PLAYWRIGHT_TEST === 'true' ||
-        process.env.DISABLE_REACT_SCAN === 'true' ||
+        isReactScanDisabled ||
+        (!isLocalDev && !isVercelPreview) ||
         html.includes('react-scan')
       ) {
         return html;
       }
 
-      // Vercel: disabled by default (user can enable via toolbar). Localhost: enabled
-      const optionsScript = isVercel
+      // PR previews should expose the toolbar without scanning by default.
+      // Local dev should scan immediately unless the developer opts out.
+      const optionsScript = isVercelPreview
         ? `{ enabled: false, log: false, showToolbar: true, animationSpeed: "fast", trackUnnecessaryRenders: true }`
-        : `{ enabled: window.location.hostname === "localhost" && !window.navigator.webdriver, log: false, showToolbar: true, trackUnnecessaryRenders: true, animationSpeed: "fast" }`;
+        : `{ enabled: !window.navigator.webdriver, log: false, showToolbar: true, trackUnnecessaryRenders: true, animationSpeed: "fast" }`;
 
       return html.replace(
         '</head>',
@@ -35,19 +46,6 @@ function reactScanPlugin() {
       );
     },
   };
-}
-
-// Check if we should disable react-scan (for tests or when explicitly disabled)
-const isTestEnv =
-  process.env.NODE_ENV === 'test' ||
-  process.env.PLAYWRIGHT_TEST === 'true' ||
-  process.env.VITEST === 'true' ||
-  process.env.CI === 'true';
-const isDisabled = process.env.DISABLE_REACT_SCAN === 'true';
-const shouldDisableReactScan = isTestEnv || isDisabled;
-
-if (shouldDisableReactScan) {
-  console.log('react-scan disabled for testing environment');
 }
 
 // https://vitejs.dev/config/
@@ -88,8 +86,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
       },
     }),
-    // Only add react-scan plugin when not in test mode
-    ...(shouldDisableReactScan ? [] : [reactScanPlugin()]),
+    reactScanPlugin(),
   ],
   resolve: {
     alias: {
