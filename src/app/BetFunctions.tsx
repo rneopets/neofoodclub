@@ -25,7 +25,7 @@ import {
   EmptyState,
 } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
-import React, { useEffect, useLayoutEffect, useMemo, useCallback, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { FaArrowLeft, FaArrowUp, FaSkullCrossbones } from 'react-icons/fa';
 import {
   FaMarkdown,
@@ -102,11 +102,6 @@ const bounceUpAndDown = keyframes`
 const bounceLeftAndRight = keyframes`
   0%, 100% { transform: translateX(0); }
   50% { transform: translateX(-6px); }
-`;
-
-const bounceInlineUpAndDown = keyframes`
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
 `;
 
 function runAfterNextPaint(fn: () => void): void {
@@ -742,41 +737,6 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
 
   const isRoundOver = useIsRoundOver();
   const emptyStatePresence = useFadePresence(!hasAnyBetsAnywhere && !isRoundOver, 160);
-  const cardsWrapRef = useRef<HTMLDivElement>(null);
-  const inlineEmptyStateRef = useRef<HTMLDivElement>(null);
-  const [inlineArrowDirection, setInlineArrowDirection] = useState<'left' | 'up'>('left');
-
-  useLayoutEffect(() => {
-    if (variant === 'sidebar' || !emptyStatePresence.mounted) {
-      return;
-    }
-
-    const updateArrowDirection = (): void => {
-      const cardsRect = cardsWrapRef.current?.getBoundingClientRect();
-      const emptyRect = inlineEmptyStateRef.current?.getBoundingClientRect();
-      if (!cardsRect || !emptyRect) {
-        return;
-      }
-
-      setInlineArrowDirection(emptyRect.left > cardsRect.left + 24 ? 'left' : 'up');
-    };
-
-    updateArrowDirection();
-
-    const resizeObserver = new ResizeObserver(updateArrowDirection);
-    if (cardsWrapRef.current) {
-      resizeObserver.observe(cardsWrapRef.current);
-    }
-    if (inlineEmptyStateRef.current) {
-      resizeObserver.observe(inlineEmptyStateRef.current);
-    }
-
-    window.addEventListener('resize', updateArrowDirection);
-    return (): void => {
-      resizeObserver.disconnect();
-      window.removeEventListener('resize', updateArrowDirection);
-    };
-  }, [emptyStatePresence.mounted, variant]);
 
   const clearOrDeleteSet = useCallback(() => {
     if (betSetCount === 1) {
@@ -1140,7 +1100,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
 
   const inlineEmptyState = emptyStatePresence.mounted ? (
     <HStack
-      ref={inlineEmptyStateRef}
+      data-testid="bet-empty-state-compact"
       maxW="280px"
       px={1}
       py={0}
@@ -1156,19 +1116,9 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
     >
       <HStack gap={1.5} color="fg.subtle" flexShrink={0} fontSize="lg">
         <Icon
-          as={FaArrowUp}
-          display={inlineArrowDirection === 'up' ? 'inline-block' : 'none'}
-          willChange="transform"
-          animation={`${bounceInlineUpAndDown} 1.6s ease-in-out infinite`}
-          css={{
-            '@media (prefers-reduced-motion: reduce)': {
-              animation: 'none',
-            },
-          }}
-        />
-        <Icon
           as={FaArrowLeft}
-          display={inlineArrowDirection === 'left' ? 'inline-block' : 'none'}
+          data-testid="bet-empty-state-left-arrow"
+          display="inline-block"
           willChange="transform"
           animation={`${bounceLeftAndRight} 1.6s ease-in-out infinite`}
           css={{
@@ -1209,7 +1159,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
         </Stack>
       ) : (
         <HStack align="start" justify="flex-start" gap={2} flexWrap="wrap">
-          <Wrap ref={cardsWrapRef}>{betCards}</Wrap>
+          <Wrap>{betCards}</Wrap>
           {inlineEmptyState}
         </HStack>
       )}

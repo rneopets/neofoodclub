@@ -1,9 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { render, screen } from '../../test/utils';
 import BetFunctions from '../BetFunctions';
 
 const noop = vi.fn<() => void>();
+let isRoundOver = true;
 
 type BetManagementMock = {
   newEmptySet: typeof noop;
@@ -40,7 +41,7 @@ vi.mock('../hooks/useBetManagement', (): { useBetManagement: () => BetManagement
 }));
 
 vi.mock('../hooks/useIsRoundOver', (): { useIsRoundOver: () => boolean } => ({
-  useIsRoundOver: (): boolean => true,
+  useIsRoundOver: (): boolean => isRoundOver,
 }));
 
 vi.mock('../stores', () => ({
@@ -78,6 +79,10 @@ vi.mock('../stores', () => ({
 }));
 
 describe('BetFunctions', () => {
+  beforeEach(() => {
+    isRoundOver = true;
+  });
+
   it('places inline round-over banner in its own toolbar row', () => {
     render(<BetFunctions variant="inline" />);
 
@@ -90,5 +95,17 @@ describe('BetFunctions', () => {
     expect(bannerRow).toContainElement(banner);
     expect(bannerRow).not.toContainElement(generateButton);
     expect(toolbarActions).toContainElement(generateButton);
+  });
+
+  it('uses a fixed left arrow for the inline empty hint', () => {
+    isRoundOver = false;
+
+    render(<BetFunctions variant="inline" />);
+
+    const emptyHint = screen.getByTestId('bet-empty-state-compact');
+
+    expect(emptyHint).toHaveTextContent('This set is empty');
+    expect(screen.getByTestId('bet-empty-state-left-arrow')).toBeVisible();
+    expect(screen.queryByTestId('bet-empty-state-inline-up-arrow')).not.toBeInTheDocument();
   });
 });
