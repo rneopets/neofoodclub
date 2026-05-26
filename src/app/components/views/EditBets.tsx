@@ -11,6 +11,7 @@ import {
   Portal,
   Accordion,
   VStack,
+  useBreakpointValue,
 } from '@chakra-ui/react';
 import React, {
   useCallback,
@@ -151,6 +152,8 @@ export default React.memo(function EditBets(): React.ReactElement {
   const [payoutPortalContainerRef, setPayoutPortalContainerRef] =
     useState<React.RefObject<HTMLElement | null> | null>(null);
   const betSetPosition = useBetSetPosition();
+  const useInlineBetSetLayout =
+    useBreakpointValue({ base: false, lg: true }, { fallback: 'base' }) ?? false;
 
   const shadowValue = useColorModeValue(
     '0 1px 2px rgba(0,0,0,0.02)',
@@ -222,14 +225,10 @@ export default React.memo(function EditBets(): React.ReactElement {
   const sideBetSetsPanel = isSideBetSetPosition ? <BetSetsPanel variant="sidebar" /> : null;
 
   const inlineBetSetsPanel = !isSideBetSetPosition ? (
-    <>
-      <BetSetsPanel variant="sidebar" display={{ base: 'block', lg: 'none' }} />
-      <BetSetsPanel
-        variant="inline"
-        tableLocation={inlineTableLocation}
-        display={{ base: 'none', lg: 'block' }}
-      />
-    </>
+    <BetSetsPanel
+      variant={useInlineBetSetLayout ? 'inline' : 'sidebar'}
+      tableLocation={inlineTableLocation}
+    />
   ) : null;
 
   const tablePanel = (
