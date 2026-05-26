@@ -217,12 +217,8 @@ export default React.memo(function EditBets(): React.ReactElement {
   }, [viewMode]);
 
   const isSideBetSetPosition = betSetPosition === 'left' || betSetPosition === 'right';
-  const renderBetSetsPanel = (
-    variant: 'sidebar' | 'inline',
-    display?: { base: 'block' | 'none'; lg: 'block' | 'none' },
-  ): React.ReactElement => (
+  const renderBetSetsPanel = (variant: 'sidebar' | 'inline'): React.ReactElement => (
     <Box
-      display={display}
       w={variant === 'sidebar' ? { base: 'full', lg: '360px' } : 'full'}
       flexShrink={0}
       bg="bg.emphasized"
@@ -253,29 +249,9 @@ export default React.memo(function EditBets(): React.ReactElement {
     </Box>
   );
 
-  const sideBetSetsPanel = isSideBetSetPosition
-    ? renderBetSetsPanel('sidebar', { base: 'none', lg: 'block' })
-    : null;
-  const mobileSideBetSetsPanel =
-    isSideBetSetPosition && betSetPosition === 'left'
-      ? renderBetSetsPanel('sidebar', { base: 'block', lg: 'none' })
-      : null;
-  const mobileRightBetSetsPanel =
-    isSideBetSetPosition && betSetPosition === 'right'
-      ? renderBetSetsPanel('sidebar', { base: 'block', lg: 'none' })
-      : null;
+  const sideBetSetsPanel = isSideBetSetPosition ? renderBetSetsPanel('sidebar') : null;
 
-  const inlineBetSetsPanel = isSideBetSetPosition
-    ? null
-    : renderBetSetsPanel('inline', { base: 'none', lg: 'block' });
-  const mobileAboveBetSetsPanel =
-    !isSideBetSetPosition && betSetPosition === 'above'
-      ? renderBetSetsPanel('sidebar', { base: 'block', lg: 'none' })
-      : null;
-  const mobileBelowBetSetsPanel =
-    !isSideBetSetPosition && betSetPosition === 'below'
-      ? renderBetSetsPanel('sidebar', { base: 'block', lg: 'none' })
-      : null;
+  const inlineBetSetsPanel = !isSideBetSetPosition ? renderBetSetsPanel('inline') : null;
 
   const tablePanel = (
     <Box overflowX="auto" width="full" pb={4}>
@@ -286,12 +262,9 @@ export default React.memo(function EditBets(): React.ReactElement {
   const mainPanel = (
     <Box flex="1" minW={0} minH={0} data-testid="bet-main">
       {betSetPosition === 'above' ? inlineBetSetsPanel : null}
-      {mobileAboveBetSetsPanel}
       {/* Horizontal scrolling for wide tables, but let the page handle vertical scroll so the sidebar sticky works */}
       {tablePanel}
       {betSetPosition === 'below' ? inlineBetSetsPanel : null}
-      {mobileBelowBetSetsPanel}
-      {mobileRightBetSetsPanel}
 
       {/* Bet amounts should appear below the bet table */}
       <Box ref={editBetAmountsContainerRef} />
@@ -302,7 +275,7 @@ export default React.memo(function EditBets(): React.ReactElement {
 
   const sideLayoutDirection = {
     base: 'column',
-    lg: betSetPosition === 'right' ? 'row-reverse' : 'row',
+    lg: 'row',
   } as const;
   const layoutDirection = isSideBetSetPosition ? sideLayoutDirection : ('column' as const);
 
@@ -397,9 +370,9 @@ export default React.memo(function EditBets(): React.ReactElement {
             w="full"
             data-testid="bets-layout"
           >
-            {sideBetSetsPanel}
-            {mobileSideBetSetsPanel}
+            {betSetPosition === 'left' ? sideBetSetsPanel : null}
             {mainPanel}
+            {betSetPosition === 'right' ? sideBetSetsPanel : null}
           </Flex>
         </>
       )}
