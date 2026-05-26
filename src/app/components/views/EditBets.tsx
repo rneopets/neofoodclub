@@ -268,9 +268,14 @@ export default React.memo(function EditBets(): React.ReactElement {
   const inlineBetSetsPanel = isSideBetSetPosition
     ? null
     : renderBetSetsPanel('inline', { base: 'none', lg: 'block' });
-  const mobileInlineBetSetsPanel = !isSideBetSetPosition
-    ? renderBetSetsPanel('sidebar', { base: 'block', lg: 'none' })
-    : null;
+  const mobileAboveBetSetsPanel =
+    !isSideBetSetPosition && betSetPosition === 'above'
+      ? renderBetSetsPanel('sidebar', { base: 'block', lg: 'none' })
+      : null;
+  const mobileBelowBetSetsPanel =
+    !isSideBetSetPosition && betSetPosition === 'below'
+      ? renderBetSetsPanel('sidebar', { base: 'block', lg: 'none' })
+      : null;
 
   const tablePanel = (
     <Box overflowX="auto" width="full" pb={4}>
@@ -281,10 +286,11 @@ export default React.memo(function EditBets(): React.ReactElement {
   const mainPanel = (
     <Box flex="1" minW={0} minH={0} data-testid="bet-main">
       {betSetPosition === 'above' ? inlineBetSetsPanel : null}
-      {mobileInlineBetSetsPanel}
+      {mobileAboveBetSetsPanel}
       {/* Horizontal scrolling for wide tables, but let the page handle vertical scroll so the sidebar sticky works */}
       {tablePanel}
       {betSetPosition === 'below' ? inlineBetSetsPanel : null}
+      {mobileBelowBetSetsPanel}
       {mobileRightBetSetsPanel}
 
       {/* Bet amounts should appear below the bet table */}
