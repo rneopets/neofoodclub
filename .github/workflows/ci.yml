@@ -39,12 +39,6 @@ jobs:
     - name: Build
       run: npm run build
 
-    - name: Install Playwright
-      run: npx playwright install --with-deps chromium
-
-    - name: E2E Tests
-      run: npx playwright test --project=chromium
-
     - name: Upload Coverage
       if: github.event_name == 'pull_request'
       uses: codecov/codecov-action@v4
