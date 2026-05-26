@@ -1,4 +1,4 @@
-import { HStack } from '@chakra-ui/react';
+import { HStack, Text } from '@chakra-ui/react';
 import { type ReactElement, type ReactNode, useCallback, useMemo, useRef } from 'react';
 import { FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowUp } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
@@ -23,36 +23,44 @@ const BetSetPosition = (): ReactElement => {
       {
         value: 'above',
         label: (
-          <HStack>
+          <HStack gap={1.5}>
             <FaArrowUp />
-            Above
+            <Text as="span" display={{ base: 'none', md: 'inline' }}>
+              Above
+            </Text>
           </HStack>
         ),
       },
       {
         value: 'below',
         label: (
-          <HStack>
+          <HStack gap={1.5}>
             <FaArrowDown />
-            Below
+            <Text as="span" display={{ base: 'none', md: 'inline' }}>
+              Below
+            </Text>
           </HStack>
         ),
       },
       {
         value: 'left',
         label: (
-          <HStack>
+          <HStack gap={1.5}>
             <FaArrowLeft />
-            Left
+            <Text as="span" display={{ base: 'none', md: 'inline' }}>
+              Left
+            </Text>
           </HStack>
         ),
       },
       {
         value: 'right',
         label: (
-          <HStack>
+          <HStack gap={1.5}>
             <FaArrowRight />
-            Right
+            <Text as="span" display={{ base: 'none', md: 'inline' }}>
+              Right
+            </Text>
           </HStack>
         ),
       },
