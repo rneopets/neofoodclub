@@ -5,6 +5,12 @@ import { PIRATE_NAMES } from '../../constants';
 import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
 import { usePiratesForArena, useRoundOpeningOdds } from '../../stores';
 
+type PirateOption = {
+  label: string;
+  value: string;
+  disabled?: boolean;
+};
+
 const CustomValueText = React.memo(() => {
   const select = useSelectContext();
   const items = select.selectedItems;
@@ -60,10 +66,10 @@ const PirateSelect = React.memo(
 
     const collection = useMemo(() => {
       if (!pirates) {
-        return createListCollection({ items: [] });
+        return createListCollection<PirateOption>({ items: [] });
       }
 
-      const items = [
+      const items: PirateOption[] = [
         ...(includeNoPirate ? [{ label: '[no pirate]', value: '0' }] : []),
         ...pirates.map((pirateId: number, pirateIndex: number) => {
           const valueNum = pirateIndex + 1;
@@ -145,7 +151,7 @@ const PirateSelect = React.memo(
         </Select.Control>
         <Select.Positioner>
           <Select.Content>
-            {collection.items.map((item: { value: string; label: string; disabled?: boolean }) => {
+            {collection.items.map((item: PirateOption) => {
               const isNoPirate = item.value === '0';
               const isDisabled = item.disabled === true;
               const pirateValueNum = item.value === '0' ? null : parseInt(item.value);
@@ -159,7 +165,7 @@ const PirateSelect = React.memo(
                 <Select.Item
                   item={item}
                   key={item.value}
-                  disabled={isDisabled}
+                  {...(isDisabled ? { _disabled: { opacity: 0.5, cursor: 'not-allowed' } } : {})}
                   {...(itemBgColor && { layerStyle: 'fill.subtle', colorPalette: itemBgColor })}
                 >
                   <Select.ItemText>

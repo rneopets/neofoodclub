@@ -10,7 +10,6 @@ export { useScrollPosition } from './useScrollPosition';
 export { useTimelineViewState } from './useTimelineViewState';
 export { useIsRoundOver } from './useIsRoundOver';
 export { useProbabilities } from './useProbabilities';
-export { useModalReset } from './useModalReset';
 export { useInterval } from './useInterval';
 export { useFormattedDate } from './useFormattedDate';
 export { useDisclosureState } from './useDisclosureState';

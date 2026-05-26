@@ -83,7 +83,7 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
         preventScroll
         modal
       >
-        <Portal container={document.body}>
+        <Portal>
           <Drawer.Backdrop />
           <Drawer.Positioner padding={2}>
             <Drawer.Content rounded="md">
@@ -300,7 +300,7 @@ export default React.memo(function EditBets(): React.ReactElement {
                 px={4}
                 py={2}
                 value={accordionValue}
-                onValueChange={(details: { value: React.SetStateAction<string[]> }) => {
+                onValueChange={(details: { value: string[] }) => {
                   setAccordionValue(details.value);
                   cookies.set('settingsAccordionExpanded', details.value.includes('settings'));
                 }}

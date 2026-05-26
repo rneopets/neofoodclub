@@ -10,6 +10,11 @@ type SemanticColorToken = {
   value: { _light: string; _dark: string; _night: string };
 };
 
+type SemanticColorPalette = Record<
+  'contrast' | 'fg' | 'subtle' | 'muted' | 'emphasized' | 'solid' | 'focusRing',
+  SemanticColorToken
+>;
+
 const semanticColor = (light: string, dark: string, night = dark): SemanticColorToken => ({
   value: { _light: light, _dark: dark, _night: night },
 });
@@ -41,7 +46,7 @@ const palette = (
   },
   name: string,
   darkAccent?: string,
-) => ({
+): SemanticColorPalette => ({
   contrast: semanticColor('{colors.white}', v2Gray[800], '{colors.white}'),
   fg: semanticColor(color[700], darkAccent ?? color[200], `{colors.${name}.300}`),
   subtle: semanticColor(color[50], color[900], `{colors.${name}.950}`),
@@ -76,7 +81,11 @@ const nfc = {
   yellow: '#FAF089',
 } as const;
 
-const nfcPalette = (light: string, dark: string, fallbackPalette: string) => ({
+const nfcPalette = (
+  light: string,
+  dark: string,
+  fallbackPalette: string,
+): SemanticColorPalette => ({
   contrast: semanticColor(v2Gray[800], '{colors.white}', `{colors.${fallbackPalette}.contrast}`),
   fg: semanticColor(v2Gray[800], '{colors.white}', `{colors.${fallbackPalette}.fg}`),
   subtle: semanticColor(light, dark, `{colors.${fallbackPalette}.subtle}`),

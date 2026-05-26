@@ -20,7 +20,6 @@ import { ARENA_NAMES, PIRATE_NAMES } from '../../constants';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
 import { useIsRoundOver } from '../../hooks/useIsRoundOver';
-import { useModalReset } from '../../hooks/useModalReset';
 import { useProbabilities } from '../../hooks/useProbabilities';
 import { computeBinaryToPirates } from '../../maths';
 import { useRoundStore } from '../../stores';
@@ -213,13 +212,17 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
   // Choose which probabilities to use based on toggle
   const usedProbabilities = useExperimentalLogit ? logitProbabilities : legacyProbabilities;
 
-  // Reset settings to global values when modal opens
-  useModalReset(isOpen, () => {
+  // Reset settings to global values when modal opens.
+  React.useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
     setUseExperimentalLogit(globalUseLogitModel);
     const currentMaxBet = getMaxBet(currentSelectedRound);
     const maxBetValue = currentMaxBet > 0 ? currentMaxBet.toString() : '10000';
     setMaxBetInput(maxBetValue);
-  }, [globalUseLogitModel, currentSelectedRound]);
+  }, [currentSelectedRound, globalUseLogitModel, isOpen]);
 
   // Calculate all possible bets using the pre-computed bet calculations
   const allBets = React.useMemo(() => {
@@ -354,7 +357,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
       preventScroll
       modal
     >
-      <Portal container={document.body}>
+      <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
           <Dialog.Content>
@@ -399,7 +402,11 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                     </Text>
                     <RadioGroup.Root
                       value={sortField}
-                      onValueChange={(details: { value: string }) => {
+                      onValueChange={(details: { value: string | null }) => {
+                        if (details.value === null) {
+                          return;
+                        }
+
                         startTransition(() => {
                           setSortField(details.value as SortField);
                         });

@@ -23,6 +23,8 @@ import {
   makeEmpty,
 } from './maths';
 
+type RoundDataState = Pick<RoundState, 'roundData'>;
+
 export function generateRandomIntegerInRange(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -290,7 +292,7 @@ export function getUseLogitModel(): boolean {
   return getBooleanCookie('useLogitModel');
 }
 
-export function isValidRound(roundState?: RoundState): boolean {
+export function isValidRound(roundState?: RoundDataState): boolean {
   return !!(roundState && roundState?.roundData?.round && roundState?.roundData?.pirates?.[0]?.[0]);
 }
 
@@ -336,7 +338,7 @@ export function makeBetURL(
   return url;
 }
 
-export function calculateRoundOverPercentage(roundState?: RoundState): number {
+export function calculateRoundOverPercentage(roundState?: RoundDataState): number {
   const roundStart = roundState?.roundData.start;
 
   if (roundStart === undefined) {

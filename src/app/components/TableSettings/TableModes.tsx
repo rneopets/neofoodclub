@@ -43,7 +43,7 @@ const TableModes = (): React.ReactElement => {
     [],
   );
 
-  const handleChange = useCallback(
+  const persistTableMode = useCallback(
     (value: string): void => {
       // Update state immediately for responsive UI
       setTableMode(value);
@@ -59,7 +59,7 @@ const TableModes = (): React.ReactElement => {
       label="View Mode"
       value={tableMode}
       options={options}
-      onChange={handleChange}
+      onChange={persistTableMode}
       testId="table-mode-segmented-control"
     />
   );

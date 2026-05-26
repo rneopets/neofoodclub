@@ -8,16 +8,19 @@ import { Tooltip, TooltipProps } from '@/components/ui/tooltip';
 interface TextTooltipProps extends Omit<TooltipProps, 'children' | 'content'> {
   text: ReactNode;
   label?: string;
+  content?: ReactNode;
+  cursor?: string;
   textDecoration?: string;
 }
 
 const TextTooltip = React.memo((props: TextTooltipProps): React.ReactElement => {
-  const { text, label, cursor, textDecoration, ...rest } = props;
+  const { text, label, content, cursor, textDecoration, ...rest } = props;
   // Convert label to string to satisfy aria-label requirement
-  const ariaLabel = label ? label : typeof text === 'string' ? text : '';
+  const tooltipContent = content ?? label ?? text;
+  const ariaLabel = typeof tooltipContent === 'string' ? tooltipContent : '';
 
   return (
-    <Tooltip content={label || text} aria-label={ariaLabel} {...rest}>
+    <Tooltip content={tooltipContent} aria-label={ariaLabel} {...rest}>
       <Text cursor={cursor} textDecoration={textDecoration}>
         {text}
       </Text>

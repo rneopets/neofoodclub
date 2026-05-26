@@ -124,6 +124,14 @@ function runAfterNextPaint(fn: () => void): void {
   raf(() => raf(fn));
 }
 
+function prefersReducedMotionNow(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
 function useFadePresence(
   isPresent: boolean,
   durationMs: number,
@@ -176,7 +184,7 @@ const BuildSetMenu = React.memo(
 
     const [open, setOpen] = useState(false);
     const [mode, setMode] = React.useState(''); // currently can only be "Ten-bet" or "Gambit"
-    const [pirateIndices, setPirateIndices] = React.useState(makeEmpty(5)); // indices of the pirates to be included in the set
+    const [pirateIndices, setPirateIndices] = React.useState(() => makeEmpty(5)); // indices of the pirates to be included in the set
     const [min, setMin] = React.useState(0); // minimum pirate amount
     const [max, setMax] = React.useState(0); // maximum pirate amount
     const { generateTenbetSet, generateGambitWithPirates } = useBetManagement();
@@ -305,7 +313,7 @@ const BuildSetMenu = React.memo(
           preventScroll
           modal
         >
-          <Portal container={document.body}>
+          <Portal>
             <Dialog.Backdrop />
             <Dialog.Positioner>
               <Dialog.Content>
@@ -1225,29 +1233,16 @@ const BetCard = React.memo(
     onValueCommit: (details: { value: string }) => void;
     layout?: 'wrap' | 'stack';
   }) => {
-    const [editableName, setEditableName] = useState(currentName);
-
     // Quick enter animation for newly created/cloned bet sets
     const BET_CARD_ENTER_MS = 140;
-    const [hasEntered, setHasEntered] = useState(false);
+    const [hasEntered, setHasEntered] = useState(prefersReducedMotionNow);
     useEffect(() => {
-      const prefersReducedMotion =
-        typeof window !== 'undefined' &&
-        typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      if (prefersReducedMotion) {
-        setHasEntered(true);
+      if (hasEntered) {
         return;
       }
 
       runAfterNextPaint(() => setHasEntered(true));
-    }, []);
-
-    // Keep the editable value in sync with external updates (e.g. clearing/renaming from elsewhere)
-    useEffect(() => {
-      setEditableName(currentName);
-    }, [cardKey, currentName]);
+    }, [hasEntered]);
 
     const card = (
       <Box
@@ -1285,13 +1280,10 @@ const BetCard = React.memo(
         >
           <VStack align="stretch" w="full" minW={layout === 'wrap' ? '200px' : 0} gap={2}>
             <Editable.Root
+              key={`${cardKey}:${currentName}`}
               as={Heading}
-              value={editableName}
-              onValueChange={(details: { value: string }) => setEditableName(details.value)}
-              onValueCommit={(details: { value: string }) => {
-                setEditableName(details.value);
-                onValueCommit(details);
-              }}
+              defaultValue={currentName}
+              onValueCommit={onValueCommit}
               placeholder="Unnamed Set"
               pointerEvents={isCurrent ? 'auto' : 'none'}
             >

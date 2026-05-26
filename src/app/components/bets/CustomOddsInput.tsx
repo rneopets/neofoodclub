@@ -23,7 +23,12 @@ const CustomOddsInput = function CustomOddsInput(props: CustomOddsInputProps): R
   );
 
   // Use the custom hook to handle all the input logic
-  const { inputValue, handleChange, handleBlur, handleFocus } = useCustomValueInput({
+  const {
+    inputValue,
+    handleChange: updateCustomOddsDraft,
+    handleBlur: commitCustomOddsInput,
+    handleFocus: selectCustomOddsInput,
+  } = useCustomValueInput({
     arenaIndex,
     pirateIndex,
     type: 'odds',
@@ -33,7 +38,7 @@ const CustomOddsInput = function CustomOddsInput(props: CustomOddsInputProps): R
   });
 
   const handleValueChange = (details: { value: string }): void => {
-    handleChange(details.value);
+    updateCustomOddsDraft(details.value);
   };
 
   return (
@@ -53,8 +58,8 @@ const CustomOddsInput = function CustomOddsInput(props: CustomOddsInputProps): R
       variant="subtle"
     >
       <NumberInputField
-        onBlur={handleBlur}
-        onFocus={handleFocus}
+        onBlur={commitCustomOddsInput}
+        onFocus={selectCustomOddsInput}
         name={`custom-odds-input-field-${arenaIndex}-${pirateIndex}`}
         data-testid={`custom-odds-input-field-${arenaIndex}-${pirateIndex}`}
       />

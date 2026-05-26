@@ -60,7 +60,7 @@ const BetSetPosition = (): ReactElement => {
     [],
   );
 
-  const handleChange = useCallback(
+  const persistBetSetPosition = useCallback(
     (position: BetSetPositionValue): void => {
       if (!BET_SET_POSITIONS.includes(position)) {
         return;
@@ -78,7 +78,7 @@ const BetSetPosition = (): ReactElement => {
       label="Bet Set Position"
       value={betSetPosition}
       options={options}
-      onChange={handleChange}
+      onChange={persistBetSetPosition}
       testId="bet-set-position-segmented-control"
     />
   );

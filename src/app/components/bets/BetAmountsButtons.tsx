@@ -32,7 +32,8 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
   const roundData = useRoundData();
   const hasRoundData = isValidRound({ roundData, currentSelectedRound } as RoundState);
   const maxBet = useMaxBet();
-  const maxBetDisplay = maxBet === BET_AMOUNT_DEFAULT ? '(currently unset)' : maxBet.toLocaleString();
+  const maxBetDisplay =
+    maxBet === BET_AMOUNT_DEFAULT ? '(currently unset)' : maxBet.toLocaleString();
 
   const setBetAmountsWithMode = useCallback(
     (capped: boolean): void => {

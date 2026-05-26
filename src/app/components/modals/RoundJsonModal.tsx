@@ -128,7 +128,7 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
       preventScroll
       modal
     >
-      <Portal container={document.body}>
+      <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
           <Dialog.Content>

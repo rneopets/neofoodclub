@@ -12,7 +12,7 @@ const CopyDomainToggle = memo(() => {
 
   const cookies = useMemo(() => new Cookies(), []);
 
-  const handleChange = useCallback((): void => {
+  const persistCopyDomainPreference = useCallback((): void => {
     const newValue = !useWebDomain;
     cookies.set('useWebDomain', newValue);
     setUseWebDomain(newValue);
@@ -26,7 +26,7 @@ const CopyDomainToggle = memo(() => {
       label={tooltipLabel}
       colorPalette="nfc-blue"
       checked={useWebDomain ?? false}
-      onChange={handleChange}
+      onChange={persistCopyDomainPreference}
       tooltipText={tooltipLabel}
     />
   );

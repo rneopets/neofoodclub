@@ -3,7 +3,8 @@ import { memo, type ReactNode, useCallback, useMemo } from 'react';
 import { FaMoon, FaRegMoon, FaSun } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
-import { COLOR_MODES, type ColorMode, useColorMode } from '@/components/ui/color-mode';
+import { useColorMode } from '@/components/ui/color-mode';
+import { COLOR_MODES, type ColorMode } from '@/components/ui/color-mode-utils';
 
 interface ColorModeOption {
   value: ColorMode;
@@ -48,7 +49,11 @@ const ColorModeToggle = memo(() => {
   );
 
   const handleChange = useCallback(
-    ({ value }: { value: string }): void => {
+    ({ value }: { value: string | null }): void => {
+      if (value === null) {
+        return;
+      }
+
       if (!COLOR_MODES.includes(value as ColorMode)) {
         return;
       }

@@ -17,11 +17,8 @@ import {
 // even if the dynamic import resolves before the other module finishes
 // initialising (circular deps), the getter picks up the fully-initialised export.
 let roundStoreModule: typeof import('./roundStore') | null = null;
-const getRoundStore = (): ReturnType<
-  typeof import('./roundStore').useRoundStore.getState
-> | null => {
-  return roundStoreModule?.useRoundStore?.getState() ?? null;
-};
+const getRoundStore = (): ReturnType<typeof import('./roundStore').useRoundStore.getState> | null =>
+  roundStoreModule?.useRoundStore?.getState() ?? null;
 import('./roundStore').then(mod => {
   roundStoreModule = mod;
 });

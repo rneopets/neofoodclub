@@ -3,6 +3,7 @@ import { memo } from 'react';
 import { FaLock, FaLockOpen } from 'react-icons/fa6';
 
 import { BET_AMOUNT_DEFAULT } from '../../constants';
+
 import { Tooltip } from '@/components/ui/tooltip';
 
 interface MaxBetLockToggleProps {

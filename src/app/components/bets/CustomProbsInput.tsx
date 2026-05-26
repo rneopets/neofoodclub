@@ -29,7 +29,12 @@ const CustomProbsInput = function CustomProbsInput(
   });
 
   // Use the custom hook to handle all the input logic
-  const { inputValue, handleChange, handleBlur, handleFocus } = useCustomValueInput({
+  const {
+    inputValue,
+    handleChange: updateCustomProbsDraft,
+    handleBlur: commitCustomProbsInput,
+    handleFocus: selectCustomProbsInput,
+  } = useCustomValueInput({
     arenaIndex,
     pirateIndex,
     type: 'probs',
@@ -39,7 +44,7 @@ const CustomProbsInput = function CustomProbsInput(
   });
 
   const handleValueChange = (details: { value: string }): void => {
-    handleChange(details.value);
+    updateCustomProbsDraft(details.value);
   };
 
   return (
@@ -58,8 +63,8 @@ const CustomProbsInput = function CustomProbsInput(
       variant="subtle"
     >
       <NumberInputField
-        onBlur={handleBlur}
-        onFocus={handleFocus}
+        onBlur={commitCustomProbsInput}
+        onFocus={selectCustomProbsInput}
         name={`custom-probs-input-field-${arenaIndex}-${pirateIndex}`}
         data-testid={`custom-probs-input-field-${arenaIndex}-${pirateIndex}`}
       />

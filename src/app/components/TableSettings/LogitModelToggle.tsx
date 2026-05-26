@@ -12,7 +12,7 @@ const LogitModelToggle = memo(() => {
 
   const cookies = useMemo(() => new Cookies(), []);
 
-  const handleChange = useCallback((): void => {
+  const persistLogitModelPreference = useCallback((): void => {
     const newValue = !useLogitModel;
     cookies.set('useLogitModel', newValue);
     toggleUseLogitModel();
@@ -24,7 +24,7 @@ const LogitModelToggle = memo(() => {
       label="Experimental Model"
       colorPalette="nfc-green"
       checked={useLogitModel ?? false}
-      onChange={handleChange}
+      onChange={persistLogitModelPreference}
       tooltipText="The experimental model uses multinomial logit to predict the probabilities and should yield better TER, especially for smaller max bets."
     />
   );

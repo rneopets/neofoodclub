@@ -1,7 +1,8 @@
 import { Group, NumberInputControl, Text } from '@chakra-ui/react';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 
-import { useSelectOnFocus, useDebouncedRoundInput } from '../../hooks';
+import { useDebouncedRoundInput } from '../../hooks/useDebouncedRoundInput';
+import { useSelectOnFocus } from '../../hooks/useSelectOnFocus';
 import { useRoundStore } from '../../stores';
 
 import {
@@ -23,7 +24,7 @@ const RoundInput: React.FC = () => {
 
   const initialRoundNumber = useMemo(() => currentSelectedRound || 0, [currentSelectedRound]);
 
-  const [tempValue, setTempValue] = useState<string>(initialRoundNumber.toString());
+  const [tempValue, setTempValue] = useState<string>(() => initialRoundNumber.toString());
 
   // Check if there's an error related to the current round
   const hasError = Boolean(error);
@@ -62,13 +63,13 @@ const RoundInput: React.FC = () => {
     setTempValue((currentSelectedRound || 0).toString());
   }, [currentSelectedRound]);
 
-  const handleFocus = useSelectOnFocus();
+  const selectRoundInput = useSelectOnFocus();
 
   const handleChange = useCallback((details: NumberInputValueChangeDetails): void => {
     setTempValue(details.value);
   }, []);
 
-  const handleBlur = useCallback((): void => {
+  const commitRoundInput = useCallback((): void => {
     const trimmedValue = tempValue.trim();
 
     // If input is empty, set to current round
@@ -121,8 +122,8 @@ const RoundInput: React.FC = () => {
         invalid={hasError}
       >
         <NumberInputField
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          onFocus={selectRoundInput}
+          onBlur={commitRoundInput}
           name="round-input-field"
           data-testid="round-input-field"
           roundedStart={0}
