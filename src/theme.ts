@@ -59,7 +59,7 @@ const nfcDark = {
   purple: '#8049DF',
   red: '#F76C6C',
   orange: '#F0923E',
-  teal: '#49DFD0',
+  teal: '#319795',
   yellow: '#FFC300',
 } as const;
 
