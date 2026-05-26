@@ -217,9 +217,13 @@ export default React.memo(function EditBets(): React.ReactElement {
   }, [viewMode]);
 
   const isSideBetSetPosition = betSetPosition === 'left' || betSetPosition === 'right';
-  const sideBetSetsPanel = isSideBetSetPosition ? (
+  const renderBetSetsPanel = (
+    variant: 'sidebar' | 'inline',
+    display?: { base: 'block' | 'none'; lg: 'block' | 'none' },
+  ): React.ReactElement => (
     <Box
-      w={{ base: 'full', lg: '360px' }}
+      display={display}
+      w={variant === 'sidebar' ? { base: 'full', lg: '360px' } : 'full'}
       flexShrink={0}
       bg="bg.emphasized"
       borderWidth="1px"
@@ -229,34 +233,44 @@ export default React.memo(function EditBets(): React.ReactElement {
       // Background + border should extend down the full content height (until the footer),
       // while the inner content remains sticky and scrollable.
       alignSelf={{ lg: 'stretch' }}
-      data-testid="bet-sidebar"
+      data-testid={variant === 'sidebar' ? 'bet-sidebar' : 'bet-sets-inline'}
     >
-      <Box
-        position={{ base: 'static', lg: 'sticky' }}
-        top={{ lg: '7.5rem' }}
-        maxH={{ lg: 'calc(100vh - 8rem)' }}
-        overflowX="hidden"
-        overflowY={{ base: 'visible', lg: 'auto' }}
-        display="flex"
-        flexDirection="column"
-      >
-        <BetFunctions variant="sidebar" flex="1" minH={0} />
-      </Box>
-    </Box>
-  ) : null;
-
-  const inlineBetSetsPanel = isSideBetSetPosition ? null : (
-    <Box
-      w="full"
-      bg="bg.emphasized"
-      borderWidth="1px"
-      borderColor="border"
-      borderRadius={0}
-      data-testid="bet-sets-inline"
-    >
-      <BetFunctions />
+      {variant === 'sidebar' ? (
+        <Box
+          position={{ base: 'static', lg: 'sticky' }}
+          top={{ lg: '7.5rem' }}
+          maxH={{ lg: 'calc(100vh - 8rem)' }}
+          overflowX="hidden"
+          overflowY={{ base: 'visible', lg: 'auto' }}
+          display="flex"
+          flexDirection="column"
+        >
+          <BetFunctions variant="sidebar" flex="1" minH={0} />
+        </Box>
+      ) : (
+        <BetFunctions tableLocation={betSetPosition === 'above' ? 'below' : 'above'} />
+      )}
     </Box>
   );
+
+  const sideBetSetsPanel = isSideBetSetPosition
+    ? renderBetSetsPanel('sidebar', { base: 'none', lg: 'block' })
+    : null;
+  const mobileSideBetSetsPanel =
+    isSideBetSetPosition && betSetPosition === 'left'
+      ? renderBetSetsPanel('sidebar', { base: 'block', lg: 'none' })
+      : null;
+  const mobileRightBetSetsPanel =
+    isSideBetSetPosition && betSetPosition === 'right'
+      ? renderBetSetsPanel('sidebar', { base: 'block', lg: 'none' })
+      : null;
+
+  const inlineBetSetsPanel = isSideBetSetPosition
+    ? null
+    : renderBetSetsPanel('inline', { base: 'none', lg: 'block' });
+  const mobileInlineBetSetsPanel = !isSideBetSetPosition
+    ? renderBetSetsPanel('sidebar', { base: 'block', lg: 'none' })
+    : null;
 
   const tablePanel = (
     <Box overflowX="auto" width="full" pb={4}>
@@ -267,9 +281,11 @@ export default React.memo(function EditBets(): React.ReactElement {
   const mainPanel = (
     <Box flex="1" minW={0} minH={0} data-testid="bet-main">
       {betSetPosition === 'above' ? inlineBetSetsPanel : null}
+      {mobileInlineBetSetsPanel}
       {/* Horizontal scrolling for wide tables, but let the page handle vertical scroll so the sidebar sticky works */}
       {tablePanel}
       {betSetPosition === 'below' ? inlineBetSetsPanel : null}
+      {mobileRightBetSetsPanel}
 
       {/* Bet amounts should appear below the bet table */}
       <Box ref={editBetAmountsContainerRef} />
@@ -376,6 +392,7 @@ export default React.memo(function EditBets(): React.ReactElement {
             data-testid="bets-layout"
           >
             {sideBetSetsPanel}
+            {mobileSideBetSetsPanel}
             {mainPanel}
           </Flex>
         </>
