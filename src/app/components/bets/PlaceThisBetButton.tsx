@@ -31,7 +31,7 @@ const ErrorBetButton: React.FC<BetButtonProps> = props => {
   const { children, ...rest } = props;
 
   return (
-    <BetButton colorPalette="red" layerStyle="fill.solid" disabled {...rest}>
+    <BetButton colorPalette="nfc-red" layerStyle="fill.solid" disabled {...rest}>
       {children}
     </BetButton>
   );

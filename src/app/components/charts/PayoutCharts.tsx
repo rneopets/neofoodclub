@@ -305,9 +305,9 @@ const PayoutCharts: React.FC = React.memo(() => {
             (title === 'Winnings' && totalWinningPayoff === dataObj.value))
         ) {
           if (dataObj.value === 0) {
-            bgColor = 'red';
+            bgColor = 'nfc-red';
           } else {
-            bgColor = 'green';
+            bgColor = 'nfc-green';
           }
         }
 

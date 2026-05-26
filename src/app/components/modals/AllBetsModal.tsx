@@ -93,6 +93,8 @@ const Row = React.memo(
     const binaryDisplay = showBinaryAsHex
       ? `0x${bet.binary.toString(16).toUpperCase().padStart(5, '0')}`
       : `0b${bet.binary.toString(2).padStart(20, '0')}`;
+    const erBg = bet.er - 1 < 0 ? 'nfc-red' : undefined;
+    const neBg = bet.ne - 1 < 0 ? 'nfc-red' : undefined;
 
     return (
       <Box
@@ -142,10 +144,20 @@ const Row = React.memo(
           <Text width="60px" textAlign="right" flexShrink={0}>
             {(bet.probability * 100).toFixed(3)}%
           </Text>
-          <Text width="60px" textAlign="right" flexShrink={0}>
+          <Text
+            width="60px"
+            textAlign="right"
+            flexShrink={0}
+            {...(erBg && { layerStyle: 'fill.subtle', colorPalette: erBg })}
+          >
             {bet.er.toFixed(3)}
           </Text>
-          <Text width="80px" textAlign="right" flexShrink={0}>
+          <Text
+            width="80px"
+            textAlign="right"
+            flexShrink={0}
+            {...(neBg && { layerStyle: 'fill.subtle', colorPalette: neBg })}
+          >
             {bet.ne.toFixed(2)}
           </Text>
           <Text width="80px" textAlign="right" flexShrink={0}>

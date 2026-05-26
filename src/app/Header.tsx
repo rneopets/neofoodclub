@@ -388,8 +388,8 @@ const MaxBetInput: React.FC = () => {
       rounded="md"
       transition="all 0.5s ease"
       {...(isAnimating && {
-        boxShadow: '0 0 0 1px var(--chakra-colors-green-400)',
-        borderColor: 'green.400',
+        boxShadow: '0 0 0 1px var(--chakra-colors-nfc-green)',
+        borderColor: 'nfc-green.solid',
       })}
     >
       <Text

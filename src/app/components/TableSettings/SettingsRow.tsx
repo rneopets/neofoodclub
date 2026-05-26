@@ -1,6 +1,7 @@
 import { Text, HStack, Spacer } from '@chakra-ui/react';
 import { ChangeEvent, ReactNode, useCallback, memo } from 'react';
 
+import { useColorMode } from '@/components/ui/color-mode';
 import { Switch } from '@/components/ui/switch';
 
 interface SettingsRowProps {
@@ -13,6 +14,22 @@ interface SettingsRowProps {
   children?: ReactNode;
 }
 
+const getSwitchTrackColor = (colorPalette: string, colorMode: string): string | undefined => {
+  if (colorMode === 'night') {
+    return undefined;
+  }
+
+  const color = colorPalette.startsWith('nfc-') ? colorPalette.slice(4) : colorPalette;
+
+  if (colorMode === 'dark') {
+    return colorPalette.startsWith('nfc-')
+      ? `var(--chakra-colors-nfc-${color})`
+      : `var(--chakra-colors-${color}-200)`;
+  }
+
+  return `var(--chakra-colors-${color}-500)`;
+};
+
 const SettingsRow = memo<SettingsRowProps>(
   ({
     icon: IconComponent,
@@ -22,6 +39,22 @@ const SettingsRow = memo<SettingsRowProps>(
     colorPalette = 'blue',
     disabled = false,
   }) => {
+    const { colorMode } = useColorMode();
+    const layerStyle = isChecked && colorMode === 'dark' ? 'fill.muted' : 'fill.surface';
+    const switchTrackColor = isChecked ? getSwitchTrackColor(colorPalette, colorMode) : undefined;
+    const switchControlProps = switchTrackColor
+      ? {
+          style: { backgroundColor: switchTrackColor },
+          boxShadow: `0 0 0 1px ${switchTrackColor}`,
+        }
+      : undefined;
+    const switchThumbProps = switchTrackColor
+      ? {
+          style: { backgroundColor: 'white' },
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.35)',
+        }
+      : undefined;
+
     const handleContainerClick = useCallback(() => {
       if (!disabled) {
         // Create a synthetic event to pass to onChange
@@ -39,7 +72,7 @@ const SettingsRow = memo<SettingsRowProps>(
       <HStack
         display="flex"
         width="100%"
-        layerStyle="fill.surface"
+        layerStyle={layerStyle}
         px="2"
         py="2"
         rounded="l1"
@@ -51,7 +84,14 @@ const SettingsRow = memo<SettingsRowProps>(
         <IconComponent />
         <Text>{label}</Text>
         <Spacer />
-        <Switch checked={isChecked} colorPalette={color} disabled={disabled} pointerEvents="none" />
+        <Switch
+          checked={isChecked}
+          colorPalette={color}
+          disabled={disabled}
+          pointerEvents="none"
+          controlProps={switchControlProps}
+          thumbProps={switchThumbProps}
+        />
       </HStack>
     );
 

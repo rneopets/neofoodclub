@@ -56,13 +56,13 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
               <Box
                 as="pre"
                 p={4}
-                bg="red.50"
+                bg="nfc-red.subtle"
                 borderRadius="md"
                 fontSize="sm"
                 overflow="auto"
                 maxW="100%"
                 w="100%"
-                color="red.900"
+                color="nfc-red.fg"
               >
                 {this.state.error.toString()}
                 {'\n\n'}
@@ -71,7 +71,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
             )}
 
             <VStack gap={2}>
-              <Button colorPalette="blue" onClick={this.handleReload}>
+              <Button colorPalette="nfc-blue" onClick={this.handleReload}>
                 Reload Page
               </Button>
               <Button variant="ghost" onClick={this.handleReset}>

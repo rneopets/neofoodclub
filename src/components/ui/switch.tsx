@@ -2,20 +2,22 @@ import { Switch as ChakraSwitch } from '@chakra-ui/react';
 import * as React from 'react';
 
 export interface SwitchProps extends ChakraSwitch.RootProps {
+  controlProps?: React.ComponentProps<typeof ChakraSwitch.Control>;
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
   rootRef?: React.RefObject<HTMLLabelElement | null>;
+  thumbProps?: React.ComponentProps<typeof ChakraSwitch.Thumb>;
   trackLabel?: { on: React.ReactNode; off: React.ReactNode };
   thumbLabel?: { on: React.ReactNode; off: React.ReactNode };
 }
 
 export const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(function Switch(props, ref) {
-  const { inputProps, children, rootRef, trackLabel, thumbLabel, ...rest } = props;
+  const { controlProps, inputProps, children, rootRef, thumbProps, trackLabel, thumbLabel, ...rest } = props;
 
   return (
     <ChakraSwitch.Root ref={rootRef} {...rest}>
       <ChakraSwitch.HiddenInput ref={ref} {...inputProps} />
-      <ChakraSwitch.Control>
-        <ChakraSwitch.Thumb>
+      <ChakraSwitch.Control {...controlProps}>
+        <ChakraSwitch.Thumb {...thumbProps}>
           {thumbLabel && (
             <ChakraSwitch.ThumbIndicator fallback={thumbLabel?.off}>
               {thumbLabel?.on}

@@ -28,7 +28,7 @@ const TopProgressBar: React.FC = () => {
         value={roundPercentOver >= 100 ? null : roundPercentOver}
         size="xs"
         height="2px"
-        colorPalette="blue"
+        colorPalette="nfc-blue"
       >
         <Progress.Track>
           <Progress.Range />

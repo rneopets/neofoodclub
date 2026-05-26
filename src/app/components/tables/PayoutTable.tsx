@@ -98,7 +98,7 @@ const PirateNameCell = React.memo(
 
     if (pirateBin > 0) {
       if (winningBetBinary > 0) {
-        bgColor = (winningBetBinary & pirateBin) === pirateBin ? 'green' : 'red';
+        bgColor = (winningBetBinary & pirateBin) === pirateBin ? 'nfc-green' : 'nfc-red';
       } else {
         bgColor = getPirateBgColor(openingOdds[arenaIndex]![pirateIndex]!);
       }
@@ -129,7 +129,7 @@ const PirateNameCell = React.memo(
                 w="6px"
                 h="6px"
                 borderRadius="full"
-                bg="blue.500"
+                bg="nfc-blue.solid"
                 cursor="help"
                 display="inline-block"
                 flexShrink={0}
@@ -204,8 +204,8 @@ const PayoutTableRow = React.memo(
       return null;
     }
 
-    const erBg = er - 1 < 0 ? 'red' : undefined;
-    const neBg = ne - 1 < 0 ? 'red' : undefined;
+    const erBg = er - 1 < 0 ? 'nfc-red' : undefined;
+    const neBg = ne - 1 < 0 ? 'nfc-red' : undefined;
 
     let betNumBgColor = undefined;
     let maxBetColor = undefined;
@@ -213,14 +213,14 @@ const PayoutTableRow = React.memo(
     if (odds !== 0) {
       const div = 1_000_000 / odds;
       if (betAmount > Math.ceil(div)) {
-        maxBetColor = 'orange';
+        maxBetColor = 'nfc-orange';
       } else if (betAmount > Math.floor(div)) {
-        maxBetColor = 'yellow';
+        maxBetColor = 'nfc-yellow';
       }
     }
 
     if (winningBetBinary > 0 && betBinary > 0) {
-      betNumBgColor = (winningBetBinary & betBinary) === betBinary ? 'green' : 'red';
+      betNumBgColor = (winningBetBinary & betBinary) === betBinary ? 'nfc-green' : 'nfc-red';
     }
 
     const mbBg = maxBetColor;
@@ -308,7 +308,7 @@ const PayoutTableRow = React.memo(
               placement="top"
               text={maxBets?.toLocaleString() ?? '0'}
               content={
-                mbBg === 'yellow'
+                mbBg === 'nfc-yellow'
                   ? 'Bet amount is 1 NP over maxbet'
                   : 'Bet amount is 2+ NP over maxbet'
               }
@@ -409,6 +409,8 @@ const PayoutTable = React.memo((): React.ReactElement => {
     }),
     [totalBetNetExpected],
   );
+  const totalErBg = totalBetExpectedRatios - 1 < 0 ? 'nfc-red' : undefined;
+  const totalNeBg = totalBetNetExpected - 1 < 0 ? 'nfc-red' : undefined;
 
   return (
     <Table.Root size="sm" width="auto" interactive>
@@ -457,13 +459,19 @@ const PayoutTable = React.memo((): React.ReactElement => {
                 {winningBetBinary > 0 && <Text>{totalWinningPayoff.toLocaleString()}</Text>}
               </Table.ColumnHeader>
               <Table.ColumnHeader style={{ textAlign: 'end' }} />
-              <Table.ColumnHeader style={{ textAlign: 'end' }}>
+              <Table.ColumnHeader
+                style={{ textAlign: 'end' }}
+                {...(totalErBg && { layerStyle: 'fill.subtle', colorPalette: totalErBg })}
+              >
                 <MemoizedTextTooltip
                   text={totalExpectedRatioTooltip.text}
                   content={totalExpectedRatioTooltip.label}
                 />
               </Table.ColumnHeader>
-              <Table.ColumnHeader style={{ textAlign: 'end' }}>
+              <Table.ColumnHeader
+                style={{ textAlign: 'end' }}
+                {...(totalNeBg && { layerStyle: 'fill.subtle', colorPalette: totalNeBg })}
+              >
                 <MemoizedTextTooltip
                   text={totalNetExpectedTooltip.text}
                   content={totalNetExpectedTooltip.label}

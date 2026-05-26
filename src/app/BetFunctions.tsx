@@ -684,7 +684,7 @@ const CopyIconButton = React.memo(
         aria-label={ariaLabel}
         disabled={disabled}
         data-testid={testId}
-        colorPalette={isActive ? 'green' : 'gray'}
+        colorPalette={isActive ? 'nfc-green' : 'gray'}
       >
         <Icon
           as={isActive ? FaCheck : MainIcon}
@@ -985,7 +985,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
           {isRoundOver && (
             <Badge
               w="full"
-              colorPalette="red"
+              colorPalette="nfc-red"
               variant="surface"
               size="sm"
               display="flex"
@@ -1079,7 +1079,7 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
             {isRoundOver && (
               <Badge
                 w="full"
-                colorPalette="red"
+                colorPalette="nfc-red"
                 variant="surface"
                 size="sm"
                 display="flex"
@@ -1392,7 +1392,7 @@ const BetBadges = React.memo(
 
       if (!calculated) {
         result.push(
-          <Badge key="no-round-data" colorPalette="red" variant="surface">
+          <Badge key="no-round-data" colorPalette="nfc-red" variant="surface">
             ❌ No data for round {currentSelectedRound}
           </Badge>,
         );
@@ -1407,7 +1407,7 @@ const BetBadges = React.memo(
       if (hasDuplicateBets) {
         // duplicate bets
         result.push(
-          <Badge key="duplicate-bets" colorPalette="red" variant="surface">
+          <Badge key="duplicate-bets" colorPalette="nfc-red" variant="surface">
             ❌ Contains duplicate bets
           </Badge>,
         );
@@ -1422,7 +1422,7 @@ const BetBadges = React.memo(
 
       if (invalidBetAmounts.length > 0) {
         result.push(
-          <Badge key="invalid-amounts" colorPalette="red" variant="surface">
+          <Badge key="invalid-amounts" colorPalette="nfc-red" variant="surface">
             ❌ Invalid bet amounts
           </Badge>,
         );
@@ -1431,7 +1431,7 @@ const BetBadges = React.memo(
       // bust chance badge
       if (betCount === 0 && calculated) {
         result.push(
-          <Badge key="no-bets" colorPalette="red" variant="surface">
+          <Badge key="no-bets" colorPalette="nfc-red" variant="surface">
             ❌ No pirates selected
           </Badge>,
         );
@@ -1466,7 +1466,7 @@ const BetBadges = React.memo(
           });
 
           result.push(
-            <Badge key="gambit" colorPalette="blue" variant="surface">
+            <Badge key="gambit" colorPalette="nfc-blue" variant="surface">
               Gambit: {names.join(' x ')}
             </Badge>,
           );
@@ -1491,7 +1491,7 @@ const BetBadges = React.memo(
           });
 
           result.push(
-            <Badge key="tenbet" colorPalette="purple" variant="surface">
+            <Badge key="tenbet" colorPalette="nfc-purple" variant="surface">
               Tenbet: {names.join(' x ')}
             </Badge>,
           );
@@ -1506,7 +1506,7 @@ const BetBadges = React.memo(
 
         if (isCrazy) {
           result.push(
-            <Badge key="crazy" colorPalette="pink" variant="surface">
+            <Badge key="crazy" colorPalette="nfc-pink" variant="surface">
               🤪 Crazy
             </Badge>,
           );
@@ -1522,7 +1522,7 @@ const BetBadges = React.memo(
 
       if (totalTer !== null) {
         result.push(
-          <Badge key="ter" colorPalette="teal" variant="surface">
+          <Badge key="ter" colorPalette="nfc-teal" variant="surface">
             TER: {totalTer.toFixed(3)}
           </Badge>,
         );
@@ -1563,7 +1563,7 @@ const BetBadges = React.memo(
       const lowestProfit = payoutTables.winnings[0]?.value ?? 0;
       if (betAmountsTotal < lowestProfit) {
         result.push(
-          <Badge key="guaranteed-profit" colorPalette="green" variant="surface">
+          <Badge key="guaranteed-profit" colorPalette="nfc-green" variant="surface">
             💰 Guaranteed profit ({lowestProfit - betAmountsTotal}+ NP)
           </Badge>,
         );
@@ -1603,14 +1603,14 @@ const BetBadges = React.memo(
         );
       } else {
         result.push(
-          <Badge key="units-won" colorPalette="green" variant="surface">
+          <Badge key="units-won" colorPalette="nfc-green" variant="surface">
             Units won: {unitsWon.toLocaleString()}
           </Badge>,
         );
 
         if (npWon > 0) {
           result.push(
-            <Badge key="np-won" colorPalette="green" variant="surface">
+            <Badge key="np-won" colorPalette="nfc-green" variant="surface">
               💰 NP won: {npWon.toLocaleString()}
             </Badge>,
           );

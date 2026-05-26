@@ -22,7 +22,7 @@ const LogitModelToggle = memo(() => {
     <SettingsSwitch
       icon={FaVial}
       label="Experimental Model"
-      colorPalette="green"
+      colorPalette="nfc-green"
       checked={useLogitModel ?? false}
       onChange={handleChange}
       tooltipText="The experimental model uses multinomial logit to predict the probabilities and should yield better TER, especially for smaller max bets."

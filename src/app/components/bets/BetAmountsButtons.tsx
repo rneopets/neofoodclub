@@ -138,7 +138,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
             <Button
               size="sm"
               layerStyle="fill.surface"
-              colorPalette="green"
+              colorPalette="nfc-green"
               onClick={handleCapped}
               data-testid="capped-bet-amounts-button"
               disabled={maxBet === BET_AMOUNT_DEFAULT}
@@ -156,7 +156,7 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
             <Button
               size="sm"
               layerStyle="fill.surface"
-              colorPalette="blue"
+              colorPalette="nfc-blue"
               onClick={handleUncapped}
               data-testid="uncapped-bet-amounts-button"
               disabled={maxBet === BET_AMOUNT_DEFAULT}
@@ -170,14 +170,14 @@ const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.Reac
             size="sm"
             onClick={clearBetAmounts}
             layerStyle="fill.surface"
-            colorPalette="red"
+            colorPalette="nfc-red"
             data-testid="clear-bet-amounts-button"
             {...rest}
           >
             Clear
           </Button>
 
-          <ButtonGroup size="sm" colorPalette="purple">
+          <ButtonGroup size="sm" colorPalette="nfc-purple">
             <Tooltip content="Increment all bet amounts by 2" openDelay={600} placement="top">
               <Button
                 onClick={incrementBetAmounts}

@@ -24,7 +24,7 @@ const CopyDomainToggle = memo(() => {
     <SettingsSwitch
       icon={FaGlobe}
       label={tooltipLabel}
-      colorPalette="blue"
+      colorPalette="nfc-blue"
       checked={useWebDomain ?? false}
       onChange={handleChange}
       tooltipText={tooltipLabel}
