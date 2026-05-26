@@ -48,15 +48,15 @@ const TimelineBar = React.memo(
     const { index, odds, percent, timestamp } = props;
 
     const palettes = [
-      'cyan',
-      'green',
-      'blue',
-      'purple',
-      'orange',
-      'red',
-      'yellow',
+      'nfc-cyan',
+      'nfc-green',
+      'nfc-blue',
+      'nfc-purple',
+      'nfc-orange',
+      'nfc-red',
+      'nfc-yellow',
       'gray',
-      'pink',
+      'nfc-pink',
     ] as const;
 
     let label = `${odds} (${index}${getOrdinalSuffix(index)} change)`;

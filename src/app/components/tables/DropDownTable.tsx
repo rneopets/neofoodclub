@@ -124,7 +124,7 @@ const PirateInfoRow = React.memo(
     return (
       <Table.Row
         key={`pirate-${pirateId}-${arenaId}-${pirateIndex}`}
-        {...(didPirateWin && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+        {...(didPirateWin && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
       >
         <Td
           whiteSpace="nowrap"
@@ -180,14 +180,14 @@ TableHeaderCell.displayName = 'TableHeaderCell';
 
 const ClearButtonHeader = React.memo(() => (
   <Table.ColumnHeader px={1}>
-    <ClearBetsButton minW="100%" colorPalette="red" />
+    <ClearBetsButton minW="100%" colorPalette="nfc-red" />
   </Table.ColumnHeader>
 ));
 
 ClearButtonHeader.displayName = 'ClearButtonHeader';
 
 const DuplicateBadge = React.memo(() => (
-  <Badge colorPalette="red" variant="subtle" fontSize="xs">
+  <Badge colorPalette="nfc-red" variant="subtle" fontSize="xs">
     ❌ Duplicate
   </Badge>
 ));

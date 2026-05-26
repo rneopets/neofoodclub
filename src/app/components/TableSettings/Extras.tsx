@@ -66,7 +66,7 @@ const Extras = memo(() => {
       <SettingsSwitch
         icon={FaBrain}
         label="Big Brain Mode"
-        colorPalette="pink"
+        colorPalette="nfc-pink"
         checked={bigBrain}
         onChange={handleBigBrainChange}
       />
@@ -77,7 +77,7 @@ const Extras = memo(() => {
             <SettingsSwitch
               icon={FaTimeline}
               label="Odds Timeline"
-              colorPalette="purple"
+              colorPalette="nfc-purple"
               checked={oddsTimeline}
               onChange={handleOddsTimelineChange}
               disabled={!isBigBrainAndNormalMode}
@@ -89,7 +89,7 @@ const Extras = memo(() => {
             <SettingsSwitch
               icon={FaCookieBite}
               label="FA Details"
-              colorPalette="orange"
+              colorPalette="nfc-orange"
               checked={faDetails}
               onChange={handleFaDetailsChange}
               disabled={!isBigBrainAndNormalMode}
@@ -101,7 +101,7 @@ const Extras = memo(() => {
             <SettingsSwitch
               icon={FaSliders}
               label="Custom Probs/Odds"
-              colorPalette="cyan"
+              colorPalette="nfc-cyan"
               checked={customOddsMode}
               onChange={handleCustomOddsModeChange}
               disabled={!isBigBrainAndNormalMode}

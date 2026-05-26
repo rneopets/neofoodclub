@@ -129,13 +129,13 @@ function consolidateTimelineEvents(events: TimelineEvent[]): TimelineEvent[] {
           let icon = <FaArrowUp />;
 
           if (hasIncreases && hasDecreases) {
-            color = 'blue';
+            color = 'nfc-blue';
             icon = <FaWaveSquare />;
           } else if (lastOdds > firstOdds) {
-            color = 'green';
+            color = 'nfc-green';
             icon = <FaArrowUp />;
           } else {
-            color = 'red';
+            color = 'nfc-red';
             icon = <FaArrowDown />;
           }
 
@@ -246,7 +246,7 @@ const ConsolidatedChangesContent = React.memo(
                       <Text
                         as="span"
                         fontWeight="semibold"
-                        color={pirate.isIncrease ? 'green.500' : 'red.500'}
+                        color={pirate.isIncrease ? 'nfc-green.solid' : 'nfc-red.solid'}
                       >
                         {pirate.newOdds}:1
                       </Text>
@@ -320,7 +320,7 @@ const RegularChangesContent = React.memo(
                 <Text
                   as="span"
                   fontWeight="semibold"
-                  color={pirate.isIncrease ? 'green.500' : 'red.500'}
+                  color={pirate.isIncrease ? 'nfc-green.solid' : 'nfc-red.solid'}
                 >
                   {pirate.newOdds}:1
                 </Text>
@@ -390,7 +390,7 @@ const WinnersContent = React.memo(
                 {showArenaName && (
                   <Text fontSize="xs" color="fg.muted">
                     Won at{' '}
-                    <Text as="span" fontWeight="semibold" color="green.500">
+                    <Text as="span" fontWeight="semibold" color="nfc-green.solid">
                       {winner.finalOdds}:1
                     </Text>
                   </Text>
@@ -549,7 +549,7 @@ const OverallTimelineView = React.memo(
         title: 'Round Started',
         description: '',
         time: startDate,
-        color: 'blue',
+        color: 'nfc-blue',
         type: 'start' as const,
       },
     ];
@@ -565,13 +565,13 @@ const OverallTimelineView = React.memo(
       let icon = <FaArrowUp />;
 
       if (hasIncreases && hasDecreases) {
-        color = 'blue';
+        color = 'nfc-blue';
         icon = <FaWaveSquare />;
       } else if (hasIncreases) {
-        color = 'green';
+        color = 'nfc-green';
         icon = <FaArrowUp />;
       } else {
-        color = 'red';
+        color = 'nfc-red';
         icon = <FaArrowDown />;
       }
 
@@ -629,7 +629,7 @@ const OverallTimelineView = React.memo(
         title: 'Round Ended',
         description: `${winningPirates.length} winning pirate${winningPirates.length !== 1 ? 's' : ''}`,
         time: endDate,
-        color: 'purple',
+        color: 'nfc-purple',
         type: 'end' as const,
         winners: winningPirates,
       });
@@ -879,13 +879,13 @@ const ArenaTimelineView = React.memo(
       let icon = <FaArrowUp />;
 
       if (hasIncreases && hasDecreases) {
-        color = 'blue';
+        color = 'nfc-blue';
         icon = <FaWaveSquare />;
       } else if (hasIncreases) {
-        color = 'green';
+        color = 'nfc-green';
         icon = <FaArrowUp />;
       } else {
-        color = 'red';
+        color = 'nfc-red';
         icon = <FaArrowDown />;
       }
 
@@ -934,7 +934,7 @@ const ArenaTimelineView = React.memo(
             title: 'Round Ended',
             description: `${pirateName} won!`,
             time: new Date(endTime),
-            color: 'purple',
+            color: 'nfc-purple',
             type: 'end' as const,
             winners: [winningPirate],
           });
@@ -1219,7 +1219,7 @@ const PirateTimelineView = React.memo(
         description: `${pirateName} opened at ${openingOdds}:1`,
         time: startDate,
         odds: openingOdds,
-        color: 'blue',
+        color: 'nfc-blue',
       },
       ...thisPiratesChanges.map((change, index) => {
         const isIncrease = change.new > change.old;
@@ -1231,7 +1231,7 @@ const PirateTimelineView = React.memo(
           description: `${index + 1}${getOrdinalSuffix(index + 1)} change`,
           time: new Date(change.t),
           odds: change.new,
-          color: isIncrease ? 'green' : 'red',
+          color: isIncrease ? 'nfc-green' : 'nfc-red',
           change: change.new - change.old,
         };
       }),
@@ -1248,7 +1248,7 @@ const PirateTimelineView = React.memo(
           : `${pirateName} lost ${arenaName}.`,
         time: endDate,
         odds: thisPiratesOdds[thisPiratesOdds.length - 1] || openingOdds,
-        color: didPirateWin ? 'green' : 'red',
+        color: didPirateWin ? 'nfc-green' : 'nfc-red',
       });
     }
 

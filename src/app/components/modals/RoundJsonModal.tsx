@@ -143,10 +143,10 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
                   <CodeBlock.Header>
                     <HStack gap={2} flex={1}>
                       <CodeBlock.Title>
-                        <Icon as={FaCode} color="green.300" />
+                        <Icon as={FaCode} color="nfc-green.solid" />
                         {roundData.round || 'unknown'}.json
                       </CodeBlock.Title>
-                      <Badge size="sm" colorPalette="blue">
+                      <Badge size="sm" colorPalette="nfc-blue">
                         JSON
                       </Badge>
                     </HStack>

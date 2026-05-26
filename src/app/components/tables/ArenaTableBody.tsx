@@ -77,14 +77,14 @@ const PirateFA = React.memo(
     let indicator = '';
 
     if (pos && neg) {
-      color = 'yellow';
+      color = 'nfc-yellow';
       // fgColor = 'yellow.fg';
       indicator = `+${pos}/-${neg}`;
     } else if (pos) {
-      color = 'green';
+      color = 'nfc-green';
       indicator = `+${pos}`;
     } else if (neg) {
-      color = 'red';
+      color = 'nfc-red';
       indicator = `-${neg}`;
     }
 
@@ -426,9 +426,9 @@ const PirateRow = React.memo(
 
     const payoutBackground = useMemo(() => {
       if (pirateWon || payout > 0) {
-        return 'green';
+        return 'nfc-green';
       } else if (payout <= -0.1) {
-        return 'red';
+        return 'nfc-red';
       }
       return undefined;
     }, [payout, pirateWon]);
@@ -548,7 +548,7 @@ const PirateRow = React.memo(
       return (
         <Table.Cell
           textAlign="end"
-          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+              {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
         >
           {displayAsPercent(logitProb, 1)}
         </Table.Cell>
@@ -563,7 +563,7 @@ const PirateRow = React.memo(
       return (
         <Table.Cell
           textAlign="end"
-          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
         >
           {pirateFA}
         </Table.Cell>
@@ -583,19 +583,19 @@ const PirateRow = React.memo(
         <>
           <Table.Cell
             textAlign="end"
-            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
           >
             {displayAsPercent(legacyProbMin, 1)}
           </Table.Cell>
           <Table.Cell
             textAlign="end"
-            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
           >
             {displayAsPercent(legacyProbMax, 1)}
           </Table.Cell>
           <Table.Cell
             textAlign="end"
-            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
           >
             {displayAsPercent(legacyProbStd, 1)}
           </Table.Cell>
@@ -657,7 +657,7 @@ const PirateRow = React.memo(
           <CustomOddsInput
             arenaIndex={arenaId}
             pirateIndex={pirateIndex + 1}
-            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
           />
         </Td>
       );
@@ -673,7 +673,7 @@ const PirateRow = React.memo(
           <CustomProbsInput
             arenaIndex={arenaId}
             pirateIndex={pirateIndex + 1}
-            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
           />
         </Td>
       );
@@ -715,7 +715,7 @@ const PirateRow = React.memo(
     return (
       <Table.Row
         key={`pirate-${pirateId}-${arenaId}`}
-        backgroundColor={pirateWon ? 'green.subtle' : 'transparent'}
+        backgroundColor={pirateWon ? 'nfc-green.subtle' : 'transparent'}
       >
         <StickyTd
           layerStyle="fill.muted"
@@ -733,18 +733,18 @@ const PirateRow = React.memo(
         {faDetailsElement}
         <Table.Cell
           textAlign="end"
-          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
         >
           {openingOdds}:1
         </Table.Cell>
         <Table.Cell
           textAlign="end"
           whiteSpace="nowrap"
-          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'green' })}
+          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
         >
           <Box display="flex" alignItems="center" justifyContent="flex-end">
             {oddsChanged && (
-              <Icon color={oddsIncreased ? 'green.fg' : 'red.fg'} mr={1}>
+              <Icon color={oddsIncreased ? 'nfc-green.fg' : 'nfc-red.fg'} mr={1}>
                 {oddsIncreased ? <FaCaretUp /> : <FaCaretDown />}
               </Icon>
             )}
@@ -847,7 +847,7 @@ const PirateRow = React.memo(
                           </Button>
                           <Button
                             size="xs"
-                            colorPalette="blue"
+                            colorPalette="nfc-blue"
                             disabled={
                               !canSwap ||
                               !arenaHasAnyChosen ||
