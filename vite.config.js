@@ -36,10 +36,21 @@ function reactScanPlugin() {
       const optionsScript = isVercelPreview
         ? `{ enabled: false, log: false, showToolbar: true, animationSpeed: "fast", trackUnnecessaryRenders: true }`
         : `{ enabled: !window.navigator.webdriver, log: false, showToolbar: true, trackUnnecessaryRenders: true, animationSpeed: "fast" }`;
+      const resetPersistedOptionsScript = isVercelPreview
+        ? `try {
+            const key = "react-scan-options";
+            const persistedOptions = JSON.parse(window.localStorage.getItem(key) || "{}");
+            window.localStorage.setItem(
+              key,
+              JSON.stringify({ ...persistedOptions, enabled: false, showToolbar: true }),
+            );
+          } catch {}`
+        : '';
 
       return html.replace(
         '</head>',
         `<script>
+          ${resetPersistedOptionsScript}
           window.REACT_SCAN_OPTIONS = ${optionsScript};
         </script>
         <script src="https://unpkg.com/react-scan@0.4.3/dist/auto.global.js"></script></head>`,
