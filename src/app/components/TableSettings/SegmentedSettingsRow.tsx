@@ -39,7 +39,11 @@ export function SegmentedSettingsRow<T extends string>({
       <Box flexShrink={0}>
         <SegmentGroup.Root
           value={value}
-          onValueChange={({ value: nextValue }: { value: string }) => onChange(nextValue as T)}
+          onValueChange={({ value: nextValue }: { value: string | null }) => {
+            if (nextValue !== null) {
+              onChange(nextValue as T);
+            }
+          }}
           size="sm"
           data-testid={testId}
           css={{

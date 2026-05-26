@@ -214,10 +214,9 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
   const tableBodies = React.useMemo(
     () =>
       // TODO: these handles could probably be deeper in the component tree
-      ARENA_NAMES.map((_arenaName, arenaId) => (
+      ARENA_NAMES.map((arenaName, arenaId) => (
         <ArenaTableBody
-          // eslint-disable-next-line react/no-array-index-key
-          key={`arena-${arenaId}`}
+          key={arenaName}
           arenaId={arenaId}
           handleTimelineClick={handleTimelineClick}
           handleArenaTimelineClick={handleArenaTimelineClick}

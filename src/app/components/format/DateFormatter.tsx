@@ -28,14 +28,14 @@ const DateFormatter = React.memo(
     ...props
   }: DateFormatterProps): React.ReactElement => {
     const { formattedDate, title } = useFormattedDate(date, {
-      format,
-      fromNow,
-      toNow,
-      calendar,
-      withTitle,
-      titleFormat,
+      ...(format !== undefined ? { format } : {}),
+      ...(fromNow !== undefined ? { fromNow } : {}),
+      ...(toNow !== undefined ? { toNow } : {}),
+      ...(calendar !== undefined ? { calendar } : {}),
+      ...(withTitle !== undefined ? { withTitle } : {}),
+      ...(titleFormat !== undefined ? { titleFormat } : {}),
       tz,
-      interval,
+      ...(interval !== undefined ? { interval } : {}),
     });
 
     return (

@@ -7,19 +7,15 @@ import type { ThemeProviderProps } from 'next-themes';
 import * as React from 'react';
 import { LuMoon, LuMoonStar, LuSun } from 'react-icons/lu';
 
+import {
+  COLOR_MODES,
+  getNextColorMode,
+  normalizeColorMode,
+  type ColorMode,
+} from './color-mode-utils';
+
 export type ColorModeProviderProps = ThemeProviderProps;
-export type ColorMode = 'light' | 'dark' | 'night';
-
-export const COLOR_MODES = ['light', 'dark', 'night'] as const satisfies readonly ColorMode[];
-
-export function getNextColorMode(colorMode: ColorMode): ColorMode {
-  const currentIndex = COLOR_MODES.indexOf(colorMode);
-  return COLOR_MODES[(currentIndex + 1) % COLOR_MODES.length] ?? 'light';
-}
-
-function normalizeColorMode(theme: string | undefined): ColorMode {
-  return COLOR_MODES.includes(theme as ColorMode) ? (theme as ColorMode) : 'dark';
-}
+export type { ColorMode };
 
 export function ColorModeProvider(props: ColorModeProviderProps): React.ReactElement {
   return (
@@ -70,7 +66,12 @@ export function ColorModeIcon(): React.ReactElement {
   return colorMode === 'dark' ? <LuMoon /> : <LuSun />;
 }
 
-type ColorModeButtonProps = Omit<IconButtonProps, 'aria-label'>;
+type ColorModeButtonProps = Omit<IconButtonProps, 'aria-label'> & {
+  ref?: React.Ref<HTMLButtonElement>;
+};
+type ModeSpanProps = SpanProps & {
+  ref?: React.Ref<HTMLSpanElement>;
+};
 const createModeElement = React.createElement as unknown as (
   type: React.ElementType,
   props: Record<string, unknown>,
@@ -80,7 +81,7 @@ function renderModeSpan(
   className: string,
   colorScheme: 'light' | 'dark',
   props: SpanProps,
-  ref: React.ForwardedRef<HTMLSpanElement>,
+  ref: React.Ref<HTMLSpanElement> | undefined,
 ): React.ReactElement {
   const modeProps: Record<string, unknown> = {
     ...props,
@@ -95,40 +96,37 @@ function renderModeSpan(
   return createModeElement(Span, modeProps);
 }
 
-export const ColorModeButton = React.forwardRef<HTMLButtonElement, ColorModeButtonProps>(
-  function ColorModeButton(props, ref) {
-    const { toggleColorMode } = useColorMode();
-    return (
-      <ClientOnly fallback={<Skeleton boxSize="8" />}>
-        <IconButton
-          onClick={toggleColorMode}
-          variant="ghost"
-          aria-label="Toggle color mode"
-          size="sm"
-          ref={ref}
-          {...props}
-          css={{
-            _icon: {
-              width: '5',
-              height: '5',
-            },
-          }}
-        >
-          <ColorModeIcon />
-        </IconButton>
-      </ClientOnly>
-    );
-  },
-);
+export function ColorModeButton(props: ColorModeButtonProps): React.ReactElement {
+  const { ref, ...rest } = props;
+  const { toggleColorMode } = useColorMode();
+  return (
+    <ClientOnly fallback={<Skeleton boxSize="8" />}>
+      <IconButton
+        onClick={toggleColorMode}
+        variant="ghost"
+        aria-label="Toggle color mode"
+        size="sm"
+        ref={ref}
+        {...rest}
+        css={{
+          _icon: {
+            width: '5',
+            height: '5',
+          },
+        }}
+      >
+        <ColorModeIcon />
+      </IconButton>
+    </ClientOnly>
+  );
+}
 
-export const LightMode = React.forwardRef<HTMLSpanElement, SpanProps>(
-  function LightMode(props, ref): React.ReactElement {
-    return renderModeSpan('chakra-theme light', 'light', props, ref);
-  },
-);
+export function LightMode(props: ModeSpanProps): React.ReactElement {
+  const { ref, ...rest } = props;
+  return renderModeSpan('chakra-theme light', 'light', rest, ref);
+}
 
-export const DarkMode = React.forwardRef<HTMLSpanElement, SpanProps>(
-  function DarkMode(props, ref): React.ReactElement {
-    return renderModeSpan('chakra-theme dark', 'dark', props, ref);
-  },
-);
+export function DarkMode(props: ModeSpanProps): React.ReactElement {
+  const { ref, ...rest } = props;
+  return renderModeSpan('chakra-theme dark', 'dark', rest, ref);
+}

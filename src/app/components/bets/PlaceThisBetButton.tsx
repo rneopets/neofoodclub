@@ -1,5 +1,5 @@
 import { Button, ButtonProps } from '@chakra-ui/react';
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 
 import { useIsRoundOver } from '../../hooks/useIsRoundOver';
@@ -42,6 +42,57 @@ interface PlaceThisBetButtonProps {
   betNum: number;
 }
 
+interface ActivePlaceBetButtonProps {
+  bet: number[];
+  betAmount: number;
+  betNum: number;
+  betOdds: ReturnType<typeof useBetOdds>;
+  betPayoffs: ReturnType<typeof useBetPayoffs>;
+  pirates: ReturnType<typeof useRoundPirates>;
+}
+
+const ActivePlaceBetButton = React.memo(
+  ({
+    bet,
+    betAmount,
+    betNum,
+    betOdds,
+    betPayoffs,
+    pirates,
+  }: ActivePlaceBetButtonProps): React.ReactElement => {
+    const [clicked, setClicked] = useState<boolean>(false);
+
+    const generateBetLink = useCallback((): void => {
+      const url = generateBetLinkUrl(
+        bet,
+        betAmount,
+        betOdds.get(betNum) || 0,
+        betPayoffs.get(betNum) || 0,
+        pirates,
+      );
+
+      openBetLinkInNewTab(url);
+    }, [bet, betAmount, betOdds, betPayoffs, betNum, pirates]);
+
+    const placeBet = useCallback(() => {
+      generateBetLink();
+      setClicked(true);
+    }, [generateBetLink]);
+
+    return (
+      <BetButton
+        onClick={placeBet}
+        colorPalette="gray"
+        layerStyle={clicked ? 'fill.surface' : 'fill.solid'}
+      >
+        {clicked ? 'Bet placed!' : 'Place bet!'} <FaExternalLinkAlt />
+      </BetButton>
+    );
+  },
+);
+
+ActivePlaceBetButton.displayName = 'ActivePlaceBetButton';
+
 const PlaceThisBetButton = React.memo(
   (props: PlaceThisBetButtonProps): React.ReactElement => {
     const { bet, betNum } = props;
@@ -57,30 +108,7 @@ const PlaceThisBetButton = React.memo(
       return new Set(binaries).size !== binaries.length;
     }, [betBinariesMap]);
 
-    const [clicked, setClicked] = useState<boolean>(false);
-
-    useEffect(() => {
-      setClicked(false);
-    }, [bet, betAmount]);
-
     const isRoundOver = useIsRoundOver();
-
-    const generateBetLink = useCallback((): void => {
-      const url = generateBetLinkUrl(
-        bet,
-        betAmount,
-        betOdds.get(betNum) || 0,
-        betPayoffs.get(betNum) || 0,
-        pirates,
-      );
-
-      openBetLinkInNewTab(url);
-    }, [bet, betAmount, betOdds, betPayoffs, betNum, pirates]);
-
-    const handleClick = useCallback(() => {
-      generateBetLink();
-      setClicked(true);
-    }, [generateBetLink]);
 
     if (isRoundOver) {
       return <ErrorBetButton>Round is over!</ErrorBetButton>;
@@ -95,13 +123,15 @@ const PlaceThisBetButton = React.memo(
     }
 
     return (
-      <BetButton
-        onClick={handleClick}
-        colorPalette="gray"
-        layerStyle={clicked ? 'fill.surface' : 'fill.solid'}
-      >
-        {clicked ? 'Bet placed!' : 'Place bet!'} <FaExternalLinkAlt />
-      </BetButton>
+      <ActivePlaceBetButton
+        key={`${bet.join(',')}:${betAmount}`}
+        bet={bet}
+        betAmount={betAmount}
+        betNum={betNum}
+        betOdds={betOdds}
+        betPayoffs={betPayoffs}
+        pirates={pirates}
+      />
     );
   },
   (prevProps, nextProps) =>

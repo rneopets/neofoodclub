@@ -69,7 +69,7 @@ const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo
           p={1}
           data-testid={testId}
         >
-          <FaPlay style={{ fontSize: '8px' }} />
+          <FaPlay style={{ fontSize: '12px' }} />
           Go to current round
         </Button>
       </Tooltip>
@@ -472,7 +472,7 @@ interface TitleHeadingProps extends ButtonProps {
 const TitleHeading: React.FC<TitleHeadingProps> = props => {
   const isRoundOver = useIsRoundOver();
 
-  const handleClick = useCallback((): void => {
+  const navigateOrScrollToTop = useCallback((): void => {
     const { scrollY } = window;
 
     if (scrollY !== 0) {
@@ -510,7 +510,7 @@ const TitleHeading: React.FC<TitleHeadingProps> = props => {
         variant="ghost"
         width="auto"
         height="auto"
-        onClick={handleClick}
+        onClick={navigateOrScrollToTop}
         px={2}
         py={1}
         _hover={{ bg: 'bg.muted' }}

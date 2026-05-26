@@ -28,7 +28,6 @@ const BetRadio = React.memo(
     return (
       <Box
         as="button"
-        type="button"
         onClick={handleChange}
         onKeyDown={e => handleRadioKeyDown(e, handleChange)}
         role="radio"
@@ -68,7 +67,6 @@ export const ClearRadio = React.memo(
     return (
       <Box
         as="button"
-        type="button"
         onClick={handleChange}
         onKeyDown={e => handleRadioKeyDown(e, handleChange)}
         role="radio"

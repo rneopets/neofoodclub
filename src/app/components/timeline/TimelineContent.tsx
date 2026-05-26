@@ -42,8 +42,28 @@ import { getOrdinalSuffix, filterChangesByArenaPirate } from '../../utils/betUti
 import DateFormatter from '../format/DateFormatter';
 
 import { Avatar } from '@/components/ui/avatar';
-import { Timeline } from '@/components/ui/timeline';
+import {
+  TimelineConnector,
+  TimelineContent as TimelineBody,
+  TimelineDescription,
+  TimelineIndicator,
+  TimelineItem,
+  TimelineRoot,
+  TimelineSeparator,
+  TimelineTitle,
+} from '@/components/ui/timeline';
 import { Tooltip } from '@/components/ui/tooltip';
+
+const Timeline = {
+  Root: TimelineRoot,
+  Item: TimelineItem,
+  Connector: TimelineConnector,
+  Separator: TimelineSeparator,
+  Indicator: TimelineIndicator,
+  Content: TimelineBody,
+  Title: TimelineTitle,
+  Description: TimelineDescription,
+};
 
 const ringCss = defineStyle({
   outlineWidth: '2px',

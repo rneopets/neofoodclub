@@ -548,7 +548,7 @@ const PirateRow = React.memo(
       return (
         <Table.Cell
           textAlign="end"
-              {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
+          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
         >
           {displayAsPercent(logitProb, 1)}
         </Table.Cell>
@@ -793,7 +793,7 @@ const PirateRow = React.memo(
                   </Tooltip>
                 </Box>
               </Popover.Trigger>
-              <Portal container={document.body}>
+              <Portal>
                 <Popover.Positioner>
                   <Popover.Content width="360px">
                     <Popover.Arrow />

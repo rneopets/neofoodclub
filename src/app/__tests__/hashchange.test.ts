@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import type { Bet, BetAmount } from '../../types/bets';
+import { BET_AMOUNT_DEFAULT } from '../constants';
+import { useBetStore } from '../stores/betStore';
+import { useRoundStore } from '../stores/roundStore';
+import { makeBetURL, parseBetUrl } from '../util';
+
 // Mock universal-cookie before any store imports
 vi.mock('universal-cookie', () => ({
   default: vi.fn().mockImplementation(() => ({
@@ -11,12 +17,6 @@ vi.mock('universal-cookie', () => ({
 // Mock fetch globally
 const mockFetch = vi.fn();
 globalThis.fetch = mockFetch;
-
-import { BET_AMOUNT_DEFAULT } from '../constants';
-import { useRoundStore } from '../stores/roundStore';
-import { useBetStore } from '../stores/betStore';
-import { makeBetURL, parseBetUrl } from '../util';
-import type { Bet, BetAmount } from '../../types/bets';
 
 function makeBetsForHash(pirates: number[][]): Bet {
   const bets: Bet = new Map();
@@ -131,9 +131,8 @@ describe('hashchange listener', () => {
     // Run initialize to register the hashchange listener
     await useRoundStore.getState().initialize();
 
-    cleanup = (
-      window as unknown as Window & { __roundDataCleanup?: () => void }
-    ).__roundDataCleanup;
+    cleanup = (window as unknown as Window & { __roundDataCleanup?: () => void })
+      .__roundDataCleanup;
   });
 
   afterEach(() => {

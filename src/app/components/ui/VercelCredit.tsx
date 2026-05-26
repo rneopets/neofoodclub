@@ -14,9 +14,7 @@ export function VercelCredit(): React.ReactElement {
       rounded="lg"
     >
       Deployed by
-      <span role="img" aria-label="Vercel logo">
-        ▲
-      </span>
+      <span aria-hidden="true">▲</span>
       Vercel
     </Box>
   );

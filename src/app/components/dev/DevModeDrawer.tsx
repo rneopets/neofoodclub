@@ -28,7 +28,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
         preventScroll
         modal
       >
-        <Portal container={document.body}>
+        <Portal>
           <Drawer.Backdrop />
           <Drawer.Positioner padding={2}>
             <Drawer.Content rounded="md">

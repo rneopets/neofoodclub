@@ -2,7 +2,7 @@ import { NumberInputControl } from '@chakra-ui/react';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX, BET_AMOUNT_MIN } from '../../constants';
-import { useSelectOnFocus } from '../../hooks';
+import { useSelectOnFocus } from '../../hooks/useSelectOnFocus';
 import { useOptimizedBetAmount, useUpdateSingleBetAmount } from '../../stores';
 
 import {
@@ -26,7 +26,7 @@ const BetAmountInput = React.memo(
     const betAmount = useOptimizedBetAmount(betIndex);
     const updateSingleBetAmount = useUpdateSingleBetAmount();
 
-    const [tempValue, setTempValue] = useState(betAmount.toString());
+    const [tempValue, setTempValue] = useState(() => betAmount.toString());
     const [isEditing, setIsEditing] = useState(false);
 
     // Update temp value when bet amount changes externally (but not when editing)
@@ -68,9 +68,9 @@ const BetAmountInput = React.memo(
       [betAmount, betIndex, sanitizeToInteger, updateSingleBetAmount],
     );
 
-    const handleFocus = useSelectOnFocus();
+    const selectBetAmountInput = useSelectOnFocus();
 
-    const handleBlur = useCallback((): void => {
+    const commitBetAmountInput = useCallback((): void => {
       // Only commit if the input can be parsed as an integer
       const cleaned = tempValue.trim().replace(/[,_\s]/g, '');
       const parsed = parseInt(cleaned, 10);
@@ -108,8 +108,8 @@ const BetAmountInput = React.memo(
       >
         <NumberInputField
           borderColor={invalid ? errorColor : 'border'}
-          onBlur={handleBlur}
-          onFocus={handleFocus}
+          onBlur={commitBetAmountInput}
+          onFocus={selectBetAmountInput}
           name={`bet-amount-input-${betIndex}`}
           data-testid={`bet-amount-input-${betIndex}`}
         />

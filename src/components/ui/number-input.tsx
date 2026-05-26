@@ -3,6 +3,8 @@ import * as React from 'react';
 
 export type NumberInputProps = ChakraNumberInput.RootProps & {
   showControl?: boolean;
+  keepWithinRange?: boolean;
+  ref?: React.Ref<HTMLDivElement>;
 };
 
 export type NumberInputValueChangeDetails = {
@@ -10,22 +12,20 @@ export type NumberInputValueChangeDetails = {
   valueAsNumber: number;
 };
 
-export const NumberInputRoot = React.forwardRef<HTMLDivElement, NumberInputProps>(
-  function NumberInput(props, ref): React.ReactElement {
-    const { children, showControl = true, ...rest } = props;
-    return (
-      <ChakraNumberInput.Root ref={ref} variant="outline" {...rest}>
-        {children}
-        {showControl && (
-          <ChakraNumberInput.Control>
-            <ChakraNumberInput.IncrementTrigger />
-            <ChakraNumberInput.DecrementTrigger />
-          </ChakraNumberInput.Control>
-        )}
-      </ChakraNumberInput.Root>
-    );
-  },
-);
+export function NumberInputRoot(props: NumberInputProps): React.ReactElement {
+  const { children, showControl = true, keepWithinRange: _keepWithinRange, ref, ...rest } = props;
+  return (
+    <ChakraNumberInput.Root ref={ref} variant="outline" {...rest}>
+      {children}
+      {showControl && (
+        <ChakraNumberInput.Control>
+          <ChakraNumberInput.IncrementTrigger />
+          <ChakraNumberInput.DecrementTrigger />
+        </ChakraNumberInput.Control>
+      )}
+    </ChakraNumberInput.Root>
+  );
+}
 
 export const NumberInputField = ChakraNumberInput.Input;
 export const NumberInputScrubber = ChakraNumberInput.Scrubber;
