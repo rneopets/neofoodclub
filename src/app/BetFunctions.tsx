@@ -867,6 +867,21 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
         }
       : {};
 
+  const roundOverBanner = isRoundOver ? (
+    <Badge
+      w="full"
+      colorPalette="nfc-red"
+      variant="surface"
+      size="sm"
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      data-testid="round-over-banner"
+    >
+      Round {roundNumber} is over
+    </Badge>
+  ) : null;
+
   const header = (
     <Stack gap={2} p={2} flexShrink={0} borderBottomWidth={variant === 'sidebar' ? '1px' : 0}>
       {variant === 'sidebar' ? (
@@ -982,44 +997,31 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
             />
           </SimpleGrid>
 
-          {isRoundOver && (
-            <Badge
-              w="full"
-              colorPalette="nfc-red"
-              variant="surface"
-              size="sm"
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              data-testid="round-over-banner"
-            >
-              Round {roundNumber} is over
-            </Badge>
-          )}
+          {roundOverBanner}
         </VStack>
       ) : (
-        <Wrap>
-          <ButtonGroup size="sm" variant="surface">
-            <Button onClick={newEmptySet} data-testid="new-set-button">
-              <FaPlus />
-              New set
-            </Button>
+        <VStack align="stretch" gap={2}>
+          <Wrap data-testid="bet-set-toolbar-actions">
+            <ButtonGroup size="sm" variant="surface">
+              <Button onClick={newEmptySet} data-testid="new-set-button">
+                <FaPlus />
+                New set
+              </Button>
 
-            <Button onClick={cloneSet} data-testid="clone-set-button">
-              <FaClone />
-              Clone
-            </Button>
-            <Button
-              onClick={clearBets}
-              data-testid="clear-delete-button"
-              disabled={betSetCount === 1 && !hasAnyBetsInCurrentSet}
-            >
-              <FaTrash />
-              {betSetCount === 1 ? 'Clear' : 'Delete'}
-            </Button>
-          </ButtonGroup>
+              <Button onClick={cloneSet} data-testid="clone-set-button">
+                <FaClone />
+                Clone
+              </Button>
+              <Button
+                onClick={clearBets}
+                data-testid="clear-delete-button"
+                disabled={betSetCount === 1 && !hasAnyBetsInCurrentSet}
+              >
+                <FaTrash />
+                {betSetCount === 1 ? 'Clear' : 'Delete'}
+              </Button>
+            </ButtonGroup>
 
-          <VStack align="stretch" gap={1}>
             <ButtonGroup size="sm" variant="surface" attached gap={0}>
               <Menu.Root>
                 <Menu.Trigger asChild>
@@ -1076,22 +1078,10 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
 
               <BuildSetMenu />
             </ButtonGroup>
-            {isRoundOver && (
-              <Badge
-                w="full"
-                colorPalette="nfc-red"
-                variant="surface"
-                size="sm"
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                data-testid="round-over-banner"
-              >
-                Round {roundNumber} is over
-              </Badge>
-            )}
-          </VStack>
-        </Wrap>
+          </Wrap>
+
+          {roundOverBanner && <Box data-testid="round-over-banner-row">{roundOverBanner}</Box>}
+        </VStack>
       )}
     </Stack>
   );
