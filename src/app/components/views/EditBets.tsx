@@ -25,7 +25,6 @@ import React, {
 import { FaPenToSquare, FaGear } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
-import BetFunctions from '../../BetFunctions';
 import {
   useBetSetPosition,
   useHasAnyBets,
@@ -41,6 +40,8 @@ import CopyDomainToggle from '../TableSettings/CopyDomainToggle';
 import Extras from '../TableSettings/Extras';
 import LogitModelToggle from '../TableSettings/LogitModelToggle';
 import TableModes from '../TableSettings/TableModes';
+
+import BetSetsPanel from './BetSetsPanel';
 
 import { useColorModeValue } from '@/components/ui/color-mode';
 
@@ -217,41 +218,19 @@ export default React.memo(function EditBets(): React.ReactElement {
   }, [viewMode]);
 
   const isSideBetSetPosition = betSetPosition === 'left' || betSetPosition === 'right';
-  const renderBetSetsPanel = (variant: 'sidebar' | 'inline'): React.ReactElement => (
-    <Box
-      w={variant === 'sidebar' ? { base: 'full', lg: '360px' } : 'full'}
-      flexShrink={0}
-      bg="bg.emphasized"
-      borderWidth="1px"
-      borderColor="border"
-      borderRadius={0}
-      p={0}
-      // Background + border should extend down the full content height (until the footer),
-      // while the inner content remains sticky and scrollable.
-      alignSelf={{ lg: 'stretch' }}
-      data-testid={variant === 'sidebar' ? 'bet-sidebar' : 'bet-sets-inline'}
-    >
-      {variant === 'sidebar' ? (
-        <Box
-          position={{ base: 'static', lg: 'sticky' }}
-          top={{ lg: '7.5rem' }}
-          maxH={{ lg: 'calc(100vh - 8rem)' }}
-          overflowX="hidden"
-          overflowY={{ base: 'visible', lg: 'auto' }}
-          display="flex"
-          flexDirection="column"
-        >
-          <BetFunctions variant="sidebar" flex="1" minH={0} />
-        </Box>
-      ) : (
-        <BetFunctions tableLocation={betSetPosition === 'above' ? 'below' : 'above'} />
-      )}
-    </Box>
-  );
+  const inlineTableLocation = betSetPosition === 'above' ? 'below' : 'above';
+  const sideBetSetsPanel = isSideBetSetPosition ? <BetSetsPanel variant="sidebar" /> : null;
 
-  const sideBetSetsPanel = isSideBetSetPosition ? renderBetSetsPanel('sidebar') : null;
-
-  const inlineBetSetsPanel = !isSideBetSetPosition ? renderBetSetsPanel('inline') : null;
+  const inlineBetSetsPanel = !isSideBetSetPosition ? (
+    <>
+      <BetSetsPanel variant="sidebar" display={{ base: 'block', lg: 'none' }} />
+      <BetSetsPanel
+        variant="inline"
+        tableLocation={inlineTableLocation}
+        display={{ base: 'none', lg: 'block' }}
+      />
+    </>
+  ) : null;
 
   const tablePanel = (
     <Box overflowX="auto" width="full" pb={4}>
