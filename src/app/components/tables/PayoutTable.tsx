@@ -53,6 +53,22 @@ const MemoizedTextTooltip = React.memo(
 );
 MemoizedTextTooltip.displayName = 'MemoizedTextTooltip';
 
+const stickySubmitColumnProps = {
+  position: 'sticky',
+  right: 0,
+  zIndex: 1,
+  bg: 'bg.panel',
+  borderLeftWidth: '1px',
+  borderLeftColor: 'border',
+  boxShadow: '-8px 0 12px -12px rgba(0, 0, 0, 0.45)',
+  minW: '8rem',
+} as const;
+
+const stickySubmitHeaderProps = {
+  ...stickySubmitColumnProps,
+  zIndex: 2,
+} as const;
+
 const PirateNameCell = React.memo(
   ({ arenaIndex, pirateIndex }: { arenaIndex: number; pirateIndex: number }) => {
     const getPirateBgColor = useGetPirateBgColor();
@@ -329,7 +345,7 @@ const PayoutTableRow = React.memo(
             />
           );
         })}
-        <Table.Cell>
+        <Table.Cell {...stickySubmitColumnProps}>
           <PlaceThisBetButton bet={currentBetLine} betNum={betIndex + 1} />
         </Table.Cell>
       </Table.Row>
@@ -435,7 +451,7 @@ const PayoutTable = React.memo((): React.ReactElement => {
           <Table.ColumnHeader>Treasure</Table.ColumnHeader>
           <Table.ColumnHeader>Hidden</Table.ColumnHeader>
           <Table.ColumnHeader>Harpoon</Table.ColumnHeader>
-          <Table.ColumnHeader>Submit</Table.ColumnHeader>
+          <Table.ColumnHeader {...stickySubmitHeaderProps}>Submit</Table.ColumnHeader>
         </Table.Row>
       </Table.Header>
 
@@ -483,7 +499,7 @@ const PayoutTable = React.memo((): React.ReactElement => {
               <Table.ColumnHeader />
               <Table.ColumnHeader />
               <Table.ColumnHeader />
-              <Table.ColumnHeader />
+              <Table.ColumnHeader {...stickySubmitColumnProps} />
             </Table.Row>
           </Table.Body>
         </>
