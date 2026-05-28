@@ -16,7 +16,6 @@ import {
 import React, {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -147,13 +146,9 @@ export default React.memo(function EditBets(): React.ReactElement {
   const editBetAmountsContainerRef = useRef<HTMLDivElement>(null);
   const viewPayoutContainerRef = useRef<HTMLDivElement>(null);
   const editPayoutContainerRef = useRef<HTMLDivElement>(null);
-  const [betAmountsPortalContainerRef, setBetAmountsPortalContainerRef] =
-    useState<React.RefObject<HTMLElement | null> | null>(null);
-  const [payoutPortalContainerRef, setPayoutPortalContainerRef] =
-    useState<React.RefObject<HTMLElement | null> | null>(null);
   const betSetPosition = useBetSetPosition();
-  const useInlineBetSetLayout =
-    useBreakpointValue({ base: false, lg: true }, { fallback: 'base' }) ?? false;
+  const isLgUp =
+    useBreakpointValue({ base: false, lg: true }, { fallback: 'base', ssr: false }) ?? false;
 
   const shadowValue = useColorModeValue(
     '0 1px 2px rgba(0,0,0,0.02)',
@@ -211,22 +206,13 @@ export default React.memo(function EditBets(): React.ReactElement {
     };
   }, [anyBets, isEditorPrefetched, startTransition, viewMode]);
 
-  useLayoutEffect(() => {
-    // Ark UI Portal expects a RefObject, not a raw HTMLElement. Passing an element would cause
-    // it to fall back to document.body (putting the content after the footer).
-    setBetAmountsPortalContainerRef(
-      viewMode ? viewBetAmountsContainerRef : editBetAmountsContainerRef,
-    );
-    setPayoutPortalContainerRef(viewMode ? viewPayoutContainerRef : editPayoutContainerRef);
-  }, [viewMode]);
-
   const isSideBetSetPosition = betSetPosition === 'left' || betSetPosition === 'right';
   const inlineTableLocation = betSetPosition === 'above' ? 'below' : 'above';
   const sideBetSetsPanel = isSideBetSetPosition ? <BetSetsPanel variant="sidebar" /> : null;
 
   const inlineBetSetsPanel = !isSideBetSetPosition ? (
     <BetSetsPanel
-      variant={useInlineBetSetLayout ? 'inline' : 'sidebar'}
+      variant={isLgUp ? 'inline' : 'sidebar'}
       tableLocation={inlineTableLocation}
     />
   ) : null;
@@ -237,25 +223,84 @@ export default React.memo(function EditBets(): React.ReactElement {
     </Box>
   );
 
-  const mainPanel = (
-    <Box flex="1" minW={0} minH={0} data-testid="bet-main">
+  const tableSection = (
+    <>
       {betSetPosition === 'above' ? inlineBetSetsPanel : null}
       {/* Horizontal scrolling for wide tables, but let the page handle vertical scroll so the sidebar sticky works */}
       {tablePanel}
       {betSetPosition === 'below' ? inlineBetSetsPanel : null}
-
-      {/* Bet amounts should appear below the bet table */}
-      <Box ref={editBetAmountsContainerRef} />
-      {/* Portal target for payout UI while in edit mode */}
-      <Box ref={editPayoutContainerRef} />
-    </Box>
+    </>
   );
 
-  const sideLayoutDirection = {
-    base: 'column',
-    lg: 'row',
-  } as const;
-  const layoutDirection = isSideBetSetPosition ? sideLayoutDirection : ('column' as const);
+  const betAmountsContent = anyBets ? (
+    <>
+      {isPending ? (
+        <Box px={4} py={2} color="fg.muted" fontSize="sm">
+          Updating…
+        </Box>
+      ) : null}
+      <Suspense fallback={null}>
+        <BetAmountsSettings />
+      </Suspense>
+    </>
+  ) : null;
+
+  const payoutContent = anyBets ? (
+    <VStack align="stretch" gap={0} w="full">
+      <Suspense fallback={null}>
+        <>
+          <ScrollArea.Root width="full">
+            <ScrollArea.Viewport>
+              <ScrollArea.Content py={4}>
+                <PayoutTable />
+              </ScrollArea.Content>
+            </ScrollArea.Viewport>
+            <ScrollArea.Scrollbar orientation="horizontal" />
+          </ScrollArea.Root>
+          <ScrollArea.Root width="full">
+            <ScrollArea.Viewport>
+              <ScrollArea.Content>
+                <PayoutCharts />
+              </ScrollArea.Content>
+            </ScrollArea.Viewport>
+            <ScrollArea.Scrollbar orientation="horizontal" />
+          </ScrollArea.Root>
+        </>
+      </Suspense>
+    </VStack>
+  ) : null;
+
+  const footerSection = (
+    <>
+      {/* Bet amounts should appear below the bet table */}
+      <Box ref={editBetAmountsContainerRef} w="full" />
+      <Box ref={editPayoutContainerRef} w="full" />
+    </>
+  );
+
+  const betsLayout = isSideBetSetPosition ? (
+    <Flex
+      direction={{ base: 'column', lg: 'row' }}
+      align="stretch"
+      w="full"
+      data-testid="bets-layout"
+    >
+      {betSetPosition === 'left' && sideBetSetsPanel}
+      <Box flex="1" minW={0} minH={0} data-testid="bet-main">
+        {tableSection}
+        {betSetPosition === 'right' && !isLgUp && sideBetSetsPanel}
+        {footerSection}
+      </Box>
+      {betSetPosition === 'right' && isLgUp && sideBetSetsPanel}
+    </Flex>
+  ) : (
+    <Box w="full" data-testid="bets-layout">
+      <Box minW={0} minH={0} data-testid="bet-main">
+        {tableSection}
+        {footerSection}
+      </Box>
+    </Box>
+  );
 
   return (
     <>
@@ -275,10 +320,9 @@ export default React.memo(function EditBets(): React.ReactElement {
             </Box>
           ) : null}
 
-          {/* Portal target for bet amounts while in view mode */}
-          <Box ref={viewBetAmountsContainerRef} />
-          {/* Portal target for payout UI while in view mode (kept outside the banner for normal flow) */}
-          <Box ref={viewPayoutContainerRef} />
+          {/* Portal targets for bet amounts + payout in view mode */}
+          <Box ref={viewBetAmountsContainerRef} w="full" />
+          <Box ref={viewPayoutContainerRef} w="full" />
         </>
       )}
 
@@ -342,56 +386,21 @@ export default React.memo(function EditBets(): React.ReactElement {
             </Box>
           </Box>
 
-          <Flex
-            direction={layoutDirection}
-            align={{ base: 'stretch', lg: 'stretch' }}
-            w="full"
-            data-testid="bets-layout"
-          >
-            {betSetPosition === 'left' ? sideBetSetsPanel : null}
-            {mainPanel}
-            {betSetPosition === 'right' ? sideBetSetsPanel : null}
-          </Flex>
+          {betsLayout}
         </>
       )}
 
-      {anyBets && betAmountsPortalContainerRef && (
-        <Portal container={betAmountsPortalContainerRef}>
-          {isPending ? (
-            <Box px={4} py={2} color="fg.muted" fontSize="sm">
-              Updating…
-            </Box>
-          ) : null}
-          <Suspense fallback={null}>
-            <BetAmountsSettings />
-          </Suspense>
+      {anyBets && (
+        <Portal
+          container={viewMode ? viewBetAmountsContainerRef : editBetAmountsContainerRef}
+        >
+          {betAmountsContent}
         </Portal>
       )}
 
-      {anyBets && payoutPortalContainerRef && (
-        <Portal container={payoutPortalContainerRef}>
-          <VStack align="stretch" gap={0} w="full">
-            <Suspense fallback={null}>
-              <>
-                <ScrollArea.Root width="full">
-                  <ScrollArea.Viewport>
-                    <ScrollArea.Content py={4}>
-                      <PayoutTable />
-                    </ScrollArea.Content>
-                  </ScrollArea.Viewport>
-                  <ScrollArea.Scrollbar orientation="horizontal" />
-                </ScrollArea.Root>
-                <ScrollArea.Root width="full">
-                  <ScrollArea.Viewport>
-                    <ScrollArea.Content>
-                      <PayoutCharts />
-                    </ScrollArea.Content>
-                  </ScrollArea.Viewport>
-                  <ScrollArea.Scrollbar orientation="horizontal" />
-                </ScrollArea.Root>
-              </>
-            </Suspense>
-          </VStack>
+      {anyBets && (
+        <Portal container={viewMode ? viewPayoutContainerRef : editPayoutContainerRef}>
+          {payoutContent}
         </Portal>
       )}
     </>
