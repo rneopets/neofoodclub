@@ -5,6 +5,9 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
+  define: {
+    'import.meta.env.DISABLE_REACT_SCAN': JSON.stringify(true),
+  },
   test: {
     globals: true,
     environment: 'jsdom',

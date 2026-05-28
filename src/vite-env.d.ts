@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly REACT_APP_VERCEL_GIT_COMMIT_SHA: string;
+  readonly DISABLE_REACT_SCAN: string;
 }
 
 interface ImportMeta {

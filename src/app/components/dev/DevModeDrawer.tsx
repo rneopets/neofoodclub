@@ -1,12 +1,15 @@
 import { Button, Drawer, Portal, Stack, CloseButton, Text, Separator } from '@chakra-ui/react';
 import * as React from 'react';
 import { FaCode, FaTable } from 'react-icons/fa';
+import { FaMagnifyingGlassChart } from 'react-icons/fa6';
 
 import { useDisclosureState } from '../../hooks/useDisclosureState';
 import { useCurrentRound } from '../../stores';
+import { getReactScanEnabled, setReactScanEnabled } from '../../util/reactScan';
 import RoundInput from '../inputs/RoundInput';
 import { AllBetsModal } from '../modals/AllBetsModal';
 import { RoundJsonModal } from '../modals/RoundJsonModal';
+import SettingsSwitch from '../TableSettings/SettingsSwitch';
 
 interface DevModeDrawerProps {
   isOpen: boolean;
@@ -17,6 +20,13 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
   const jsonModal = useDisclosureState(false);
   const allBetsModal = useDisclosureState(false);
   const currentRoundFromCdn = useCurrentRound();
+  const [isReactScanEnabled, setIsReactScanEnabled] = React.useState(getReactScanEnabled);
+
+  const handleReactScanToggle = React.useCallback((): void => {
+    const nextEnabled = !isReactScanEnabled;
+    setIsReactScanEnabled(nextEnabled);
+    void setReactScanEnabled(nextEnabled);
+  }, [isReactScanEnabled]);
 
   return (
     <>
@@ -50,6 +60,14 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
                     </Text>
                     <RoundInput />
                   </Stack>
+                  <Separator />
+                  <SettingsSwitch
+                    icon={FaMagnifyingGlassChart}
+                    label="React Scan"
+                    colorPalette="purple"
+                    checked={isReactScanEnabled}
+                    onChange={handleReactScanToggle}
+                  />
                   <Separator />
                   <Button width="full" onClick={jsonModal.onOpen}>
                     <FaCode />
