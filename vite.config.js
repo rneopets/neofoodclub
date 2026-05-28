@@ -4,63 +4,6 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-const isReactScanDisabled =
-  process.env.NODE_ENV === 'test' ||
-  process.env.PLAYWRIGHT_TEST === 'true' ||
-  process.env.VITEST === 'true' ||
-  process.env.DISABLE_REACT_SCAN === 'true';
-
-// Custom plugin to inject react-scan locally and in Vercel PR previews.
-function reactScanPlugin() {
-  let viteCommand = 'build';
-
-  return {
-    name: 'vite-plugin-react-scan',
-    configResolved(config) {
-      viteCommand = config.command;
-    },
-    transformIndexHtml(html) {
-      const isLocalDev = viteCommand === 'serve';
-      const isVercelPreview = process.env.VERCEL_ENV === 'preview';
-
-      if (
-        isReactScanDisabled ||
-        (!isLocalDev && !isVercelPreview) ||
-        html.includes('react-scan')
-      ) {
-        return html;
-      }
-
-      // PR previews should expose the toolbar without scanning by default.
-      // Local dev should scan immediately unless the developer opts out.
-      const optionsScript = isVercelPreview
-        ? `{ enabled: false, log: false, showToolbar: true, animationSpeed: "fast", trackUnnecessaryRenders: true }`
-        : `{ enabled: !window.navigator.webdriver, log: false, showToolbar: true, trackUnnecessaryRenders: true, animationSpeed: "fast" }`;
-      const resetPersistedOptionsScript = isVercelPreview
-        ? `try {
-            const key = "react-scan-options";
-            const persistedOptions = JSON.parse(window.localStorage.getItem(key) || "{}");
-            window.localStorage.setItem(
-              key,
-              JSON.stringify({ ...persistedOptions, enabled: false, showToolbar: true }),
-            );
-          } catch {}`
-        : '';
-
-      return html.replace(
-        '</head>',
-        `<script>
-          ${resetPersistedOptionsScript}
-        </script>
-        <script src="https://unpkg.com/react-scan@0.4.3/dist/auto.global.js"></script>
-        <script>
-          window.reactScan?.(${optionsScript});
-        </script></head>`,
-      );
-    },
-  };
-}
-
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -99,7 +42,6 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
       },
     }),
-    reactScanPlugin(),
   ],
   resolve: {
     alias: {
@@ -112,6 +54,9 @@ export default defineConfig({
       process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA ||
         process.env.VERCEL_GIT_COMMIT_SHA ||
         'development',
+    ),
+    'import.meta.env.DISABLE_REACT_SCAN': JSON.stringify(
+      process.env.DISABLE_REACT_SCAN === 'true',
     ),
   },
   // Configure the public directory to serve static assets

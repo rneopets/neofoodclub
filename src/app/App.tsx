@@ -3,6 +3,7 @@ import { JSX, useEffect } from 'react';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import HomePage from './HomePage';
 import { useInitializeRoundData } from './stores';
+import { initReactScanIfEnabled } from './util/reactScan';
 
 function App(): JSX.Element {
   const initialize = useInitializeRoundData();
@@ -11,6 +12,10 @@ function App(): JSX.Element {
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    void initReactScanIfEnabled();
+  }, []);
 
   return (
     <ErrorBoundary>
