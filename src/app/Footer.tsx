@@ -14,8 +14,18 @@ import {
   BoxProps,
 } from '@chakra-ui/react';
 import * as React from 'react';
+import {
+  FaBook,
+  FaClipboardList,
+  FaClockRotateLeft,
+  FaCoins,
+  FaGithub,
+  FaPenToSquare,
+  FaTrophy,
+} from 'react-icons/fa6';
 
 import { DevModeDrawer } from './components/dev/DevModeDrawer';
+import { useHelpGuide } from './components/help/HelpGuideProvider';
 import { GitCommit } from './components/ui/GitCommit';
 import { VercelCredit } from './components/ui/VercelCredit';
 import NeopointIcon from './images/np-icon.svg';
@@ -51,22 +61,35 @@ const ListHeader: React.FC<ListHeaderProps> = ({ children, ...props }) => (
   </Text>
 );
 
+type FooterLinkProps = React.ComponentProps<typeof Link> & {
+  icon: React.ElementType;
+  children: React.ReactNode;
+};
+
+const FooterLink: React.FC<FooterLinkProps> = ({ icon: IconComponent, children, ...linkProps }) => (
+  <Link {...linkProps}>
+    <HStack gap="2">
+      <Box as={IconComponent} flexShrink={0} fontSize="1em" aria-hidden />
+      <span>{children}</span>
+    </HStack>
+  </Link>
+);
+
 const KoFiButton: React.FC = () => (
-  <>
-    <Link href="https://ko-fi.com/dice" target="_blank" rel="noopener noreferrer">
-      <img
-        height="36"
-        style={{ border: '0px', height: '36px' }}
-        src="https://storage.ko-fi.com/cdn/kofi1.png?v=3"
-        alt="Buy Me a Coffee at ko-fi.com"
-      />
-    </Link>
-  </>
+  <Link href="https://ko-fi.com/dice" target="_blank" rel="noopener noreferrer">
+    <img
+      height="36"
+      style={{ border: '0px', height: '36px' }}
+      src="https://storage.ko-fi.com/cdn/kofi1.png?v=3"
+      alt="Buy Me a Coffee at ko-fi.com"
+    />
+  </Link>
 );
 
 type FooterProps = BoxProps;
 
 const Footer: React.FC<FooterProps> = props => {
+  const { openHelpGuide } = useHelpGuide();
   const [isDevModeOpen, setIsDevModeOpen] = React.useState(false);
   const [, setClickCount] = React.useState(0);
   const [rotation, setRotation] = React.useState(0);
@@ -157,48 +180,67 @@ const Footer: React.FC<FooterProps> = props => {
           <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} gap={8}>
             <Stack align={'flex-start'}>
               <ListHeader>Food Club Links</ListHeader>
-              <Link
+              <FooterLink
+                icon={FaPenToSquare}
                 href="https://www.neopets.com/pirates/foodclub.phtml?type=bet"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Place Bets
-              </Link>
-              <Link
+              </FooterLink>
+              <FooterLink
+                icon={FaClipboardList}
                 href="https://www.neopets.com/pirates/foodclub.phtml?type=current_bets"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Current Bets
-              </Link>
-              <Link
+              </FooterLink>
+              <FooterLink
+                icon={FaCoins}
                 href="https://www.neopets.com/pirates/foodclub.phtml?type=collect"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Collect Winnings
-              </Link>
-              <Link
+              </FooterLink>
+              <FooterLink
+                icon={FaTrophy}
                 href="https://www.neopets.com/gamescores.phtml?game_id=88"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 High Score List
-              </Link>
+              </FooterLink>
             </Stack>
 
             <Stack align={'flex-start'}>
               <ListHeader>NeoFoodClub Stuff</ListHeader>
-              <Link href={classicHref} target="_blank" rel="noopener noreferrer">
+              <FooterLink
+                as="button"
+                type="button"
+                icon={FaBook}
+                onClick={() => openHelpGuide()}
+                data-testid="help-guide-footer-link"
+              >
+                Help Guide
+              </FooterLink>
+              <FooterLink
+                icon={FaClockRotateLeft}
+                href={classicHref}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Classic NeoFoodClub
-              </Link>
-              <Link
+              </FooterLink>
+              <FooterLink
+                icon={FaGithub}
                 href="https://github.com/rneopets/neofoodclub"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 Source Code
-              </Link>
+              </FooterLink>
             </Stack>
 
             <Stack align={'flex-start'}>

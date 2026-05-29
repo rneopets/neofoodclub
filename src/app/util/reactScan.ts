@@ -93,7 +93,9 @@ export async function setReactScanEnabled(enabled: boolean): Promise<void> {
 
   try {
     const legacyKey = 'react-scan-options';
-    const legacyOptions = JSON.parse(localStorage.getItem(legacyKey) || '{}') as ReactScanRuntimeOptions;
+    const legacyOptions = JSON.parse(
+      localStorage.getItem(legacyKey) || '{}',
+    ) as ReactScanRuntimeOptions;
     localStorage.setItem(
       legacyKey,
       JSON.stringify({ ...legacyOptions, enabled: false, showToolbar: false }),

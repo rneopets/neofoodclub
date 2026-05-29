@@ -211,10 +211,7 @@ export default React.memo(function EditBets(): React.ReactElement {
   const sideBetSetsPanel = isSideBetSetPosition ? <BetSetsPanel variant="sidebar" /> : null;
 
   const inlineBetSetsPanel = !isSideBetSetPosition ? (
-    <BetSetsPanel
-      variant={isLgUp ? 'inline' : 'sidebar'}
-      tableLocation={inlineTableLocation}
-    />
+    <BetSetsPanel variant={isLgUp ? 'inline' : 'sidebar'} tableLocation={inlineTableLocation} />
   ) : null;
 
   const tablePanel = (
@@ -391,9 +388,7 @@ export default React.memo(function EditBets(): React.ReactElement {
       )}
 
       {anyBets && (
-        <Portal
-          container={viewMode ? viewBetAmountsContainerRef : editBetAmountsContainerRef}
-        >
+        <Portal container={viewMode ? viewBetAmountsContainerRef : editBetAmountsContainerRef}>
           {betAmountsContent}
         </Portal>
       )}

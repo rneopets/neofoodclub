@@ -92,6 +92,55 @@ const TimelineBar = React.memo(
 
 TimelineBar.displayName = 'TimelineBar';
 
+export interface OddsTimelineSegment {
+  odds: number;
+  percent: number;
+  timestamp: number;
+}
+
+interface OddsTimelineBarsProps {
+  arenaId: number;
+  pirateIndex: number;
+  segments: OddsTimelineSegment[];
+  onClick?: () => void;
+  readOnly?: boolean;
+}
+
+export const OddsTimelineBars = React.memo((props: OddsTimelineBarsProps): React.ReactElement => {
+  const { arenaId, pirateIndex, segments, onClick, readOnly = false } = props;
+
+  return (
+    <Box
+      maxW="300px"
+      onClick={readOnly ? undefined : onClick}
+      cursor={readOnly ? 'default' : 'pointer'}
+      pointerEvents={readOnly ? 'none' : undefined}
+      display="flex"
+      px="0"
+      rounded="lg"
+      overflow="hidden"
+      borderRadius="md"
+      border="1px solid"
+      borderColor="border"
+      role={readOnly ? 'img' : undefined}
+      aria-label={readOnly ? 'Example odds timeline' : undefined}
+      css={readOnly ? { '& *': { cursor: 'default' } } : undefined}
+    >
+      {segments.map((segment, i) => (
+        <TimelineBar
+          key={`timeline-${arenaId}-${pirateIndex}-${segment.timestamp}-${segment.odds}`}
+          index={i}
+          odds={segment.odds}
+          percent={segment.percent}
+          timestamp={segment.timestamp}
+        />
+      ))}
+    </Box>
+  );
+});
+
+OddsTimelineBars.displayName = 'OddsTimelineBars';
+
 interface OddsTimelineProps {
   onClick: () => void;
   arenaId: number;
@@ -163,30 +212,20 @@ const OddsTimeline = React.memo(
       return <Box>&nbsp;</Box>;
     }
 
+    const segments: OddsTimelineSegment[] = timelineData.odds.map((odds, i) => ({
+      odds,
+      percent: timelineData.percentages[i] ?? 0,
+      timestamp: timelineData.times[i] ?? 0,
+    }));
+
     return (
       <Table.Cell p={0}>
-        <Box
-          maxW="300px"
+        <OddsTimelineBars
+          arenaId={arenaId}
+          pirateIndex={pirateIndex}
+          segments={segments}
           onClick={onClick}
-          cursor="pointer"
-          display="flex"
-          px="0"
-          rounded="lg"
-          overflow="hidden"
-          borderRadius="md"
-          border="1px solid"
-          borderColor="border"
-        >
-          {timelineData.odds.map((odds, i) => (
-            <TimelineBar
-              key={`timeline-${arenaId}-${pirateIndex}-${timelineData.times[i]}-${odds}`}
-              index={i}
-              odds={odds}
-              percent={timelineData.percentages[i] ?? 0}
-              timestamp={timelineData.times[i] ?? 0}
-            />
-          ))}
-        </Box>
+        />
       </Table.Cell>
     );
   },
