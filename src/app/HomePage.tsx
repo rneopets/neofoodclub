@@ -1,6 +1,7 @@
 import { Box } from '@chakra-ui/react';
 import React from 'react';
 
+import { HelpGuideProvider } from './components/help/HelpGuideProvider';
 import TopProgressBar from './components/ui/TopProgressBar';
 import EditBets from './components/views/EditBets';
 import Footer from './Footer';
@@ -8,7 +9,7 @@ import Header from './Header';
 
 const HomePage = React.memo(
   (): React.ReactElement => (
-    <>
+    <HelpGuideProvider>
       <TopProgressBar />
       <Header />
 
@@ -17,7 +18,7 @@ const HomePage = React.memo(
       </Box>
 
       <Footer />
-    </>
+    </HelpGuideProvider>
   ),
 );
 
