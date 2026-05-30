@@ -2,7 +2,9 @@ import {
   createSystem,
   defaultConfig,
   defineConfig,
+  defineRecipe,
   defineSemanticTokens,
+  defineSlotRecipe,
   defineTokens,
 } from '@chakra-ui/react';
 
@@ -30,6 +32,21 @@ const v2Gray = {
   700: '#2D3748',
   800: '#1A202C',
   900: '#171923',
+} as const;
+
+const v2RadiomarkControl = {
+  borderWidth: '2px',
+  borderColor: 'radiomark.ring',
+  bg: 'transparent',
+  color: 'transparent',
+  _checked: {
+    bg: 'radiomark.checked',
+    borderColor: 'radiomark.checked',
+    color: 'radiomark.dot',
+  },
+  '& .dot': {
+    scale: '0.5',
+  },
 } as const;
 
 const palette = (
@@ -296,6 +313,34 @@ const baseConfig = defineConfig({
         'nfc-cyan': nfcPalette(nfc.cyan, nfcDark.cyan, 'cyan'),
         'nfc-purple': nfcPalette(nfc.purple, nfcDark.purple, 'purple'),
         'nfc-pink': nfcPalette(nfc.pink, nfcDark.pink, 'pink'),
+        radiomark: {
+          ring: semanticColor(v2Gray[200], 'rgba(255, 255, 255, 0.4)', v2Gray[700]),
+          checked: semanticColor(v2Colors.blue[500], v2Colors.blue[200], v2Gray[200]),
+          dot: semanticColor('{colors.white}', v2Gray[900], v2Gray[900]),
+        },
+      }),
+    },
+    recipes: {
+      radiomark: defineRecipe({
+        className: 'chakra-radiomark',
+        variants: {
+          variant: {
+            solid: v2RadiomarkControl,
+          },
+        },
+      }),
+    },
+    slotRecipes: {
+      radioGroup: defineSlotRecipe({
+        className: 'chakra-radio-group',
+        slots: ['root', 'label', 'item', 'itemText', 'itemControl', 'indicator', 'itemAddon', 'itemIndicator'],
+        variants: {
+          variant: {
+            solid: {
+              itemControl: v2RadiomarkControl,
+            },
+          },
+        },
       }),
     },
   },
