@@ -20,13 +20,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Run Docker
         run: |
           cd ./automation/
           docker compose run --rm nfc_values
-          cp "./output/javascript.js" "./../src/app/constants_logit.js"
+          cp "./output/typescript.ts" "./../src/app/constants_logit.ts"
 
       - name: Git stuff
         run: |
