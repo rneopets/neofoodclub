@@ -402,6 +402,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                     </Text>
                     <RadioGroup.Root
                       value={sortField}
+                      size="sm"
                       onValueChange={(details: { value: string | null }) => {
                         if (details.value === null) {
                           return;
