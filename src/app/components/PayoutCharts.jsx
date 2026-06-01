@@ -80,6 +80,8 @@ const PayoutCharts = () => {
     }
 
     const options = {
+      responsive: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: {
           display: false,
@@ -162,7 +164,9 @@ const PayoutCharts = () => {
     return (
       <Tr>
         <Td colSpan={4} pt={2}>
-          <Scatter data={chartData} options={options} />
+          <Box h="240px" w="100%">
+            <Scatter data={chartData} options={options} />
+          </Box>
         </Td>
       </Tr>
     );
