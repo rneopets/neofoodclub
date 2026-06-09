@@ -160,7 +160,7 @@ const ClearButtonCell = React.memo(
 
     return (
       <Td backgroundColor="bg.subtle">
-        <Button size="2xs" onClick={handleClearRow}>
+        <Button size="2xs" variant="subtle" onClick={handleClearRow}>
           {betCount}-Bet
         </Button>
       </Td>
