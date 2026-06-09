@@ -37,7 +37,8 @@ import { useIsRoundOver } from '../../hooks/useIsRoundOver';
 import { useScrollPosition } from '../../hooks/useScrollPosition';
 import { useTimelineViewState } from '../../hooks/useTimelineViewState';
 import { makeEmpty } from '../../maths';
-import { useRoundStore, useCurrentOddsValue, useOpeningOddsValue } from '../../stores';
+import { useRoundStore, useCurrentOddsValue, useOpeningOddsValue, useArenaRatios, useBigBrain } from '../../stores';
+import { displayAsPercent } from '../../util';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../../utils/betUtils';
 import DateFormatter from '../format/DateFormatter';
 
@@ -842,6 +843,9 @@ const ArenaTimelineView = React.memo(
     const start = roundData.start;
     const endTime = roundData.timestamp;
     const getPirateBgColor = useGetPirateBgColor();
+    const arenaRatios = useArenaRatios();
+    const bigBrain = useBigBrain();
+    const arenaRatio = arenaRatios[arenaId];
 
     if (!start || !endTime) {
       return null;
@@ -991,16 +995,23 @@ const ArenaTimelineView = React.memo(
 
             {/* Pirate quick navigation */}
 
-            <Text
-              fontSize="sm"
-              fontWeight="bold"
-              color="fg.muted"
-              textTransform="uppercase"
-              letterSpacing="wide"
-            >
-              <FaSkullCrossbones style={{ display: 'inline', marginRight: '8px' }} />
-              Pirates in {arenaName}
-            </Text>
+            <Flex alignItems="center" gap={2}>
+              <Text
+                fontSize="sm"
+                fontWeight="bold"
+                color="fg.muted"
+                textTransform="uppercase"
+                letterSpacing="wide"
+              >
+                <FaSkullCrossbones style={{ display: 'inline', marginRight: '8px' }} />
+                Pirates in {arenaName}
+              </Text>
+              {bigBrain && arenaRatio !== undefined && (
+                <Badge variant="subtle" fontSize="xs">
+                  {displayAsPercent(arenaRatio, 1)} ratio
+                </Badge>
+              )}
+            </Flex>
             <SimpleGrid mb={4} columns={4} gap={{ base: 2, md: 3 }} w="full" justifyItems="center">
               {arenaPirates.map((pirateId, pirateIndex) => {
                 if (!pirateId) {
