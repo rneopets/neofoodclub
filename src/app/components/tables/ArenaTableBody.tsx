@@ -122,19 +122,6 @@ const StickyTd = React.memo(
       zIndex: 1,
       ...(cursor && { cursor }),
       onClick,
-      _after: {
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        right: '-10px',
-        width: '10px',
-        height: '100%',
-        background: 'linear-gradient(to right, rgba(0,0,0,0.1), transparent)',
-        pointerEvents: 'none',
-        zIndex: 1,
-        opacity: 1,
-      },
-      position: 'relative',
       ...filteredRest,
     };
 
