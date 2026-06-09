@@ -345,7 +345,6 @@ const ArenaHeaderRow = React.memo(
       <Table.Row>
         <Table.Cell
           rowSpan={5}
-          p={2}
           backgroundColor="bg.subtle"
           cursor="pointer"
           onClick={handleArenaTimelineClickLocal}
@@ -355,12 +354,7 @@ const ArenaHeaderRow = React.memo(
           <Text fontWeight="bold">{ARENA_NAMES[arenaId]}</Text>
         </Table.Cell>
         {bigBrain && (
-          <Table.Cell
-            rowSpan={5}
-            p={2}
-            backgroundColor="bg.subtle"
-            textAlign="center"
-          >
+          <Table.Cell rowSpan={5} backgroundColor="bg.subtle" textAlign="center">
             <ArenaRatioDisplay arenaId={arenaId} />
           </Table.Cell>
         )}
@@ -748,7 +742,7 @@ const PirateRow = React.memo(
         {customOddsInputElement}
         {timelineElement}
         {betRadios}
-        <Table.Cell py={0} whiteSpace="nowrap">
+        <Table.Cell whiteSpace="nowrap">
           <Box display="flex" gap={1} justifyContent="center">
             <Tooltip content="10-bet" openDelay={600} placement="top">
               <IconButton

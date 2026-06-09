@@ -209,6 +209,7 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
       customOddsHeader,
       oddsTimelineHeader,
       faHeader,
+      bigBrain,
     ],
   );
 
