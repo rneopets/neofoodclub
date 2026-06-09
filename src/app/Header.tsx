@@ -60,7 +60,7 @@ const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo
     }, [fetchCurrentRound]);
 
     return (
-      <Tooltip content={`Go to current round (${currentRound})`} placement="top">
+      <Tooltip content="Go to current round" placement="top">
         <Button
           size="xs"
           variant="ghost"
