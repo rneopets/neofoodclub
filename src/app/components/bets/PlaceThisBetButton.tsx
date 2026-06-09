@@ -83,7 +83,7 @@ const ActivePlaceBetButton = React.memo(
       <BetButton
         onClick={placeBet}
         colorPalette="gray"
-        layerStyle={clicked ? 'fill.surface' : 'fill.solid'}
+        variant={clicked ? 'outline' : 'subtle'}
       >
         {clicked ? 'Bet placed!' : 'Place bet!'} <FaExternalLinkAlt />
       </BetButton>
