@@ -365,11 +365,18 @@ const ArenaHeaderRow = React.memo(
           title={`Click to view odds timeline for ${ARENA_NAMES[arenaId]}`}
           _hover={{ bg: 'bg.emphasized' }}
         >
-          <VStack gap={1}>
-            <Text fontWeight="bold">{ARENA_NAMES[arenaId]}</Text>
-            <ArenaRatioDisplay arenaId={arenaId} />
-          </VStack>
+          <Text fontWeight="bold">{ARENA_NAMES[arenaId]}</Text>
         </Table.Cell>
+        {bigBrain && (
+          <Table.Cell
+            rowSpan={5}
+            p={2}
+            backgroundColor="bg.subtle"
+            textAlign="center"
+          >
+            <ArenaRatioDisplay arenaId={arenaId} />
+          </Table.Cell>
+        )}
         <EmptyTd colSpan={emptyColSpan} />
         {faDetails ? <FoodItems arenaId={arenaId} /> : null}
         <EmptyTd colSpan={2} />
