@@ -172,6 +172,7 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
       <Table.Header>
         <Table.Row>
           <Table.ColumnHeader textAlign="center">Arena</Table.ColumnHeader>
+          {bigBrain && <Table.ColumnHeader textAlign="center">Ratio</Table.ColumnHeader>}
           <Table.ColumnHeader textAlign="center">Pirate</Table.ColumnHeader>
           {probsHeader}
           {customProbsHeader}
