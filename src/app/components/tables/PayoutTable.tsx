@@ -432,25 +432,25 @@ const PayoutTable = React.memo((): React.ReactElement => {
     <Table.Root size="sm" width="auto" interactive>
       <Table.Header>
         <Table.Row>
-          <Table.ColumnHeader>Bet #</Table.ColumnHeader>
-          <Table.ColumnHeader>Amount</Table.ColumnHeader>
-          <Table.ColumnHeader>Odds</Table.ColumnHeader>
-          <Table.ColumnHeader>Payoff</Table.ColumnHeader>
-          <Table.ColumnHeader>
+          <Table.ColumnHeader w="3.5rem">Bet #</Table.ColumnHeader>
+          <Table.ColumnHeader w="5rem">Amount</Table.ColumnHeader>
+          <Table.ColumnHeader w="4rem">Odds</Table.ColumnHeader>
+          <Table.ColumnHeader w="5rem">Payoff</Table.ColumnHeader>
+          <Table.ColumnHeader w="4rem">
             <TextTooltip text="Prob." content="Probability" />
           </Table.ColumnHeader>
-          <Table.ColumnHeader>
+          <Table.ColumnHeader w="4.5rem">
             <TextTooltip text="E.R." content="Expected Ratio" />
           </Table.ColumnHeader>
-          <Table.ColumnHeader>
+          <Table.ColumnHeader w="5rem">
             <TextTooltip text="N.E." content="Net Expected" />
           </Table.ColumnHeader>
-          <Table.ColumnHeader>Maxbet</Table.ColumnHeader>
-          <Table.ColumnHeader>Shipwreck</Table.ColumnHeader>
-          <Table.ColumnHeader>Lagoon</Table.ColumnHeader>
-          <Table.ColumnHeader>Treasure</Table.ColumnHeader>
-          <Table.ColumnHeader>Hidden</Table.ColumnHeader>
-          <Table.ColumnHeader>Harpoon</Table.ColumnHeader>
+          <Table.ColumnHeader w="5rem">Maxbet</Table.ColumnHeader>
+          <Table.ColumnHeader minW="5rem">Shipwreck</Table.ColumnHeader>
+          <Table.ColumnHeader minW="5rem">Lagoon</Table.ColumnHeader>
+          <Table.ColumnHeader minW="5rem">Treasure</Table.ColumnHeader>
+          <Table.ColumnHeader minW="5rem">Hidden</Table.ColumnHeader>
+          <Table.ColumnHeader minW="5rem">Harpoon</Table.ColumnHeader>
           <Table.ColumnHeader {...stickySubmitHeaderProps}>Submit</Table.ColumnHeader>
         </Table.Row>
       </Table.Header>
