@@ -49,12 +49,15 @@ interface GoToCurrentRoundButtonProps {
 
 const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo(
   ({ testId = 'go-to-current-round' }) => {
-    const currentRound = useRoundStore(state => state.currentRound);
-    const updateSelectedRound = useRoundStore(state => state.updateSelectedRound);
+    const fetchCurrentRound = useRoundStore(state => state.fetchCurrentRound);
 
-    const handleGoToCurrent = useCallback(() => {
-      updateSelectedRound(currentRound);
-    }, [updateSelectedRound, currentRound]);
+    const handleGoToCurrent = useCallback(async () => {
+      await fetchCurrentRound();
+      const updatedState = useRoundStore.getState();
+      if (updatedState.currentRound > 0) {
+        updatedState.updateSelectedRound(updatedState.currentRound);
+      }
+    }, [fetchCurrentRound]);
 
     return (
       <Tooltip content={`Go to current round (${currentRound})`} placement="top">
