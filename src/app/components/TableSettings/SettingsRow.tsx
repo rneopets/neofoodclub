@@ -40,7 +40,7 @@ const SettingsRow = memo<SettingsRowProps>(
     disabled = false,
   }) => {
     const { colorMode } = useColorMode();
-    const layerStyle = isChecked && colorMode === 'dark' ? 'fill.muted' : 'fill.surface';
+    const layerStyle = 'fill.surface';
     const switchTrackColor = isChecked ? getSwitchTrackColor(colorPalette, colorMode) : undefined;
     const switchControlProps = switchTrackColor
       ? {
