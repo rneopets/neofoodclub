@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 
 import { useAddNewSet } from './stores';
-import { anyBetsExist, parseBetUrl } from './util';
+import { anyBetsExist, parseMultiBetUrl } from './util';
 
 function removeHtmlTags(str: string): string {
   return str.replace(/<\/?[^>]+(>|$)/g, '');
@@ -46,34 +46,44 @@ const DropZone = ({ children }: DropZoneProps): React.ReactElement => {
       // This prevents the browser from navigating
       e.preventDefault();
 
-      // Process each URL
-      urls.forEach((urlLine, index) => {
-        const hashPart = urlLine.split('#')[1];
-
-        if (!hashPart) {
-          return;
-        }
-
-        const parsed = parseBetUrl(hashPart);
-
-        if (!anyBetsExist(parsed.bets)) {
-          return;
-        }
-
-        // For single drops, try to extract name from HTML
-        // For multiple drops, use a numbered format
-        let name: string;
-        if (urls.length === 1) {
-          const dropped = textHtml || urlLine;
-          name = removeHtmlTags(dropped).trim();
-          if (name.startsWith('http')) {
-            name = `Dropped Set [Round ${parsed.round}]`;
+      // Each line may itself unpack into multiple bets (repeated b=/a= params),
+      // so gather every bet across every line before deciding how to number them.
+      const lines = urls
+        .map(urlLine => {
+          const hashPart = urlLine.split('#')[1];
+          if (!hashPart) {
+            return null;
           }
-        } else {
-          name = `Dropped Set ${index + 1} [Round ${parsed.round}]`;
-        }
 
-        addNewSet(name, parsed.bets, parsed.betAmounts, true);
+          const parsed = parseMultiBetUrl(hashPart);
+          const entries = parsed.entries.filter(entry => anyBetsExist(entry.bets));
+
+          return { urlLine, round: parsed.round, entries };
+        })
+        .filter((line): line is NonNullable<typeof line> => line !== null);
+
+      const totalSets = lines.reduce((total, line) => total + line.entries.length, 0);
+
+      let setIndex = 0;
+      lines.forEach(line => {
+        line.entries.forEach(entry => {
+          setIndex += 1;
+
+          // For a single dropped bet, try to extract name from HTML
+          // For multiple dropped bets, use a numbered format
+          let name: string;
+          if (totalSets === 1) {
+            const dropped = textHtml || line.urlLine;
+            name = removeHtmlTags(dropped).trim();
+            if (name.startsWith('http')) {
+              name = `Dropped Set [Round ${line.round}]`;
+            }
+          } else {
+            name = `Dropped Set ${setIndex} [Round ${line.round}]`;
+          }
+
+          addNewSet(name, entry.bets, entry.betAmounts, true);
+        });
       });
 
       // toast({

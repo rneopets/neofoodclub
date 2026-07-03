@@ -70,6 +70,8 @@ import {
   useUsedProbabilities,
   useBetSetCount,
   useAllBetSetNames,
+  useAllBets,
+  useAllBetAmounts,
   useCurrentBet,
   useSetCurrentBet,
   useDeleteBetSet,
@@ -86,6 +88,7 @@ import {
   generateRandomIntegerInRange,
   anyBetsExist,
   makeBetURL,
+  makeMultiBetURL,
   isValidRound,
   displayAsPercent,
   makeBetValues,
@@ -732,11 +735,54 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
 
   const betSetCount = useBetSetCount();
   const allNames = useAllBetSetNames();
+  const allBets = useAllBets();
+  const allBetAmounts = useAllBetAmounts();
   const hasAnyBetsInCurrentSet = useHasAnyBets();
   const hasAnyBetsAnywhere = useHasAnyBetsAnywhere();
 
   const isRoundOver = useIsRoundOver();
   const emptyStatePresence = useFadePresence(!hasAnyBetsAnywhere && !isRoundOver, 160);
+
+  const [copiedAllButton, setCopiedAllButton] = useState<string | null>(null);
+
+  // Current set first, so the sharer's active selection is what a recipient lands on too.
+  const orderedAllSets = useMemo(() => {
+    const orderedKeys = [
+      currentBetIndex,
+      ...Array.from(allNames.keys()).filter(key => key !== currentBetIndex),
+    ];
+    return orderedKeys.map(key => ({
+      bets: allBets.get(key) ?? new Map(),
+      betAmounts: allBetAmounts.get(key) ?? new Map(),
+    }));
+  }, [currentBetIndex, allNames, allBets, allBetAmounts]);
+
+  const copyAllUrl = useMemo(
+    () => makeMultiBetURL(currentSelectedRound, orderedAllSets, false),
+    [currentSelectedRound, orderedAllSets],
+  );
+
+  const copyAllUrlWithAmounts = useMemo(
+    () => makeMultiBetURL(currentSelectedRound, orderedAllSets, true),
+    [currentSelectedRound, orderedAllSets],
+  );
+
+  const { copy: copyAll } = useClipboard({ value: copyAllUrl });
+  const { copy: copyAllWithAmounts } = useClipboard({ value: copyAllUrlWithAmounts });
+
+  const handleCopyAllWithAnimation = useCallback((buttonId: string, copyFn: () => void) => {
+    copyFn();
+    setCopiedAllButton(buttonId);
+    setTimeout(() => setCopiedAllButton(null), 1500);
+  }, []);
+
+  const handleCopyAllUrl = useCallback(() => {
+    handleCopyAllWithAnimation('all', copyAll);
+  }, [handleCopyAllWithAnimation, copyAll]);
+
+  const handleCopyAllUrlWithAmounts = useCallback(() => {
+    handleCopyAllWithAnimation('allWithAmounts', copyAllWithAmounts);
+  }, [handleCopyAllWithAnimation, copyAllWithAmounts]);
 
   const clearOrDeleteSet = useCallback(() => {
     if (betSetCount === 1) {
@@ -965,6 +1011,39 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
             />
           </SimpleGrid>
 
+          {betSetCount > 1 && (
+            <SimpleGrid columns={2} gap={2}>
+              <Button
+                onClick={handleCopyAllUrl}
+                data-testid="copy-all-url-button"
+                disabled={!hasAnyBetsAnywhere}
+                size="sm"
+                variant="surface"
+                w="full"
+                justifyContent="center"
+                colorPalette={copiedAllButton === 'all' ? 'nfc-green' : undefined}
+                {...sidebarSurfaceButtonProps}
+              >
+                {copiedAllButton === 'all' ? <FaCheck /> : <FaLink />}
+                Copy All URL
+              </Button>
+              <Button
+                onClick={handleCopyAllUrlWithAmounts}
+                data-testid="copy-all-url-amounts-button"
+                disabled={!hasAnyBetsAnywhere}
+                size="sm"
+                variant="surface"
+                w="full"
+                justifyContent="center"
+                colorPalette={copiedAllButton === 'allWithAmounts' ? 'nfc-green' : undefined}
+                {...sidebarSurfaceButtonProps}
+              >
+                {copiedAllButton === 'allWithAmounts' ? <FaCheck /> : <FaSackDollar />}
+                Copy All (amounts)
+              </Button>
+            </SimpleGrid>
+          )}
+
           {roundOverBanner}
         </VStack>
       ) : (
@@ -989,6 +1068,29 @@ const BetFunctions = React.memo((props: BetFunctionsProps): React.ReactElement =
                 {betSetCount === 1 ? 'Clear' : 'Delete'}
               </Button>
             </ButtonGroup>
+
+            {betSetCount > 1 && (
+              <ButtonGroup size="sm" variant="surface">
+                <Button
+                  onClick={handleCopyAllUrl}
+                  data-testid="copy-all-url-button"
+                  disabled={!hasAnyBetsAnywhere}
+                  colorPalette={copiedAllButton === 'all' ? 'nfc-green' : undefined}
+                >
+                  {copiedAllButton === 'all' ? <FaCheck /> : <FaLink />}
+                  Copy All URL
+                </Button>
+                <Button
+                  onClick={handleCopyAllUrlWithAmounts}
+                  data-testid="copy-all-url-amounts-button"
+                  disabled={!hasAnyBetsAnywhere}
+                  colorPalette={copiedAllButton === 'allWithAmounts' ? 'nfc-green' : undefined}
+                >
+                  {copiedAllButton === 'allWithAmounts' ? <FaCheck /> : <FaSackDollar />}
+                  Copy All (amounts)
+                </Button>
+              </ButtonGroup>
+            )}
 
             <ButtonGroup size="sm" variant="surface" attached gap={0}>
               <Menu.Root>

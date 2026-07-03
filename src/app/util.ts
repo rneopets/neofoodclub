@@ -84,9 +84,12 @@ interface ParsedBetUrl {
   betAmounts: BetAmount;
 }
 
-export function parseBetUrl(url: string): ParsedBetUrl {
-  const urlParams = new URLSearchParams(url);
+export interface ParsedBetEntry {
+  bets: Bet;
+  betAmounts: BetAmount;
+}
 
+function parseSingleEntry(betStr: string | null, amountsStr: string | null): ParsedBetEntry {
   // Initialize with empty Maps to ensure we always have the correct types
   const bets: Bet = new Map<number, number[]>();
   const betAmounts: BetAmount = new Map<number, number>();
@@ -96,15 +99,13 @@ export function parseBetUrl(url: string): ParsedBetUrl {
   let tempBetAmounts = new Map<number, number>();
 
   // parse Bets
-  const bet = urlParams.get('b');
-  if (bet !== null) {
-    tempBets = parseBets(bet);
+  if (betStr !== null) {
+    tempBets = parseBets(betStr);
   }
 
   // parse Bet Amounts
-  const amounts = urlParams.get('a');
-  if (amounts !== null && amounts !== '') {
-    tempBetAmounts = parseBetAmounts(amounts);
+  if (amountsStr !== null && amountsStr !== '') {
+    tempBetAmounts = parseBetAmounts(amountsStr);
   }
 
   // force data if none exists for bets and amounts alike
@@ -116,6 +117,14 @@ export function parseBetUrl(url: string): ParsedBetUrl {
     betAmounts.set(index, tempBetAmounts.get(index) || BET_AMOUNT_DEFAULT);
   }
 
+  return { bets, betAmounts };
+}
+
+export function parseBetUrl(url: string): ParsedBetUrl {
+  const urlParams = new URLSearchParams(url);
+
+  const { bets, betAmounts } = parseSingleEntry(urlParams.get('b'), urlParams.get('a'));
+
   const round = Number(urlParams.get('round')) || 0;
 
   return {
@@ -123,6 +132,26 @@ export function parseBetUrl(url: string): ParsedBetUrl {
     bets,
     betAmounts,
   };
+}
+
+export interface ParsedMultiBetUrl {
+  round: number;
+  entries: ParsedBetEntry[];
+}
+
+export function parseMultiBetUrl(url: string): ParsedMultiBetUrl {
+  const urlParams = new URLSearchParams(url);
+
+  const round = Number(urlParams.get('round')) || 0;
+  const bList = urlParams.getAll('b');
+  const aList = urlParams.getAll('a');
+
+  const entries =
+    bList.length === 0
+      ? [parseSingleEntry(null, null)]
+      : bList.map((b, i) => parseSingleEntry(b, aList[i] ?? null));
+
+  return { round, entries };
 }
 
 function makeBetsUrl(bets: number[][]): string {
@@ -333,6 +362,33 @@ export function makeBetURL(
     const betAmountsValues = Array.from(betAmounts.values());
     const a = makeBetAmountsUrl(betAmountsValues);
     url += `&a=${a}`;
+  }
+
+  return url;
+}
+
+export function makeMultiBetURL(
+  roundNumber: number,
+  sets: { bets: Bet; betAmounts: BetAmount }[],
+  includeBetAmounts: boolean = false,
+): string {
+  const nonEmptySets = sets.filter(set => anyBetsExist(set.bets));
+
+  if (nonEmptySets.length <= 1) {
+    const only = nonEmptySets[0];
+    return makeBetURL(roundNumber, only?.bets, only?.betAmounts, includeBetAmounts);
+  }
+
+  let url = `/#round=${roundNumber}`;
+
+  for (const { bets, betAmounts } of nonEmptySets) {
+    const b = makeBetsUrl(Array.from(bets.values()));
+    url += `&b=${b}`;
+
+    if (includeBetAmounts && anyBetAmountsExist(betAmounts)) {
+      const a = makeBetAmountsUrl(Array.from(betAmounts.values()));
+      url += `&a=${a}`;
+    }
   }
 
   return url;

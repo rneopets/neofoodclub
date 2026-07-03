@@ -4,7 +4,7 @@ import type { Bet, BetAmount } from '../../types/bets';
 import { BET_AMOUNT_DEFAULT } from '../constants';
 import { useBetStore } from '../stores/betStore';
 import { useRoundStore } from '../stores/roundStore';
-import { makeBetURL, parseBetUrl } from '../util';
+import { makeBetURL, makeMultiBetURL, parseBetUrl } from '../util';
 
 // Mock universal-cookie before any store imports
 vi.mock('universal-cookie', () => ({
@@ -200,6 +200,47 @@ describe('hashchange listener', () => {
     const betState = useBetStore.getState();
     const currentBets = betState.allBets.get(betState.currentBet)!;
     expect(currentBets.get(1)).toEqual([0, 3, 0, 1, 0]);
+  });
+
+  it('unpacks multiple bets from a hash with repeated b=/a= params', () => {
+    const betsA = makeBetsForHash([[1, 2, 0, 0, 0]]);
+    const amountsA = makeAmountsForHash([3000]);
+    const betsB = makeBetsForHash([[0, 0, 3, 0, 0]]);
+    const amountsB = makeAmountsForHash([4000]);
+
+    const url = makeMultiBetURL(
+      8000,
+      [
+        { bets: betsA, betAmounts: amountsA },
+        { bets: betsB, betAmounts: amountsB },
+      ],
+      true,
+    );
+    const hash = url.slice(2);
+
+    // window.location is stubbed out as a plain object by setHashAndDispatch, so
+    // history.replaceState no longer keeps it in sync; spy on the call itself instead.
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+
+    setHashAndDispatch(hash);
+
+    const betState = useBetStore.getState();
+    const currentBets = betState.allBets.get(betState.currentBet)!;
+    const currentAmounts = betState.allBetAmounts.get(betState.currentBet)!;
+    expect(currentBets.get(1)).toEqual([1, 2, 0, 0, 0]);
+    expect(currentAmounts.get(1)).toBe(3000);
+
+    expect(betState.allBets.size).toBe(2);
+    const otherIndex = Array.from(betState.allBets.keys()).find(k => k !== betState.currentBet);
+    expect(otherIndex).toBeDefined();
+    expect(betState.allBets.get(otherIndex!)?.get(1)).toEqual([0, 0, 3, 0, 0]);
+    expect(betState.allBetAmounts.get(otherIndex!)?.get(1)).toBe(4000);
+
+    // URL should collapse back down to a single b=/a= form for the current bet.
+    const collapsedUrl = makeBetURL(8000, currentBets, currentAmounts, true);
+    expect(replaceStateSpy).toHaveBeenCalledWith(null, '', collapsedUrl);
+
+    replaceStateSpy.mockRestore();
   });
 
   it('does nothing when hash is empty', () => {

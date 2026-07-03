@@ -8,6 +8,7 @@ import {
   calculateRoundData,
   getBetSetPosition,
   parseBetUrl,
+  parseMultiBetUrl,
   getTableMode,
   getUseWebDomain,
   getUseLogitModel,
@@ -552,6 +553,19 @@ export const useRoundStore = create<RoundStore>()(
       const handleHashChange = (): void => {
         const hash = window.location.hash.slice(1);
         if (!hash) {
+          return;
+        }
+
+        const multiParsed = parseMultiBetUrl(hash);
+        if (multiParsed.entries.length > 1) {
+          const currentState = get();
+          const betState = useBetStore.getState();
+
+          if (multiParsed.round > 0 && multiParsed.round !== currentState.currentSelectedRound) {
+            currentState.updateSelectedRound(multiParsed.round);
+          }
+
+          betState.loadBetSets(multiParsed.entries);
           return;
         }
 

@@ -17,8 +17,10 @@ import {
   calculateBaseMaxBet,
   isValidRound,
   makeBetURL,
+  makeMultiBetURL,
   shuffleArray,
   parseBetUrl,
+  parseMultiBetUrl,
   getMaxBet,
   calculateRoundOverPercentage,
   makeEmptyBets,
@@ -434,6 +436,77 @@ describe('Utility Functions', () => {
     });
   });
 
+  describe('makeMultiBetURL', () => {
+    it('produces the same output as makeBetURL for zero sets', () => {
+      expect(makeMultiBetURL(8500, [], false)).toBe(makeBetURL(8500));
+    });
+
+    it('produces the same output as makeBetURL for a single non-empty set', () => {
+      const bets: Bet = new Map([[1, [1, 2, 0, 0, 0]]]);
+      const betAmounts: BetAmount = new Map([[1, 1000]]);
+
+      expect(makeMultiBetURL(8500, [{ bets, betAmounts }], true)).toBe(
+        makeBetURL(8500, bets, betAmounts, true),
+      );
+    });
+
+    it('skips empty sets when deciding whether output is single or multi', () => {
+      const emptyBets: Bet = new Map([[1, [0, 0, 0, 0, 0]]]);
+      const emptyAmounts: BetAmount = new Map([[1, BET_AMOUNT_DEFAULT]]);
+      const bets: Bet = new Map([[1, [1, 2, 0, 0, 0]]]);
+      const betAmounts: BetAmount = new Map([[1, 1000]]);
+
+      const result = makeMultiBetURL(
+        8500,
+        [
+          { bets: emptyBets, betAmounts: emptyAmounts },
+          { bets, betAmounts },
+        ],
+        true,
+      );
+      expect(result).toBe(makeBetURL(8500, bets, betAmounts, true));
+    });
+
+    it('repeats b= (and a=) once per non-empty set for multiple sets', () => {
+      const betsA: Bet = new Map([[1, [1, 2, 0, 0, 0]]]);
+      const amountsA: BetAmount = new Map([[1, 1000]]);
+      const betsB: Bet = new Map([[1, [0, 0, 3, 4, 0]]]);
+      const amountsB: BetAmount = new Map([[1, 2000]]);
+
+      const result = makeMultiBetURL(
+        8500,
+        [
+          { bets: betsA, betAmounts: amountsA },
+          { bets: betsB, betAmounts: amountsB },
+        ],
+        true,
+      );
+
+      expect(result.startsWith('/#round=8500')).toBe(true);
+      expect((result.match(/&b=/g) ?? []).length).toBe(2);
+      expect((result.match(/&a=/g) ?? []).length).toBe(2);
+    });
+
+    it('omits a= when includeBetAmounts is false, even with multiple sets', () => {
+      const betsA: Bet = new Map([[1, [1, 2, 0, 0, 0]]]);
+      const amountsA: BetAmount = new Map([[1, 1000]]);
+      const betsB: Bet = new Map([[1, [0, 0, 3, 4, 0]]]);
+      const amountsB: BetAmount = new Map([[1, 2000]]);
+
+      const result = makeMultiBetURL(
+        8500,
+        [
+          { bets: betsA, betAmounts: amountsA },
+          { bets: betsB, betAmounts: amountsB },
+        ],
+        false,
+      );
+
+      expect((result.match(/&b=/g) ?? []).length).toBe(2);
+      expect(result).not.toContain('&a=');
+    });
+  });
+
   describe('shuffleArray', () => {
     let originalMathRandom: () => number;
 
@@ -567,6 +640,71 @@ describe('Utility Functions', () => {
       const result = parseBetUrl('round=8500');
       expect(result.bets.size).toBe(10); // Default to 10 bets
       expect(result.betAmounts.size).toBe(10);
+    });
+  });
+
+  describe('parseMultiBetUrl', () => {
+    it('round-trips with makeMultiBetURL for a single set', () => {
+      const bets: Bet = new Map([[1, [1, 2, 0, 0, 0]]]);
+      const betAmounts: BetAmount = new Map([[1, 1000]]);
+      const url = makeMultiBetURL(8500, [{ bets, betAmounts }], true);
+
+      const result = parseMultiBetUrl(url.slice(2));
+
+      expect(result.round).toBe(8500);
+      expect(result.entries).toHaveLength(1);
+      expect(result.entries[0]?.bets.get(1)).toEqual([1, 2, 0, 0, 0]);
+      expect(result.entries[0]?.betAmounts.get(1)).toBe(1000);
+    });
+
+    it('round-trips with makeMultiBetURL for multiple sets', () => {
+      const betsA: Bet = new Map([[1, [1, 2, 0, 0, 0]]]);
+      const amountsA: BetAmount = new Map([[1, 1000]]);
+      const betsB: Bet = new Map([[1, [0, 0, 3, 4, 0]]]);
+      const amountsB: BetAmount = new Map([[1, 2000]]);
+      const betsC: Bet = new Map([[1, [0, 1, 0, 0, 2]]]);
+      const amountsC: BetAmount = new Map([[1, 3000]]);
+
+      const url = makeMultiBetURL(
+        9000,
+        [
+          { bets: betsA, betAmounts: amountsA },
+          { bets: betsB, betAmounts: amountsB },
+          { bets: betsC, betAmounts: amountsC },
+        ],
+        true,
+      );
+
+      const result = parseMultiBetUrl(url.slice(2));
+
+      expect(result.round).toBe(9000);
+      expect(result.entries).toHaveLength(3);
+      expect(result.entries[0]?.bets.get(1)).toEqual([1, 2, 0, 0, 0]);
+      expect(result.entries[0]?.betAmounts.get(1)).toBe(1000);
+      expect(result.entries[1]?.bets.get(1)).toEqual([0, 0, 3, 4, 0]);
+      expect(result.entries[1]?.betAmounts.get(1)).toBe(2000);
+      expect(result.entries[2]?.bets.get(1)).toEqual([0, 1, 0, 0, 2]);
+      expect(result.entries[2]?.betAmounts.get(1)).toBe(3000);
+    });
+
+    it('matches parseBetUrl for a plain single-bet hash', () => {
+      const multi = parseMultiBetUrl('round=8500&b=abcde&a=abc');
+      const single = parseBetUrl('round=8500&b=abcde&a=abc');
+
+      expect(multi.round).toBe(single.round);
+      expect(multi.entries).toHaveLength(1);
+      expect(multi.entries[0]?.bets).toEqual(single.bets);
+      expect(multi.entries[0]?.betAmounts).toEqual(single.betAmounts);
+    });
+
+    it('handles an empty hash the same way parseBetUrl does', () => {
+      const multi = parseMultiBetUrl('');
+      const single = parseBetUrl('');
+
+      expect(multi.round).toBe(0);
+      expect(multi.entries).toHaveLength(1);
+      expect(multi.entries[0]?.bets).toEqual(single.bets);
+      expect(multi.entries[0]?.betAmounts).toEqual(single.betAmounts);
     });
   });
 

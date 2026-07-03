@@ -5,6 +5,7 @@ import { Bet, BetAmount } from '../../types/bets';
 import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MIN } from '../constants';
 import {
   parseBetUrl,
+  parseMultiBetUrl,
   anyBetsExist,
   makeBetURL,
   anyBetAmountsExist,
@@ -33,6 +34,7 @@ interface BetStore {
   // Actions
   setCurrentBet: (value: number) => void;
   addNewSet: (name: string, bets: Bet, betAmounts: BetAmount, replace?: boolean) => void;
+  loadBetSets: (entries: { bets: Bet; betAmounts: BetAmount }[]) => void;
   updateBetName: (index: number, name: string) => void;
   deleteBetSet: (index: number) => void;
   swapBets: (uiIndex1: number, uiIndex2: number) => void;
@@ -87,6 +89,36 @@ export const useBetStore = create<BetStore>()(
           allBets: new Map(state.allBets).set(newIndex, bets),
           allBetAmounts: new Map(state.allBetAmounts).set(newIndex, betAmounts),
           currentBet: newIndex,
+        };
+      });
+    },
+
+    loadBetSets: (entries: { bets: Bet; betAmounts: BetAmount }[]): void => {
+      set(state => {
+        const [first, ...rest] = entries;
+        if (!first) {
+          return state;
+        }
+
+        const newNames = new Map(state.allNames);
+        const newBets = new Map(state.allBets).set(state.currentBet, first.bets);
+        const newBetAmounts = new Map(state.allBetAmounts).set(
+          state.currentBet,
+          first.betAmounts,
+        );
+
+        let nextIndex = Math.max(...Array.from(state.allBets.keys()), 0) + 1;
+        rest.forEach((entry, i) => {
+          newNames.set(nextIndex, `Imported Set ${i + 2}`);
+          newBets.set(nextIndex, entry.bets);
+          newBetAmounts.set(nextIndex, entry.betAmounts);
+          nextIndex += 1;
+        });
+
+        return {
+          allNames: newNames,
+          allBets: newBets,
+          allBetAmounts: newBetAmounts,
         };
       });
     },
@@ -342,3 +374,25 @@ useBetStore.subscribe(
   },
   { fireImmediately: false },
 );
+
+// Unpack a multi-bet URL (repeated b=/a= params) into separate sets on load, then
+// collapse the address bar back down to the current set's single b=/a= form. This is
+// done explicitly (rather than relying on the subscriber above) because at this point
+// in module evaluation the round store hasn't necessarily finished wiring up yet, and
+// the subscriber's URL rewrite is gated on round data having caught up to the URL's
+// round, which hasn't happened yet this early.
+const initialMultiParsed = parseMultiBetUrl(window.location.hash.slice(1));
+if (initialMultiParsed.entries.length > 1) {
+  useBetStore.getState().loadBetSets(initialMultiParsed.entries);
+
+  const firstEntry = initialMultiParsed.entries[0];
+  if (firstEntry) {
+    const collapsedUrl = makeBetURL(
+      initialMultiParsed.round,
+      firstEntry.bets,
+      firstEntry.betAmounts,
+      anyBetsExist(firstEntry.bets) && anyBetAmountsExist(firstEntry.betAmounts),
+    );
+    window.history.replaceState(null, '', collapsedUrl);
+  }
+}

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, createMockDragEvent } from '../../test/utils';
 import DropZone from '../DropZone';
 import { useAddNewSet } from '../stores';
-import { anyBetsExist, parseBetUrl } from '../util';
+import { anyBetsExist, parseMultiBetUrl } from '../util';
 
 // Mock the dependencies
 vi.mock('@chakra-ui/react', async () => {
@@ -20,13 +20,13 @@ vi.mock('../stores', () => ({
 
 vi.mock('../util', () => ({
   anyBetsExist: vi.fn(),
-  parseBetUrl: vi.fn(),
+  parseMultiBetUrl: vi.fn(),
 }));
 
 describe('DropZone', () => {
   const mockAddNewSet = vi.fn();
   const mockAnyBetsExist = vi.mocked(anyBetsExist);
-  const mockParseBetUrl = vi.mocked(parseBetUrl);
+  const mockParseMultiBetUrl = vi.mocked(parseMultiBetUrl);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,10 +38,9 @@ describe('DropZone', () => {
 
     // Setup default mock returns
     mockAnyBetsExist.mockReturnValue(true);
-    mockParseBetUrl.mockReturnValue({
+    mockParseMultiBetUrl.mockReturnValue({
       round: 1234,
-      bets: new Map([[1, [1, 2, 3, 4, 5]]]),
-      betAmounts: new Map([[1, 1000]]),
+      entries: [{ bets: new Map([[1, [1, 2, 3, 4, 5]]]), betAmounts: new Map([[1, 1000]]) }],
     });
   });
 
@@ -126,7 +125,7 @@ describe('DropZone', () => {
 
     document.dispatchEvent(dropEvent);
 
-    expect(mockParseBetUrl).toHaveBeenCalledWith('round=1234&b=123');
+    expect(mockParseMultiBetUrl).toHaveBeenCalledWith('round=1234&b=123');
     expect(mockAnyBetsExist).toHaveBeenCalledWith(new Map([[1, [1, 2, 3, 4, 5]]]));
     expect(preventDefaultSpy).toHaveBeenCalled();
     expect(mockAddNewSet).toHaveBeenCalledWith(
@@ -193,7 +192,7 @@ describe('DropZone', () => {
 
     document.dispatchEvent(dropEvent);
 
-    expect(mockParseBetUrl).not.toHaveBeenCalled();
+    expect(mockParseMultiBetUrl).not.toHaveBeenCalled();
     expect(mockAddNewSet).not.toHaveBeenCalled();
   });
 
@@ -210,7 +209,7 @@ describe('DropZone', () => {
 
     document.dispatchEvent(dropEvent);
 
-    expect(mockParseBetUrl).not.toHaveBeenCalled();
+    expect(mockParseMultiBetUrl).not.toHaveBeenCalled();
     expect(mockAddNewSet).not.toHaveBeenCalled();
   });
 
@@ -228,7 +227,7 @@ describe('DropZone', () => {
 
     document.dispatchEvent(dropEvent);
 
-    expect(mockParseBetUrl).toHaveBeenCalledWith('round=1234&b=123');
+    expect(mockParseMultiBetUrl).toHaveBeenCalledWith('round=1234&b=123');
     expect(mockAddNewSet).toHaveBeenCalledWith(
       'My Bet Set',
       new Map([[1, [1, 2, 3, 4, 5]]]),
@@ -250,7 +249,7 @@ describe('DropZone', () => {
 
     document.dispatchEvent(dropEvent);
 
-    expect(mockParseBetUrl).not.toHaveBeenCalled();
+    expect(mockParseMultiBetUrl).not.toHaveBeenCalled();
     expect(mockAddNewSet).not.toHaveBeenCalled();
   });
 
@@ -269,7 +268,7 @@ describe('DropZone', () => {
 
     document.dispatchEvent(dropEvent);
 
-    expect(mockParseBetUrl).toHaveBeenCalledWith('round=1234&b=123');
+    expect(mockParseMultiBetUrl).toHaveBeenCalledWith('round=1234&b=123');
     expect(mockAnyBetsExist).toHaveBeenCalled();
     expect(mockAddNewSet).not.toHaveBeenCalled();
   });
@@ -313,9 +312,9 @@ describe('DropZone', () => {
 
     // The implementation processes each URL separately
     // Multiple URLs are separated by newlines in text/uri-list
-    expect(mockParseBetUrl).toHaveBeenCalledTimes(2);
-    expect(mockParseBetUrl).toHaveBeenNthCalledWith(1, 'round=1234&b=123');
-    expect(mockParseBetUrl).toHaveBeenNthCalledWith(2, 'round=5678&b=456');
+    expect(mockParseMultiBetUrl).toHaveBeenCalledTimes(2);
+    expect(mockParseMultiBetUrl).toHaveBeenNthCalledWith(1, 'round=1234&b=123');
+    expect(mockParseMultiBetUrl).toHaveBeenNthCalledWith(2, 'round=5678&b=456');
 
     // Each URL gets numbered since there are multiple
     expect(mockAddNewSet).toHaveBeenCalledTimes(2);
@@ -335,6 +334,48 @@ describe('DropZone', () => {
     );
   });
 
+  it('unpacks multiple bets from a single dropped URL', () => {
+    mockParseMultiBetUrl.mockReturnValue({
+      round: 1234,
+      entries: [
+        { bets: new Map([[1, [1, 2, 3, 4, 5]]]), betAmounts: new Map([[1, 1000]]) },
+        { bets: new Map([[1, [5, 4, 3, 2, 1]]]), betAmounts: new Map([[1, 2000]]) },
+      ],
+    });
+
+    render(
+      <DropZone>
+        <div>Test</div>
+      </DropZone>,
+    );
+
+    const dropEvent = createMockDragEvent('drop', {
+      'text/uri-list': 'https://example.com/#round=1234&b=123&a=100&b=456&a=200',
+      'text/html': 'My Bets',
+    });
+
+    document.dispatchEvent(dropEvent);
+
+    expect(mockParseMultiBetUrl).toHaveBeenCalledTimes(1);
+    expect(mockParseMultiBetUrl).toHaveBeenCalledWith('round=1234&b=123&a=100&b=456&a=200');
+
+    expect(mockAddNewSet).toHaveBeenCalledTimes(2);
+    expect(mockAddNewSet).toHaveBeenNthCalledWith(
+      1,
+      'Dropped Set 1 [Round 1234]',
+      new Map([[1, [1, 2, 3, 4, 5]]]),
+      new Map([[1, 1000]]),
+      true,
+    );
+    expect(mockAddNewSet).toHaveBeenNthCalledWith(
+      2,
+      'Dropped Set 2 [Round 1234]',
+      new Map([[1, [5, 4, 3, 2, 1]]]),
+      new Map([[1, 2000]]),
+      true,
+    );
+  });
+
   it('does nothing when URL without hash is provided', () => {
     render(
       <DropZone>
@@ -348,7 +389,7 @@ describe('DropZone', () => {
 
     document.dispatchEvent(dropEvent);
 
-    expect(mockParseBetUrl).not.toHaveBeenCalled();
+    expect(mockParseMultiBetUrl).not.toHaveBeenCalled();
     expect(mockAddNewSet).not.toHaveBeenCalled();
   });
 });
