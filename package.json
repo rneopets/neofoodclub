@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "@chakra-ui/cli": "^3.22.0",
-    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.31.0",
     "@playwright/test": "^1.54.1",
     "@testing-library/dom": "^10.4.0",
