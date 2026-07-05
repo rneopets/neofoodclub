@@ -2,7 +2,7 @@ import { useMemo, useCallback } from 'react';
 
 import { Bet, BetAmount } from '../../types/bets';
 import { BET_AMOUNT_DEFAULT } from '../constants';
-import { computePiratesBinary, computeBinaryToPirates, computePirateBinary } from '../maths';
+import { computePiratesBinary } from '../maths';
 import {
   useAllBetsForURLData,
   useAllBetAmountsForURLData,
@@ -13,22 +13,25 @@ import {
   useAddNewSet,
   useDeleteBetSet,
   useBetStore,
-  useArenaRatios,
   useUsedProbabilities,
-  useRoundCurrentOdds,
-  useWinningBetBinary,
   useBetCount,
 } from '../stores';
 import {
   makeEmptyBets,
-  determineBetAmount,
   makeEmptyBetAmounts,
   getMaxBet,
   anyBetsExist as anyBetsExistInSet,
-  shuffleArray,
   calculateBetMaps,
-  sortedIndices,
 } from '../util';
+import {
+  wasmMakeMaxTerBets,
+  wasmMakeBestGambitBets,
+  wasmMakeGambitBets,
+  wasmMakeWinningGambitBets,
+  wasmMakeBustproofBets,
+  wasmMakeCrazyBets,
+  wasmMakeTenbetBets,
+} from '../wasmEngine';
 
 import { useDuplicateBets } from './useDuplicateBets';
 
@@ -63,10 +66,8 @@ export function useBetManagement(): {
   generateTenbetSet: (pirateIndices: number[]) => void;
   generateGambitWithPirates: (pirates: number[]) => void;
 } {
-  const arenaRatios = useArenaRatios();
   const currentSelectedRound = useSelectedRound();
   const usedProbabilities = useUsedProbabilities();
-  const winningBetBinary = useWinningBetBinary();
 
   // Use selective hooks for better performance
   const currentBetIndex = useCurrentBet();
@@ -93,8 +94,6 @@ export function useBetManagement(): {
   );
 
   const roundData = useRoundData();
-  const currentOdds = useRoundCurrentOdds();
-  const positiveArenas = arenaRatios.filter(x => x > 0).length;
 
   // Get total bet amount for current set
   const totalBetAmount = useMemo(
@@ -264,295 +263,91 @@ export function useBetManagement(): {
     deleteBetSet(currentBetIndex);
   }, [deleteBetSet, currentBetIndex]);
 
-  // Bet generation functions
+  // Bet generation functions - delegated to the wasm engine (see wasmEngine.ts).
   const generateMaxTERSet = useCallback((): void => {
     const maxBet = getMaxBet(currentSelectedRound);
-
-    const { betCaps, pirateCombos } = calculateBets(
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
-    );
-    const topRatios = Array.from(pirateCombos.entries());
-    topRatios.sort((a: number[], b: number[]) => (b[1] ?? 0) - (a[1] ?? 0));
-
-    const newBets = new Map<number, number[]>();
-    const newBetAmounts = new Map<number, number>();
-    for (let bet = 0; bet < betCount; bet++) {
-      const pirateBinary = topRatios[bet]?.[0] ?? 0;
-      newBets.set(bet + 1, computeBinaryToPirates(pirateBinary));
-      newBetAmounts.set(bet + 1, determineBetAmount(maxBet, betCaps.get(pirateBinary) ?? 0));
-    }
-
-    addNewSet(`Max TER Set (${maxBet} NP)`, newBets, newBetAmounts, true);
-  }, [addNewSet, betCount, calculateBets, currentSelectedRound]);
+    const { bets, betAmounts } = wasmMakeMaxTerBets(betCount);
+    addNewSet(`Max TER Set (${maxBet} NP)`, bets, betAmounts, true);
+  }, [addNewSet, betCount, currentSelectedRound]);
 
   const generateTenbetSet = useCallback(
     (tenbetIndices: number[]): void => {
       const maxBet = getMaxBet(currentSelectedRound);
       const tenbetBinary = computePiratesBinary(tenbetIndices);
 
-      const { betCaps, pirateCombos } = calculateBets(
-        [0, 1, 2, 3, 4],
-        [0, 1, 2, 3, 4],
-        [0, 1, 2, 3, 4],
-        [0, 1, 2, 3, 4],
-        [0, 1, 2, 3, 4],
-      );
-
-      const topRatios = Array.from(pirateCombos.entries()).map(([k, v]) => [k, v]);
-      topRatios.sort((a: number[], b: number[]) => (b[1] ?? 0) - (a[1] ?? 0));
-
-      const bets = new Map<number, number[]>();
-      const betAmounts = new Map<number, number>();
-      let bet = 0;
-      while (bets.size < betCount) {
-        const pirateBinary = topRatios[bet]?.[0] ?? 0;
-        if ((pirateBinary & tenbetBinary) === tenbetBinary) {
-          const index = bets.size + 1;
-
-          bets.set(index, computeBinaryToPirates(pirateBinary));
-          betAmounts.set(index, determineBetAmount(maxBet, betCaps.get(pirateBinary) ?? 0));
-        }
-        bet += 1;
+      // Unlike the old TS implementation (which could loop indefinitely on an
+      // unsatisfiable selection), the wasm engine errors instead of hanging.
+      try {
+        const { bets, betAmounts } = wasmMakeTenbetBets(tenbetBinary, betCount);
+        addNewSet(`Custom Ten-bet Set (${maxBet} NP)`, bets, betAmounts, true);
+      } catch (error) {
+        console.error('Could not generate ten-bet set:', error);
       }
-
-      addNewSet(`Custom Ten-bet Set (${maxBet} NP)`, bets, betAmounts, true);
     },
-    [betCount, calculateBets, currentSelectedRound, addNewSet],
+    [betCount, currentSelectedRound, addNewSet],
   );
 
   // Helper function that returns bets and betAmounts
   const createGambitWithPirates = useCallback(
     (pirates: number[]): { bets: Bet; betAmounts: BetAmount } => {
-      const maxBet = getMaxBet(currentSelectedRound);
-      const { betCaps, betOdds } = calculateBets(
-        [0, pirates[0] ?? 0],
-        [0, pirates[1] ?? 0],
-        [0, pirates[2] ?? 0],
-        [0, pirates[3] ?? 0],
-        [0, pirates[4] ?? 0],
-      );
-
-      const topRatios = Array.from(betOdds.entries()).map(([k, v]) => [k, v]);
-      topRatios.sort((a: number[], b: number[]) => (b[1] ?? 0) - (a[1] ?? 0));
-
-      const bets = new Map<number, number[]>();
-      const betAmounts = new Map<number, number>();
-      for (let bet = 0; bet < betCount; bet++) {
-        const pirateBinary = topRatios[bet]?.[0] ?? 0;
-        bets.set(bet + 1, computeBinaryToPirates(pirateBinary));
-        betAmounts.set(bet + 1, determineBetAmount(maxBet, betCaps.get(pirateBinary) ?? 0));
+      const piratesBinary = computePiratesBinary(pirates);
+      try {
+        return wasmMakeGambitBets(piratesBinary, betCount);
+      } catch (error) {
+        console.error('Could not generate gambit set:', error);
+        return { bets: new Map(), betAmounts: new Map() };
       }
-
-      return { bets, betAmounts };
     },
-    [calculateBets, betCount, currentSelectedRound],
+    [betCount],
   );
 
   const generateGambitWithPirates = useCallback(
     (pirates: number[]): void => {
       const maxBet = getMaxBet(currentSelectedRound);
       const { bets, betAmounts } = createGambitWithPirates(pirates);
-      addNewSet(`Custom Gambit Set (${maxBet} NP)`, bets as Bet, betAmounts as BetAmount, true);
+      if (bets.size === 0) {
+        return;
+      }
+      addNewSet(`Custom Gambit Set (${maxBet} NP)`, bets, betAmounts, true);
     },
     [createGambitWithPirates, currentSelectedRound, addNewSet],
   );
 
   const generateGambitSet = useCallback((): void => {
-    const { pirateCombos } = calculateBets(
-      [1, 2, 3, 4],
-      [1, 2, 3, 4],
-      [1, 2, 3, 4],
-      [1, 2, 3, 4],
-      [1, 2, 3, 4],
-    );
-
-    const topRatios = Array.from(pirateCombos.entries()).map(([k, v]) => [k, v]);
-    topRatios.sort((a: number[], b: number[]) => (b[1] as number) - (a[1] as number));
-
-    // get best full bet
-    const best = computeBinaryToPirates(topRatios[0]?.[0] as number);
-
-    // generate a set based on those 5 pirates
-    generateGambitWithPirates(best);
-  }, [calculateBets, generateGambitWithPirates]);
+    const maxBet = getMaxBet(currentSelectedRound);
+    const { bets, betAmounts } = wasmMakeBestGambitBets(betCount);
+    addNewSet(`Custom Gambit Set (${maxBet} NP)`, bets, betAmounts, true);
+  }, [addNewSet, betCount, currentSelectedRound]);
 
   const generateBustproofSet = useCallback((): void => {
-    const maxBet = getMaxBet(currentSelectedRound);
-    const { betOdds } = calculateBets(
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
-      [0, 1, 2, 3, 4],
+    const result = wasmMakeBustproofBets(betCount);
+    if (!result) {
+      console.warn('Bustproof set not possible: no arena has a positive ratio this round.');
+      return;
+    }
+    addNewSet(
+      `Bustproof Set (round ${currentSelectedRound})`,
+      result.bets,
+      result.betAmounts,
+      true,
     );
-
-    const bets = makeEmptyBets(10);
-    const betAmounts = makeEmptyBetAmounts(10);
-
-    // reverse it, because it's least -> greatest
-    const bestArenas = sortedIndices(arenaRatios).reverse();
-    const [bestArena, secondBestArena, thirdBestArena] = bestArenas;
-
-    const getBestPirates = (arenaIndex: number): number[] =>
-      sortedIndices(currentOdds[arenaIndex] as number[]).reverse();
-
-    if (positiveArenas === 1) {
-      // If only one arena is positive, we place 1 bet on each of the pirates of that arena. Total bets = 4.
-
-      for (let x = 1; x < 5; x++) {
-        bets.set(x, computeBinaryToPirates(computePirateBinary(bestArena as number, x as number)));
-      }
-    } else if (positiveArenas === 2) {
-      // If two arenas are positive, we place 1 bet on each of the three worst pirates of the best arena and
-      // 1 bet on each of the pirates of the second arena + the best pirate of the best arena. Total bets = 7
-
-      const bestPiratesInBestArena = getBestPirates(bestArena as number);
-
-      const [fourthBestInBest, thirdBestInBest, secondBestInBest, bestInBest] =
-        bestPiratesInBestArena;
-
-      bets.set(
-        1,
-        computeBinaryToPirates(
-          computePirateBinary(bestArena as number, secondBestInBest as number),
-        ),
-      );
-      bets.set(
-        2,
-        computeBinaryToPirates(computePirateBinary(bestArena as number, thirdBestInBest as number)),
-      );
-      bets.set(
-        3,
-        computeBinaryToPirates(
-          computePirateBinary(bestArena as number, fourthBestInBest as number),
-        ),
-      );
-
-      for (let x = 1; x < 5; x++) {
-        bets.set(
-          x + 3,
-          computeBinaryToPirates(
-            computePirateBinary(bestArena as number, bestInBest as number) |
-              computePirateBinary(secondBestArena as number, x as number),
-          ),
-        );
-      }
-    } else {
-      // If three arenas are positive, we place 1 bet on each of the three worst pirates of the best arena,
-      // If four or more arenas are positive, we only play the three best arenas, seen below
-      // 1 bet on each of the three worst pirates of the second arena + the best pirate of the best arena,
-      // and 1 bet on each of the pirates of the third arena + the best pirate of the best arena + the best pirate
-      // of the second arena. Total bets = 10.
-
-      const bestPiratesInBestArena = getBestPirates(bestArena as number);
-
-      const [fourthBestInBest, thirdBestInBest, secondBestInBest, bestInBest] =
-        bestPiratesInBestArena;
-
-      bets.set(
-        1,
-        computeBinaryToPirates(
-          computePirateBinary(bestArena as number, secondBestInBest as number),
-        ),
-      );
-      bets.set(
-        2,
-        computeBinaryToPirates(computePirateBinary(bestArena as number, thirdBestInBest as number)),
-      );
-      bets.set(
-        3,
-        computeBinaryToPirates(
-          computePirateBinary(bestArena as number, fourthBestInBest as number),
-        ),
-      );
-
-      //
-
-      const bestPiratesInSecondBestArena = getBestPirates(secondBestArena as number);
-
-      for (const [index, value] of bestPiratesInSecondBestArena.slice(0, 3).entries()) {
-        bets.set(
-          index + 4,
-          computeBinaryToPirates(
-            computePirateBinary(bestArena as number, bestInBest as number) |
-              computePirateBinary(secondBestArena as number, value as number),
-          ),
-        );
-      }
-
-      //
-      const bestInSecondBest = bestPiratesInSecondBestArena[3];
-
-      for (let x = 1; x < 5; x++) {
-        bets.set(
-          x + 6,
-          computeBinaryToPirates(
-            computePirateBinary(bestArena as number, bestInBest as number) |
-              computePirateBinary(secondBestArena as number, bestInSecondBest as number) |
-              computePirateBinary(thirdBestArena as number, x as number),
-          ),
-        );
-      }
-    }
-
-    // make per-bet maxbets
-    if (maxBet > 0) {
-      const odds = [];
-      const bins = [];
-      for (const pirates of bets.values()) {
-        const bin = computePiratesBinary(pirates);
-        if (bin === 0) {
-          continue;
-        }
-        odds.push(betOdds.get(bin) as number);
-        bins.push(bin);
-      }
-
-      const lowestOdds = Math.min(...odds);
-
-      for (const [index, value] of bins.entries()) {
-        betAmounts.set(
-          index + 1,
-          Math.floor(((maxBet * lowestOdds) / (betOdds.get(value) as number)) as number),
-        );
-      }
-    }
-
-    addNewSet(`Bustproof Set (round ${currentSelectedRound})`, bets, betAmounts, true);
-  }, [addNewSet, currentSelectedRound, arenaRatios, currentOdds, positiveArenas, calculateBets]);
+  }, [addNewSet, currentSelectedRound, betCount]);
 
   const generateWinningGambitSet = useCallback((): void => {
-    // get round winners
-    const piratesToBet = computeBinaryToPirates(winningBetBinary);
-    generateGambitWithPirates(piratesToBet);
-  }, [generateGambitWithPirates, winningBetBinary]);
+    const maxBet = getMaxBet(currentSelectedRound);
+    const result = wasmMakeWinningGambitBets(betCount);
+    if (!result) {
+      console.warn('No winners yet: cannot generate a winning gambit set.');
+      return;
+    }
+    addNewSet(`Custom Gambit Set (${maxBet} NP)`, result.bets, result.betAmounts, true);
+  }, [addNewSet, currentSelectedRound, betCount]);
 
   const generateRandomCrazySet = useCallback((): void => {
     const maxBet = getMaxBet(currentSelectedRound);
-    const { pirateCombos, betCaps } = calculateBets(
-      [1, 2, 3, 4],
-      [1, 2, 3, 4],
-      [1, 2, 3, 4],
-      [1, 2, 3, 4],
-      [1, 2, 3, 4],
-    );
-    const pirateKeys = Array.from(pirateCombos.keys());
-    shuffleArray(pirateKeys);
-
-    const newBets = new Map<number, number[]>();
-    const newBetAmounts = new Map<number, number>();
-
-    for (let i = 0; i < betCount; i++) {
-      const pirateBinary = pirateKeys[i] as number;
-      newBets.set(i + 1, computeBinaryToPirates(pirateBinary));
-      newBetAmounts.set(i + 1, determineBetAmount(maxBet, betCaps.get(pirateBinary) as number));
-    }
-    addNewSet(`Crazy Set (${maxBet} NP)`, newBets, newBetAmounts, true);
-  }, [addNewSet, betCount, calculateBets, currentSelectedRound]);
+    const { bets, betAmounts } = wasmMakeCrazyBets(betCount);
+    addNewSet(`Crazy Set (${maxBet} NP)`, bets, betAmounts, true);
+  }, [addNewSet, betCount, currentSelectedRound]);
 
   return {
     // Current data
