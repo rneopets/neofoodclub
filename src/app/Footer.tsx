@@ -1,4 +1,5 @@
 import {
+  Badge,
   Box,
   Center,
   Stack,
@@ -223,7 +224,10 @@ const Footer: React.FC<FooterProps> = props => {
                 onClick={() => openHelpGuide()}
                 data-testid="help-guide-footer-link"
               >
-                Help Guide
+                Help Guide{' '}
+                <Badge colorPalette="cyan" variant="solid" fontSize="2xs">
+                  New
+                </Badge>
               </FooterLink>
               <FooterLink
                 icon={FaClockRotateLeft}
