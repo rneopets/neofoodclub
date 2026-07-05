@@ -3,7 +3,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 
 import { RoundData, RoundCalculationResult } from '../../types';
 import { OddsData, ProbabilitiesData } from '../../types/bets';
-import { defaultRoundData } from '../constants';
+import { defaultRoundData, BET_AMOUNT_MIN } from '../constants';
 import {
   calculateRoundData,
   getBetSetPosition,
@@ -50,6 +50,12 @@ const isAbortError = (error: unknown): boolean => {
   }
   return 'name' in error && (error as { name?: unknown }).name === 'AbortError';
 };
+
+// maxBet uses BET_AMOUNT_DEFAULT (-1000) as its own "unset" sentinel - unlike
+// `|| null`, this correctly treats that (truthy, negative) value as unset
+// rather than passing it through to the wasm engine's Option<u32> boundary.
+const toEngineBetAmount = (maxBet: number): number | null =>
+  maxBet >= BET_AMOUNT_MIN ? maxBet : null;
 
 const emptyCalculations: RoundCalculationResult = {
   calculated: false,
@@ -207,7 +213,11 @@ export const useRoundStore = create<RoundStore>()(
       // Pirates are static for a round, so we don't need to check for pirate changes
       if (oddsChanged || winnersChanged || roundData.round !== state.roundData.round) {
         try {
-          rebuildEngine(JSON.stringify(roundData), state.maxBet || null, state.useLogitModel);
+          rebuildEngine(
+            JSON.stringify(roundData),
+            toEngineBetAmount(state.maxBet),
+            state.useLogitModel,
+          );
           // a fresh engine has no override - reapply if custom-odds-mode is active
           if (state.customOddsMode) {
             if (state.customOdds) {
@@ -298,7 +308,7 @@ export const useRoundStore = create<RoundStore>()(
       set({ maxBet });
       if (get().roundData !== defaultRoundData) {
         try {
-          setEngineBetAmount(maxBet || null);
+          setEngineBetAmount(toEngineBetAmount(maxBet));
         } catch (error) {
           console.error('Failed to update wasm engine bet amount:', error);
         }
@@ -337,7 +347,7 @@ export const useRoundStore = create<RoundStore>()(
         try {
           rebuildEngine(
             JSON.stringify(newState.roundData),
-            newState.maxBet || null,
+            toEngineBetAmount(newState.maxBet),
             newState.useLogitModel,
           );
           if (newState.customOddsMode) {
