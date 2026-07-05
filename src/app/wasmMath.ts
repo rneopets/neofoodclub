@@ -1,6 +1,6 @@
 import type { PayoutTables } from '../types';
 
-type WasmModule = typeof import('@wasm/neofoodclub_wasm.js');
+export type WasmModule = typeof import('@wasm/neofoodclub_wasm.js');
 
 let wasmModule: WasmModule | null = null;
 let initPromise: Promise<void> | null = null;
@@ -19,7 +19,8 @@ export function initWasmMath(): Promise<void> {
   return initPromise;
 }
 
-function getWasm(): WasmModule {
+/** Shared accessor for the loaded module - also used by wasmEngine.ts. */
+export function getWasm(): WasmModule {
   if (!wasmModule) {
     throw new Error(
       'neofoodclub-wasm module not initialized - initWasmMath() must be awaited before use',
@@ -28,7 +29,8 @@ function getWasm(): WasmModule {
   return wasmModule;
 }
 
-function flatten(grid: number[][]): number[] {
+/** Flattens a 5x5 (arena x pirate) grid into a 25-element array. */
+export function flattenGrid(grid: number[][]): number[] {
   const out: number[] = [];
   for (let arena = 0; arena < 5; arena++) {
     for (let pirate = 0; pirate < 5; pirate++) {
@@ -54,7 +56,7 @@ export function wasmStdProbabilities(roundJson: string, useLogit: boolean): numb
 
 /** Wraps `computeArenaRatios` (odds grid in, one ratio per arena out). */
 export function wasmArenaRatios(odds: number[][]): number[] {
-  const flat = Float64Array.from(flatten(odds));
+  const flat = Float64Array.from(flattenGrid(odds));
   return Array.from(getWasm().computeArenaRatios(flat));
 }
 
@@ -74,7 +76,7 @@ export function wasmPayoutTables(
 ): PayoutTables {
   const result = getWasm().computePayoutTables(
     Uint8Array.from(betIndices),
-    Float64Array.from(flatten(probabilities)),
+    Float64Array.from(flattenGrid(probabilities)),
     toU32Array(betOdds),
     toU32Array(betPayoffs),
   );
