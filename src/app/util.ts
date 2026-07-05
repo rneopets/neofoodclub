@@ -22,6 +22,12 @@ import {
   computeLogitProbabilities,
   makeEmpty,
 } from './maths';
+import {
+  wasmAmountsHashToBetAmounts,
+  wasmBetAmountsToAmountsHash,
+  wasmBetsHashToIndices,
+  wasmBetsIndicesToHash,
+} from './wasmMath';
 
 type RoundDataState = Pick<RoundState, 'roundData'>;
 
@@ -33,49 +39,32 @@ export function generateRandomPirateIndex(): number {
   return generateRandomIntegerInRange(1, 4);
 }
 
+// Decodes a bets-hash fragment into a 1-indexed sparse array (index 0
+// unused), matching the shape parseBetUrl expects. Delegates the actual
+// encoding to the wasm engine (math::bets_hash_to_bet_indices) - note this
+// drops an all-zero 5-tuple embedded between real bets (positions compact),
+// unlike the old hand-rolled decoder which preserved every slot. Throws on
+// a malformed hash (bytes outside a-y) instead of silently stripping bad
+// characters - callers must catch and fall back to empty bets.
 function parseBets(betString: string): number[][] {
-  return betString
-    .replace(/[^a-y]/g, '')
-    .split('')
-    .map(char => 'abcdefghijklmnopqrstuvwxy'.indexOf(char))
-    .reduce((prev: number[], next: number) => {
-      prev.push(Math.floor(next / 5), next % 5);
-      return prev;
-    }, [])
-    .reduce((t: number[][], e: number, r: number) => {
-      const div = r % 5;
-      if (div === 0) {
-        t.push(makeEmpty(5));
-      }
-      const lastItem = t[t.length - 1];
-      if (lastItem) {
-        lastItem[div] = e;
-      }
-      return t;
-    }, [])
-    .reduce((t: number[][], e: number[], r: number) => {
-      t[r + 1] = e;
-      return t;
-    }, []);
+  const flat = wasmBetsHashToIndices(betString);
+  const result: number[][] = [];
+  for (let i = 0; i * 5 < flat.length; i++) {
+    result[i + 1] = flat.slice(i * 5, i * 5 + 5);
+  }
+  return result;
 }
 
+// Decodes an amounts-hash fragment into a 1-indexed Map, matching the shape
+// parseBetUrl expects. An invalid/negative decoded value becomes
+// BET_AMOUNT_DEFAULT (Rust's None), not a raw negative number. Throws on a
+// malformed hash (wrong length or non-alphabetic characters).
 function parseBetAmounts(betAmountsString: string): BetAmount {
-  const result = betAmountsString
-    .match(/.{1,3}/g)
-    ?.map(chunk => {
-      let val = 0;
-      for (let char = 0; char < chunk.length; char++) {
-        val *= 52;
-        val += 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.indexOf(chunk[char] ?? '');
-      }
-      return val - 70304;
-    })
-    .reduce((t: BetAmount, e, r) => {
-      t.set(r + 1, e);
-      return t;
-    }, new Map<number, number>());
-
-  return result || new Map<number, number>();
+  const amounts = wasmAmountsHashToBetAmounts(betAmountsString, BET_AMOUNT_DEFAULT);
+  return amounts.reduce((t: BetAmount, e, r) => {
+    t.set(r + 1, e);
+    return t;
+  }, new Map<number, number>());
 }
 
 interface ParsedBetUrl {
@@ -98,13 +87,23 @@ export function parseBetUrl(url: string): ParsedBetUrl {
   // parse Bets
   const bet = urlParams.get('b');
   if (bet !== null) {
-    tempBets = parseBets(bet);
+    try {
+      tempBets = parseBets(bet);
+    } catch {
+      // malformed hash (e.g. characters outside a-y) - fall back to empty bets
+      tempBets = [];
+    }
   }
 
   // parse Bet Amounts
   const amounts = urlParams.get('a');
   if (amounts !== null && amounts !== '') {
-    tempBetAmounts = parseBetAmounts(amounts);
+    try {
+      tempBetAmounts = parseBetAmounts(amounts);
+    } catch {
+      // malformed hash (wrong length or non-alphabetic characters)
+      tempBetAmounts = new Map<number, number>();
+    }
   }
 
   // force data if none exists for bets and amounts alike
@@ -126,7 +125,7 @@ export function parseBetUrl(url: string): ParsedBetUrl {
 }
 
 function makeBetsUrl(bets: number[][]): string {
-  return Object.keys(bets)
+  const flat = Object.keys(bets)
     .sort((t, e) => Number(t) - Number(e))
     .map(t => bets[Number(t)])
     .reduce<number[]>((t, e) => {
@@ -134,35 +133,12 @@ function makeBetsUrl(bets: number[][]): string {
         t.push(...e);
       }
       return t;
-    }, [])
-    .reduce((t: number[], e: number, r: number) => {
-      if (r % 2 === 0) {
-        t.push(5 * e);
-      } else if (t.length > 0) {
-        const lastItem = t[t.length - 1];
-        if (lastItem !== undefined) {
-          t[t.length - 1] = lastItem + e;
-        }
-      }
-      return t;
-    }, [])
-    .map((t: number) => 'abcdefghijklmnopqrstuvwxy'[t] as string)
-    .join('');
+    }, []);
+  return wasmBetsIndicesToHash(flat);
 }
 
 function makeBetAmountsUrl(betAmounts: number[]): string {
-  return betAmounts
-    .map(t => {
-      let e = '';
-      t = (t % 70304) + 70304;
-      for (let r = 0; r < 3; r++) {
-        const n = t % 52;
-        e = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'[n] + e;
-        t = (t - n) / 52;
-      }
-      return e;
-    })
-    .join('');
+  return wasmBetAmountsToAmountsHash(betAmounts);
 }
 
 export function displayAsPercent(value: number, decimals?: number): string {

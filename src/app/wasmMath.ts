@@ -95,3 +95,43 @@ export function wasmPiratesBinary(pirates: number[]): number {
 export function wasmBinaryToPirates(bin: number): number[] {
   return Array.from(getWasm().computeBinaryToPirates(bin));
 }
+
+/**
+ * Wraps `computeBetsHashToIndices`. Decodes a bets hash into a flattened n*5
+ * array of pirate indices. Unlike the old TS decoder, an all-zero 5-tuple
+ * embedded between real bets is dropped (positions compact), and a
+ * malformed hash throws instead of being silently stripped - callers should
+ * catch and fall back to empty bets, matching parseBetUrl's contract.
+ */
+export function wasmBetsHashToIndices(hash: string): number[] {
+  return Array.from(getWasm().computeBetsHashToIndices(hash));
+}
+
+/** Wraps `computeBetsIndicesToHash` (flattened n*5 pirate indices in). */
+export function wasmBetsIndicesToHash(flatIndices: number[]): string {
+  return getWasm().computeBetsIndicesToHash(Uint8Array.from(flatIndices));
+}
+
+// The wasm boundary represents "no amount set" as a BigInt64Array (i64) with
+// -1 for None, since Rust models it as Option<u32>. These two helpers keep
+// that BigInt/sentinel detail private to this module.
+const NO_AMOUNT_SENTINEL = BigInt(-1);
+
+/**
+ * Wraps `computeAmountsHashToBetAmounts`. Decodes an amounts hash into one
+ * amount per bet; an invalid/negative decoded value becomes
+ * `BET_AMOUNT_DEFAULT` (Rust's `None`), not a raw negative number.
+ */
+export function wasmAmountsHashToBetAmounts(hash: string, betAmountDefault: number): number[] {
+  const raw = getWasm().computeAmountsHashToBetAmounts(hash);
+  return Array.from(raw, v => (v === NO_AMOUNT_SENTINEL ? betAmountDefault : Number(v)));
+}
+
+/**
+ * Wraps `computeBetAmountsToAmountsHash`. Any amount `< 1` (including the
+ * app's own `BET_AMOUNT_DEFAULT` sentinel) encodes as "no amount set".
+ */
+export function wasmBetAmountsToAmountsHash(amounts: number[]): string {
+  const bigints = BigInt64Array.from(amounts.map(v => BigInt(Math.trunc(v))));
+  return getWasm().computeBetAmountsToAmountsHash(bigints);
+}
