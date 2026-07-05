@@ -302,6 +302,30 @@ export const LOGIT_IS_POS4 = {{
 """.lstrip()
 
 
+def generate_typescript(params) -> str:
+    sep = ",\n    "
+    return f"""
+export const LOGIT_INTERCEPTS: Map<number, number> = new Map([
+    {sep.join([f"[{i + 1}, {params.iloc[i]}]" for i in range(14)])}{sep}[15, 0.0]{sep}{sep.join([f"[{i + 2}, {params.iloc[i]}]" for i in range(14, 19)])},
+]);
+export const LOGIT_PFA: Map<number, number> = new Map([
+    {sep.join([f"[{i - 18}, {params.iloc[i]}]" for i in range(19, 39)])},
+]);
+export const LOGIT_NFA: Map<number, number> = new Map([
+    {sep.join([f"[{i - 38}, {params.iloc[i]}]" for i in range(39, 59)])},
+]);
+export const LOGIT_IS_POS2: Map<number, number> = new Map([
+    {sep.join([f"[{i - 58}, {params.iloc[i]}]" for i in range(59, 79)])},
+]);
+export const LOGIT_IS_POS3: Map<number, number> = new Map([
+    {sep.join([f"[{i - 78}, {params.iloc[i]}]" for i in range(79, 99)])},
+]);
+export const LOGIT_IS_POS4: Map<number, number> = new Map([
+    {sep.join([f"[{i - 98}, {params.iloc[i]}]" for i in range(99, 119)])},
+]);
+""".lstrip()
+
+
 def generate_python(params) -> str:
     sep = ",\n    "
     return f"""
@@ -354,6 +378,11 @@ print("Writing output files...")
 print("Creating javascript.js...")
 Path("./output/javascript.js").write_text(
     generate_javascript(params),
+)
+
+print("Creating typescript.ts...")
+Path("./output/typescript.ts").write_text(
+    generate_typescript(params),
 )
 print("Creating rust.rs...")
 Path("./output/rust.rs").write_text(

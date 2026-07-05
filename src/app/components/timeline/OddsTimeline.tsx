@@ -1,0 +1,238 @@
+import { Box, Table } from '@chakra-ui/react';
+import React, { useMemo } from 'react';
+
+import { useRoundStore } from '../../stores';
+import { getOrdinalSuffix, filterChangesByArenaPirate } from '../../utils/betUtils';
+
+import { Tooltip } from '@/components/ui/tooltip';
+
+/**
+ * Calculate the percentage width for each timeline segment
+ */
+function calculatePercentages(timestamps: number[], endTime: number): number[] {
+  if (timestamps.length === 0) {
+    return [];
+  }
+
+  const percentages: number[] = [];
+  const startTime = timestamps[0] as number;
+  const totalDuration = endTime - startTime;
+
+  // If there's no duration (brand new round), just show equal segments
+  if (totalDuration === 0) {
+    const equalPercent = 100 / timestamps.length;
+    return timestamps.map(() => equalPercent);
+  }
+
+  timestamps.forEach((timestamp: number, i: number) => {
+    const currentTime = timestamp;
+    const nextTime = i === timestamps.length - 1 ? endTime : (timestamps[i + 1] as number);
+    const segmentDuration = nextTime - currentTime;
+    const segmentPercentage = (segmentDuration / totalDuration) * 100;
+    percentages.push(segmentPercentage);
+  });
+
+  return percentages;
+}
+
+/**
+ * Individual bar in the timeline representing a specific odds value
+ */
+const TimelineBar = React.memo(
+  (props: {
+    index: number;
+    odds: number;
+    percent: number;
+    timestamp: number;
+  }): React.ReactElement => {
+    const { index, odds, percent, timestamp } = props;
+
+    const palettes = [
+      'nfc-cyan',
+      'nfc-green',
+      'nfc-blue',
+      'nfc-purple',
+      'nfc-orange',
+      'nfc-red',
+      'nfc-yellow',
+      'gray',
+      'nfc-pink',
+    ] as const;
+
+    let label = `${odds} (${index}${getOrdinalSuffix(index)} change)`;
+
+    if (index === 0) {
+      label = `${odds} (Opening Odds)`;
+    }
+
+    return (
+      <Tooltip content={label} showArrow placement="top">
+        <Box
+          width={`${percent}%`}
+          whiteSpace="nowrap"
+          overflow="hidden"
+          fontSize="xs"
+          layerStyle="fill.muted"
+          colorPalette={palettes[odds % (palettes.length - 1)]}
+          fontWeight="semibold"
+          textAlign="center"
+          minH="6"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          cursor="pointer"
+          data-timestamp={timestamp}
+        >
+          {percent > 8 ? odds : '\u00A0'}
+        </Box>
+      </Tooltip>
+    );
+  },
+);
+
+TimelineBar.displayName = 'TimelineBar';
+
+export interface OddsTimelineSegment {
+  odds: number;
+  percent: number;
+  timestamp: number;
+}
+
+interface OddsTimelineBarsProps {
+  arenaId: number;
+  pirateIndex: number;
+  segments: OddsTimelineSegment[];
+  onClick?: () => void;
+  readOnly?: boolean;
+}
+
+export const OddsTimelineBars = React.memo((props: OddsTimelineBarsProps): React.ReactElement => {
+  const { arenaId, pirateIndex, segments, onClick, readOnly = false } = props;
+
+  return (
+    <Box
+      maxW="300px"
+      onClick={readOnly ? undefined : onClick}
+      cursor={readOnly ? 'default' : 'pointer'}
+      pointerEvents={readOnly ? 'none' : undefined}
+      display="flex"
+      px="0"
+      rounded="lg"
+      overflow="hidden"
+      borderRadius="md"
+      border="1px solid"
+      borderColor="border"
+      role={readOnly ? 'img' : undefined}
+      aria-label={readOnly ? 'Example odds timeline' : undefined}
+      css={readOnly ? { '& *': { cursor: 'default' } } : undefined}
+    >
+      {segments.map((segment, i) => (
+        <TimelineBar
+          key={`timeline-${arenaId}-${pirateIndex}-${segment.timestamp}-${segment.odds}`}
+          index={i}
+          odds={segment.odds}
+          percent={segment.percent}
+          timestamp={segment.timestamp}
+        />
+      ))}
+    </Box>
+  );
+});
+
+OddsTimelineBars.displayName = 'OddsTimelineBars';
+
+interface OddsTimelineProps {
+  onClick: () => void;
+  arenaId: number;
+  pirateIndex: number;
+}
+
+/**
+ * Timeline component that shows odds changes over time
+ */
+const OddsTimeline = React.memo(
+  (props: OddsTimelineProps): React.ReactElement => {
+    const { onClick, arenaId, pirateIndex } = props;
+
+    const roundData = useRoundStore(state => state.roundData);
+    const openingOdds = roundData?.openingOdds?.[arenaId]?.[pirateIndex + 1];
+    const start = roundData?.start;
+    const lastChange = roundData?.lastChange;
+    const timestamp = roundData?.timestamp;
+
+    // Calculate timeline data
+    const startDate = useMemo(() => new Date(start as string), [start]);
+    const changes = useMemo(() => roundData.changes || [], [roundData.changes]);
+
+    // Get pirate odds history
+    const timelineData = useMemo(() => {
+      // Build odds history: opening → changes → current
+      const odds: number[] = [];
+      const times: number[] = [];
+
+      // Start with opening odds
+      if (!openingOdds) {
+        return { odds: [], percentages: [], times: [] };
+      }
+
+      // Start with opening odds
+      odds.push(openingOdds);
+      times.push(startDate.getTime());
+
+      // Add all changes for this pirate
+      const pirateChanges = filterChangesByArenaPirate(changes, arenaId, pirateIndex);
+      pirateChanges.forEach(change => {
+        const lastOdds = odds[odds.length - 1];
+        if (change.new !== lastOdds) {
+          odds.push(change.new);
+          times.push(new Date(change.t).getTime());
+        }
+      });
+
+      // Determine end time for the timeline
+      let endTime: number;
+      if (pirateChanges.length > 0) {
+        // This pirate has had changes, use timestamp as end
+        endTime = new Date(timestamp as string).getTime();
+      } else if (lastChange) {
+        // No changes for this pirate, but round has changes - use lastChange
+        endTime = new Date(lastChange).getTime();
+      } else {
+        // Brand new round, no changes at all - use start time
+        endTime = startDate.getTime();
+      }
+
+      // Calculate width percentages
+      const percentages = calculatePercentages(times, endTime);
+
+      return { odds, percentages, times };
+    }, [openingOdds, startDate, changes, arenaId, pirateIndex, lastChange, timestamp]);
+
+    if (!openingOdds || !start) {
+      return <Box>&nbsp;</Box>;
+    }
+
+    const segments: OddsTimelineSegment[] = timelineData.odds.map((odds, i) => ({
+      odds,
+      percent: timelineData.percentages[i] ?? 0,
+      timestamp: timelineData.times[i] ?? 0,
+    }));
+
+    return (
+      <Table.Cell p={0}>
+        <OddsTimelineBars
+          arenaId={arenaId}
+          pirateIndex={pirateIndex}
+          segments={segments}
+          onClick={onClick}
+        />
+      </Table.Cell>
+    );
+  },
+  (prevProps, nextProps) =>
+    prevProps.arenaId === nextProps.arenaId && prevProps.pirateIndex === nextProps.pirateIndex,
+);
+
+OddsTimeline.displayName = 'OddsTimeline';
+
+export default OddsTimeline;

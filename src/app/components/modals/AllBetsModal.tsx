@@ -1,0 +1,729 @@
+import {
+  Badge,
+  Button,
+  Dialog,
+  Portal,
+  CloseButton,
+  Box,
+  HStack,
+  Text,
+  Input,
+  Stack,
+  RadioGroup,
+  Checkbox,
+  Code,
+} from '@chakra-ui/react';
+import * as React from 'react';
+import { List } from 'react-window';
+
+import { ARENA_NAMES, PIRATE_NAMES } from '../../constants';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
+import { useIsRoundOver } from '../../hooks/useIsRoundOver';
+import { useProbabilities } from '../../hooks/useProbabilities';
+import { computeBinaryToPirates } from '../../maths';
+import { useRoundStore } from '../../stores';
+import { calculateBetMaps, getMaxBet } from '../../util';
+
+interface AllBet {
+  binary: number;
+  pirates: number[];
+  odds: number;
+  probability: number;
+  payoff: number;
+  er: number;
+  ne: number;
+  maxBet: number;
+}
+
+interface AllBetsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+type SortField = 'er' | 'ne' | 'odds' | 'maxBet';
+
+/** `pirateIdx` is 1–4 (matches computeBinaryToPirates and 1-indexed odds arrays). */
+function pirateNameForSlot(
+  piratesByArena: number[][] | undefined,
+  arenaIdx: number,
+  pirateIdx: number,
+): string {
+  const pirateId = piratesByArena?.[arenaIdx]?.[pirateIdx - 1];
+  return pirateId ? PIRATE_NAMES.get(pirateId) || '' : '';
+}
+
+function pirateColorForOpeningOdds(
+  openingOdds: number[][] | undefined,
+  arenaIdx: number,
+  pirateIdx: number,
+  getPirateBgColor: (odds: number) => string,
+): string | undefined {
+  const odds = openingOdds?.[arenaIdx]?.[pirateIdx];
+  return odds ? getPirateBgColor(odds) : undefined;
+}
+
+interface RowData {
+  allBets: AllBet[];
+  piratesByArena: number[][];
+  openingOdds: number[][] | undefined;
+  getPirateBgColor: (odds: number) => string;
+  showBinaryAsHex: boolean;
+}
+
+const Row = React.memo(
+  ({
+    index,
+    style,
+    allBets,
+    piratesByArena,
+    openingOdds,
+    getPirateBgColor,
+    showBinaryAsHex,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+  } & RowData) => {
+    const bet = allBets[index];
+    if (!bet) {
+      return null;
+    }
+
+    const binaryDisplay = showBinaryAsHex
+      ? `0x${bet.binary.toString(16).toUpperCase().padStart(5, '0')}`
+      : `0b${bet.binary.toString(2).padStart(20, '0')}`;
+    const erBg = bet.er - 1 < 0 ? 'nfc-red' : undefined;
+    const neBg = bet.ne - 1 < 0 ? 'nfc-red' : undefined;
+
+    return (
+      <Box
+        style={{
+          ...style,
+          animation: 'fadeIn 0.3s ease-in',
+        }}
+        borderBottomWidth="1px"
+        css={{
+          '@keyframes fadeIn': {
+            from: { opacity: 0 },
+            to: { opacity: 1 },
+          },
+        }}
+      >
+        <HStack px={2} py={1} fontSize="xs" gap={2} flexWrap="nowrap">
+          <Text width="40px" textAlign="right" flexShrink={0}>
+            {index + 1}
+          </Text>
+          <HStack width="350px" gap={1} flexShrink={0}>
+            {bet.pirates.map((p, arenaIdx) => {
+              const key = `${arenaIdx}-${p}`;
+              const color =
+                p > 0
+                  ? pirateColorForOpeningOdds(openingOdds, arenaIdx, p, getPirateBgColor)
+                  : undefined;
+              return (
+                <Text
+                  key={key}
+                  width="70px"
+                  fontSize="2xs"
+                  truncate
+                  flexShrink={0}
+                  {...(color && { layerStyle: 'fill.subtle', colorPalette: color })}
+                >
+                  {p > 0 ? pirateNameForSlot(piratesByArena, arenaIdx, p) : ''}
+                </Text>
+              );
+            })}
+          </HStack>
+          <Text width="60px" textAlign="right" flexShrink={0}>
+            {bet.odds}:1
+          </Text>
+          <Text width="80px" textAlign="right" flexShrink={0}>
+            {bet.payoff.toLocaleString()}
+          </Text>
+          <Text width="60px" textAlign="right" flexShrink={0}>
+            {(bet.probability * 100).toFixed(3)}%
+          </Text>
+          <Text
+            width="60px"
+            textAlign="right"
+            flexShrink={0}
+            {...(erBg && { layerStyle: 'fill.subtle', colorPalette: erBg })}
+          >
+            {bet.er.toFixed(3)}
+          </Text>
+          <Text
+            width="80px"
+            textAlign="right"
+            flexShrink={0}
+            {...(neBg && { layerStyle: 'fill.subtle', colorPalette: neBg })}
+          >
+            {bet.ne.toFixed(2)}
+          </Text>
+          <Text width="80px" textAlign="right" flexShrink={0}>
+            {bet.maxBet.toLocaleString()}
+          </Text>
+          <Code
+            fontSize="2xs"
+            width={showBinaryAsHex ? '80px' : '130px'}
+            textAlign="center"
+            flexShrink={0}
+          >
+            {binaryDisplay}
+          </Code>
+        </HStack>
+      </Box>
+    );
+  },
+);
+
+Row.displayName = 'AllBetsRow';
+
+export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, onClose }) => {
+  const roundData = useRoundStore(state => state.roundData);
+  const globalUseLogitModel = useRoundStore(state => state.useLogitModel);
+  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
+  const getPirateBgColor = useGetPirateBgColor();
+
+  // Get user's max bet setting
+  const userMaxBet = getMaxBet(currentSelectedRound);
+  const initialMaxBet = userMaxBet > 0 ? userMaxBet.toString() : '10000';
+
+  const [maxBetInput, setMaxBetInput] = React.useState(initialMaxBet);
+  const debouncedMaxBetInput = useDebouncedValue(maxBetInput, 300);
+  const debouncedMaxBet = React.useMemo(() => {
+    const value = Number(debouncedMaxBetInput);
+    return !isNaN(value) && value > 0 ? value : userMaxBet > 0 ? userMaxBet : 10000;
+  }, [debouncedMaxBetInput, userMaxBet]);
+  const [sortField, setSortField] = React.useState<SortField>('er');
+  const [reverseSort, setReverseSort] = React.useState(true);
+  const [useExperimentalLogit, setUseExperimentalLogit] = React.useState(globalUseLogitModel);
+  const [showOnlyWinningBets, setShowOnlyWinningBets] = React.useState(false);
+  const [showBinaryAsHex, setShowBinaryAsHex] = React.useState(true);
+  /** Keys `${arenaIdx}-${pirateIdx}` (pirateIdx 1–4). Bets containing any blocked pirate are hidden. */
+  const [blockedPirates, setBlockedPirates] = React.useState<Set<string>>(() => new Set());
+  const [isPending, startTransition] = React.useTransition();
+
+  // Check if round is over
+  const isRoundOver = useIsRoundOver();
+
+  // Compute both probability types independently
+  const { legacyProbabilities, logitProbabilities } = useProbabilities();
+
+  // Choose which probabilities to use based on toggle
+  const usedProbabilities = useExperimentalLogit ? logitProbabilities : legacyProbabilities;
+
+  // Reset settings to global values when modal opens.
+  React.useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setUseExperimentalLogit(globalUseLogitModel);
+    const currentMaxBet = getMaxBet(currentSelectedRound);
+    const maxBetValue = currentMaxBet > 0 ? currentMaxBet.toString() : '10000';
+    setMaxBetInput(maxBetValue);
+  }, [currentSelectedRound, globalUseLogitModel, isOpen]);
+
+  // Calculate all possible bets using the pre-computed bet calculations
+  const allBets = React.useMemo(() => {
+    if (!roundData || !roundData.pirates || roundData.pirates.length === 0 || !usedProbabilities) {
+      return [];
+    }
+
+    // Local calculation to avoid subscribing to bet-store changes.
+    // Odds/prob arrays in this app are 1-indexed (0 reserved for "clear").
+    const { betOdds, betCaps } = calculateBetMaps(
+      [
+        [0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4],
+        [0, 1, 2, 3, 4],
+      ],
+      roundData.currentOdds,
+      usedProbabilities,
+      debouncedMaxBet,
+      { includePirateCombos: false },
+    );
+
+    const bets: AllBet[] = [];
+
+    // Convert from Maps to array
+    for (const [binary, odds] of betOdds) {
+      if (binary === 0 || odds === 0) {
+        continue;
+      }
+
+      const pirates = computeBinaryToPirates(binary);
+
+      // Calculate probability using the same logic as calculateBets
+      let probability = 1;
+      for (let i = 0; i < 5; i++) {
+        const pirateIdx = pirates[i]!;
+        if (pirateIdx === 0) {
+          continue;
+        }
+        probability *= usedProbabilities[i]?.[pirateIdx] ?? 0;
+      }
+
+      const payoff = Math.min(debouncedMaxBet * odds, 1_000_000);
+      const maxBet = betCaps.get(binary) || Math.floor(1_000_000 / (odds || 1));
+      const er = odds * probability;
+      const ne = payoff * probability - debouncedMaxBet;
+
+      bets.push({
+        binary,
+        pirates,
+        odds,
+        probability,
+        payoff,
+        er,
+        ne,
+        maxBet,
+      });
+    }
+
+    // Sort by selected field
+    const sortMultiplier = reverseSort ? 1 : -1;
+    return bets.sort((a, b) => {
+      switch (sortField) {
+        case 'er':
+          return (b.er - a.er) * sortMultiplier;
+        case 'ne':
+          return (b.ne - a.ne) * sortMultiplier;
+        case 'odds':
+          return (b.odds - a.odds) * sortMultiplier;
+        case 'maxBet':
+          return (b.maxBet - a.maxBet) * sortMultiplier;
+        default:
+          return (b.er - a.er) * sortMultiplier;
+      }
+    });
+  }, [roundData, usedProbabilities, debouncedMaxBet, sortField, reverseSort]);
+
+  const pirateFilteredBets = React.useMemo(() => {
+    if (blockedPirates.size === 0) {
+      return allBets;
+    }
+    return allBets.filter(bet => {
+      for (let arenaIdx = 0; arenaIdx < 5; arenaIdx++) {
+        const p = bet.pirates[arenaIdx];
+        if (p && p > 0 && blockedPirates.has(`${arenaIdx}-${p}`)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [allBets, blockedPirates]);
+
+  // Filter bets to only show winning bets if enabled
+  const filteredBets = React.useMemo(() => {
+    if (!showOnlyWinningBets || !isRoundOver || !roundData.winners) {
+      return pirateFilteredBets;
+    }
+
+    // Filter to only bets where all selected pirates are winners
+    return pirateFilteredBets.filter(bet => {
+      for (let arenaIdx = 0; arenaIdx < 5; arenaIdx++) {
+        const selectedPirate = bet.pirates[arenaIdx];
+        const winner = roundData.winners?.[arenaIdx];
+
+        // If a pirate is selected in this arena (not 0), it must match the winner
+        if (selectedPirate && selectedPirate > 0 && selectedPirate !== winner) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [pirateFilteredBets, showOnlyWinningBets, isRoundOver, roundData.winners]);
+
+  // Item data for react-window
+  const itemData = React.useMemo<RowData>(
+    () => ({
+      allBets: filteredBets,
+      piratesByArena: roundData.pirates,
+      openingOdds: roundData.openingOdds,
+      getPirateBgColor,
+      showBinaryAsHex,
+    }),
+    [filteredBets, roundData.pirates, roundData.openingOdds, getPirateBgColor, showBinaryAsHex],
+  );
+
+  return (
+    <Dialog.Root
+      open={isOpen}
+      onOpenChange={(e: { open: boolean }) => !e.open && onClose()}
+      size="cover"
+      preventScroll
+      modal
+    >
+      <Portal>
+        <Dialog.Backdrop />
+        <Dialog.Positioner>
+          <Dialog.Content>
+            <Dialog.Header>
+              <Dialog.Title>
+                All Possible Bets ({filteredBets.length}
+                {(showOnlyWinningBets || blockedPirates.size > 0) &&
+                allBets.length !== filteredBets.length
+                  ? ` of ${allBets.length}`
+                  : ''}
+                )
+              </Dialog.Title>
+              <Dialog.CloseTrigger asChild>
+                <CloseButton size="sm" />
+              </Dialog.CloseTrigger>
+            </Dialog.Header>
+            <Dialog.Body display="flex" flexDirection="column" overflow="hidden">
+              <Stack gap={4} flex={1} minHeight={0}>
+                <Text fontSize="sm" color="fg.muted" flexShrink={0}>
+                  Note: Settings changed here will not affect your saved settings.
+                </Text>
+
+                <Stack gap={3} flexShrink={0}>
+                  {/* Max Bet Input */}
+                  <HStack>
+                    <Text fontSize="sm" fontWeight="medium" width="70px">
+                      Max Bet:
+                    </Text>
+                    <Input
+                      type="number"
+                      value={maxBetInput}
+                      onChange={e => setMaxBetInput(e.target.value)}
+                      width="120px"
+                      size="sm"
+                    />
+                  </HStack>
+
+                  {/* Sort Controls */}
+                  <HStack gap={4}>
+                    <Text fontSize="sm" fontWeight="medium" width="70px">
+                      Sort by:
+                    </Text>
+                    <RadioGroup.Root
+                      value={sortField}
+                      size="sm"
+                      onValueChange={(details: { value: string | null }) => {
+                        if (details.value === null) {
+                          return;
+                        }
+
+                        startTransition(() => {
+                          setSortField(details.value as SortField);
+                        });
+                      }}
+                    >
+                      <HStack gap={3}>
+                        <RadioGroup.Item value="er" cursor="pointer">
+                          <RadioGroup.ItemHiddenInput />
+                          <RadioGroup.ItemIndicator cursor="pointer" />
+                          <RadioGroup.ItemText>ER</RadioGroup.ItemText>
+                        </RadioGroup.Item>
+                        <RadioGroup.Item value="ne" cursor="pointer">
+                          <RadioGroup.ItemHiddenInput />
+                          <RadioGroup.ItemIndicator cursor="pointer" />
+                          <RadioGroup.ItemText>NE</RadioGroup.ItemText>
+                        </RadioGroup.Item>
+                        <RadioGroup.Item value="odds" cursor="pointer">
+                          <RadioGroup.ItemHiddenInput />
+                          <RadioGroup.ItemIndicator cursor="pointer" />
+                          <RadioGroup.ItemText>Odds</RadioGroup.ItemText>
+                        </RadioGroup.Item>
+                        <RadioGroup.Item value="maxBet" cursor="pointer">
+                          <RadioGroup.ItemHiddenInput />
+                          <RadioGroup.ItemIndicator cursor="pointer" />
+                          <RadioGroup.ItemText>MaxBet</RadioGroup.ItemText>
+                        </RadioGroup.Item>
+                      </HStack>
+                    </RadioGroup.Root>
+                    <Checkbox.Root
+                      checked={reverseSort}
+                      onCheckedChange={() => {
+                        startTransition(() => {
+                          setReverseSort(!reverseSort);
+                        });
+                      }}
+                    >
+                      <Checkbox.HiddenInput />
+                      <Checkbox.Control />
+                      <Checkbox.Label>Reverse</Checkbox.Label>
+                    </Checkbox.Root>
+                  </HStack>
+
+                  {/* Filter Options */}
+                  <HStack gap={4}>
+                    <Text fontSize="sm" fontWeight="medium" width="70px">
+                      Options:
+                    </Text>
+                    <HStack gap={4}>
+                      <Checkbox.Root
+                        checked={useExperimentalLogit}
+                        onCheckedChange={() => {
+                          startTransition(() => {
+                            setUseExperimentalLogit(!useExperimentalLogit);
+                          });
+                        }}
+                      >
+                        <Checkbox.HiddenInput />
+                        <Checkbox.Control />
+                        <Checkbox.Label>Experimental Logit</Checkbox.Label>
+                      </Checkbox.Root>
+
+                      <Checkbox.Root
+                        checked={showBinaryAsHex}
+                        onCheckedChange={() => setShowBinaryAsHex(!showBinaryAsHex)}
+                      >
+                        <Checkbox.HiddenInput />
+                        <Checkbox.Control />
+                        <Checkbox.Label>Show Binary as Hex</Checkbox.Label>
+                      </Checkbox.Root>
+
+                      {isRoundOver && (
+                        <Checkbox.Root
+                          checked={showOnlyWinningBets}
+                          onCheckedChange={() => {
+                            startTransition(() => {
+                              setShowOnlyWinningBets(!showOnlyWinningBets);
+                            });
+                          }}
+                        >
+                          <Checkbox.HiddenInput />
+                          <Checkbox.Control />
+                          <Checkbox.Label>Show Only Winning Bets</Checkbox.Label>
+                        </Checkbox.Root>
+                      )}
+                    </HStack>
+                  </HStack>
+
+                  <Box
+                    flexShrink={0}
+                    mt={2}
+                    pt={3}
+                    pb={3}
+                    px={3}
+                    borderWidth="1px"
+                    borderRadius="md"
+                    borderColor="border.muted"
+                    bg="bg.subtle"
+                  >
+                    <Stack gap={3}>
+                      <Stack gap={1}>
+                        <HStack justify="space-between" align="flex-start" flexWrap="wrap" gap={2}>
+                          <Text fontSize="sm" fontWeight="semibold">
+                            Pirate exclusions
+                          </Text>
+                          {blockedPirates.size > 0 && (
+                            <Button
+                              size="xs"
+                              variant="ghost"
+                              onClick={() => {
+                                startTransition(() => setBlockedPirates(new Set()));
+                              }}
+                            >
+                              Allow all pirates
+                            </Button>
+                          )}
+                        </HStack>
+                        <Text fontSize="xs" color="fg.muted" lineHeight="short">
+                          Bets that include a checked pirate are hidden. Nothing is excluded by
+                          default.
+                        </Text>
+                      </Stack>
+                      <Box overflowX="auto" pb={1} width="fit-content" maxWidth="100%">
+                        <Box
+                          display="grid"
+                          gridTemplateColumns="repeat(5, 8rem)"
+                          gap={1.5}
+                          alignItems="end"
+                          px={1}
+                          pb={2}
+                          borderBottomWidth="1px"
+                          borderColor="border.muted"
+                        >
+                          {ARENA_NAMES.map(arenaName => (
+                            <Text
+                              key={arenaName}
+                              fontSize="xs"
+                              fontWeight="medium"
+                              color="fg.muted"
+                              textAlign="center"
+                              lineHeight="short"
+                            >
+                              {arenaName}
+                            </Text>
+                          ))}
+                        </Box>
+                        <Box as="ul" listStyleType="none" margin={0} padding={0} fontSize="xs">
+                          {[1, 2, 3, 4].map(pirateIdx => (
+                            <Box
+                              as="li"
+                              key={pirateIdx}
+                              display="grid"
+                              gridTemplateColumns="repeat(5, 8rem)"
+                              gap={1.5}
+                              alignItems="start"
+                              py={1.5}
+                              px={1}
+                              borderBottomWidth="1px"
+                              borderColor="border.muted"
+                              _last={{ borderBottomWidth: '0' }}
+                            >
+                              {ARENA_NAMES.map((arenaName, arenaIdx) => {
+                                const key = `${arenaIdx}-${pirateIdx}`;
+                                const name =
+                                  pirateNameForSlot(roundData.pirates, arenaIdx, pirateIdx) ||
+                                  `P${pirateIdx}`;
+                                const color = pirateColorForOpeningOdds(
+                                  roundData.openingOdds,
+                                  arenaIdx,
+                                  pirateIdx,
+                                  getPirateBgColor,
+                                );
+                                const curOdds = roundData.currentOdds?.[arenaIdx]?.[pirateIdx];
+                                const blockLabel = `Block ${name} (${arenaName})`;
+                                return (
+                                  <Checkbox.Root
+                                    key={key}
+                                    checked={blockedPirates.has(key)}
+                                    display="flex"
+                                    flexDirection="row"
+                                    alignItems="center"
+                                    gap={1}
+                                    minWidth={0}
+                                    title={blockLabel}
+                                    onCheckedChange={() => {
+                                      startTransition(() => {
+                                        setBlockedPirates(prev => {
+                                          const next = new Set(prev);
+                                          if (next.has(key)) {
+                                            next.delete(key);
+                                          } else {
+                                            next.add(key);
+                                          }
+                                          return next;
+                                        });
+                                      });
+                                    }}
+                                    aria-label={blockLabel}
+                                  >
+                                    <Checkbox.HiddenInput />
+                                    <Checkbox.Control flexShrink={0} />
+                                    <Checkbox.Label
+                                      flex={1}
+                                      minWidth={0}
+                                      marginInlineStart={0}
+                                      cursor="pointer"
+                                      userSelect="none"
+                                    >
+                                      <Badge
+                                        fontSize="2xs"
+                                        variant="subtle"
+                                        maxWidth="100%"
+                                        px={1}
+                                        py={0.5}
+                                        lineHeight="short"
+                                        {...(color
+                                          ? { colorPalette: color }
+                                          : { colorPalette: 'gray' })}
+                                      >
+                                        <HStack gap={0.5} maxW="100%" minW={0} lineHeight="short">
+                                          <Text
+                                            as="span"
+                                            truncate
+                                            display="block"
+                                            flex={1}
+                                            minW={0}
+                                          >
+                                            {name}
+                                          </Text>
+                                          {curOdds !== undefined && curOdds > 0 ? (
+                                            <Text
+                                              as="span"
+                                              color="fg"
+                                              flexShrink={0}
+                                              whiteSpace="nowrap"
+                                            >
+                                              - {curOdds}:1
+                                            </Text>
+                                          ) : null}
+                                        </HStack>
+                                      </Badge>
+                                    </Checkbox.Label>
+                                  </Checkbox.Root>
+                                );
+                              })}
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    </Stack>
+                  </Box>
+                </Stack>
+
+                <Box flex={1} minHeight={0} display="flex" flexDirection="column">
+                  {/* Header */}
+                  <Box borderBottomWidth="2px" fontWeight="bold" bg="bg.muted" flexShrink={0}>
+                    <HStack px={2} py={2} fontSize="xs" gap={2} flexWrap="nowrap">
+                      <Text width="40px" textAlign="right" flexShrink={0}>
+                        #
+                      </Text>
+                      <Text width="350px" flexShrink={0}>
+                        Pirates
+                      </Text>
+                      <Text width="60px" textAlign="right" flexShrink={0}>
+                        Odds
+                      </Text>
+                      <Text width="80px" textAlign="right" flexShrink={0}>
+                        Payoff
+                      </Text>
+                      <Text width="60px" textAlign="right" flexShrink={0}>
+                        Prob
+                      </Text>
+                      <Text width="60px" textAlign="right" flexShrink={0}>
+                        ER
+                      </Text>
+                      <Text width="80px" textAlign="right" flexShrink={0}>
+                        NE
+                      </Text>
+                      <Text width="80px" textAlign="right" flexShrink={0}>
+                        MaxBet
+                      </Text>
+                      <Text
+                        width={showBinaryAsHex ? '80px' : '130px'}
+                        textAlign="center"
+                        flexShrink={0}
+                      >
+                        Binary
+                      </Text>
+                    </HStack>
+                  </Box>
+
+                  {/* Virtualized List */}
+                  <Box
+                    flex={1}
+                    minHeight={0}
+                    opacity={isPending ? 0.5 : 1}
+                    transition="opacity 0.2s"
+                  >
+                    <List<RowData>
+                      defaultHeight={400}
+                      rowCount={filteredBets.length}
+                      rowHeight={32}
+                      rowComponent={Row}
+                      rowProps={itemData as RowData}
+                    />
+                  </Box>
+                </Box>
+              </Stack>
+            </Dialog.Body>
+            <Dialog.Footer>
+              <Button variant="outline" onClick={onClose}>
+                Close
+              </Button>
+            </Dialog.Footer>
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Portal>
+    </Dialog.Root>
+  );
+});

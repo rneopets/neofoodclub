@@ -1,0 +1,35 @@
+import { memo, useMemo, useCallback } from 'react';
+import { FaVial } from 'react-icons/fa6';
+import Cookies from 'universal-cookie';
+
+import { useLogitModelSetting, useToggleUseLogitModel } from '../../stores';
+
+import SettingsSwitch from './SettingsSwitch';
+
+const LogitModelToggle = memo(() => {
+  const useLogitModel = useLogitModelSetting();
+  const toggleUseLogitModel = useToggleUseLogitModel();
+
+  const cookies = useMemo(() => new Cookies(), []);
+
+  const persistLogitModelPreference = useCallback((): void => {
+    const newValue = !useLogitModel;
+    cookies.set('useLogitModel', newValue);
+    toggleUseLogitModel();
+  }, [useLogitModel, cookies, toggleUseLogitModel]);
+
+  return (
+    <SettingsSwitch
+      icon={FaVial}
+      label="Experimental Model"
+      colorPalette="nfc-green"
+      checked={useLogitModel ?? false}
+      onChange={persistLogitModelPreference}
+      tooltipText="The experimental model uses multinomial logit to predict the probabilities and should yield better TER, especially for smaller max bets."
+    />
+  );
+});
+
+LogitModelToggle.displayName = 'LogitModelToggle';
+
+export default LogitModelToggle;

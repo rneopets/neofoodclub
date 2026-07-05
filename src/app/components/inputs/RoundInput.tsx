@@ -1,0 +1,137 @@
+import { Group, NumberInputControl, Text } from '@chakra-ui/react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+
+import { useDebouncedRoundInput } from '../../hooks/useDebouncedRoundInput';
+import { useSelectOnFocus } from '../../hooks/useSelectOnFocus';
+import { useRoundStore } from '../../stores';
+
+import {
+  NumberInputRoot,
+  NumberInputField,
+  NumberInputValueChangeDetails,
+} from '@/components/ui/number-input';
+
+// Hook to get error state from the store
+const useErrorState = (): string | null => useRoundStore(state => state.error);
+
+// this element is the number input to say which round's data you're viewing
+
+const RoundInput: React.FC = () => {
+  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
+  const currentRound = useRoundStore(state => state.currentRound);
+  const updateSelectedRound = useRoundStore(state => state.updateSelectedRound);
+  const error = useErrorState();
+
+  const initialRoundNumber = useMemo(() => currentSelectedRound || 0, [currentSelectedRound]);
+
+  const [tempValue, setTempValue] = useState<string>(() => initialRoundNumber.toString());
+
+  // Check if there's an error related to the current round
+  const hasError = Boolean(error);
+
+  // Use custom hook to handle debouncing with cancellation on external changes
+  useDebouncedRoundInput(
+    tempValue,
+    currentSelectedRound.toString(),
+    400,
+    useCallback(
+      (debouncedValue: string) => {
+        const trimmedValue = debouncedValue.trim();
+        if (trimmedValue === '') {
+          return;
+        }
+
+        const roundNumber = parseInt(trimmedValue, 10);
+        if (isNaN(roundNumber) || roundNumber === 0) {
+          return;
+        }
+
+        const isSameRound = roundNumber === currentSelectedRound;
+        if (isSameRound) {
+          return;
+        }
+
+        // Use the new updateSelectedRound action which handles data fetching automatically
+        updateSelectedRound(roundNumber);
+      },
+      [currentSelectedRound, updateSelectedRound],
+    ),
+  );
+
+  // Sync temp value when currentSelectedRound changes externally
+  useEffect(() => {
+    setTempValue((currentSelectedRound || 0).toString());
+  }, [currentSelectedRound]);
+
+  const selectRoundInput = useSelectOnFocus();
+
+  const handleChange = useCallback((details: NumberInputValueChangeDetails): void => {
+    setTempValue(details.value);
+  }, []);
+
+  const commitRoundInput = useCallback((): void => {
+    const trimmedValue = tempValue.trim();
+
+    // If input is empty, set to current round
+    if (trimmedValue === '') {
+      setTempValue(currentRound.toString());
+      return;
+    }
+
+    const roundNumber = parseInt(trimmedValue, 10);
+
+    // If invalid number, revert to current round
+    if (isNaN(roundNumber) || roundNumber < 1) {
+      setTempValue(currentRound.toString());
+      return;
+    }
+
+    // Update the display value to the parsed number
+    setTempValue(roundNumber.toString());
+  }, [tempValue, currentRound]);
+
+  return (
+    <Group attached w="full" gap={0} alignItems="stretch">
+      <Text
+        fontSize="xs"
+        lineHeight="1"
+        fontWeight="medium"
+        color="fg.muted"
+        bg="bg.muted"
+        borderWidth="1px"
+        borderEndWidth="0"
+        borderColor="border"
+        roundedStart="md"
+        roundedEnd={0}
+        px="2"
+        display="flex"
+        alignItems="center"
+        whiteSpace="nowrap"
+        userSelect="none"
+      >
+        Round
+      </Text>
+      <NumberInputRoot
+        value={tempValue}
+        min={1}
+        allowMouseWheel
+        onValueChange={handleChange}
+        name="round-input"
+        data-testid="round-input"
+        size="xs"
+        invalid={hasError}
+      >
+        <NumberInputField
+          onFocus={selectRoundInput}
+          onBlur={commitRoundInput}
+          name="round-input-field"
+          data-testid="round-input-field"
+          roundedStart={0}
+        />
+        <NumberInputControl />
+      </NumberInputRoot>
+    </Group>
+  );
+};
+
+export default RoundInput;
