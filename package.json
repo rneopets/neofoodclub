@@ -24,7 +24,7 @@
     "zustand": "5.0.14"
   },
   "scripts": {
-    "build:wasm": "wasm-pack build wasm --target bundler --out-dir pkg --out-name neofoodclub_wasm",
+    "build:wasm": "wasm-pack build wasm/neofoodclub_rs/crates/wasm --target bundler --out-dir ../../../pkg --out-name neofoodclub_wasm",
     "prestart": "npm run build:wasm",
     "start": "vite",
     "start:no-scan": "DISABLE_REACT_SCAN=true vite",

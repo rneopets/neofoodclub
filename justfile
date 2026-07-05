@@ -23,7 +23,7 @@ clean:
 
 # Clean everything including node_modules (slower)
 clean-all:
-	rm -rf node_modules build coverage .vite playwright-report wasm/target wasm/pkg
+	rm -rf node_modules build coverage .vite playwright-report wasm/neofoodclub_rs/target wasm/pkg
 
 # Start dev server
 dev:
