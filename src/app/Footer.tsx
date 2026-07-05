@@ -225,7 +225,7 @@ const Footer: React.FC<FooterProps> = props => {
                 data-testid="help-guide-footer-link"
               >
                 Help Guide{' '}
-                <Badge colorPalette="cyan" variant="solid" fontSize="2xs">
+                <Badge colorPalette="cyan" variant="subtle" size="sm" rounded="full">
                   New
                 </Badge>
               </FooterLink>
