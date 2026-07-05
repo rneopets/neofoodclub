@@ -6,6 +6,16 @@ default:
 # Install dependencies (prefer clean, reproducible installs if lockfile exists)
 install:
 	@if [ -f package-lock.json ]; then npm ci; else npm install; fi
+	just wasm-setup
+
+# One-time: install the wasm32 rustup target + init the neofoodclub.rs submodule
+wasm-setup:
+	rustup target add wasm32-unknown-unknown
+	git submodule update --init --recursive wasm/neofoodclub_rs
+
+# Build the wasm-bindgen math core (also wired into npm's prestart/prebuild/pretest hooks)
+wasm-build:
+	npm run build:wasm
 
 # Clean build artifacts
 clean:
@@ -13,7 +23,7 @@ clean:
 
 # Clean everything including node_modules (slower)
 clean-all:
-	rm -rf node_modules build coverage .vite playwright-report
+	rm -rf node_modules build coverage .vite playwright-report wasm/target wasm/pkg
 
 # Start dev server
 dev:

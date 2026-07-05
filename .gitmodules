@@ -1,0 +1,4 @@
+[submodule "wasm/neofoodclub_rs"]
+	path = wasm/neofoodclub_rs
+	url = https://github.com/rneopets/neofoodclub.rs.git
+	branch = main

@@ -34,3 +34,6 @@ __pycache__/
 /playwright-report/
 /playwright/.cache/
 .env*
+
+# rust wasm build artifacts (see wasm/)
+/wasm/target/

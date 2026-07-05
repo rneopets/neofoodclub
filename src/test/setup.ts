@@ -2,6 +2,11 @@ import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
+import { initWasmMath } from '../app/wasmMath';
+
+// Load the wasm math core before any test runs (mirrors src/index.jsx).
+await initWasmMath();
+
 // Clean up after each test
 afterEach(() => {
   cleanup();
