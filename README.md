@@ -5,7 +5,6 @@
 
 ## Links
 - [neofood.club website](https://neofood.club/)
-- [neofoodclub.py Github Repo](https://github.com/rneopets/neofoodclub.py)
 - [neofoodclub.rs Github Repo](https://github.com/rneopets/neofoodclub.rs)
 
 ---
