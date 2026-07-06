@@ -175,13 +175,27 @@ export function displayAsPercent(value: number, decimals?: number): string {
   return `${(100 * value).toFixed(decimals)}%`;
 }
 
+function smartPercentDecimals(pct: number): number {
+  return Math.ceil(-Math.log10(Math.abs(pct)));
+}
+
 export function displayAsPercentSmart(value: number): string {
   if (value === undefined || value === 0) {
     return '0%';
   }
   const pct = value * 100;
-  const d = Math.max(3, Math.ceil(-Math.log10(Math.abs(pct))));
-  return `${pct.toFixed(d)}%`;
+  return `${pct.toFixed(Math.max(3, smartPercentDecimals(pct)))}%`;
+}
+
+export function getMaxSmartPercentDecimals(values: number[], minDecimals = 3): number {
+  let max = minDecimals;
+  for (const value of values) {
+    if (value === undefined || value === 0) {
+      continue;
+    }
+    max = Math.max(max, smartPercentDecimals(value * 100));
+  }
+  return max;
 }
 
 export function displayAsPlusMinus(value: number): string {

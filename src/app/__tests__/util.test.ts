@@ -26,6 +26,7 @@ import {
   makeEmptyBetAmounts,
   determineBetAmount,
   formatDate,
+  getMaxSmartPercentDecimals,
 } from '../util';
 
 // Mock universal-cookie
@@ -153,6 +154,28 @@ describe('Utility Functions', () => {
 
     it('handles negative values', () => {
       expect(displayAsPercentSmart(-0.1)).toBe('-10.000%');
+    });
+  });
+
+  describe('getMaxSmartPercentDecimals', () => {
+    it('returns the minimum of 3 decimals for all normal values', () => {
+      expect(getMaxSmartPercentDecimals([0.5, 0.25, 0.1])).toBe(3);
+    });
+
+    it('returns the larger decimal count needed by a tiny value in the array', () => {
+      expect(getMaxSmartPercentDecimals([0.5, 0.000001])).toBe(4);
+    });
+
+    it('ignores zeros when computing the max', () => {
+      expect(getMaxSmartPercentDecimals([0.5, 0, 0.25])).toBe(3);
+    });
+
+    it('returns the minDecimals floor for an empty array', () => {
+      expect(getMaxSmartPercentDecimals([])).toBe(3);
+    });
+
+    it('respects a custom minDecimals parameter', () => {
+      expect(getMaxSmartPercentDecimals([0.5], 5)).toBe(5);
     });
   });
 
