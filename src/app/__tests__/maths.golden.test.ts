@@ -1,7 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+
 import { describe, expect, it } from 'vitest';
 
+import type { RoundData } from '../../types';
+import type { Bet, BetAmount } from '../../types/bets';
 import {
   calculateArenaRatios,
   calculatePayoutTables,
@@ -11,8 +14,6 @@ import {
   computePirateBinary,
   computePiratesBinary,
 } from '../maths';
-import type { RoundData } from '../../types';
-import type { Bet, BetAmount } from '../../types/bets';
 
 /**
  * Regression net for the pure-math core now delegated to the wasm engine
