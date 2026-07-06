@@ -175,6 +175,15 @@ export function displayAsPercent(value: number, decimals?: number): string {
   return `${(100 * value).toFixed(decimals)}%`;
 }
 
+export function displayAsPercentSmart(value: number): string {
+  if (value === undefined || value === 0) {
+    return '0%';
+  }
+  const pct = value * 100;
+  const d = Math.max(3, Math.ceil(-Math.log10(Math.abs(pct))));
+  return `${pct.toFixed(d)}%`;
+}
+
 export function displayAsPlusMinus(value: number): string {
   return `${value > 0 ? '+' : ''}${value}`;
 }

@@ -19,7 +19,7 @@ import {
   useWinningBetBinary,
   useTotalBetAmounts,
 } from '../../stores';
-import { amountAbbreviation, displayAsPercent } from '../../util';
+import { amountAbbreviation, displayAsPercent, displayAsPercentSmart } from '../../util';
 import TextTooltip from '../ui/TextTooltip';
 
 import { useColorMode } from '@/components/ui/color-mode';
@@ -214,7 +214,7 @@ const PayoutCharts: React.FC = React.memo(() => {
               label: function (context: TooltipItem<'scatter'>): string[] {
                 return [
                   `${context!.parsed!.x!.toLocaleString()} ${type}`,
-                  `${displayAsPercent(context!.parsed!.y!, 3)}`,
+                  `${displayAsPercentSmart(context!.parsed!.y!)}`,
                 ];
               },
             },
@@ -321,20 +321,20 @@ const PayoutCharts: React.FC = React.memo(() => {
             </Table.Cell>
             <Table.Cell textAlign="end">
               <TextTooltip
-                text={displayAsPercent(dataObj.probability, 3)}
-                content={displayAsPercent(dataObj.probability)}
+                text={displayAsPercentSmart(dataObj.probability)}
+                content={displayAsPercentSmart(dataObj.probability)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
               <TextTooltip
-                text={displayAsPercent(dataObj.cumulative || 0, 3)}
-                content={displayAsPercent(dataObj.cumulative || 0)}
+                text={displayAsPercentSmart(dataObj.cumulative || 0)}
+                content={displayAsPercentSmart(dataObj.cumulative || 0)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
               <TextTooltip
-                text={displayAsPercent(dataObj.tail || 0, 3)}
-                content={displayAsPercent(dataObj.tail || 0)}
+                text={displayAsPercentSmart(dataObj.tail || 0)}
+                content={displayAsPercentSmart(dataObj.tail || 0)}
               />
             </Table.Cell>
           </Table.Row>
