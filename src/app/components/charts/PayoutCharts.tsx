@@ -316,22 +316,22 @@ const PayoutCharts: React.FC = React.memo(() => {
             key={dataObj.value}
             {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}
           >
-            <Table.Cell textAlign="end" truncate>
+            <Table.Cell textAlign="end">
               {dataObj.value.toLocaleString()}
             </Table.Cell>
-            <Table.Cell textAlign="end" truncate>
+            <Table.Cell textAlign="end">
               <TextTooltip
                 text={displayAsPercent(dataObj.probability, 3)}
                 content={displayAsPercent(dataObj.probability)}
               />
             </Table.Cell>
-            <Table.Cell textAlign="end" truncate>
+            <Table.Cell textAlign="end">
               <TextTooltip
                 text={displayAsPercent(dataObj.cumulative || 0, 3)}
                 content={displayAsPercent(dataObj.cumulative || 0)}
               />
             </Table.Cell>
-            <Table.Cell textAlign="end" truncate>
+            <Table.Cell textAlign="end">
               <TextTooltip
                 text={displayAsPercent(dataObj.tail || 0, 3)}
                 content={displayAsPercent(dataObj.tail || 0)}
@@ -346,13 +346,13 @@ const PayoutCharts: React.FC = React.memo(() => {
           <Card.Root boxShadow="md" minW={0} w="full" maxW="full">
             <Card.Body p={1}>
               <Skeleton loading={!hasRoundData || !calculationsData.calculated}>
-                <Table.Root size="sm" width="full" tableLayout="fixed" interactive>
+                <Table.Root size="sm" width="full" tableLayout="auto" interactive>
                   <Table.Header>
                     <Table.Row>
-                      <Table.ColumnHeader truncate>{title}</Table.ColumnHeader>
-                      <Table.ColumnHeader truncate>Probability</Table.ColumnHeader>
-                      <Table.ColumnHeader truncate>Cumulative</Table.ColumnHeader>
-                      <Table.ColumnHeader truncate>Tail</Table.ColumnHeader>
+                      <Table.ColumnHeader>{title}</Table.ColumnHeader>
+                      <Table.ColumnHeader>Probability</Table.ColumnHeader>
+                      <Table.ColumnHeader>Cumulative</Table.ColumnHeader>
+                      <Table.ColumnHeader>Tail</Table.ColumnHeader>
                     </Table.Row>
                   </Table.Header>
                   <Table.Body>
