@@ -125,7 +125,7 @@ const StickyTd = React.memo(
       ...filteredRest,
     };
 
-    return <Table.Cell {...tdProps}>{children}</Table.Cell>;
+    return <Td {...tdProps}>{children}</Td>;
   },
 );
 
@@ -285,7 +285,7 @@ const EmptyBetsPlaceholder = React.memo(() => (
 EmptyBetsPlaceholder.displayName = 'EmptyBetsPlaceholder';
 
 const EmptyTd = React.memo((props: { colSpan?: number }) => (
-  <Table.Cell backgroundColor="bg.subtle" colSpan={props.colSpan || 1} />
+  <Td backgroundColor="bg.subtle" colSpan={props.colSpan || 1} />
 ));
 
 const ArenaHeaderRow = React.memo(
@@ -343,7 +343,7 @@ const ArenaHeaderRow = React.memo(
 
     return (
       <Table.Row>
-        <Table.Cell
+        <Td
           rowSpan={5}
           backgroundColor="bg.subtle"
           cursor="pointer"
@@ -352,11 +352,11 @@ const ArenaHeaderRow = React.memo(
           _hover={{ bg: 'bg.emphasized' }}
         >
           <Text fontWeight="bold">{ARENA_NAMES[arenaId]}</Text>
-        </Table.Cell>
+        </Td>
         {bigBrain && (
-          <Table.Cell rowSpan={5} backgroundColor="bg.subtle" textAlign="center">
+          <Td rowSpan={5} backgroundColor="bg.subtle" textAlign="center">
             <ArenaRatioDisplay arenaId={arenaId} />
-          </Table.Cell>
+          </Td>
         )}
         <EmptyTd colSpan={emptyColSpan} />
         {faDetails ? <FoodItems arenaId={arenaId} /> : null}
@@ -534,12 +534,12 @@ const PirateRow = React.memo(
       }
 
       return (
-        <Table.Cell
+        <Td
           textAlign="end"
           {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
         >
           {displayAsPercent(logitProb, 1)}
-        </Table.Cell>
+        </Td>
       );
     }, [logitProb, useLogitModel, bigBrain, pirateWon]);
 
@@ -549,12 +549,12 @@ const PirateRow = React.memo(
       }
 
       return (
-        <Table.Cell
+        <Td
           textAlign="end"
           {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
         >
           {pirateFA}
-        </Table.Cell>
+        </Td>
       );
     }, [pirateFA, bigBrain, pirateWon]);
 
@@ -569,24 +569,24 @@ const PirateRow = React.memo(
 
       return (
         <>
-          <Table.Cell
+          <Td
             textAlign="end"
             {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
           >
             {displayAsPercent(legacyProbMin, 1)}
-          </Table.Cell>
-          <Table.Cell
+          </Td>
+          <Td
             textAlign="end"
             {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
           >
             {displayAsPercent(legacyProbMax, 1)}
-          </Table.Cell>
-          <Table.Cell
+          </Td>
+          <Td
             textAlign="end"
             {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
           >
             {displayAsPercent(legacyProbStd, 1)}
-          </Table.Cell>
+          </Td>
         </>
       );
     }, [legacyProbMin, legacyProbMax, legacyProbStd, useLogitModel, bigBrain, pirateWon]);
@@ -673,12 +673,12 @@ const PirateRow = React.memo(
       }
 
       return (
-        <Table.Cell
+        <Td
           textAlign="end"
           {...(payoutBackground && { layerStyle: 'fill.subtle', colorPalette: payoutBackground })}
         >
           {displayAsPercent(payout, 1)}
-        </Table.Cell>
+        </Td>
       );
     }, [payout, payoutBackground, bigBrain]);
 
@@ -690,9 +690,9 @@ const PirateRow = React.memo(
     if (!pirateId) {
       return (
         <Table.Row>
-          <Table.Cell colSpan={100}>
+          <Td colSpan={100}>
             <Skeleton height="24px">&nbsp;</Skeleton>
-          </Table.Cell>
+          </Td>
         </Table.Row>
       );
     }
@@ -719,13 +719,13 @@ const PirateRow = React.memo(
         {payoutElement}
         {faElement}
         {faDetailsElement}
-        <Table.Cell
+        <Td
           textAlign="end"
           {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
         >
           {openingOdds}:1
-        </Table.Cell>
-        <Table.Cell
+        </Td>
+        <Td
           textAlign="end"
           whiteSpace="nowrap"
           {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
@@ -738,11 +738,11 @@ const PirateRow = React.memo(
             )}
             <Text fontWeight={oddsChanged ? 'bold' : 'normal'}>{currentOdds}:1</Text>
           </Box>
-        </Table.Cell>
+        </Td>
         {customOddsInputElement}
         {timelineElement}
         {betRadios}
-        <Table.Cell whiteSpace="nowrap">
+        <Td whiteSpace="nowrap">
           <Box display="flex" gap={1} justifyContent="center">
             <Tooltip content="10-bet" openDelay={600} placement="top">
               <IconButton
@@ -853,7 +853,7 @@ const PirateRow = React.memo(
               </Portal>
             </Popover.Root>
           </Box>
-        </Table.Cell>
+        </Td>
       </Table.Row>
     );
   },

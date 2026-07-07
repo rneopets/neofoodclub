@@ -136,7 +136,7 @@ const PirateNameCell = React.memo(
     }, [hasModifications, hasCustomOdds, hasCustomProbs]);
 
     return (
-      <Table.Cell {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}>
+      <Td {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}>
         <HStack gap={1} display="inline-flex" alignItems="center">
           <Text>{pirateName}</Text>
           {hasModifications && (
@@ -154,7 +154,7 @@ const PirateNameCell = React.memo(
             </Tooltip>
           )}
         </HStack>
-      </Table.Cell>
+      </Td>
     );
   },
 );
@@ -297,15 +297,15 @@ const PayoutTableRow = React.memo(
             {...(baBg && { errorColor: baBg })}
           />
         </Td>
-        <Table.Cell style={{ textAlign: 'end' }}>
+        <Td style={{ textAlign: 'end' }}>
           {odds?.toLocaleString() ?? '0'}
           :1
-        </Table.Cell>
-        <Table.Cell style={{ textAlign: 'end' }}>{payoffs?.toLocaleString() ?? '0'}</Table.Cell>
-        <Table.Cell style={{ textAlign: 'end' }}>
+        </Td>
+        <Td style={{ textAlign: 'end' }}>{payoffs?.toLocaleString() ?? '0'}</Td>
+        <Td style={{ textAlign: 'end' }}>
           <MemoizedTextTooltip text={probabilityTooltip.text} content={probabilityTooltip.label} />
-        </Table.Cell>
-        <Table.Cell
+        </Td>
+        <Td
           style={{ textAlign: 'end' }}
           {...(erBg && { layerStyle: 'fill.subtle', colorPalette: erBg })}
         >
@@ -313,14 +313,14 @@ const PayoutTableRow = React.memo(
             text={expectedRatioTooltip.text}
             content={expectedRatioTooltip.label}
           />
-        </Table.Cell>
-        <Table.Cell
+        </Td>
+        <Td
           style={{ textAlign: 'end' }}
           {...(neBg && { layerStyle: 'fill.subtle', colorPalette: neBg })}
         >
           <MemoizedTextTooltip text={netExpectedTooltip.text} content={netExpectedTooltip.label} />
-        </Table.Cell>
-        <Table.Cell
+        </Td>
+        <Td
           style={{ textAlign: 'end' }}
           {...(mbBg && { layerStyle: 'fill.subtle', colorPalette: mbBg })}
         >
@@ -339,7 +339,7 @@ const PayoutTableRow = React.memo(
           ) : (
             (maxBets?.toLocaleString() ?? '0')
           )}
-        </Table.Cell>
+        </Td>
         {[0, 1, 2, 3, 4].map(arenaIndex => {
           const pirateIndex = currentBetLine[arenaIndex] as number;
           return (
@@ -350,9 +350,9 @@ const PayoutTableRow = React.memo(
             />
           );
         })}
-        <Table.Cell {...stickySubmitColumnProps}>
+        <Td {...stickySubmitColumnProps}>
           <PlaceThisBetButton bet={currentBetLine} betNum={betIndex + 1} />
-        </Table.Cell>
+        </Td>
       </Table.Row>
     );
   },
