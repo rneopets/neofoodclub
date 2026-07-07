@@ -34,8 +34,9 @@ import {
   useCustomProbsValue,
   useCustomOddsMode,
   useRoundStore,
+  useBetProbabilities,
 } from '../../stores';
-import { displayAsPercent } from '../../util';
+import { displayAsPercent, displayAsPercentSmart, getMaxSmartPercentDecimals } from '../../util';
 import BetAmountInput from '../bets/BetAmountInput';
 import PlaceThisBetButton from '../bets/PlaceThisBetButton';
 import TextTooltip from '../ui/TextTooltip';
@@ -165,10 +166,12 @@ const PayoutTableRow = React.memo(
     betIndex,
     onSwapUp,
     onSwapDown,
+    probabilityDecimals,
   }: {
     betIndex: number;
     onSwapUp: (index: number) => void;
     onSwapDown: (index: number) => void;
+    probabilityDecimals: number;
   }) => {
     const viewMode = useViewMode();
     const winningBetBinary = useWinningBetBinary();
@@ -191,10 +194,10 @@ const PayoutTableRow = React.memo(
 
     const probabilityTooltip = useMemo(
       () => ({
-        text: displayAsPercent(probabilities, 3),
-        label: displayAsPercent(probabilities),
+        text: displayAsPercent(probabilities, probabilityDecimals),
+        label: displayAsPercentSmart(probabilities),
       }),
-      [probabilities],
+      [probabilities, probabilityDecimals],
     );
 
     const expectedRatioTooltip = useMemo(
@@ -373,6 +376,7 @@ const PayoutTable = React.memo((): React.ReactElement => {
 
   const currentBet = useCurrentBet();
   const amountOfBets = useBetCount();
+  const betProbabilities = useBetProbabilities();
 
   const swapBets = useSwapBets();
 
@@ -394,6 +398,14 @@ const PayoutTable = React.memo((): React.ReactElement => {
     [swapBets, amountOfBets],
   );
 
+  const probabilityDecimals = useMemo(
+    () =>
+      getMaxSmartPercentDecimals(
+        Array.from({ length: amountOfBets }, (_, i) => betProbabilities.get(i + 1) ?? 0),
+      ),
+    [amountOfBets, betProbabilities],
+  );
+
   const tableRows = useMemo(() => {
     const rows = [];
     for (let i = 0; i < amountOfBets; i++) {
@@ -403,11 +415,12 @@ const PayoutTable = React.memo((): React.ReactElement => {
           betIndex={i}
           onSwapUp={handleSwapBetUp}
           onSwapDown={handleSwapBetDown}
+          probabilityDecimals={probabilityDecimals}
         />,
       );
     }
     return rows;
-  }, [amountOfBets, currentBet, handleSwapBetUp, handleSwapBetDown]);
+  }, [amountOfBets, currentBet, handleSwapBetUp, handleSwapBetDown, probabilityDecimals]);
 
   const totalExpectedRatioTooltip = useMemo(
     () => ({
