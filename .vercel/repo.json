@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_XDGx0mvpnQpg8K7TFPSsEd1FxlEd",
+      "name": "foodclub",
+      "directory": ".",
+      "orgId": "team_cr0aK0dMFRng8ppmFBYl5Gdn"
+    }
+  ]
+}

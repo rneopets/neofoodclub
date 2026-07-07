@@ -28,9 +28,9 @@ public/rounds/
 
 __pycache__/
 .env
-.vercel
 
 # Playwright
 /test-results/
 /playwright-report/
 /playwright/.cache/
+.env*
