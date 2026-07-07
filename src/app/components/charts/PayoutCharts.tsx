@@ -288,7 +288,7 @@ const PayoutCharts: React.FC = React.memo(() => {
           <Table.Cell colSpan={4} pt={2} borderBottom="none" w="full">
             <Box w="full" h={{ base: '160px', md: '180px' }}>
               {/* @ts-ignore */}
-              <Scatter data={chartData} options={options} redraw />
+              <Scatter data={chartData} options={options} />
             </Box>
           </Table.Cell>
         </Table.Row>
