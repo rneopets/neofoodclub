@@ -19,7 +19,12 @@ import {
   useWinningBetBinary,
   useTotalBetAmounts,
 } from '../../stores';
-import { amountAbbreviation, displayAsPercent } from '../../util';
+import {
+  amountAbbreviation,
+  displayAsPercent,
+  displayAsPercentSmart,
+  getMaxSmartPercentDecimals,
+} from '../../util';
 import TextTooltip from '../ui/TextTooltip';
 
 import { useColorMode } from '@/components/ui/color-mode';
@@ -121,7 +126,11 @@ const PayoutCharts: React.FC = React.memo(() => {
   const isDarkLikeMode = colorMode !== 'light';
 
   const makeChart = useCallback(
-    (title: string, data: PayoutData[] | undefined): React.ReactElement | null => {
+    (
+      title: string,
+      data: PayoutData[] | undefined,
+      probabilityDecimals: number,
+    ): React.ReactElement | null => {
       if (!data) {
         return null;
       }
@@ -214,7 +223,7 @@ const PayoutCharts: React.FC = React.memo(() => {
               label: function (context: TooltipItem<'scatter'>): string[] {
                 return [
                   `${context!.parsed!.x!.toLocaleString()} ${type}`,
-                  `${displayAsPercent(context!.parsed!.y!, 3)}`,
+                  `${displayAsPercent(context!.parsed!.y!, probabilityDecimals)}`,
                 ];
               },
             },
@@ -294,6 +303,10 @@ const PayoutCharts: React.FC = React.memo(() => {
         data = [];
       }
 
+      const probabilityDecimals = getMaxSmartPercentDecimals(data.map(d => d.probability));
+      const cumulativeDecimals = getMaxSmartPercentDecimals(data.map(d => d.cumulative || 0));
+      const tailDecimals = getMaxSmartPercentDecimals(data.map(d => d.tail || 0));
+
       const { totalWinningOdds, totalWinningPayoff } = calculationsData;
 
       const tableRows = data.map(dataObj => {
@@ -316,25 +329,23 @@ const PayoutCharts: React.FC = React.memo(() => {
             key={dataObj.value}
             {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}
           >
-            <Table.Cell textAlign="end">
-              {dataObj.value.toLocaleString()}
-            </Table.Cell>
+            <Table.Cell textAlign="end">{dataObj.value.toLocaleString()}</Table.Cell>
             <Table.Cell textAlign="end">
               <TextTooltip
-                text={displayAsPercent(dataObj.probability, 3)}
-                content={displayAsPercent(dataObj.probability)}
+                text={displayAsPercent(dataObj.probability, probabilityDecimals)}
+                content={displayAsPercentSmart(dataObj.probability)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
               <TextTooltip
-                text={displayAsPercent(dataObj.cumulative || 0, 3)}
-                content={displayAsPercent(dataObj.cumulative || 0)}
+                text={displayAsPercent(dataObj.cumulative || 0, cumulativeDecimals)}
+                content={displayAsPercentSmart(dataObj.cumulative || 0)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
               <TextTooltip
-                text={displayAsPercent(dataObj.tail || 0, 3)}
-                content={displayAsPercent(dataObj.tail || 0)}
+                text={displayAsPercent(dataObj.tail || 0, tailDecimals)}
+                content={displayAsPercentSmart(dataObj.tail || 0)}
               />
             </Table.Cell>
           </Table.Row>
@@ -357,7 +368,7 @@ const PayoutCharts: React.FC = React.memo(() => {
                   </Table.Header>
                   <Table.Body>
                     {tableRows}
-                    {makeChart(title, data)}
+                    {makeChart(title, data, probabilityDecimals)}
                   </Table.Body>
                 </Table.Root>
               </Skeleton>

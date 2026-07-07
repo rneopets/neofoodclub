@@ -7,6 +7,7 @@ import {
   generateRandomIntegerInRange,
   generateRandomPirateIndex,
   displayAsPercent,
+  displayAsPercentSmart,
   displayAsPlusMinus,
   anyBetsExist,
   anyBetAmountsExist,
@@ -25,6 +26,7 @@ import {
   makeEmptyBetAmounts,
   determineBetAmount,
   formatDate,
+  getMaxSmartPercentDecimals,
 } from '../util';
 
 // Mock universal-cookie
@@ -130,6 +132,50 @@ describe('Utility Functions', () => {
     it('handles values greater than 1', () => {
       expect(displayAsPercent(1.5)).toBe('150%');
       expect(displayAsPercent(2.5, 1)).toBe('250.0%');
+    });
+  });
+
+  describe('displayAsPercentSmart', () => {
+    it('shows at least 3 decimals for normal values', () => {
+      expect(displayAsPercentSmart(0.5)).toBe('50.000%');
+      expect(displayAsPercentSmart(0.25)).toBe('25.000%');
+      expect(displayAsPercentSmart(1)).toBe('100.000%');
+    });
+
+    it('shows 0% for zero', () => {
+      expect(displayAsPercentSmart(0)).toBe('0%');
+    });
+
+    it('shows extra decimals for small values to reveal first non-zero digit', () => {
+      expect(displayAsPercentSmart(0.00001)).toBe('0.001%');
+      expect(displayAsPercentSmart(0.000001)).toBe('0.0001%');
+      expect(displayAsPercentSmart(0.0000001)).toBe('0.00001%');
+    });
+
+    it('handles negative values', () => {
+      expect(displayAsPercentSmart(-0.1)).toBe('-10.000%');
+    });
+  });
+
+  describe('getMaxSmartPercentDecimals', () => {
+    it('returns the minimum of 3 decimals for all normal values', () => {
+      expect(getMaxSmartPercentDecimals([0.5, 0.25, 0.1])).toBe(3);
+    });
+
+    it('returns the larger decimal count needed by a tiny value in the array', () => {
+      expect(getMaxSmartPercentDecimals([0.5, 0.000001])).toBe(4);
+    });
+
+    it('ignores zeros when computing the max', () => {
+      expect(getMaxSmartPercentDecimals([0.5, 0, 0.25])).toBe(3);
+    });
+
+    it('returns the minDecimals floor for an empty array', () => {
+      expect(getMaxSmartPercentDecimals([])).toBe(3);
+    });
+
+    it('respects a custom minDecimals parameter', () => {
+      expect(getMaxSmartPercentDecimals([0.5], 5)).toBe(5);
     });
   });
 
