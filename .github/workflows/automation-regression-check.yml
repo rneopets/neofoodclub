@@ -1,4 +1,4 @@
-name: Automation Output Check
+name: Automation Regression Check
 
 on:
   pull_request:
@@ -9,9 +9,9 @@ on:
       - 'automation/.python-version'
       - 'automation/Dockerfile'
       - 'automation/docker-compose.yml'
-      - '.github/workflows/automation-check.yml'
+      - '.github/workflows/automation-regression-check.yml'
   workflow_run:
-    workflows: ['Automation Output Check']
+    workflows: ['Automation Regression Check']
     types: [completed]
 
 jobs:
@@ -196,7 +196,7 @@ jobs:
               ].join('\n');
             } else {
               comment = [
-                '## ✅ Automation Output Check Passed',
+                '## ✅ Automation Regression Check Passed',
                 '',
                 'The generated `output/python.py` matches the expected output.',
               ].join('\n');
