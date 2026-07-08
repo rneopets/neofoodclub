@@ -1,6 +1,7 @@
 import { Box, Table } from '@chakra-ui/react';
 import React, { useMemo } from 'react';
 
+import { RoundData } from '../../../types';
 import { useRoundStore } from '../../stores';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../../utils/betUtils';
 
@@ -33,6 +34,62 @@ function calculatePercentages(timestamps: number[], endTime: number): number[] {
   });
 
   return percentages;
+}
+
+/**
+ * Build the odds-history segments (opening odds -> each change -> current) for a single
+ * pirate, with each segment's proportional width across the round's duration so far.
+ * Shared by the table-cell bar (OddsTimeline) and the timeline drawer's pirate view.
+ */
+export function buildOddsTimelineSegments(
+  roundData: RoundData,
+  arenaId: number,
+  pirateIndex: number,
+): OddsTimelineSegment[] {
+  const openingOdds = roundData?.openingOdds?.[arenaId]?.[pirateIndex + 1];
+  const start = roundData?.start;
+
+  if (!openingOdds || !start) {
+    return [];
+  }
+
+  const startDate = new Date(start);
+  const startTime = startDate.getTime();
+  const changes = roundData.changes || [];
+
+  // Build odds history: opening -> changes -> current
+  const odds: number[] = [openingOdds];
+  const times: number[] = [startTime];
+
+  const pirateChanges = filterChangesByArenaPirate(changes, arenaId, pirateIndex);
+  pirateChanges.forEach(change => {
+    const lastOdds = odds[odds.length - 1];
+    if (change.new !== lastOdds) {
+      odds.push(change.new);
+      times.push(new Date(change.t).getTime());
+    }
+  });
+
+  // Determine end time for the timeline
+  let endTime: number;
+  if (pirateChanges.length > 0) {
+    // This pirate has had changes, use timestamp as end
+    endTime = new Date(roundData.timestamp as string).getTime();
+  } else if (roundData.lastChange) {
+    // No changes for this pirate, but round has changes - use lastChange
+    endTime = new Date(roundData.lastChange).getTime();
+  } else {
+    // Brand new round, no changes at all - use start time
+    endTime = startTime;
+  }
+
+  const percentages = calculatePercentages(times, endTime);
+
+  return odds.map((thisOdds, i) => ({
+    odds: thisOdds,
+    percent: percentages[i] ?? 0,
+    timestamp: times[i] ?? 0,
+  }));
 }
 
 /**
@@ -104,10 +161,18 @@ interface OddsTimelineBarsProps {
   segments: OddsTimelineSegment[];
   onClick?: () => void;
   readOnly?: boolean;
+  ariaLabel?: string;
 }
 
 export const OddsTimelineBars = React.memo((props: OddsTimelineBarsProps): React.ReactElement => {
-  const { arenaId, pirateIndex, segments, onClick, readOnly = false } = props;
+  const {
+    arenaId,
+    pirateIndex,
+    segments,
+    onClick,
+    readOnly = false,
+    ariaLabel = 'Example odds timeline',
+  } = props;
 
   return (
     <Box
@@ -123,7 +188,7 @@ export const OddsTimelineBars = React.memo((props: OddsTimelineBarsProps): React
       border="1px solid"
       borderColor="border"
       role={readOnly ? 'img' : undefined}
-      aria-label={readOnly ? 'Example odds timeline' : undefined}
+      aria-label={readOnly ? ariaLabel : undefined}
       css={readOnly ? { '& *': { cursor: 'default' } } : undefined}
     >
       {segments.map((segment, i) => (
@@ -157,66 +222,15 @@ const OddsTimeline = React.memo(
     const roundData = useRoundStore(state => state.roundData);
     const openingOdds = roundData?.openingOdds?.[arenaId]?.[pirateIndex + 1];
     const start = roundData?.start;
-    const lastChange = roundData?.lastChange;
-    const timestamp = roundData?.timestamp;
 
-    // Calculate timeline data
-    const startDate = useMemo(() => new Date(start as string), [start]);
-    const changes = useMemo(() => roundData.changes || [], [roundData.changes]);
-
-    // Get pirate odds history
-    const timelineData = useMemo(() => {
-      // Build odds history: opening → changes → current
-      const odds: number[] = [];
-      const times: number[] = [];
-
-      // Start with opening odds
-      if (!openingOdds) {
-        return { odds: [], percentages: [], times: [] };
-      }
-
-      // Start with opening odds
-      odds.push(openingOdds);
-      times.push(startDate.getTime());
-
-      // Add all changes for this pirate
-      const pirateChanges = filterChangesByArenaPirate(changes, arenaId, pirateIndex);
-      pirateChanges.forEach(change => {
-        const lastOdds = odds[odds.length - 1];
-        if (change.new !== lastOdds) {
-          odds.push(change.new);
-          times.push(new Date(change.t).getTime());
-        }
-      });
-
-      // Determine end time for the timeline
-      let endTime: number;
-      if (pirateChanges.length > 0) {
-        // This pirate has had changes, use timestamp as end
-        endTime = new Date(timestamp as string).getTime();
-      } else if (lastChange) {
-        // No changes for this pirate, but round has changes - use lastChange
-        endTime = new Date(lastChange).getTime();
-      } else {
-        // Brand new round, no changes at all - use start time
-        endTime = startDate.getTime();
-      }
-
-      // Calculate width percentages
-      const percentages = calculatePercentages(times, endTime);
-
-      return { odds, percentages, times };
-    }, [openingOdds, startDate, changes, arenaId, pirateIndex, lastChange, timestamp]);
+    const segments = useMemo(
+      () => buildOddsTimelineSegments(roundData, arenaId, pirateIndex),
+      [roundData, arenaId, pirateIndex],
+    );
 
     if (!openingOdds || !start) {
       return <Box>&nbsp;</Box>;
     }
-
-    const segments: OddsTimelineSegment[] = timelineData.odds.map((odds, i) => ({
-      odds,
-      percent: timelineData.percentages[i] ?? 0,
-      timestamp: timelineData.times[i] ?? 0,
-    }));
 
     return (
       <Table.Cell p={0}>
