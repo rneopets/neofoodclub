@@ -108,6 +108,7 @@ jobs:
         run: exit 1
 
   docker-build-check:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: read
