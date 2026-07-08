@@ -6,6 +6,10 @@ on:
       - 'automation/**/*.py'
       - 'automation/pyproject.toml'
       - 'automation/uv.lock'
+      - 'automation/.python-version'
+      - 'automation/Dockerfile'
+      - 'automation/docker-compose.yml'
+      - '.github/workflows/automation-check.yml'
   workflow_run:
     workflows: ['Automation Output Check']
     types: [completed]
@@ -24,7 +28,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version-file: automation/.python-version
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -91,18 +95,30 @@ jobs:
 
       - name: Upload comparison results
         if: always()
-        working-directory: automation
         uses: actions/upload-artifact@v4
         with:
           name: automation-output-check
           path: |
-            compare-result.json
-            diff_output.txt
+            automation/compare-result.json
+            automation/diff_output.txt
           if-no-files-found: ignore
 
       - name: Fail if diff detected
         if: steps.compare.outcome == 'failure'
         run: exit 1
+
+  docker-build-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build automation Docker image
+        working-directory: automation
+        run: docker compose build nfc_values
 
   post-pr-comment:
     if: >
