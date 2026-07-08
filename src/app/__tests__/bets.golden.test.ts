@@ -30,6 +30,18 @@ import { initWasmMath, wasmPiratesBinary } from '../wasmMath';
  * max-TER ranking order). Review snapshot diffs carefully rather than
  * blindly updating them.
  */
+
+// Snapshotted values here are always plain JSON-shaped data (numbers,
+// arrays, small objects, null) - print them as compact single-line JSON
+// instead of vitest's default multi-line pretty-format, which otherwise
+// balloons this file's .snap output to one line per array element/field.
+// Note: JSON.stringify silently coerces NaN/Infinity to null; none of the
+// current fixtures produce those values.
+expect.addSnapshotSerializer({
+  test: () => true,
+  print: val => JSON.stringify(val),
+});
+
 const fixturesDir = path.resolve(__dirname, '../../../automation/raw_json');
 const fixtureFiles = fs
   .readdirSync(fixturesDir)
