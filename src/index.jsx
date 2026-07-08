@@ -12,7 +12,7 @@ import { Provider } from '@/components/ui/provider';
 
 // Vite-specific environment variable access
 window.ENV = {
-  REACT_APP_VERCEL_GIT_COMMIT_SHA: import.meta.env.REACT_APP_VERCEL_GIT_COMMIT_SHA,
+  VITE_GIT_COMMIT_SHA: import.meta.env.VITE_GIT_COMMIT_SHA,
 };
 
 // Register service worker without automatic updates
