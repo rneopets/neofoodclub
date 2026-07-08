@@ -1,6 +1,9 @@
 services:
   nfc_values:
-    build: .
+    build:
+      context: .
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION}
     stop_signal: SIGINT
     volumes:
       - ./raw_json:/app/raw_json

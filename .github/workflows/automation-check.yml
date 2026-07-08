@@ -118,7 +118,10 @@ jobs:
 
       - name: Build automation Docker image
         working-directory: automation
-        run: docker compose build nfc_values
+        run: |
+          PYTHON_VERSION="$(cat .python-version)"
+          export PYTHON_VERSION
+          docker compose build nfc_values
 
   post-pr-comment:
     if: >

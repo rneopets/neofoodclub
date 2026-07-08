@@ -25,6 +25,8 @@ jobs:
       - name: Run Docker
         run: |
           cd ./automation/
+          PYTHON_VERSION="$(cat .python-version)"
+          export PYTHON_VERSION
           docker compose run --rm nfc_values
           cp "./output/typescript.ts" "./../src/app/constants_logit.ts"
 
