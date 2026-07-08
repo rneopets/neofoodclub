@@ -38,7 +38,7 @@ jobs:
 
     - name: Build
       env:
-        VITE_GIT_COMMIT_SHA: ${{ github.sha }}
+        VITE_GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       run: npm run build
 
     - name: Upload Coverage
