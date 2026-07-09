@@ -83,7 +83,8 @@ const ActivePlaceBetButton = React.memo(
       <BetButton
         onClick={placeBet}
         colorPalette="nfc-green"
-        variant={clicked ? 'outline' : 'surface'}
+        variant="surface"
+        opacity={clicked ? 0.6 : 1}
       >
         {clicked ? 'Bet placed!' : 'Place bet!'} <FaExternalLinkAlt />
       </BetButton>
