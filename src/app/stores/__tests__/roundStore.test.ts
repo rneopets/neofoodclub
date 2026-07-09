@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import type { RoundCalculationResult, RoundData } from '../../../types';
+import { makeRoundData } from '../../../test/utils';
+import type { RoundCalculationResult } from '../../../types';
 import type { Bet, BetAmount } from '../../../types/bets';
 import { BET_AMOUNT_DEFAULT, defaultRoundData } from '../../constants';
 import { useBetStore } from '../betStore';
@@ -23,42 +24,6 @@ globalThis.fetch = mockFetch;
 // Allow the betStore's lazy dynamic import of roundStore (and vice versa) to resolve
 async function waitForStoreInit(): Promise<void> {
   await new Promise(resolve => setTimeout(resolve, 50));
-}
-
-function makeRoundData(overrides: Partial<RoundData> = {}): RoundData {
-  return {
-    round: 8000,
-    pirates: [
-      [1, 2, 3, 4],
-      [5, 6, 7, 8],
-      [9, 10, 11, 12],
-      [13, 14, 15, 16],
-      [17, 18, 19, 20],
-    ],
-    openingOdds: [
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-    ],
-    currentOdds: [
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-    ],
-    foods: [
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    ],
-    winners: [0, 0, 0, 0, 0],
-    ...overrides,
-  };
 }
 
 const blankCalculations: RoundCalculationResult = {

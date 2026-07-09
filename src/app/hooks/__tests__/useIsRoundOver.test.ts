@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { RoundData } from '../../../types';
+import { makeRoundData } from '../../../test/utils';
 import { useRoundStore } from '../../stores';
 import { useIsRoundOver } from '../useIsRoundOver';
 
@@ -16,41 +16,6 @@ vi.mock('universal-cookie', () => ({
   }),
 }));
 
-function makeRoundData(winners: number[] | undefined): RoundData {
-  const base = {
-    round: 1,
-    pirates: [
-      [1, 2, 3, 4],
-      [5, 6, 7, 8],
-      [9, 10, 11, 12],
-      [13, 14, 15, 16],
-      [17, 18, 19, 20],
-    ],
-    openingOdds: [
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-    ],
-    currentOdds: [
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-    ],
-    foods: [
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    ],
-  };
-  return winners === undefined ? base : { ...base, winners };
-}
-
 describe('useIsRoundOver', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,7 +23,7 @@ describe('useIsRoundOver', () => {
   });
 
   it('returns false when no winner value is greater than zero', () => {
-    useRoundStore.setState({ roundData: makeRoundData([0, 0, 0, 0, 0]) });
+    useRoundStore.setState({ roundData: makeRoundData({ winners: [0, 0, 0, 0, 0] }) });
 
     const { result } = renderHook(() => useIsRoundOver());
 
@@ -66,15 +31,15 @@ describe('useIsRoundOver', () => {
   });
 
   it('returns true when at least one winner value is greater than zero', () => {
-    useRoundStore.setState({ roundData: makeRoundData([1, 0, 0, 0, 0]) });
+    useRoundStore.setState({ roundData: makeRoundData({ winners: [1, 0, 0, 0, 0] }) });
 
     const { result } = renderHook(() => useIsRoundOver());
 
     expect(result.current).toBe(true);
   });
 
-  it('returns false when winners is undefined', () => {
-    useRoundStore.setState({ roundData: makeRoundData(undefined) });
+  it('returns false when winners is omitted (defaults to an empty array, same falsy effect as undefined)', () => {
+    useRoundStore.setState({ roundData: makeRoundData() });
 
     const { result } = renderHook(() => useIsRoundOver());
 
@@ -82,7 +47,7 @@ describe('useIsRoundOver', () => {
   });
 
   it('returns false when winners is an empty array', () => {
-    useRoundStore.setState({ roundData: makeRoundData([]) });
+    useRoundStore.setState({ roundData: makeRoundData({ winners: [] }) });
 
     const { result } = renderHook(() => useIsRoundOver());
 

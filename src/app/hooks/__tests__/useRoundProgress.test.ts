@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { RoundData } from '../../../types';
+import { makeRoundData } from '../../../test/utils';
 import { useRoundStore } from '../../stores';
 import { useRoundProgress } from '../useRoundProgress';
 
@@ -16,42 +16,6 @@ vi.mock('universal-cookie', () => ({
   }),
 }));
 
-function makeRoundData(start: string | undefined): RoundData {
-  const base = {
-    round: 1,
-    pirates: [
-      [1, 2, 3, 4],
-      [5, 6, 7, 8],
-      [9, 10, 11, 12],
-      [13, 14, 15, 16],
-      [17, 18, 19, 20],
-    ],
-    openingOdds: [
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-    ],
-    currentOdds: [
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-      [1, 2, 3, 4, 5],
-    ],
-    foods: [
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    ],
-    winners: [0, 0, 0, 0, 0],
-  };
-  return start === undefined ? base : { ...base, start };
-}
-
 describe('useRoundProgress', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -65,7 +29,7 @@ describe('useRoundProgress', () => {
 
   it('returns 0 when the round has no start timestamp', () => {
     vi.setSystemTime(new Date('2026-01-01T12:00:00Z'));
-    useRoundStore.setState({ roundData: makeRoundData(undefined), currentSelectedRound: 1 });
+    useRoundStore.setState({ roundData: makeRoundData(), currentSelectedRound: 1 });
 
     const { result } = renderHook(() => useRoundProgress());
 
@@ -75,7 +39,7 @@ describe('useRoundProgress', () => {
   it('returns a percentage within the 0-100 range when the round has a start timestamp', () => {
     vi.setSystemTime(new Date('2026-01-01T18:00:00Z'));
     useRoundStore.setState({
-      roundData: makeRoundData('2026-01-01T00:00:00Z'),
+      roundData: makeRoundData({ start: '2026-01-01T00:00:00Z' }),
       currentSelectedRound: 1,
     });
 
@@ -90,7 +54,7 @@ describe('useRoundProgress', () => {
   it('recomputes the percentage on the 1 second interval tick', () => {
     vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
     useRoundStore.setState({
-      roundData: makeRoundData('2026-01-01T00:00:00Z'),
+      roundData: makeRoundData({ start: '2026-01-01T00:00:00Z' }),
       currentSelectedRound: 1,
     });
 
@@ -110,7 +74,7 @@ describe('useRoundProgress', () => {
   it('clears the interval on unmount', () => {
     vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
     useRoundStore.setState({
-      roundData: makeRoundData('2026-01-01T00:00:00Z'),
+      roundData: makeRoundData({ start: '2026-01-01T00:00:00Z' }),
       currentSelectedRound: 1,
     });
 
