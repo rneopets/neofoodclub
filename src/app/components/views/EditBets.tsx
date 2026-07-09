@@ -25,8 +25,10 @@ import React, {
 import { FaPenToSquare, FaGear } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
+import { BetCopyButtons } from '../../BetFunctions';
 import {
   useBetSetPosition,
+  useCurrentBet,
   useHasAnyBets,
   useRoundStore,
   useTableMode,
@@ -132,6 +134,7 @@ PirateTable.displayName = 'PirateTable';
 export default React.memo(function EditBets(): React.ReactElement {
   const viewMode = useViewMode();
   const anyBets = useHasAnyBets();
+  const currentBetIndex = useCurrentBet();
   const setViewMode = useRoundStore(state => state.setViewMode);
   const [isPending, startTransition] = useTransition();
   const [isEditorPrefetched, setIsEditorPrefetched] = useState(false);
@@ -304,10 +307,13 @@ export default React.memo(function EditBets(): React.ReactElement {
       {viewMode && (
         <>
           <Box bgColor={'bg.emphasized'} p={4}>
-            <Button colorPalette="blackAlpha" onClick={handleEditModeClick}>
-              <FaPenToSquare />
-              Edit these bets
-            </Button>
+            <Flex align="center" justify="space-between" wrap="wrap" gap={2}>
+              <Button colorPalette="blackAlpha" onClick={handleEditModeClick}>
+                <FaPenToSquare />
+                Edit these bets
+              </Button>
+              {anyBets ? <BetCopyButtons index={currentBetIndex} /> : null}
+            </Flex>
           </Box>
 
           {/* Prefetch the heavy editor table in the background to speed up the click into edit mode */}

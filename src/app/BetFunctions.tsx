@@ -532,7 +532,7 @@ function createHtmlTable(
   return html;
 }
 
-const BetCopyButtons = React.memo(
+export const BetCopyButtons = React.memo(
   (props: { index: number; [key: string]: unknown }): React.ReactElement => {
     const { index, ...rest } = props;
     const currentSelectedRound = useSelectedRound();
