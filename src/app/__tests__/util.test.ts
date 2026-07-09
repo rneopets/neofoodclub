@@ -6,6 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RoundData, RoundState } from '../../types';
 import { Bet, BetAmount } from '../../types/bets';
 import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX } from '../constants';
+import { computePiratesBinary } from '../maths';
 import {
   calculateRoundData,
   generateRandomIntegerInRange,
@@ -33,6 +34,12 @@ import {
   determineBetAmount,
   formatDate,
   getMaxSmartPercentDecimals,
+  getTableMode,
+  getBetSetPosition,
+  getBigBrainMode,
+  makeBetValues,
+  calculateRoundData,
+  calculateBetMaps,
 } from '../util';
 
 // Mock universal-cookie
@@ -1073,5 +1080,349 @@ describe('Utility Functions', () => {
         resultWithoutCustomOdds.legacyProbabilities.used,
       );
     });
+  });
+});
+
+describe('Cookie-backed settings', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetCookie.mockReset();
+  });
+
+  describe('getTableMode', () => {
+    it('returns the default "normal" when no cookie is set', () => {
+      mockGetCookie.mockReturnValue(undefined);
+      expect(getTableMode()).toBe('normal');
+    });
+
+    it('returns the cookie value when it is a valid option', () => {
+      mockGetCookie.mockReturnValue('dropdown');
+      expect(getTableMode()).toBe('dropdown');
+    });
+
+    it('falls back to the default when the cookie value is invalid', () => {
+      mockGetCookie.mockReturnValue('garbage');
+      expect(getTableMode()).toBe('normal');
+    });
+  });
+
+  describe('getBetSetPosition', () => {
+    it('returns the default "below" when no cookie is set', () => {
+      mockGetCookie.mockReturnValue(undefined);
+      expect(getBetSetPosition()).toBe('below');
+    });
+
+    it('returns the cookie value when it is a valid option', () => {
+      mockGetCookie.mockReturnValue('left');
+      expect(getBetSetPosition()).toBe('left');
+    });
+
+    it('returns "right" when the cookie is set to "right"', () => {
+      mockGetCookie.mockReturnValue('right');
+      expect(getBetSetPosition()).toBe('right');
+    });
+
+    it('falls back to the default when the cookie value is invalid', () => {
+      mockGetCookie.mockReturnValue('sideways');
+      expect(getBetSetPosition()).toBe('below');
+    });
+  });
+
+  describe('getBigBrainMode', () => {
+    it('returns the default true when no cookie is set', () => {
+      mockGetCookie.mockReturnValue(undefined);
+      expect(getBigBrainMode()).toBe(true);
+    });
+
+    it('returns true when the cookie is the boolean true', () => {
+      mockGetCookie.mockReturnValue(true);
+      expect(getBigBrainMode()).toBe(true);
+    });
+
+    it('returns false when the cookie is the boolean false', () => {
+      mockGetCookie.mockReturnValue(false);
+      expect(getBigBrainMode()).toBe(false);
+    });
+
+    it('returns false when the cookie is the string "false"', () => {
+      mockGetCookie.mockReturnValue('false');
+      expect(getBigBrainMode()).toBe(false);
+    });
+
+    it('returns true when the cookie is the string "true"', () => {
+      mockGetCookie.mockReturnValue('true');
+      expect(getBigBrainMode()).toBe(true);
+    });
+
+    it('falls back to the default when the cookie is an invalid/garbage string', () => {
+      mockGetCookie.mockReturnValue('garbage');
+      expect(getBigBrainMode()).toBe(true);
+    });
+
+    it('coerces numeric cookies (0 is false, nonzero is true)', () => {
+      mockGetCookie.mockReturnValue(0);
+      expect(getBigBrainMode()).toBe(false);
+      mockGetCookie.mockReturnValue(1);
+      expect(getBigBrainMode()).toBe(true);
+    });
+  });
+});
+
+describe('makeBetValues', () => {
+  it('forces oddsProduct/probProduct/payoff to 0 for an all-zero bet', () => {
+    const bets: Bet = new Map([[1, [0, 0, 0, 0, 0]]]);
+    const betAmounts: BetAmount = new Map([[1, 100]]);
+    const odds = [
+      [0, 2, 3, 4, 5],
+      [0, 2, 3, 4, 5],
+      [0, 2, 3, 4, 5],
+      [0, 2, 3, 4, 5],
+      [0, 2, 3, 4, 5],
+    ];
+    const probabilities = [
+      [0, 0.25, 0.25, 0.25, 0.25],
+      [0, 0.25, 0.25, 0.25, 0.25],
+      [0, 0.25, 0.25, 0.25, 0.25],
+      [0, 0.25, 0.25, 0.25, 0.25],
+      [0, 0.25, 0.25, 0.25, 0.25],
+    ];
+
+    const result = makeBetValues(bets, betAmounts, odds, probabilities);
+
+    expect(result.betBinaries.get(1)).toBe(0);
+    expect(result.betOdds.get(1)).toBe(0);
+    expect(result.betProbabilities.get(1)).toBe(0);
+    expect(result.betPayoffs.get(1)).toBe(0);
+    expect(result.betExpectedRatios.get(1)).toBe(0);
+    expect(result.betNetExpected.get(1)).toBe(-100);
+    expect(result.betMaxBets.get(1)).toBe(1_000_000);
+  });
+
+  it('computes exact odds/probability/payoff products for a normal 5-arena bet', () => {
+    const bets: Bet = new Map([[1, [1, 2, 3, 4, 1]]]);
+    const betAmounts: BetAmount = new Map([[1, 10]]);
+    const odds = [
+      [0, 2, 0, 0, 0],
+      [0, 0, 3, 0, 0],
+      [0, 0, 0, 4, 0],
+      [0, 0, 0, 0, 5],
+      [0, 6, 0, 0, 0],
+    ];
+    const probabilities = [
+      [0, 0.5, 0, 0, 0],
+      [0, 0, 0.4, 0, 0],
+      [0, 0, 0, 0.3, 0],
+      [0, 0, 0, 0, 0.2],
+      [0, 0.1, 0, 0, 0],
+    ];
+
+    const result = makeBetValues(bets, betAmounts, odds, probabilities);
+
+    expect(result.betBinaries.get(1)).toBeGreaterThan(0);
+    expect(result.betOdds.get(1)).toBe(720); // 2*3*4*5*6
+    expect(result.betProbabilities.get(1)!).toBeCloseTo(0.0012, 9); // 0.5*0.4*0.3*0.2*0.1
+    expect(result.betPayoffs.get(1)).toBe(7200); // 10 * 720
+    expect(result.betExpectedRatios.get(1)!).toBeCloseTo(0.864, 9); // 720 * 0.0012
+    expect(result.betNetExpected.get(1)!).toBeCloseTo(-1.36, 9); // 7200*0.0012 - 10
+    expect(result.betMaxBets.get(1)).toBe(1388); // floor(1_000_000 / 720)
+  });
+
+  it('caps payoff at 1,000,000', () => {
+    const bets: Bet = new Map([[1, [1, 0, 0, 0, 0]]]);
+    const betAmounts: BetAmount = new Map([[1, 1000]]);
+    const odds = [
+      [0, 5000, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ];
+    const probabilities = [
+      [0, 0.1, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ];
+
+    const result = makeBetValues(bets, betAmounts, odds, probabilities);
+
+    expect(result.betOdds.get(1)).toBe(5000);
+    // amount * oddsProduct = 1000 * 5000 = 5,000,000, capped at 1,000,000
+    expect(result.betPayoffs.get(1)).toBe(1_000_000);
+  });
+
+  it('returns all-empty maps for an empty bets Map', () => {
+    const bets: Bet = new Map();
+    const betAmounts: BetAmount = new Map();
+    const odds = [[], [], [], [], []];
+    const probabilities = [[], [], [], [], []];
+
+    const result = makeBetValues(bets, betAmounts, odds, probabilities);
+
+    expect(result.betBinaries.size).toBe(0);
+    expect(result.betOdds.size).toBe(0);
+    expect(result.betPayoffs.size).toBe(0);
+    expect(result.betProbabilities.size).toBe(0);
+    expect(result.betExpectedRatios.size).toBe(0);
+    expect(result.betNetExpected.size).toBe(0);
+    expect(result.betMaxBets.size).toBe(0);
+  });
+});
+
+describe('calculateRoundData', () => {
+  it('returns the uncalculated default shape when called with no arguments', () => {
+    const result = calculateRoundData();
+
+    expect(result.calculated).toBe(false);
+    expect(result.odds).toEqual([]);
+    expect(result.legacyProbabilities).toEqual({ min: [], std: [], max: [], used: [] });
+    expect(result.logitProbabilities).toEqual({ prob: [], used: [] });
+    expect(result.usedProbabilities).toEqual([]);
+    expect(result.pirateFAs.size).toBe(0);
+    expect(result.arenaRatios).toEqual([]);
+    expect(result.betOdds.size).toBe(0);
+    expect(result.betBinaries.size).toBe(0);
+    expect(result.payoutTables).toEqual({ odds: [], winnings: [] });
+    expect(result.winningBetBinary).toBe(0);
+    expect(result.totalBetAmounts).toBe(0);
+    expect(result.totalEnabledBets).toBe(0);
+  });
+
+  it('populates calculated fields for a valid round/bets/betAmounts combination', () => {
+    const roundState: RoundState = {
+      roundData: {
+        round: 8000,
+        pirates: [
+          [1, 2, 3, 4],
+          [5, 6, 7, 8],
+          [9, 10, 11, 12],
+          [13, 14, 15, 16],
+          [17, 18, 19, 20],
+        ],
+        openingOdds: [
+          [1, 2, 3, 4, 5],
+          [1, 2, 3, 4, 5],
+          [1, 2, 3, 4, 5],
+          [1, 2, 3, 4, 5],
+          [1, 2, 3, 4, 5],
+        ],
+        currentOdds: [
+          [1, 2, 3, 4, 5],
+          [1, 2, 3, 4, 5],
+          [1, 2, 3, 4, 5],
+          [1, 2, 3, 4, 5],
+          [1, 2, 3, 4, 5],
+        ],
+        foods: [
+          [1, 2, 3, 4],
+          [5, 6, 7, 8],
+          [9, 10, 11, 12],
+          [13, 14, 15, 16],
+          [17, 18, 19, 20],
+        ],
+        winners: [],
+      },
+      currentSelectedRound: 8000,
+      currentRound: 8000,
+      advanced: {
+        bigBrain: false,
+        faDetails: false,
+        oddsTimeline: false,
+        customOddsMode: false,
+        useLogitModel: false,
+      },
+      customOdds: null,
+      customProbs: null,
+      viewMode: false,
+      useWebDomain: false,
+      tableMode: 'normal',
+    };
+    const bets: Bet = new Map([[1, [1, 1, 1, 1, 1]]]);
+    const betAmounts: BetAmount = new Map([[1, 50]]);
+
+    const result = calculateRoundData(roundState, bets, betAmounts);
+
+    expect(result.calculated).toBe(true);
+    expect(result.odds).toEqual(roundState.roundData.currentOdds);
+    expect(result.betBinaries.get(1)).toBeGreaterThan(0);
+    expect(result.payoutTables.odds.length).toBeGreaterThan(0);
+    expect(result.payoutTables.winnings.length).toBeGreaterThan(0);
+    expect(result.totalEnabledBets).toBe(1);
+    expect(result.totalBetAmounts).toBe(50);
+  });
+});
+
+describe('calculateBetMaps', () => {
+  it('returns empty maps when odds is an empty array', () => {
+    const result = calculateBetMaps(
+      [
+        [0, 1],
+        [0, 1],
+      ],
+      [],
+      null,
+      0,
+    );
+    expect(result.betCaps.size).toBe(0);
+    expect(result.betOdds.size).toBe(0);
+    expect(result.pirateCombos.size).toBe(0);
+  });
+
+  it('computes betOdds/betCaps for a small pirateChoices cartesian product without pirateCombos', () => {
+    const pirateChoices = [
+      [0, 1],
+      [0, 1],
+    ];
+    const odds = [[0, 2], [0, 4], [], [], []];
+
+    const result = calculateBetMaps(pirateChoices, odds, null, 0, {
+      includePirateCombos: false,
+    });
+
+    // [0,0] produces betBinary 0 and is skipped; the other 3 combos are kept.
+    expect(result.betOdds.size).toBe(3);
+    expect(result.betCaps.size).toBe(3);
+    expect(result.pirateCombos.size).toBe(0);
+  });
+
+  it('also computes pirateCombos when includePirateCombos is true', () => {
+    const pirateChoices = [
+      [0, 1],
+      [0, 1],
+    ];
+    const odds = [[0, 2], [0, 4], [], [], []];
+    const probabilities = [[0, 0.5], [0, 0.6], [], [], []];
+
+    const result = calculateBetMaps(pirateChoices, odds, probabilities, 0, {
+      includePirateCombos: true,
+    });
+
+    expect(result.betOdds.size).toBe(3);
+    expect(result.pirateCombos.size).toBe(3);
+
+    // arena0=pirate1(odds 2), arena1=pirate1(odds 4) => betBinary for [1,1]
+    const binaryBothSelected = computePiratesBinary([1, 1]);
+    expect(result.betOdds.get(binaryBothSelected)).toBe(8); // 2 * 4
+    expect(result.pirateCombos.get(binaryBothSelected)).toBeCloseTo(2.4, 9); // 8 * (0.5*0.6)
+  });
+
+  it('applies the maxBet > 0 branch when computing pirateCombos', () => {
+    const pirateChoices = [
+      [0, 1],
+      [0, 1],
+    ];
+    const odds = [[0, 2], [0, 4], [], [], []];
+    const probabilities = [[0, 0.5], [0, 0.6], [], [], []];
+
+    const result = calculateBetMaps(pirateChoices, odds, probabilities, 1000, {
+      includePirateCombos: true,
+    });
+
+    const binaryBothSelected = computePiratesBinary([1, 1]);
+    // totalOdds=8, betCap=ceil(1_000_000/8)=125000, maxCap=min(125000,1000)=1000,
+    // winnings=min(1000*8,1_000_000)=8000, winChance=0.5*0.6=0.3
+    // pirateCombos = ((0.3*8000)/1000 - 1) * 1000 = 1400
+    expect(result.pirateCombos.get(binaryBothSelected)).toBeCloseTo(1400, 6);
   });
 });
