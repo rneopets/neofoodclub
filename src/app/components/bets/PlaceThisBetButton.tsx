@@ -124,15 +124,21 @@ const PlaceThisBetButton = React.memo(
     }
 
     if (hasDuplicates) {
-      return (
-        <ErrorBetButton>
-          Duplicate bet!
-          {myDuplicateColor && (
+      if (myDuplicateColor) {
+        return (
+          <ErrorBetButton>
+            Duplicate bet!
             <Badge colorPalette={myDuplicateColor} variant="solid" ml={1}>
               ●
             </Badge>
-          )}
-        </ErrorBetButton>
+          </ErrorBetButton>
+        );
+      }
+
+      return (
+        <BetButton colorPalette="nfc-green" variant="surface" disabled>
+          Place bet! <FaExternalLinkAlt />
+        </BetButton>
       );
     }
 
