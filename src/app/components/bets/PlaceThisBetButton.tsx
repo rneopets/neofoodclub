@@ -1,8 +1,9 @@
-import { Button, ButtonProps } from '@chakra-ui/react';
+import { Badge, Button, ButtonProps } from '@chakra-ui/react';
 import React, { useState, useCallback, useMemo } from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 
 import { useIsRoundOver } from '../../hooks/useIsRoundOver';
+import { computePiratesBinary } from '../../maths';
 import {
   useBetOdds,
   useBetPayoffs,
@@ -11,6 +12,10 @@ import {
   useBetBinaries,
 } from '../../stores';
 import { generateBetLinkUrl, openBetLinkInNewTab } from '../../utils/betUtils';
+import {
+  computeDuplicateBetGroupColors,
+  DUPLICATE_BET_COLOR_PALETTE,
+} from '../../utils/duplicateBetColors';
 
 // this element is the "Place Bet" button inside the PayoutTable
 
@@ -104,10 +109,13 @@ const PlaceThisBetButton = React.memo(
 
     const betAmount = useSpecificBetAmount(betNum);
     const betBinariesMap = useBetBinaries();
-    const hasDuplicates = useMemo(() => {
-      const binaries = Array.from(betBinariesMap.values()).filter(b => b > 0);
-      return new Set(binaries).size !== binaries.length;
-    }, [betBinariesMap]);
+    const duplicateColors = useMemo(
+      () => computeDuplicateBetGroupColors(betBinariesMap),
+      [betBinariesMap],
+    );
+    const hasDuplicates = duplicateColors.size > 0;
+    const thisBetBinary = useMemo(() => computePiratesBinary(bet), [bet]);
+    const myDuplicateColor = duplicateColors.get(thisBetBinary);
 
     const isRoundOver = useIsRoundOver();
 
@@ -115,12 +123,45 @@ const PlaceThisBetButton = React.memo(
       return <ErrorBetButton>Round is over!</ErrorBetButton>;
     }
 
+    if (myDuplicateColor) {
+      const duplicateGroupNumber =
+        DUPLICATE_BET_COLOR_PALETTE.indexOf(
+          myDuplicateColor as (typeof DUPLICATE_BET_COLOR_PALETTE)[number],
+        ) + 1;
+
+      return (
+        <ErrorBetButton>
+          Duplicate bet!
+          <Badge
+            colorPalette={myDuplicateColor}
+            variant="solid"
+            ml={2}
+            borderRadius="full"
+            minW="16px"
+            h="16px"
+            display="inline-flex"
+            alignItems="center"
+            justifyContent="center"
+            px={1}
+            fontSize="xs"
+            border="2px solid white"
+          >
+            {duplicateGroupNumber}
+          </Badge>
+        </ErrorBetButton>
+      );
+    }
+
     if (betAmount < 1) {
       return <ErrorBetButton>Invalid bet amount!</ErrorBetButton>;
     }
 
     if (hasDuplicates) {
-      return <ErrorBetButton>Duplicate bet!</ErrorBetButton>;
+      return (
+        <BetButton colorPalette="nfc-green" variant="surface" disabled>
+          Place bet! <FaExternalLinkAlt />
+        </BetButton>
+      );
     }
 
     return (

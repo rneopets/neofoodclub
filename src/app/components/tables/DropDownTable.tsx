@@ -19,6 +19,7 @@ import {
   useBigBrain,
 } from '../../stores';
 import { displayAsPercent } from '../../util';
+import { computeDuplicateBetGroupColors } from '../../utils/duplicateBetColors';
 import ClearBetsButton from '../bets/ClearBetsButton';
 import PirateSelect from '../bets/PirateSelect';
 
@@ -62,15 +63,16 @@ const DropDownTableRow = React.memo(
   ({
     betNum,
     rowHandlers,
-    isBetDuplicate,
+    duplicateColors,
   }: {
     betNum: number;
     rowHandlers: ((e: React.ChangeEvent<HTMLSelectElement>) => void)[];
-    isBetDuplicate: (betBinary: number) => boolean;
+    duplicateColors: Map<number, string>;
   }) => {
     const currentBetLine = useBetLineSpecific(betNum + 1);
     const thisBetBinary = useSpecificBetBinary(betNum + 1);
     const loaded = useIsCalculated();
+    const duplicateColor = duplicateColors.get(thisBetBinary);
 
     return (
       <Table.Row>
@@ -89,7 +91,7 @@ const DropDownTableRow = React.memo(
             />
           );
         })}
-        <Td>{isBetDuplicate(thisBetBinary) && <DuplicateBadge />}</Td>
+        <Td>{duplicateColor && <DuplicateBadge color={duplicateColor} />}</Td>
       </Table.Row>
     );
   },
@@ -186,8 +188,8 @@ const ClearButtonHeader = React.memo(() => (
 
 ClearButtonHeader.displayName = 'ClearButtonHeader';
 
-const DuplicateBadge = React.memo(() => (
-  <Badge colorPalette="nfc-red" variant="subtle" fontSize="xs">
+const DuplicateBadge = React.memo(({ color }: { color: string }) => (
+  <Badge colorPalette={color} variant="subtle" fontSize="xs">
     ❌ Duplicate
   </Badge>
 ));
@@ -282,24 +284,9 @@ const DropDownTable = React.memo(
     const betBinariesMap = useBetBinaries();
     const updateSinglePirate = useUpdateSinglePirate();
 
-    const duplicateBinaries = useMemo(() => {
-      const seen = new Set<number>();
-      const duplicates = new Set<number>();
-      for (const binary of betBinariesMap.values()) {
-        if (binary > 0) {
-          if (seen.has(binary)) {
-            duplicates.add(binary);
-          } else {
-            seen.add(binary);
-          }
-        }
-      }
-      return Array.from(duplicates);
-    }, [betBinariesMap]);
-
-    const isBetDuplicate = useCallback(
-      (betBinary: number): boolean => duplicateBinaries.includes(betBinary),
-      [duplicateBinaries],
+    const duplicateColors = useMemo(
+      () => computeDuplicateBetGroupColors(betBinariesMap),
+      [betBinariesMap],
     );
 
     const { openTimelineDrawer } = timelineHandlers;
@@ -378,11 +365,11 @@ const DropDownTable = React.memo(
               key={`dropdown-bet-${betNum}`}
               betNum={betNum}
               rowHandlers={rowHandlers}
-              isBetDuplicate={isBetDuplicate}
+              duplicateColors={duplicateColors}
             />
           );
         }),
-      [amountOfBets, allRowHandlers, isBetDuplicate],
+      [amountOfBets, allRowHandlers, duplicateColors],
     );
 
     return (
