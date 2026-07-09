@@ -1,4 +1,5 @@
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
+ARG PYTHON_VERSION=3.13
+FROM ghcr.io/astral-sh/uv:python${PYTHON_VERSION}-bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*

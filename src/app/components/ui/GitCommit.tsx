@@ -1,7 +1,7 @@
 import { Box, Link, Text, Code } from '@chakra-ui/react';
 
 export function GitCommit(): React.ReactElement {
-  const commitHash = process.env['REACT_APP_GIT_COMMIT_SHA'] || 'development';
+  const commitHash = import.meta.env.VITE_GIT_COMMIT_SHA || 'development';
   const shortHash = commitHash.substring(0, 7);
 
   return (

@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main, master ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Test & Build
@@ -16,10 +20,10 @@ jobs:
       pull-requests: write
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v7
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: '24'
         cache: 'npm'
@@ -37,18 +41,20 @@ jobs:
       run: npm run test:coverage
 
     - name: Build
+      env:
+        VITE_GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       run: npm run build
 
     - name: Upload Coverage
       if: github.event_name == 'pull_request'
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v7
       with:
         file: ./coverage/lcov.info
         fail_ci_if_error: false
 
     - name: Coverage Comment
       if: github.event_name == 'pull_request'
-      uses: romeovs/lcov-reporter-action@v0.3.1
+      uses: romeovs/lcov-reporter-action@v0.4.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         lcov-file: ./coverage/lcov.info
@@ -56,7 +62,7 @@ jobs:
 
     - name: Upload Test Artifacts
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: test-results
         path: |

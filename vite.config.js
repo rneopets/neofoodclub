@@ -16,7 +16,7 @@ export default defineConfig({
     }),
     tsconfigPaths(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       injectRegister: 'auto',
       manifest: {
         name: 'NeoFoodClub',
@@ -66,15 +66,32 @@ export default defineConfig({
     outDir: 'build',
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
           // Split Chakra UI into its own chunk
-          'chakra-ui': ['@chakra-ui/react', '@emotion/react'],
+          if (id.includes('/@chakra-ui/react') || id.includes('/@emotion/react')) {
+            return 'chakra-ui';
+          }
           // Split Chart.js into its own chunk
-          chart: ['chart.js', 'react-chartjs-2', 'chartjs-plugin-annotation'],
+          if (
+            id.includes('/chart.js') ||
+            id.includes('/react-chartjs-2') ||
+            id.includes('/chartjs-plugin-annotation')
+          ) {
+            return 'chart';
+          }
           // Split React libraries
-          'react-vendor': ['react', 'react-dom'],
+          if (id.includes('/react/') || id.includes('/react-dom/')) {
+            return 'react-vendor';
+          }
           // Split icons and other UI libraries
-          'ui-vendor': ['react-icons', 'date-fns', 'date-fns-tz'],
+          if (
+            id.includes('/react-icons') ||
+            id.includes('/date-fns/') ||
+            id.includes('/date-fns-tz')
+          ) {
+            return 'ui-vendor';
+          }
         },
       },
     },

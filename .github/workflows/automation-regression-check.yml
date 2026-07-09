@@ -1,0 +1,120 @@
+name: Automation Regression Check
+
+on:
+  pull_request:
+    paths:
+      - 'automation/**/*.py'
+      - 'automation/pyproject.toml'
+      - 'automation/uv.lock'
+      - 'automation/.python-version'
+      - 'automation/Dockerfile'
+      - 'automation/docker-compose.yml'
+      - '.github/workflows/automation-regression-check.yml'
+
+jobs:
+  check-outputs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: automation/.python-version
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.3.2
+        with:
+          version: 'latest'
+
+      - name: Install dependencies
+        working-directory: automation
+        run: uv sync
+
+      - name: Backup original outputs
+        working-directory: automation
+        run: |
+          mkdir -p original_outputs
+          # Verify original file exists before backing up
+          if [ -f "output/python.py" ]; then
+            cp "output/python.py" "original_outputs/python.py"
+          else
+            echo "Warning: output/python.py does not exist in repository"
+          fi
+
+      - name: Run final.py
+        working-directory: automation
+        run: uv run python final.py
+
+      - name: Compare outputs
+        working-directory: automation
+        id: compare
+        continue-on-error: true
+        run: |
+          echo "Comparing generated python.py with existing file..."
+
+          HAS_DIFF=false
+          ORIGINAL_EXISTS=false
+
+          # Check if file was generated
+          if [ ! -f "output/python.py" ]; then
+            echo "Error: output/python.py was not generated"
+            exit 1
+          fi
+
+          # Compare the file and capture diff
+          if [ -f "original_outputs/python.py" ]; then
+            ORIGINAL_EXISTS=true
+            diff -u "original_outputs/python.py" "output/python.py" > diff_output.txt 2>&1 || true
+            if [ -s diff_output.txt ]; then
+              HAS_DIFF=true
+              echo "has_diff=true" >> $GITHUB_OUTPUT
+              echo "Error: output/python.py differs from expected"
+              exit 1
+            else
+              echo "has_diff=false" >> $GITHUB_OUTPUT
+              rm -f diff_output.txt
+              echo "✓ output/python.py matches expected"
+            fi
+          else
+            echo "has_diff=false" >> $GITHUB_OUTPUT
+            echo "Warning: output/python.py was not present in repository, cannot compare"
+          fi
+
+          echo "{\"has_diff\":${HAS_DIFF},\"original_exists\":${ORIGINAL_EXISTS}}" > compare-result.json
+
+          echo "Output file matches expected value."
+
+      - name: Upload comparison results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: automation-output-check
+          path: |
+            automation/compare-result.json
+            automation/diff_output.txt
+          if-no-files-found: ignore
+
+      - name: Fail if diff detected
+        if: steps.compare.outcome == 'failure'
+        run: exit 1
+
+  docker-build-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Build automation Docker image
+        working-directory: automation
+        run: |
+          PYTHON_VERSION="$(cat .python-version)"
+          export PYTHON_VERSION
+          docker compose build nfc_values

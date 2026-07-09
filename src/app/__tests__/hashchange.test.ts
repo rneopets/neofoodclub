@@ -8,10 +8,12 @@ import { makeBetURL, parseBetUrl } from '../util';
 
 // Mock universal-cookie before any store imports
 vi.mock('universal-cookie', () => ({
-  default: vi.fn().mockImplementation(() => ({
-    get: vi.fn().mockReturnValue(undefined),
-    set: vi.fn(),
-  })),
+  default: vi.fn().mockImplementation(function () {
+    return {
+      get: vi.fn().mockReturnValue(undefined),
+      set: vi.fn(),
+    };
+  }),
 }));
 
 // Mock fetch globally
@@ -109,13 +111,13 @@ describe('hashchange listener', () => {
                 [1, 2, 3, 4, 5],
               ],
               foods: [
-                [1, 2, 3, 4],
-                [5, 6, 7, 8],
-                [9, 10, 11, 12],
-                [13, 14, 15, 16],
-                [17, 18, 19, 20],
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
               ],
-              winners: [],
+              winners: [0, 0, 0, 0, 0],
             }),
         });
       }
