@@ -8,10 +8,12 @@ import { makeBetURL, parseBetUrl } from '../util';
 
 // Mock universal-cookie before any store imports
 vi.mock('universal-cookie', () => ({
-  default: vi.fn().mockImplementation(() => ({
-    get: vi.fn().mockReturnValue(undefined),
-    set: vi.fn(),
-  })),
+  default: vi.fn().mockImplementation(function () {
+    return {
+      get: vi.fn().mockReturnValue(undefined),
+      set: vi.fn(),
+    };
+  }),
 }));
 
 // Mock fetch globally
