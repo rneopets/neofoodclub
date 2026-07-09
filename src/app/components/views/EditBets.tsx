@@ -304,6 +304,64 @@ export default React.memo(function EditBets(): React.ReactElement {
 
   return (
     <>
+      {/* Settings accordion - shown in both view mode and edit mode */}
+      <Box w="full" mb={0} data-testid="view-controls">
+        <Box
+          w="100%"
+          bg={'bg'}
+          boxShadow={shadowValue}
+          borderRadius={{ base: 'md', lg: 0 }}
+          overflow="visible"
+        >
+          <Accordion.Root
+            collapsible
+            variant="subtle"
+            px={4}
+            py={2}
+            value={accordionValue}
+            onValueChange={(details: { value: string[] }) => {
+              setAccordionValue(details.value);
+              cookies.set('settingsAccordionExpanded', details.value.includes('settings'));
+            }}
+          >
+            <Accordion.Item value="settings">
+              <Accordion.ItemTrigger
+                transition="all 0.2s ease-in-out"
+                _hover={{
+                  bg: 'bg.emphasized',
+                  borderRadius: 'md',
+                }}
+              >
+                <HStack gap={2} flex="1">
+                  <FaGear size={14} />
+                  <Text fontSize="sm" fontWeight="semibold">
+                    Settings
+                  </Text>
+                </HStack>
+                <Accordion.ItemIndicator />
+              </Accordion.ItemTrigger>
+              <Accordion.ItemContent overflow="visible">
+                <Accordion.ItemBody>
+                  <VStack gap={2} align="stretch" width="100%">
+                    <TableModes />
+
+                    <BetSetPosition />
+
+                    <LogitModelToggle />
+
+                    <CopyDomainToggle />
+
+                    <Extras />
+
+                    <ColorModeToggle />
+                  </VStack>
+                </Accordion.ItemBody>
+              </Accordion.ItemContent>
+            </Accordion.Item>
+          </Accordion.Root>
+        </Box>
+      </Box>
+
       {viewMode && (
         <>
           <Box bgColor={'bg.emphasized'} p={4}>
@@ -329,69 +387,7 @@ export default React.memo(function EditBets(): React.ReactElement {
         </>
       )}
 
-      {!viewMode && (
-        <>
-          {/* View / table mode controls (above sidebar + content) */}
-          <Box w="full" mb={0} data-testid="view-controls">
-            <Box
-              w="100%"
-              bg={'bg'}
-              boxShadow={shadowValue}
-              borderRadius={{ base: 'md', lg: 0 }}
-              overflow="visible"
-            >
-              <Accordion.Root
-                collapsible
-                variant="subtle"
-                px={4}
-                py={2}
-                value={accordionValue}
-                onValueChange={(details: { value: string[] }) => {
-                  setAccordionValue(details.value);
-                  cookies.set('settingsAccordionExpanded', details.value.includes('settings'));
-                }}
-              >
-                <Accordion.Item value="settings">
-                  <Accordion.ItemTrigger
-                    transition="all 0.2s ease-in-out"
-                    _hover={{
-                      bg: 'bg.emphasized',
-                      borderRadius: 'md',
-                    }}
-                  >
-                    <HStack gap={2} flex="1">
-                      <FaGear size={14} />
-                      <Text fontSize="sm" fontWeight="semibold">
-                        Settings
-                      </Text>
-                    </HStack>
-                    <Accordion.ItemIndicator />
-                  </Accordion.ItemTrigger>
-                  <Accordion.ItemContent overflow="visible">
-                    <Accordion.ItemBody>
-                      <VStack gap={2} align="stretch" width="100%">
-                        <TableModes />
-
-                        <BetSetPosition />
-
-                        <LogitModelToggle />
-
-                        <CopyDomainToggle />
-
-                        <Extras />
-
-                        <ColorModeToggle />
-                      </VStack>
-                    </Accordion.ItemBody>
-                  </Accordion.ItemContent>
-                </Accordion.Item>
-              </Accordion.Root>
-            </Box>
-          </Box>
-
-          {betsLayout}
-        </>
-      )}
+      {!viewMode && <>{betsLayout}</>}
 
       {anyBets && (
         <Portal container={viewMode ? viewBetAmountsContainerRef : editBetAmountsContainerRef}>
