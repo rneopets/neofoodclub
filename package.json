@@ -83,7 +83,6 @@
     "prettier": "^3.8.4",
     "vite": "^8.1.3",
     "vite-plugin-pwa": "1.3.0",
-    "vite-tsconfig-paths": "^6.0.0",
     "vitest": "4.1.10",
     "workbox-core": "^7.0.0",
     "workbox-expiration": "^7.0.0",
