@@ -307,7 +307,7 @@ export default React.memo(function EditBets(): React.ReactElement {
       {viewMode && (
         <>
           <Box bgColor={'bg.emphasized'} p={4}>
-            <Flex align="center" justify="space-between" wrap="wrap" gap={2}>
+            <Flex align="center" justify="flex-start" wrap="wrap" gap={4}>
               <Button colorPalette="blackAlpha" onClick={handleEditModeClick}>
                 <FaPenToSquare />
                 Edit these bets
