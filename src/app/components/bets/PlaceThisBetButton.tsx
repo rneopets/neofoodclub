@@ -12,7 +12,10 @@ import {
   useBetBinaries,
 } from '../../stores';
 import { generateBetLinkUrl, openBetLinkInNewTab } from '../../utils/betUtils';
-import { computeDuplicateBetGroupColors } from '../../utils/duplicateBetColors';
+import {
+  computeDuplicateBetGroupColors,
+  DUPLICATE_BET_COLOR_PALETTE,
+} from '../../utils/duplicateBetColors';
 
 // this element is the "Place Bet" button inside the PayoutTable
 
@@ -119,22 +122,40 @@ const PlaceThisBetButton = React.memo(
       return <ErrorBetButton>Round is over!</ErrorBetButton>;
     }
 
+    if (myDuplicateColor) {
+      const duplicateGroupNumber =
+        DUPLICATE_BET_COLOR_PALETTE.indexOf(
+          myDuplicateColor as (typeof DUPLICATE_BET_COLOR_PALETTE)[number],
+        ) + 1;
+
+      return (
+        <ErrorBetButton>
+          Duplicate bet!
+          <Badge
+            colorPalette={myDuplicateColor}
+            variant="solid"
+            ml={2}
+            borderRadius="full"
+            minW="16px"
+            h="16px"
+            display="inline-flex"
+            alignItems="center"
+            justifyContent="center"
+            px={1}
+            fontSize="xs"
+            border="2px solid white"
+          >
+            {duplicateGroupNumber}
+          </Badge>
+        </ErrorBetButton>
+      );
+    }
+
     if (betAmount < 1) {
       return <ErrorBetButton>Invalid bet amount!</ErrorBetButton>;
     }
 
     if (hasDuplicates) {
-      if (myDuplicateColor) {
-        return (
-          <ErrorBetButton>
-            Duplicate bet!
-            <Badge colorPalette={myDuplicateColor} variant="solid" ml={1}>
-              ●
-            </Badge>
-          </ErrorBetButton>
-        );
-      }
-
       return (
         <BetButton colorPalette="nfc-green" variant="surface" disabled>
           Place bet! <FaExternalLinkAlt />
