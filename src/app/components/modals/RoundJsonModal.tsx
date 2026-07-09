@@ -12,16 +12,26 @@ import {
 } from '@chakra-ui/react';
 import * as React from 'react';
 import { FaCode } from 'react-icons/fa';
-import type { BundledLanguage, BundledTheme, HighlighterGeneric } from 'shiki';
+import type { HighlighterGeneric } from 'shiki';
 
 import { useRoundStore } from '../../stores';
 
-const shikiAdapter = createShikiAdapter<HighlighterGeneric<BundledLanguage, BundledTheme>>({
+// Uses the fine-grained core API (rather than `createHighlighter` from the
+// `shiki` package) so the bundler only includes the json language and
+// github-dark theme instead of every language/theme shiki ships.
+const shikiAdapter = createShikiAdapter<HighlighterGeneric<'json', 'github-dark'>>({
   async load() {
-    const { createHighlighter } = await import('shiki');
-    return createHighlighter({
-      langs: ['json'],
-      themes: ['github-dark'],
+    const [{ createHighlighterCore }, { createOnigurumaEngine }, json, githubDark] =
+      await Promise.all([
+        import('shiki/core'),
+        import('shiki/engine/oniguruma'),
+        import('shiki/langs/json.mjs'),
+        import('shiki/themes/github-dark.mjs'),
+      ]);
+    return createHighlighterCore({
+      langs: [json.default],
+      themes: [githubDark.default],
+      engine: createOnigurumaEngine(import('shiki/wasm')),
     });
   },
   theme: 'github-dark',
