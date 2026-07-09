@@ -32,10 +32,12 @@ import {
 // Mock universal-cookie
 const mockGetCookie = vi.fn();
 vi.mock('universal-cookie', () => ({
-  default: vi.fn().mockImplementation(() => ({
-    get: mockGetCookie,
-    set: vi.fn(),
-  })),
+  default: vi.fn().mockImplementation(function () {
+    return {
+      get: mockGetCookie,
+      set: vi.fn(),
+    };
+  }),
 }));
 
 // Mock moment - using factory function to avoid hoisting issues
