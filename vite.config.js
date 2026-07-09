@@ -4,6 +4,13 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
+// Cloudflare Pages doesn't set VITE_GIT_COMMIT_SHA itself, but it exposes the
+// deployed commit as CF_PAGES_COMMIT_SHA. Bridge it so Vite's normal VITE_ env
+// handling picks it up, matching what CI already sets explicitly.
+if (!process.env.VITE_GIT_COMMIT_SHA && process.env.CF_PAGES_COMMIT_SHA) {
+  process.env.VITE_GIT_COMMIT_SHA = process.env.CF_PAGES_COMMIT_SHA;
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -50,9 +57,6 @@ export default defineConfig({
     extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.json'],
   },
   define: {
-    'process.env.REACT_APP_GIT_COMMIT_SHA': JSON.stringify(
-      process.env.CF_PAGES_COMMIT_SHA || 'development',
-    ),
     'import.meta.env.DISABLE_REACT_SCAN': JSON.stringify(
       process.env.DISABLE_REACT_SCAN === 'true',
     ),
