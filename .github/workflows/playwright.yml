@@ -7,7 +7,7 @@ on:
     branches: [ main, master ]
 
 jobs:
-  test:
+  test-shard:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     strategy:
@@ -64,3 +64,16 @@ jobs:
         name: test-results-${{ matrix.shard }}
         path: test-results/
         retention-days: 30
+
+  test:
+    name: test
+    needs: test-shard
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Check shard results
+      run: |
+        if [ "${{ needs.test-shard.result }}" != "success" ]; then
+          echo "One or more Playwright shards failed: ${{ needs.test-shard.result }}"
+          exit 1
+        fi
