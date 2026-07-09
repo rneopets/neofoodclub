@@ -64,12 +64,13 @@ describe('computePirateFAs', () => {
   });
 
   it('computes exact favorite/allergy values for a known pirate/food combination', () => {
-    // Default fixture: arena 0 pirates are [1,2,3,4], arena 0 foods are [1,2,3,4].
-    // POSITIVE_FAS[1] = { 1: 2, 2: 0, 3: 0, 4: 1, ... } => sum for foods [1,2,3,4] = 3.
-    // NEGATIVE_FAS[1] = { 1: 0, 2: 0, 3: 0, 4: 0, ... } => sum for foods [1,2,3,4] = 0.
+    // Default fixture: arena 0 pirate index 0 is pirate 1, arena 0 foods are [1..10].
+    // POSITIVE_FAS[1] = { 1: 2, 2: 0, 3: 0, 4: 1, 5: 0, 6: 1, 7: 1, 8: 1, 9: 0, 10: 1, ... }
+    //   => sum for foods [1..10] = 2+0+0+1+0+1+1+1+0+1 = 7.
+    // NEGATIVE_FAS[1] = { 1: 0, 2: 0, ..., 10: 0 } => sum for foods [1..10] = 0.
     const result = computePirateFAs(makeRoundData());
     const arena0 = result.get(0)!;
-    expect(arena0[0]).toEqual([3, 0]);
+    expect(arena0[0]).toEqual([7, 0]);
   });
 
   it('returns all zeroes when foods is an empty array', () => {
