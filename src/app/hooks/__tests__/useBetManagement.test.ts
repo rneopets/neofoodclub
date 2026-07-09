@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { makeRoundData } from '../../../test/utils';
 import type { RoundData } from '../../../types';
 import type { Bet, BetAmount } from '../../../types/bets';
 import { BET_AMOUNT_DEFAULT, defaultRoundData } from '../../constants';
@@ -26,46 +27,6 @@ vi.mock('universal-cookie', () => ({
 // Allow betStore's lazy dynamic import of roundStore to resolve.
 async function waitForStoreInit(): Promise<void> {
   await new Promise(resolve => setTimeout(resolve, 50));
-}
-
-// Builds a RoundData fixture with real (non-default) round data and varying odds so that
-// arena ratios / probabilities differ across arenas. `useRoundStore.recalculate()` treats an
-// object that is `===` to `defaultRoundData` (or has empty `pirates`) as a sentinel that keeps
-// `calculations` empty, so this always returns a *fresh* object.
-function makeRoundData(overrides: Partial<RoundData> = {}): RoundData {
-  return {
-    round: 8000,
-    pirates: [
-      [1, 2, 3, 4],
-      [5, 6, 7, 8],
-      [9, 10, 11, 12],
-      [13, 14, 15, 16],
-      [17, 18, 19, 20],
-    ],
-    openingOdds: [
-      [1, 2, 3, 4, 5],
-      [1, 3, 4, 5, 6],
-      [1, 2, 5, 6, 7],
-      [1, 4, 3, 7, 8],
-      [1, 5, 6, 2, 9],
-    ],
-    currentOdds: [
-      [1, 2, 3, 4, 5],
-      [1, 3, 4, 5, 6],
-      [1, 2, 5, 6, 7],
-      [1, 4, 3, 7, 8],
-      [1, 5, 6, 2, 9],
-    ],
-    foods: [
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    ],
-    winners: [0, 0, 0, 0, 0],
-    ...overrides,
-  };
 }
 
 // A round whose odds produce exactly one "positive" arena (arena 0), used to exercise the
