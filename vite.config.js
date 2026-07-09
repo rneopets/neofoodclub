@@ -50,10 +50,8 @@ export default defineConfig({
     extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.json'],
   },
   define: {
-    'process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA': JSON.stringify(
-      process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA ||
-        process.env.VERCEL_GIT_COMMIT_SHA ||
-        'development',
+    'process.env.REACT_APP_GIT_COMMIT_SHA': JSON.stringify(
+      process.env.CF_PAGES_COMMIT_SHA || 'development',
     ),
     'import.meta.env.DISABLE_REACT_SCAN': JSON.stringify(
       process.env.DISABLE_REACT_SCAN === 'true',
