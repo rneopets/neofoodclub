@@ -37,7 +37,7 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "e2e", "playwright.config.ts", "vercel-build.ts"],
+  "include": ["src", "e2e", "playwright.config.ts"],
   "exclude": ["vitest.config.ts"],
   "typeRoots": ["./node_modules/@types", "./src/types"]
 }

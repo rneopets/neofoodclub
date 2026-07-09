@@ -97,30 +97,6 @@ check:
 	just lint
 	just test-run
 
-# Run Vercel build helper (Vite automatically copies public assets)
-vercel-build:
-	just build-assets
-
-# Vercel: local dev
-vercel-dev:
-	npx --yes vercel dev
-
-# Vercel: link project to current directory
-vercel-link:
-	npx --yes vercel link --yes
-
-# Vercel: login (interactive)
-vercel-login:
-	npx --yes vercel login
-
-# Vercel: deploy preview
-vercel-deploy-preview:
-	npx --yes vercel deploy --prebuilt --yes
-
-# Vercel: deploy production
-vercel-deploy-prod:
-	npx --yes vercel deploy --prebuilt --prod --yes
-
 # Automation: run dockerized monthly updater via compose
 automation-update:
 	cd automation && docker compose run --rm nfc_values

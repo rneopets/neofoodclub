@@ -17,7 +17,6 @@ export default [
       'coverage',
       '.github',
       'automation',
-      'vercel-build.ts',
       '.prettierrc.cjs',
       '.eslintrc.cjs',
       'vite.config.js',

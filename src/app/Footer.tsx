@@ -28,7 +28,6 @@ import {
 import { DevModeDrawer } from './components/dev/DevModeDrawer';
 import { useHelpGuide } from './components/help/HelpGuideProvider';
 import { GitCommit } from './components/ui/GitCommit';
-import { VercelCredit } from './components/ui/VercelCredit';
 import NeopointIcon from './images/np-icon.svg';
 import { useSelectedRound, useCurrentBet, useAllBets, useAllBetAmounts } from './stores';
 import { makeBetURL } from './util';
@@ -267,9 +266,6 @@ const Footer: React.FC<FooterProps> = props => {
             This is an unofficial Neopets fansite with no affiliation/endorsement with Neopets.
             <br /> Images/Names &copy; Neopets, Inc. All rights reserved. Used With Permission.
           </Text>
-          <Center>
-            <VercelCredit />
-          </Center>
           <Center mt={3}>
             <GitCommit />
           </Center>
