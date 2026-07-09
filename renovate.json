@@ -2,5 +2,12 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<6.1.0",
+      "description": "Pin typescript below 6.1.0 until @typescript-eslint supports the new major (TS 7 dropped APIs such as ts.Extension and the downlevelIteration compiler option that typescript-eslint and this repo's tsconfig currently rely on)."
+    }
   ]
 }
