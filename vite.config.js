@@ -73,6 +73,11 @@ export default defineConfig({
   },
   build: {
     outDir: 'build',
+    // vite-plugin-top-level-await downlevels TLA-transformed chunks to Vite's
+    // legacy default target unless build.target is explicitly "esnext", and
+    // that downlevel pass fails on Rolldown's output. WASM already requires a
+    // modern browser baseline, so esnext is not a meaningful regression.
+    target: 'esnext',
     rollupOptions: {
       output: {
         manualChunks(id) {
