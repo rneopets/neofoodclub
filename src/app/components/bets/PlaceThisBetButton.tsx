@@ -90,7 +90,6 @@ const ActivePlaceBetButton = React.memo(
         colorPalette="nfc-green"
         variant="surface"
         opacity={clicked ? 0.5 : 1}
-        _hover={{ bg: 'colorPalette.emphasized' }}
       >
         {clicked ? 'Bet placed!' : 'Place bet!'} <FaExternalLinkAlt />
       </BetButton>
