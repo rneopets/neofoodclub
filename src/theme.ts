@@ -98,18 +98,70 @@ const nfc = {
   yellow: '#FAF089',
 } as const;
 
-const nfcPalette = (
-  light: string,
-  dark: string,
-  fallbackPalette: string,
-): SemanticColorPalette => ({
-  contrast: semanticColor(v2Gray[800], '{colors.white}', `{colors.${fallbackPalette}.contrast}`),
-  fg: semanticColor(v2Gray[800], '{colors.white}', `{colors.${fallbackPalette}.fg}`),
-  subtle: semanticColor(light, dark, `{colors.${fallbackPalette}.subtle}`),
-  muted: semanticColor(light, dark, `{colors.${fallbackPalette}.muted}`),
-  emphasized: semanticColor(light, dark, `{colors.${fallbackPalette}.emphasized}`),
-  solid: semanticColor(light, dark, `{colors.${fallbackPalette}.solid}`),
-  focusRing: semanticColor(light, dark, `{colors.${fallbackPalette}.focusRing}`),
+// Precomputed shades (darken(nfc[name], 0.12) / darken(nfc[name], 0.25)) so the
+// surface/subtle button variants have distinct hover/active backgrounds instead
+// of collapsing to the flat accent color. Values are static, not computed at
+// runtime, to match the rest of this file's palette() convention.
+const nfcMuted = {
+  blue: '#7FB4D7',
+  cyan: '#8AD0DB',
+  green: '#88CA9E',
+  pink: '#DDA0B5',
+  purple: '#BCA5DC',
+  red: '#E09D9D',
+  orange: '#DDBA7C',
+  teal: '#72CABF',
+  yellow: '#DCD379',
+} as const;
+
+const nfcEmphasized = {
+  blue: '#6C9AB7',
+  cyan: '#76B1BB',
+  green: '#74AD87',
+  pink: '#BC899B',
+  purple: '#A18DBC',
+  red: '#BF8686',
+  orange: '#BC9E6A',
+  teal: '#61ADA3',
+  yellow: '#BCB467',
+} as const;
+
+const nfcDarkMuted = {
+  blue: '#428DC9',
+  cyan: '#40B3C4',
+  green: '#46AA70',
+  pink: '#C44082',
+  purple: '#7140C4',
+  red: '#D95F5F',
+  orange: '#D38037',
+  teal: '#2B8583',
+  yellow: '#E0AC00',
+} as const;
+
+const nfcDarkEmphasized = {
+  blue: '#3878AB',
+  cyan: '#3798A7',
+  green: '#3C915F',
+  pink: '#A7376F',
+  purple: '#6037A7',
+  red: '#B95151',
+  orange: '#B46E2F',
+  teal: '#257170',
+  yellow: '#BF9200',
+} as const;
+
+const nfcPalette = (name: keyof typeof nfcDark): SemanticColorPalette => ({
+  contrast: semanticColor(v2Gray[800], '{colors.white}', `{colors.${name}.contrast}`),
+  fg: semanticColor(v2Gray[800], '{colors.white}', `{colors.${name}.fg}`),
+  subtle: semanticColor(nfc[name], nfcDark[name], `{colors.${name}.subtle}`),
+  muted: semanticColor(nfcMuted[name], nfcDarkMuted[name], `{colors.${name}.muted}`),
+  emphasized: semanticColor(
+    nfcEmphasized[name],
+    nfcDarkEmphasized[name],
+    `{colors.${name}.emphasized}`,
+  ),
+  solid: semanticColor(nfc[name], nfcDark[name], `{colors.${name}.solid}`),
+  focusRing: semanticColor(nfc[name], nfcDark[name], `{colors.${name}.focusRing}`),
 });
 
 const v2Colors = {
@@ -304,15 +356,15 @@ const baseConfig = defineConfig({
         cyan: palette(v2Colors.cyan, 'cyan', nfcDark.cyan),
         purple: palette(v2Colors.purple, 'purple', nfcDark.purple),
         pink: palette(v2Colors.pink, 'pink', nfcDark.pink),
-        'nfc-blue': nfcPalette(nfc.blue, nfcDark.blue, 'blue'),
-        'nfc-green': nfcPalette(nfc.green, nfcDark.green, 'green'),
-        'nfc-red': nfcPalette(nfc.red, nfcDark.red, 'red'),
-        'nfc-orange': nfcPalette(nfc.orange, nfcDark.orange, 'orange'),
-        'nfc-yellow': nfcPalette(nfc.yellow, nfcDark.yellow, 'yellow'),
-        'nfc-teal': nfcPalette(nfc.teal, nfcDark.teal, 'teal'),
-        'nfc-cyan': nfcPalette(nfc.cyan, nfcDark.cyan, 'cyan'),
-        'nfc-purple': nfcPalette(nfc.purple, nfcDark.purple, 'purple'),
-        'nfc-pink': nfcPalette(nfc.pink, nfcDark.pink, 'pink'),
+        'nfc-blue': nfcPalette('blue'),
+        'nfc-green': nfcPalette('green'),
+        'nfc-red': nfcPalette('red'),
+        'nfc-orange': nfcPalette('orange'),
+        'nfc-yellow': nfcPalette('yellow'),
+        'nfc-teal': nfcPalette('teal'),
+        'nfc-cyan': nfcPalette('cyan'),
+        'nfc-purple': nfcPalette('purple'),
+        'nfc-pink': nfcPalette('pink'),
         radiomark: {
           ring: semanticColor(v2Gray[200], 'rgba(255, 255, 255, 0.4)', v2Gray[700]),
           checked: semanticColor(v2Colors.blue[500], v2Colors.blue[200], v2Gray[200]),
