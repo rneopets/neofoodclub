@@ -126,6 +126,22 @@ const Footer: React.FC<FooterProps> = props => {
     return `${baseUrl}${betPathHash}`;
   }, [currentSelectedRound, currentBet, allBets, allBetAmounts]);
 
+  const productionHref = React.useMemo(() => {
+    const baseUrl = 'https://neofood.club';
+
+    if (!currentSelectedRound) {
+      return baseUrl;
+    }
+
+    const betPathHash = makeBetURL(
+      currentSelectedRound,
+      allBets.get(currentBet),
+      allBetAmounts.get(currentBet),
+      true,
+    );
+    return `${baseUrl}${betPathHash}`;
+  }, [currentSelectedRound, currentBet, allBets, allBetAmounts]);
+
   const handleLogoClick = React.useCallback(() => {
     // Trigger spin animation - increment rotation by 360 degrees
     setRotation(prev => prev + 360);
@@ -253,7 +269,7 @@ const Footer: React.FC<FooterProps> = props => {
               {!isProductionHost && (
                 <FooterLink
                   icon={FaGlobe}
-                  href="https://neofood.club"
+                  href={productionHref}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
