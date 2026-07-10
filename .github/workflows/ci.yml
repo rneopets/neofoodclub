@@ -69,3 +69,78 @@ jobs:
           playwright-report/
           test-results/
         retention-days: 7
+
+  report-deployment:
+    name: Report Cloudflare Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+    - name: Poll Cloudflare Pages deployment and report to GitHub Deployments
+      env:
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COMMIT_SHA: ${{ github.sha }}
+        BRANCH_NAME: ${{ github.ref_name }}
+        PROJECT_NAME: neofoodclub
+      run: |
+        set -euo pipefail
+
+        if [ "$BRANCH_NAME" = "main" ]; then
+          ENVIRONMENT="production"
+        else
+          ENVIRONMENT="preview"
+        fi
+
+        CF_STATUS=""
+        CF_URL=""
+
+        for i in $(seq 1 30); do
+          RESPONSE=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$PROJECT_NAME/deployments?per_page=25")
+
+          DEPLOYMENT=$(echo "$RESPONSE" | jq -c --arg sha "$COMMIT_SHA" \
+            '[.result[]? | select(.deployment_trigger.metadata.commit_hash == $sha)][0] // empty')
+
+          if [ -n "$DEPLOYMENT" ]; then
+            STAGE_STATUS=$(echo "$DEPLOYMENT" | jq -r '.latest_stage.status // empty')
+            if [ "$STAGE_STATUS" = "success" ] || [ "$STAGE_STATUS" = "failure" ]; then
+              CF_STATUS="$STAGE_STATUS"
+              CF_URL=$(echo "$DEPLOYMENT" | jq -r '.url // empty')
+              break
+            fi
+          fi
+
+          echo "Attempt $i/30: no terminal deployment status yet for $COMMIT_SHA, waiting..."
+          sleep 10
+        done
+
+        if [ "$CF_STATUS" = "success" ]; then
+          GH_STATE="success"
+        elif [ "$CF_STATUS" = "failure" ]; then
+          GH_STATE="failure"
+        else
+          GH_STATE="error"
+          echo "Timed out waiting for a terminal Cloudflare Pages deployment status."
+        fi
+
+        DEPLOYMENT_ID=$(gh api "repos/${{ github.repository }}/deployments" \
+          -f ref="$COMMIT_SHA" \
+          -f environment="$ENVIRONMENT" \
+          -F auto_merge=false \
+          -f "required_contexts[]" \
+          --jq '.id')
+
+        STATUS_ARGS=(-f state="$GH_STATE" -f description="Cloudflare Pages")
+        if [ -n "$CF_URL" ]; then
+          STATUS_ARGS+=(-f environment_url="$CF_URL")
+        fi
+
+        gh api "repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses" "${STATUS_ARGS[@]}"
+
+        echo "Reported Cloudflare deployment status '$GH_STATE' for commit $COMMIT_SHA"
