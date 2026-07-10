@@ -21,6 +21,7 @@ import {
   FaClockRotateLeft,
   FaCoins,
   FaGithub,
+  FaGlobe,
   FaPenToSquare,
   FaTrophy,
 } from 'react-icons/fa6';
@@ -103,6 +104,11 @@ const Footer: React.FC<FooterProps> = props => {
   const currentBet = useCurrentBet();
   const allBets = useAllBets();
   const allBetAmounts = useAllBetAmounts();
+
+  const isProductionHost = React.useMemo(() => {
+    const host = window.location.hostname;
+    return host === 'neofood.club' || host === 'www.neofood.club';
+  }, []);
 
   const classicHref = React.useMemo(() => {
     const baseUrl = 'https://foodclub.neocities.org';
@@ -244,6 +250,16 @@ const Footer: React.FC<FooterProps> = props => {
               >
                 Source Code
               </FooterLink>
+              {!isProductionHost && (
+                <FooterLink
+                  icon={FaGlobe}
+                  href="https://neofood.club"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Production Site
+                </FooterLink>
+              )}
             </Stack>
 
             <Stack align={'flex-start'}>
