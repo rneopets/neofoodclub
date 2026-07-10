@@ -107,18 +107,6 @@ check:
 	just lint
 	just test-run
 
-# Automation: run dockerized monthly updater via compose
-automation-update:
-	cd automation && docker compose run --rm nfc_values
-
-# Automation: build compose image
-automation-build:
-	cd automation && docker compose -f docker-compose.yml build
-
-# Automation: run compose job directly
-automation-run:
-	cd automation && docker compose -f docker-compose.yml run --rm nfc_values
-
 # Chakra UI codegen CLI
 chakra:
 	npm run chakra
