@@ -110,7 +110,6 @@ check:
 # Automation: run dockerized monthly updater via compose
 automation-update:
 	cd automation && docker compose run --rm nfc_values
-	cp automation/output/typescript.ts src/app/constants_logit.ts
 
 # Automation: build compose image
 automation-build:
