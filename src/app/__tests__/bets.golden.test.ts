@@ -42,7 +42,7 @@ expect.addSnapshotSerializer({
   print: val => JSON.stringify(val),
 });
 
-const fixturesDir = path.resolve(__dirname, '../../../automation/raw_json');
+const fixturesDir = path.resolve(__dirname, 'fixtures/rounds');
 const fixtureFiles = fs
   .readdirSync(fixturesDir)
   .filter(f => f.endsWith('.json'))

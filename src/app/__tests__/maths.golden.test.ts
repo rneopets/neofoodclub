@@ -18,7 +18,7 @@ import {
 /**
  * Regression net for the pure-math core now delegated to the wasm engine
  * (see src/app/wasmMath.ts). Fixtures are a deterministic slice of real
- * historical rounds (automation/raw_json), including both old rounds with
+ * historical rounds (fixtures/rounds), including both old rounds with
  * `foods: null` and newer ones with full food data. If a future change
  * (e.g. bumping the wasm/neofoodclub_rs submodule) alters these values,
  * this suite is what will catch it - review snapshot diffs carefully rather
@@ -36,7 +36,7 @@ expect.addSnapshotSerializer({
   print: val => JSON.stringify(val),
 });
 
-const fixturesDir = path.resolve(__dirname, '../../../automation/raw_json');
+const fixturesDir = path.resolve(__dirname, 'fixtures/rounds');
 const fixtureFiles = fs
   .readdirSync(fixturesDir)
   .filter(f => f.endsWith('.json'))
