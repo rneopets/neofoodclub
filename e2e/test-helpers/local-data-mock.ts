@@ -4,7 +4,7 @@ import * as path from 'path';
 import { Page } from '@playwright/test';
 
 /**
- * Sets up mocking of neofood.club CDN requests to use local data from automation folder
+ * Sets up mocking of neofood.club CDN requests to use local data from e2e/fixtures/rounds
  */
 export async function setupLocalDataMock(page: Page, baseRound: number = 9000): Promise<void> {
   // Mock the current round endpoint
@@ -26,7 +26,7 @@ export async function setupLocalDataMock(page: Page, baseRound: number = 9000): 
 
     if (roundMatch && roundMatch[1]) {
       const roundNumber = parseInt(roundMatch[1], 10);
-      const jsonPath = path.join(process.cwd(), 'automation', 'raw_json', `${roundNumber}.json`);
+      const jsonPath = path.join(process.cwd(), 'e2e', 'fixtures', 'rounds', `${roundNumber}.json`);
 
       try {
         if (fs.existsSync(jsonPath)) {
