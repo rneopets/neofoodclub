@@ -139,28 +139,32 @@ interface RoundStore {
   initialize: () => Promise<void>;
 }
 
-const initialState = parseBetUrl(window.location.hash.slice(1));
+// Do NOT parse the URL here - parseBetUrl decodes the `b=`/`a=` hash via the
+// wasm engine (see util.ts), which isn't initialized yet at module-eval time
+// (src/index.jsx awaits initWasmMath() after this module has already been
+// imported and evaluated). Start with safe defaults; hydrateRoundStoreFromUrl(),
+// called from index.jsx once wasm is ready, applies the real parsed values.
 
 export const useRoundStore = create<RoundStore>()(
   subscribeWithSelector((set, get) => ({
     // Round data
     roundData: defaultRoundData,
-    currentRound: initialState.round || 0,
-    currentSelectedRound: initialState.round || 0,
+    currentRound: 0,
+    currentSelectedRound: 0,
 
     // Settings
     customOdds: null,
     customProbs: null,
     tableMode: getTableMode(),
     betSetPosition: getBetSetPosition(),
-    viewMode: anyBetsExist(initialState.bets),
+    viewMode: false,
     useWebDomain: getUseWebDomain(),
     bigBrain: getBigBrainMode(),
     faDetails: getFaDetailsMode(),
     customOddsMode: getCustomOddsMode(),
     oddsTimeline: getOddsTimelineMode(),
     useLogitModel: getUseLogitModel(),
-    maxBet: getMaxBet(initialState.round || 0),
+    maxBet: getMaxBet(0),
 
     // Calculations
     calculations: emptyCalculations,
@@ -700,6 +704,24 @@ export const useRoundStore = create<RoundStore>()(
     },
   })),
 );
+
+/**
+ * Parses the current URL hash and applies the round/view-mode/max-bet it
+ * encodes. Must only be called after initWasmMath() has resolved (see
+ * src/index.jsx) - calling it earlier will silently see no bets (round still
+ * parses fine, since it doesn't touch the wasm engine), since parseBetUrl's
+ * bet/amount decoding depends on the wasm engine being initialized.
+ */
+export function hydrateRoundStoreFromUrl(): void {
+  const initialState = parseBetUrl(window.location.hash.slice(1));
+  const round = initialState.round || 0;
+  useRoundStore.setState({
+    currentRound: round,
+    currentSelectedRound: round,
+    viewMode: anyBetsExist(initialState.bets),
+    maxBet: getMaxBet(round),
+  });
+}
 
 // Subscribe to bet changes and recalculate
 // Use dynamic import to avoid circular dependency at module load time

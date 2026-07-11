@@ -7,6 +7,8 @@ import './index.css';
 import App from './app/App';
 import DropZone from './app/DropZone';
 import FaviconGenerator from './app/FaviconGenerator';
+import { hydrateBetStoreFromUrl } from './app/stores/betStore';
+import { hydrateRoundStoreFromUrl } from './app/stores/roundStore';
 import { initWasmMath } from './app/wasmMath';
 
 import { Provider } from '@/components/ui/provider';
@@ -34,6 +36,13 @@ if ('serviceWorker' in navigator) {
 // into src/app/maths.ts - including ones made from useMemo in render bodies -
 // is safe from the very first render.
 await initWasmMath();
+
+// Parse the URL hash now that the wasm engine is ready. Doing this at
+// betStore/roundStore module-eval time (before this await resolves) would
+// silently decode to empty bets - the store modules are statically imported
+// above, so their top-level code already ran before this line.
+hydrateBetStoreFromUrl();
+hydrateRoundStoreFromUrl();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
