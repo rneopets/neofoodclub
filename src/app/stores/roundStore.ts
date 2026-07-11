@@ -3,7 +3,7 @@ import { subscribeWithSelector } from 'zustand/middleware';
 
 import { RoundData, RoundCalculationResult } from '../../types';
 import { OddsData, ProbabilitiesData } from '../../types/bets';
-import { defaultRoundData } from '../constants';
+import { defaultRoundData, BET_AMOUNT_MIN } from '../constants';
 import {
   calculateRoundData,
   getBetSetPosition,
@@ -21,6 +21,12 @@ import {
   getMaxBet,
   type BetSetPosition,
 } from '../util';
+import {
+  rebuildEngine,
+  setEngineBetAmount,
+  applyCustomOdds,
+  applyCustomProbabilities,
+} from '../wasmEngine';
 
 import { useBetStore } from './betStore';
 
@@ -44,6 +50,12 @@ const isAbortError = (error: unknown): boolean => {
   }
   return 'name' in error && (error as { name?: unknown }).name === 'AbortError';
 };
+
+// maxBet uses BET_AMOUNT_DEFAULT (-1000) as its own "unset" sentinel - unlike
+// `|| null`, this correctly treats that (truthy, negative) value as unset
+// rather than passing it through to the wasm engine's Option<u32> boundary.
+const toEngineBetAmount = (maxBet: number): number | null =>
+  maxBet >= BET_AMOUNT_MIN ? maxBet : null;
 
 const emptyCalculations: RoundCalculationResult = {
   calculated: false,
@@ -200,6 +212,24 @@ export const useRoundStore = create<RoundStore>()(
       // Only recalculate if odds or winners changed (this is the expensive operation)
       // Pirates are static for a round, so we don't need to check for pirate changes
       if (oddsChanged || winnersChanged || roundData.round !== state.roundData.round) {
+        try {
+          rebuildEngine(
+            JSON.stringify(roundData),
+            toEngineBetAmount(state.maxBet),
+            state.useLogitModel,
+          );
+          // a fresh engine has no override - reapply if custom-odds-mode is active
+          if (state.customOddsMode) {
+            if (state.customOdds) {
+              applyCustomOdds(state.customOdds);
+            }
+            if (state.customProbs) {
+              applyCustomProbabilities(state.customProbs);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to rebuild wasm engine:', error);
+        }
         get().recalculate();
       }
     },
@@ -218,14 +248,25 @@ export const useRoundStore = create<RoundStore>()(
         prev.fetchAbortController.abort('round_changed');
       }
 
+      const maxBet = getMaxBet(round);
       set({
         currentSelectedRound: round,
         customOdds: null,
         customProbs: null,
         error: null,
         fetchAbortController: null,
-        maxBet: getMaxBet(round),
+        maxBet,
       });
+
+      // The engine itself gets rebuilt once new round data arrives (see
+      // updateRoundData) - just make sure any override from the previous
+      // round doesn't linger on the (about-to-be-replaced) engine instance.
+      try {
+        applyCustomOdds(null);
+        applyCustomProbabilities(null);
+      } catch (error) {
+        console.error('Failed to clear wasm engine overrides:', error);
+      }
 
       if (round > 0) {
         // Always pass the round explicitly to avoid reading stale state
@@ -236,11 +277,25 @@ export const useRoundStore = create<RoundStore>()(
 
     setCustomOdds: (odds: OddsData): void => {
       set({ customOdds: odds });
+      if (get().customOddsMode) {
+        try {
+          applyCustomOdds(odds);
+        } catch (error) {
+          console.error('Failed to apply custom odds:', error);
+        }
+      }
       get().recalculate();
     },
 
     setCustomProbs: (probs: ProbabilitiesData): void => {
       set({ customProbs: probs });
+      if (get().customOddsMode) {
+        try {
+          applyCustomProbabilities(probs);
+        } catch (error) {
+          console.error('Failed to apply custom probabilities:', error);
+        }
+      }
       get().recalculate();
     },
 
@@ -249,17 +304,64 @@ export const useRoundStore = create<RoundStore>()(
     setViewMode: (viewMode: boolean): void => set({ viewMode }),
     setUseWebDomain: (useWebDomain: boolean): void => set({ useWebDomain }),
 
-    setMaxBet: (maxBet: number): void => set({ maxBet }),
+    setMaxBet: (maxBet: number): void => {
+      set({ maxBet });
+      if (get().roundData !== defaultRoundData) {
+        try {
+          setEngineBetAmount(toEngineBetAmount(maxBet));
+        } catch (error) {
+          console.error('Failed to update wasm engine bet amount:', error);
+        }
+      }
+    },
 
     toggleBigBrain: (): void => set(state => ({ bigBrain: !state.bigBrain })),
     toggleFaDetails: (): void => set(state => ({ faDetails: !state.faDetails })),
     toggleOddsTimeline: (): void => set(state => ({ oddsTimeline: !state.oddsTimeline })),
     toggleCustomOddsMode: (): void => {
       set(state => ({ customOddsMode: !state.customOddsMode }));
+      try {
+        const state = get();
+        if (state.customOddsMode) {
+          if (state.customOdds) {
+            applyCustomOdds(state.customOdds);
+          }
+          if (state.customProbs) {
+            applyCustomProbabilities(state.customProbs);
+          }
+        } else {
+          applyCustomOdds(null);
+          applyCustomProbabilities(null);
+        }
+      } catch (error) {
+        console.error('Failed to toggle wasm engine custom-odds overrides:', error);
+      }
       get().recalculate();
     },
     toggleUseLogitModel: (): void => {
       set(state => ({ useLogitModel: !state.useLogitModel }));
+      const newState = get();
+      // the probability model is baked in at construction, so a full
+      // rebuild is needed (setBetAmount alone can't change it)
+      if (newState.roundData !== defaultRoundData && newState.roundData.pirates?.length) {
+        try {
+          rebuildEngine(
+            JSON.stringify(newState.roundData),
+            toEngineBetAmount(newState.maxBet),
+            newState.useLogitModel,
+          );
+          if (newState.customOddsMode) {
+            if (newState.customOdds) {
+              applyCustomOdds(newState.customOdds);
+            }
+            if (newState.customProbs) {
+              applyCustomProbabilities(newState.customProbs);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to rebuild wasm engine after logit-model toggle:', error);
+        }
+      }
       get().recalculate();
     },
 

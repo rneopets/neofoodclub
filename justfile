@@ -6,6 +6,16 @@ default:
 # Install dependencies (prefer clean, reproducible installs if lockfile exists)
 install:
 	@if [ -f package-lock.json ]; then npm ci; else npm install; fi
+	just wasm-setup
+
+# One-time: install the wasm32 rustup target + init the neofoodclub.rs submodule
+wasm-setup:
+	rustup target add wasm32-unknown-unknown
+	git submodule update --init --recursive wasm/neofoodclub_rs
+
+# Build the wasm-bindgen math core (also wired into npm's prestart/prebuild/pretest hooks)
+wasm-build:
+	npm run build:wasm
 
 # Clean build artifacts
 clean:
@@ -13,7 +23,7 @@ clean:
 
 # Clean everything including node_modules (slower)
 clean-all:
-	rm -rf node_modules build coverage .vite playwright-report
+	rm -rf node_modules build coverage .vite playwright-report wasm/neofoodclub_rs/target wasm/pkg
 
 # Start dev server
 dev:
@@ -96,19 +106,6 @@ check:
 	just typecheck
 	just lint
 	just test-run
-
-# Automation: run dockerized monthly updater via compose
-automation-update:
-	cd automation && docker compose run --rm nfc_values
-	cp automation/output/typescript.ts src/app/constants_logit.ts
-
-# Automation: build compose image
-automation-build:
-	cd automation && docker compose -f docker-compose.yml build
-
-# Automation: run compose job directly
-automation-run:
-	cd automation && docker compose -f docker-compose.yml run --rm nfc_values
 
 # Chakra UI codegen CLI
 chakra:

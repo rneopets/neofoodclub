@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2015",
+    "target": "es2017",
     "lib": ["dom", "dom.iterable", "esnext", "webworker"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -34,7 +34,8 @@
     "jsx": "react-jsx",
     "downlevelIteration": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@wasm/*": ["./wasm/pkg/*"]
     }
   },
   "include": ["src", "e2e", "playwright.config.ts"],

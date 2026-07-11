@@ -2,6 +2,9 @@ import { resolve } from 'path';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import tsconfigPaths from 'vite-tsconfig-paths';
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 
 // Cloudflare Pages doesn't set VITE_GIT_COMMIT_SHA itself, but it exposes the
 // deployed commit as CF_PAGES_COMMIT_SHA. Bridge it so Vite's normal VITE_ env
@@ -20,6 +23,9 @@ export default defineConfig({
         plugins: ['babel-plugin-react-compiler'],
       },
     }),
+    tsconfigPaths(),
+    wasm(),
+    topLevelAwait(),
     VitePWA({
       registerType: 'prompt',
       injectRegister: 'auto',
@@ -44,7 +50,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),
   ],
@@ -66,6 +73,11 @@ export default defineConfig({
   },
   build: {
     outDir: 'build',
+    // vite-plugin-top-level-await downlevels TLA-transformed chunks to Vite's
+    // legacy default target unless build.target is explicitly "esnext", and
+    // that downlevel pass fails on Rolldown's output. WASM already requires a
+    // modern browser baseline, so esnext is not a meaningful regression.
+    target: 'esnext',
     rollupOptions: {
       output: {
         manualChunks(id) {
