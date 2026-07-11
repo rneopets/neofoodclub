@@ -12,9 +12,9 @@ const HomePage = React.memo((): React.ReactElement => (
   <HelpGuideProvider>
     <TopProgressBar />
     <Header />
-    <DragDropTipBanner />
 
     <Box pt="7rem" w="100%" maxW="100%">
+      <DragDropTipBanner />
       <EditBets />
     </Box>
 
