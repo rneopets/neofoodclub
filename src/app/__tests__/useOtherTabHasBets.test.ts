@@ -85,7 +85,7 @@ describe('useOtherTabHasBets', () => {
     await waitFor(() => expect(tabB.current).toBe(true));
   });
 
-  it('goes back to false once the other tab goes stale past the prune window', async () => {
+  it('stays true even after the other tab goes stale past the prune window', async () => {
     vi.useFakeTimers();
     mockUseHasAnyBets.mockReturnValue(true);
 
@@ -105,14 +105,13 @@ describe('useOtherTabHasBets', () => {
     // Simulate tab B closing/crashing without signaling (no beforeunload in jsdom).
     unmountTabB();
 
-    // Fast-forward past the 12s prune window. Pruning only happens on the 4s
-    // heartbeat ticks, so advance past the *next* tick after the threshold
-    // (16s), not just past the threshold itself (13s lands between the 12s
-    // and 16s ticks and was flaky).
+    // Fast-forward well past the 12s prune window - this is a discoverability
+    // tip, not a live presence indicator, so it should not flip back off just
+    // because the other tab stopped heartbeating.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(17000);
     });
 
-    expect(tabA.current).toBe(false);
+    expect(tabA.current).toBe(true);
   });
 });

@@ -46,6 +46,11 @@ export function useOtherTabHasBets(): boolean {
     const channel = new BroadcastChannel(CHANNEL_NAME);
     channelRef.current = channel;
 
+    // Once we've seen another tab with bets, keep reporting it even if that
+    // tab later goes stale (closed, crashed, or just backgrounded and
+    // throttled by the browser) - this is a discoverability tip, not a live
+    // presence indicator, so flickering it off after a missed heartbeat does
+    // more harm than showing it a little longer than strictly accurate.
     const recomputeDerivedState = (): void => {
       let hasAny = false;
       for (const entry of registryRef.current.values()) {
@@ -54,7 +59,9 @@ export function useOtherTabHasBets(): boolean {
           break;
         }
       }
-      setOtherTabHasBets(hasAny);
+      if (hasAny) {
+        setOtherTabHasBets(true);
+      }
     };
 
     const broadcastPresence = (): void => {
@@ -91,18 +98,14 @@ export function useOtherTabHasBets(): boolean {
     const intervalId = setInterval(() => {
       broadcastPresence();
 
+      // Prune stale entries from the registry so it doesn't grow unbounded
+      // over a long session. This never un-sets otherTabHasBets - see the
+      // comment on recomputeDerivedState above.
       const now = Date.now();
-      let pruned = false;
-
       for (const [id, entry] of registryRef.current) {
         if (now - entry.lastSeen > STALE_THRESHOLD_MS) {
           registryRef.current.delete(id);
-          pruned = true;
         }
-      }
-
-      if (pruned) {
-        recomputeDerivedState();
       }
     }, HEARTBEAT_INTERVAL_MS);
 
