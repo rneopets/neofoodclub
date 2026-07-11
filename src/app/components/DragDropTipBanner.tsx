@@ -16,7 +16,10 @@ export default React.memo(function DragDropTipBanner(): React.ReactElement | nul
   return (
     <Box bgColor="bg.emphasized" p={4}>
       <Flex align="center" justify="space-between" wrap="wrap" gap={4}>
-        <Text>Tip: you can drag a bet link from another tab into this one to import it.</Text>
+        <Text>
+          Tip: you can drag a bet link in from another tab, Discord, or any website to import it
+          here.
+        </Text>
         <CloseButton size="sm" onClick={() => setDismissed(true)} aria-label="Dismiss tip" />
       </Flex>
     </Box>
