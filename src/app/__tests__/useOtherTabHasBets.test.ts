@@ -105,9 +105,12 @@ describe('useOtherTabHasBets', () => {
     // Simulate tab B closing/crashing without signaling (no beforeunload in jsdom).
     unmountTabB();
 
-    // Fast-forward past the 12s prune window.
+    // Fast-forward past the 12s prune window. Pruning only happens on the 4s
+    // heartbeat ticks, so advance past the *next* tick after the threshold
+    // (16s), not just past the threshold itself (13s lands between the 12s
+    // and 16s ticks and was flaky).
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(13000);
+      await vi.advanceTimersByTimeAsync(17000);
     });
 
     expect(tabA.current).toBe(false);
