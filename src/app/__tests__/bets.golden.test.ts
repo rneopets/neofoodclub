@@ -42,17 +42,13 @@ expect.addSnapshotSerializer({
   print: val => JSON.stringify(val),
 });
 
-const fixturesDir = path.resolve(__dirname, 'fixtures/rounds');
-const fixtureFiles = fs
-  .readdirSync(fixturesDir)
-  .filter(f => f.endsWith('.json'))
-  .sort()
-  .slice(0, 20);
-
-function loadFixture(file: string): RoundData {
-  const raw = fs.readFileSync(path.join(fixturesDir, file), 'utf8');
-  return JSON.parse(raw) as RoundData;
-}
+const fixturesPath = path.resolve(__dirname, 'fixtures/rounds.jsonl');
+const fixtures: { file: string; roundData: RoundData }[] = fs
+  .readFileSync(fixturesPath, 'utf8')
+  .trim()
+  .split('\n')
+  .map(line => JSON.parse(line) as RoundData)
+  .map(roundData => ({ file: `${roundData.round}.json`, roundData }));
 
 function serialize(result: { bets: Bet; betAmounts: BetAmount }): unknown {
   return {
@@ -66,10 +62,8 @@ beforeAll(async () => {
 });
 
 describe('bets.ts golden regression (wasm-backed generators)', () => {
-  for (const file of fixtureFiles) {
+  for (const { file, roundData } of fixtures) {
     describe(`fixture ${file}`, () => {
-      const roundData = loadFixture(file);
-
       beforeAll(() => {
         rebuildEngine(JSON.stringify(roundData), 500000, false);
       });
@@ -115,7 +109,7 @@ describe('bets.ts golden regression (wasm-backed generators)', () => {
 });
 
 describe('behavior changes (Tier 2 - intentional divergences from the old TS implementation)', () => {
-  const fixture = loadFixture(fixtureFiles[0] as string);
+  const fixture = fixtures[0]!.roundData;
 
   beforeAll(() => {
     rebuildEngine(JSON.stringify(fixture), 500000, false);

@@ -4,8 +4,17 @@ import * as path from 'path';
 import { Page } from '@playwright/test';
 
 /**
- * Sets up mocking of neofood.club CDN requests to use local data from e2e/fixtures/rounds
+ * Sets up mocking of neofood.club CDN requests to use local data from e2e/fixtures/rounds.jsonl
  */
+
+const roundsByNumber: Map<number, string> = new Map(
+  fs
+    .readFileSync(path.join(process.cwd(), 'e2e', 'fixtures', 'rounds.jsonl'), 'utf8')
+    .trim()
+    .split('\n')
+    .map(line => [(JSON.parse(line) as { round: number }).round, line]),
+);
+
 export async function setupLocalDataMock(page: Page, baseRound: number = 9000): Promise<void> {
   // Mock the current round endpoint
   await page.route('https://cdn.neofood.club/current_round.txt', async route => {
@@ -26,30 +35,20 @@ export async function setupLocalDataMock(page: Page, baseRound: number = 9000): 
 
     if (roundMatch && roundMatch[1]) {
       const roundNumber = parseInt(roundMatch[1], 10);
-      const jsonPath = path.join(process.cwd(), 'e2e', 'fixtures', 'rounds', `${roundNumber}.json`);
+      const jsonData = roundsByNumber.get(roundNumber);
 
-      try {
-        if (fs.existsSync(jsonPath)) {
-          const jsonData = fs.readFileSync(jsonPath, 'utf8');
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: jsonData,
-          });
-        } else {
-          // Return 404 for rounds that don't exist locally
-          await route.fulfill({
-            status: 404,
-            contentType: 'application/json',
-            body: JSON.stringify({ error: `Round ${roundNumber} not found` }),
-          });
-        }
-      } catch (error) {
-        console.error(`Failed to read round data for ${roundNumber}:`, error);
+      if (jsonData) {
         await route.fulfill({
-          status: 500,
+          status: 200,
           contentType: 'application/json',
-          body: JSON.stringify({ error: 'Internal server error' }),
+          body: jsonData,
+        });
+      } else {
+        // Return 404 for rounds that don't exist locally
+        await route.fulfill({
+          status: 404,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: `Round ${roundNumber} not found` }),
         });
       }
     } else {

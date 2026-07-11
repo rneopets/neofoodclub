@@ -18,7 +18,7 @@ import {
 /**
  * Regression net for the pure-math core now delegated to the wasm engine
  * (see src/app/wasmMath.ts). Fixtures are a deterministic slice of real
- * historical rounds (fixtures/rounds), including both old rounds with
+ * historical rounds (fixtures/rounds.jsonl), including both old rounds with
  * `foods: null` and newer ones with full food data. If a future change
  * (e.g. bumping the wasm/neofoodclub_rs submodule) alters these values,
  * this suite is what will catch it - review snapshot diffs carefully rather
@@ -36,17 +36,13 @@ expect.addSnapshotSerializer({
   print: val => JSON.stringify(val),
 });
 
-const fixturesDir = path.resolve(__dirname, 'fixtures/rounds');
-const fixtureFiles = fs
-  .readdirSync(fixturesDir)
-  .filter(f => f.endsWith('.json'))
-  .sort()
-  .slice(0, 20);
-
-function loadFixture(file: string): RoundData {
-  const raw = fs.readFileSync(path.join(fixturesDir, file), 'utf8');
-  return JSON.parse(raw) as RoundData;
-}
+const fixturesPath = path.resolve(__dirname, 'fixtures/rounds.jsonl');
+const fixtures: { file: string; roundData: RoundData }[] = fs
+  .readFileSync(fixturesPath, 'utf8')
+  .trim()
+  .split('\n')
+  .map(line => JSON.parse(line) as RoundData)
+  .map(roundData => ({ file: `${roundData.round}.json`, roundData }));
 
 // A handful of representative bet shapes: single-pirate, two-arena, and a
 // full 5-arena bet, covering different "ib" overlap patterns in the payout
@@ -68,10 +64,8 @@ function makeSampleBets(): { bets: Bet; betAmounts: BetAmount } {
 }
 
 describe('maths.ts golden regression (wasm-backed)', () => {
-  for (const file of fixtureFiles) {
+  for (const { file, roundData } of fixtures) {
     describe(`fixture ${file}`, () => {
-      const roundData = loadFixture(file);
-
       it('computeLegacyProbabilities', () => {
         expect(computeLegacyProbabilities(roundData)).toMatchSnapshot();
       });
