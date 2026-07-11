@@ -45,23 +45,41 @@ interface BetStore {
   clearAllBets: () => void;
 }
 
-// Parse initial state from URL
-let initialState: { round: number; bets: Bet; betAmounts: BetAmount };
-try {
-  initialState = parseBetUrl(window.location.hash.slice(1));
-  if (initialState.bets.size === 0) {
-    initialState.bets = makeEmptyBets(10);
+// Safe, synchronous defaults - do NOT parse the URL here. parseBetUrl decodes
+// the `b=`/`a=` hash fragments via the wasm engine (see util.ts), which isn't
+// initialized yet at module-eval time (src/index.jsx awaits initWasmMath()
+// after this module has already been imported and evaluated). Parsing here
+// would silently decode to empty bets every time. The real parse happens in
+// hydrateBetStoreFromUrl(), called from index.jsx once wasm is ready.
+const initialState: { round: number; bets: Bet; betAmounts: BetAmount } = {
+  round: 0,
+  bets: makeEmptyBets(10),
+  betAmounts: makeEmptyBetAmounts(10),
+};
+
+/**
+ * Parses the current URL hash and applies it to the store. Must only be
+ * called after initWasmMath() has resolved (see src/index.jsx) - calling it
+ * earlier will silently decode to empty bets, since parseBetUrl depends on
+ * the wasm engine being initialized.
+ */
+export function hydrateBetStoreFromUrl(): void {
+  let bets: Bet;
+  let betAmounts: BetAmount;
+  try {
+    const parsed = parseBetUrl(window.location.hash.slice(1));
+    bets = parsed.bets.size === 0 ? makeEmptyBets(10) : parsed.bets;
+    betAmounts = parsed.betAmounts.size === 0 ? makeEmptyBetAmounts(10) : parsed.betAmounts;
+  } catch (error) {
+    console.error('Failed to parse initial bet URL:', error);
+    bets = makeEmptyBets(10);
+    betAmounts = makeEmptyBetAmounts(10);
   }
-  if (initialState.betAmounts.size === 0) {
-    initialState.betAmounts = makeEmptyBetAmounts(10);
-  }
-} catch (error) {
-  console.error('Failed to parse initial bet URL:', error);
-  initialState = {
-    round: 0,
-    bets: makeEmptyBets(10),
-    betAmounts: makeEmptyBetAmounts(10),
-  };
+
+  useBetStore.setState(state => ({
+    allBets: new Map(state.allBets).set(0, bets),
+    allBetAmounts: new Map(state.allBetAmounts).set(0, betAmounts),
+  }));
 }
 
 export const useBetStore = create<BetStore>()(
