@@ -9,6 +9,7 @@ import DropZone from './app/DropZone';
 import FaviconGenerator from './app/FaviconGenerator';
 import { hydrateBetStoreFromUrl } from './app/stores/betStore';
 import { hydrateRoundStoreFromUrl } from './app/stores/roundStore';
+import { isProductionHost } from './app/util/isProductionHost';
 import { initWasmMath } from './app/wasmMath';
 
 import { Provider } from '@/components/ui/provider';
@@ -17,6 +18,14 @@ import { Provider } from '@/components/ui/provider';
 window.ENV = {
   VITE_GIT_COMMIT_SHA: import.meta.env.VITE_GIT_COMMIT_SHA,
 };
+
+// Non-production builds show the commit hash in the tab title so it's
+// obvious which deploy is being viewed.
+if (!isProductionHost()) {
+  const commitHash = import.meta.env.VITE_GIT_COMMIT_SHA;
+  const shortHash = commitHash ? commitHash.substring(0, 7) : 'dev';
+  document.title = `NFC [${shortHash}]`;
+}
 
 // Register service worker without automatic updates
 if ('serviceWorker' in navigator) {

@@ -32,6 +32,7 @@ import { GitCommit } from './components/ui/GitCommit';
 import NeopointIcon from './images/np-icon.svg';
 import { useSelectedRound, useCurrentBet, useAllBets, useAllBetAmounts } from './stores';
 import { makeBetURL } from './util';
+import { isProductionHost } from './util/isProductionHost';
 
 interface LogoProps {
   rotation: number;
@@ -105,10 +106,7 @@ const Footer: React.FC<FooterProps> = props => {
   const allBets = useAllBets();
   const allBetAmounts = useAllBetAmounts();
 
-  const isProductionHost = React.useMemo(() => {
-    const host = window.location.hostname;
-    return host === 'neofood.club' || host === 'www.neofood.club';
-  }, []);
+  const isProdHost = React.useMemo(() => isProductionHost(), []);
 
   const classicHref = React.useMemo(() => {
     const baseUrl = 'https://foodclub.neocities.org';
@@ -266,7 +264,7 @@ const Footer: React.FC<FooterProps> = props => {
               >
                 Source Code
               </FooterLink>
-              {!isProductionHost && (
+              {!isProdHost && (
                 <FooterLink
                   icon={FaGlobe}
                   href={productionHref}
