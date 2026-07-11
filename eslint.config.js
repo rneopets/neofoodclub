@@ -68,6 +68,7 @@ export default [
         ExtendableMessageEvent: 'readonly',
         sessionStorage: 'readonly',
         SVGSVGElement: 'readonly',
+        crypto: 'readonly',
       },
     },
     plugins: {
