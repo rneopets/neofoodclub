@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useOtherTabHasBets } from '../hooks/useOtherTabHasBets';
@@ -85,33 +85,33 @@ describe('useOtherTabHasBets', () => {
     await waitFor(() => expect(tabB.current).toBe(true));
   });
 
-  it('stays true even after the other tab goes stale past the prune window', async () => {
-    vi.useFakeTimers();
+  it('stays true after the other tab closes, since this is a discoverability tip, not a live presence indicator', async () => {
     mockUseHasAnyBets.mockReturnValue(true);
 
     const { result: tabA } = renderHook(() => useOtherTabHasBets());
     const { result: tabB, unmount: unmountTabB } = renderHook(() => useOtherTabHasBets());
 
-    // Flush the mutual-discovery microtask exchange (initial broadcast + immediate reply).
-    await act(async () => {
-      for (let i = 0; i < 5; i++) {
-        await vi.advanceTimersByTimeAsync(0);
-      }
-    });
-
-    expect(tabA.current).toBe(true);
-    expect(tabB.current).toBe(true);
+    await waitFor(() => expect(tabA.current).toBe(true));
+    await waitFor(() => expect(tabB.current).toBe(true));
 
     // Simulate tab B closing/crashing without signaling (no beforeunload in jsdom).
     unmountTabB();
 
-    // Fast-forward well past the 12s prune window - this is a discoverability
-    // tip, not a live presence indicator, so it should not flip back off just
-    // because the other tab stopped heartbeating.
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(17000);
-    });
-
     expect(tabA.current).toBe(true);
+  });
+
+  it('becomes true once the other tab gains bets, even though it announced no bets on mount', async () => {
+    mockUseHasAnyBets.mockReturnValue(false);
+
+    const { result: tabA } = renderHook(() => useOtherTabHasBets());
+    const { rerender: rerenderTabB, result: tabB } = renderHook(() => useOtherTabHasBets());
+
+    await waitFor(() => expect(tabB.current).toBe(false));
+    expect(tabA.current).toBe(false);
+
+    mockUseHasAnyBets.mockReturnValue(true);
+    rerenderTabB();
+
+    await waitFor(() => expect(tabA.current).toBe(true));
   });
 });
