@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID } from './dragSource';
-import { useAddNewSet } from './stores';
+import { useAddNewSet, useSetViewMode, useViewMode } from './stores';
 import { anyBetsExist, parseBetUrl } from './util';
 
 function removeHtmlTags(str: string): string {
@@ -14,6 +14,13 @@ interface DropZoneProps {
 
 const DropZone = ({ children }: DropZoneProps): React.ReactElement => {
   const addNewSet = useAddNewSet();
+  const setViewMode = useSetViewMode();
+
+  const viewMode = useViewMode();
+  const viewModeRef = useRef(viewMode);
+  useEffect(() => {
+    viewModeRef.current = viewMode;
+  }, [viewMode]);
 
   useEffect(() => {
     const handleDrop = (e: DragEvent): void => {
@@ -54,6 +61,7 @@ const DropZone = ({ children }: DropZoneProps): React.ReactElement => {
       e.preventDefault();
 
       // Process each URL
+      let addedAnySet = false;
       urls.forEach((urlLine, index) => {
         const hashPart = urlLine.split('#')[1];
 
@@ -81,7 +89,13 @@ const DropZone = ({ children }: DropZoneProps): React.ReactElement => {
         }
 
         addNewSet(name, parsed.bets, parsed.betAmounts, true);
+        addedAnySet = true;
       });
+
+      // A dropped bet set is only useful once the user can see and edit it.
+      if (addedAnySet && viewModeRef.current) {
+        setViewMode(false);
+      }
 
       // toast({
       //   title: `${importCount} bet${importCount > 1 ? 's' : ''} imported!`,
@@ -100,7 +114,7 @@ const DropZone = ({ children }: DropZoneProps): React.ReactElement => {
       document.removeEventListener('drop', handleDrop as EventListener);
       document.removeEventListener('dragover', handleDragOver as EventListener);
     };
-  }, [addNewSet]);
+  }, [addNewSet, setViewMode]);
 
   return <>{children}</>;
 };
