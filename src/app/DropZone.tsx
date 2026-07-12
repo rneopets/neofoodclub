@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 
+import { BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID } from './dragSource';
 import { useAddNewSet } from './stores';
 import { anyBetsExist, parseBetUrl } from './util';
 
@@ -17,6 +18,12 @@ const DropZone = ({ children }: DropZoneProps): React.ReactElement => {
   useEffect(() => {
     const handleDrop = (e: DragEvent): void => {
       if (!e.dataTransfer) {
+        return;
+      }
+
+      // Ignore drops that originated from this same tab
+      if (e.dataTransfer.getData(BET_DRAG_SOURCE_TYPE) === TAB_INSTANCE_ID) {
+        e.preventDefault();
         return;
       }
 

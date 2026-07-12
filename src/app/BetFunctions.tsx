@@ -54,6 +54,7 @@ import {
   PIRATE_NAMES,
   SHORTHAND_PIRATE_NAMES,
 } from './constants';
+import { BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID } from './dragSource';
 import { useBetManagement } from './hooks/useBetManagement';
 import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { makeEmpty, computeBinaryToPirates, calculatePayoutTables } from './maths';
@@ -604,6 +605,7 @@ export const BetCopyButtons = React.memo(
         e.dataTransfer.setData('text/uri-list', betUrl);
         e.dataTransfer.setData('text/plain', betUrl);
         e.dataTransfer.setData('text/html', buildBetUrlHtml(betUrl));
+        e.dataTransfer.setData(BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID);
         e.dataTransfer.effectAllowed = 'copy';
       },
       [betUrl, buildBetUrlHtml],
@@ -618,6 +620,7 @@ export const BetCopyButtons = React.memo(
         e.dataTransfer.setData('text/uri-list', betUrlWithAmounts);
         e.dataTransfer.setData('text/plain', betUrlWithAmounts);
         e.dataTransfer.setData('text/html', buildBetUrlHtml(betUrlWithAmounts));
+        e.dataTransfer.setData(BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID);
         e.dataTransfer.effectAllowed = 'copy';
       },
       [betUrlWithAmounts, buildBetUrlHtml],
@@ -736,7 +739,6 @@ const CopyIconButton = React.memo(
         colorPalette={isActive ? 'nfc-green' : 'gray'}
         draggable={draggable && !disabled}
         onDragStart={draggable && !disabled ? onDragStart : undefined}
-        cursor={draggable && !disabled ? 'grab' : undefined}
       >
         <Icon
           as={isActive ? FaCheck : MainIcon}

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { render, screen, createMockDragEvent } from '../../test/utils';
+import { BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID } from '../dragSource';
 import DropZone from '../DropZone';
 import { useAddNewSet } from '../stores';
 import { anyBetsExist, parseBetUrl } from '../util';
@@ -344,6 +345,24 @@ describe('DropZone', () => {
 
     const dropEvent = createMockDragEvent('drop', {
       'text/uri-list': 'https://example.com/no-hash',
+    });
+
+    document.dispatchEvent(dropEvent);
+
+    expect(mockParseBetUrl).not.toHaveBeenCalled();
+    expect(mockAddNewSet).not.toHaveBeenCalled();
+  });
+
+  it('ignores drops that originated from the same tab', () => {
+    render(
+      <DropZone>
+        <div>Test</div>
+      </DropZone>,
+    );
+
+    const dropEvent = createMockDragEvent('drop', {
+      'text/uri-list': 'https://neofood.club/#round=1234&b=abc',
+      [BET_DRAG_SOURCE_TYPE]: TAB_INSTANCE_ID,
     });
 
     document.dispatchEvent(dropEvent);

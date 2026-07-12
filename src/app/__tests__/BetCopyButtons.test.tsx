@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { render, screen, fireEvent, createMockDataTransfer } from '../../test/utils';
 import { BetCopyButtons } from '../BetFunctions';
+import { BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID } from '../dragSource';
 import {
   useSelectedRound,
   useRoundData,
@@ -94,6 +95,7 @@ describe('BetCopyButtons', () => {
     // Check that text/html contains an anchor with the bet name
     const htmlCall = dataTransfer.setData.mock.calls.find(call => call[0] === 'text/html');
     expect(htmlCall?.[1]).toContain(`<a href="${expectedUrl}">My Set</a>`);
+    expect(dataTransfer.setData).toHaveBeenCalledWith(BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID);
   });
 
   it('drags URL with amounts button sets correct dataTransfer values', () => {
@@ -112,6 +114,7 @@ describe('BetCopyButtons', () => {
     // Check that text/html contains an anchor with the bet name
     const htmlCall = dataTransfer.setData.mock.calls.find(call => call[0] === 'text/html');
     expect(htmlCall?.[1]).toContain(`<a href="${expectedUrl}">My Set</a>`);
+    expect(dataTransfer.setData).toHaveBeenCalledWith(BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID);
   });
 
   it('does not setData when button is disabled (no bets)', () => {
