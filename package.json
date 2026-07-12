@@ -76,7 +76,7 @@
     "@vitejs/plugin-react": "6.0.3",
     "@vitest/coverage-v8": "^4.0.0",
     "babel-plugin-react-compiler": "^19.0.0-beta-714736e-20250131",
-    "eslint": "10.6.0",
+    "eslint": "10.7.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-prettier": "^5.4.0",
