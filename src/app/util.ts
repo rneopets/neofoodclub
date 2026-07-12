@@ -311,6 +311,10 @@ export function anyBetAmountsExist(betAmountsObject?: BetAmount): boolean {
   return Array.from(betAmountsObject.values()).some(amount => amount > 0);
 }
 
+export function escapeHtmlText(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 export function makeBetURL(
   roundNumber: number,
   bets?: Bet,

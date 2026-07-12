@@ -90,6 +90,7 @@ import {
   displayAsPercent,
   makeBetValues,
   anyBetAmountsExist,
+  escapeHtmlText,
 } from './util';
 
 import { Tooltip } from '@/components/ui/tooltip';
@@ -585,6 +586,43 @@ export const BetCopyButtons = React.memo(
     const { copy: copyUrl } = useClipboard({ value: betUrl });
     const { copy: copyUrlWithAmounts } = useClipboard({ value: betUrlWithAmounts });
 
+    const allBetSetNames = useAllBetSetNames();
+    const betName = allBetSetNames.get(index) ?? '';
+
+    const buildBetUrlHtml = useCallback(
+      (url: string): string =>
+        `<a href="${url}">${escapeHtmlText(betName || `Bet Set [Round ${currentSelectedRound}]`)}</a>`,
+      [betName, currentSelectedRound],
+    );
+
+    const handleDragStartUrl = useCallback(
+      (e: React.DragEvent<HTMLButtonElement>) => {
+        if (!betUrl) {
+          e.preventDefault();
+          return;
+        }
+        e.dataTransfer.setData('text/uri-list', betUrl);
+        e.dataTransfer.setData('text/plain', betUrl);
+        e.dataTransfer.setData('text/html', buildBetUrlHtml(betUrl));
+        e.dataTransfer.effectAllowed = 'copy';
+      },
+      [betUrl, buildBetUrlHtml],
+    );
+
+    const handleDragStartUrlWithAmounts = useCallback(
+      (e: React.DragEvent<HTMLButtonElement>) => {
+        if (!betUrlWithAmounts) {
+          e.preventDefault();
+          return;
+        }
+        e.dataTransfer.setData('text/uri-list', betUrlWithAmounts);
+        e.dataTransfer.setData('text/plain', betUrlWithAmounts);
+        e.dataTransfer.setData('text/html', buildBetUrlHtml(betUrlWithAmounts));
+        e.dataTransfer.effectAllowed = 'copy';
+      },
+      [betUrlWithAmounts, buildBetUrlHtml],
+    );
+
     const handleCopyWithAnimation = useCallback((buttonId: string, copyFn: () => void) => {
       copyFn();
       setCopiedButton(buttonId);
@@ -617,21 +655,25 @@ export const BetCopyButtons = React.memo(
         <ButtonGroup variant="ghost" gap={1} size="xs">
           <CopyIconButton
             icon={FaLink}
-            label="Copy Bet URL"
+            label="Copy Bet URL (or drag to share)"
             onClick={handleCopyUrl}
             ariaLabel="Copy Bet URL"
             disabled={!anyBetsExist(bets)}
             testId="copy-bet-url-button"
             isActive={copiedButton === 'url'}
+            draggable
+            onDragStart={handleDragStartUrl}
           />
           <CopyIconButton
             icon={FaSackDollar}
-            label="Copy Bet URL with amounts"
+            label="Copy Bet URL with amounts (or drag to share)"
             onClick={handleCopyUrlWithAmounts}
             ariaLabel="Copy Bet URL with amounts"
             disabled={!anyBetAmountsExist(betAmounts)}
             testId="copy-bet-url-with-amounts-button"
             isActive={copiedButton === 'urlWithAmounts'}
+            draggable
+            onDragStart={handleDragStartUrlWithAmounts}
           />
         </ButtonGroup>
 
@@ -672,6 +714,8 @@ const CopyIconButton = React.memo(
     disabled,
     testId,
     isActive,
+    draggable = false,
+    onDragStart,
   }: {
     icon: React.ComponentType;
     label: string;
@@ -680,6 +724,8 @@ const CopyIconButton = React.memo(
     disabled: boolean;
     testId: string;
     isActive: boolean;
+    draggable?: boolean;
+    onDragStart?: (e: React.DragEvent<HTMLButtonElement>) => void;
   }) => (
     <Tooltip content={label} openDelay={600}>
       <IconButton
@@ -688,6 +734,9 @@ const CopyIconButton = React.memo(
         disabled={disabled}
         data-testid={testId}
         colorPalette={isActive ? 'nfc-green' : 'gray'}
+        draggable={draggable && !disabled}
+        onDragStart={draggable && !disabled ? onDragStart : undefined}
+        cursor={draggable && !disabled ? 'grab' : undefined}
       >
         <Icon
           as={isActive ? FaCheck : MainIcon}

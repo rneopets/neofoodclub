@@ -32,7 +32,8 @@ export default React.memo(function DragDropTipBanner(): React.ReactElement | nul
         <Flex align="center" gap={2}>
           <FaLightbulb />
           <Text>
-            Tip: drag a bet link from another tab (or any site) onto this page to import it here.
+            Tip: in another tab, drag the link icon next to "Share:" onto this page to import that
+            tab's bets here.
           </Text>
         </Flex>
         <CloseButton size="sm" onClick={handleDismiss} aria-label="Dismiss tip" />
