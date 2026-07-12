@@ -32,8 +32,7 @@ export default React.memo(function DragDropTipBanner(): React.ReactElement | nul
         <Flex align="center" gap={2}>
           <FaLightbulb />
           <Text>
-            Tip: drag a bet link onto this page to import it, whether it's from another tab (the
-            link icon next to "Share:") or a link posted on Discord or Reddit.
+            Tip: drag a bet link onto this page to import it!
           </Text>
         </Flex>
         <CloseButton size="sm" onClick={handleDismiss} aria-label="Dismiss tip" />
