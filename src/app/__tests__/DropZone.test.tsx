@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { render, screen, createMockDragEvent } from '../../test/utils';
+import { BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID } from '../dragSource';
 import DropZone from '../DropZone';
-import { useAddNewSet } from '../stores';
+import { useAddNewSet, useSetViewMode, useViewMode } from '../stores';
 import { anyBetsExist, parseBetUrl } from '../util';
 
 // Mock the dependencies
@@ -16,6 +17,8 @@ vi.mock('@chakra-ui/react', async () => {
 
 vi.mock('../stores', () => ({
   useAddNewSet: vi.fn(),
+  useViewMode: vi.fn(),
+  useSetViewMode: vi.fn(),
 }));
 
 vi.mock('../util', () => ({
@@ -25,8 +28,10 @@ vi.mock('../util', () => ({
 
 describe('DropZone', () => {
   const mockAddNewSet = vi.fn();
+  const mockSetViewMode = vi.fn();
   const mockAnyBetsExist = vi.mocked(anyBetsExist);
   const mockParseBetUrl = vi.mocked(parseBetUrl);
+  const mockUseViewMode = vi.mocked(useViewMode);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -35,6 +40,10 @@ describe('DropZone', () => {
     (useAddNewSet as unknown as { mockReturnValue: (value: unknown) => void }).mockReturnValue(
       mockAddNewSet,
     );
+    (useSetViewMode as unknown as { mockReturnValue: (value: unknown) => void }).mockReturnValue(
+      mockSetViewMode,
+    );
+    mockUseViewMode.mockReturnValue(true);
 
     // Setup default mock returns
     mockAnyBetsExist.mockReturnValue(true);
@@ -350,5 +359,81 @@ describe('DropZone', () => {
 
     expect(mockParseBetUrl).not.toHaveBeenCalled();
     expect(mockAddNewSet).not.toHaveBeenCalled();
+  });
+
+  it('ignores drops that originated from the same tab', () => {
+    render(
+      <DropZone>
+        <div>Test</div>
+      </DropZone>,
+    );
+
+    const dropEvent = createMockDragEvent('drop', {
+      'text/uri-list': 'https://neofood.club/#round=1234&b=abc',
+      [BET_DRAG_SOURCE_TYPE]: TAB_INSTANCE_ID,
+    });
+
+    document.dispatchEvent(dropEvent);
+
+    expect(mockParseBetUrl).not.toHaveBeenCalled();
+    expect(mockAddNewSet).not.toHaveBeenCalled();
+  });
+
+  it('enters edit mode when a bet set is dropped while in view mode', () => {
+    mockUseViewMode.mockReturnValue(true);
+
+    render(
+      <DropZone>
+        <div>Test</div>
+      </DropZone>,
+    );
+
+    const dropEvent = createMockDragEvent('drop', {
+      'text/uri-list': 'https://example.com/#round=1234&b=123',
+    });
+
+    document.dispatchEvent(dropEvent);
+
+    expect(mockAddNewSet).toHaveBeenCalled();
+    expect(mockSetViewMode).toHaveBeenCalledWith(false);
+  });
+
+  it('does not touch view mode when already in edit mode', () => {
+    mockUseViewMode.mockReturnValue(false);
+
+    render(
+      <DropZone>
+        <div>Test</div>
+      </DropZone>,
+    );
+
+    const dropEvent = createMockDragEvent('drop', {
+      'text/uri-list': 'https://example.com/#round=1234&b=123',
+    });
+
+    document.dispatchEvent(dropEvent);
+
+    expect(mockAddNewSet).toHaveBeenCalled();
+    expect(mockSetViewMode).not.toHaveBeenCalled();
+  });
+
+  it('does not enter edit mode when nothing was actually dropped', () => {
+    mockUseViewMode.mockReturnValue(true);
+    mockAnyBetsExist.mockReturnValue(false);
+
+    render(
+      <DropZone>
+        <div>Test</div>
+      </DropZone>,
+    );
+
+    const dropEvent = createMockDragEvent('drop', {
+      'text/uri-list': 'https://example.com/#round=1234&b=123',
+    });
+
+    document.dispatchEvent(dropEvent);
+
+    expect(mockAddNewSet).not.toHaveBeenCalled();
+    expect(mockSetViewMode).not.toHaveBeenCalled();
   });
 });

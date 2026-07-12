@@ -1,26 +1,26 @@
 import { Box } from '@chakra-ui/react';
 import React from 'react';
 
+import DragDropTipBanner from './components/DragDropTipBanner';
 import { HelpGuideProvider } from './components/help/HelpGuideProvider';
 import TopProgressBar from './components/ui/TopProgressBar';
 import EditBets from './components/views/EditBets';
 import Footer from './Footer';
 import Header from './Header';
 
-const HomePage = React.memo(
-  (): React.ReactElement => (
-    <HelpGuideProvider>
-      <TopProgressBar />
-      <Header />
+const HomePage = React.memo((): React.ReactElement => (
+  <HelpGuideProvider>
+    <TopProgressBar />
+    <Header />
 
-      <Box pt="7rem" w="100%" maxW="100%">
-        <EditBets />
-      </Box>
+    <Box pt="7rem" w="100%" maxW="100%">
+      <DragDropTipBanner />
+      <EditBets />
+    </Box>
 
-      <Footer />
-    </HelpGuideProvider>
-  ),
-);
+    <Footer />
+  </HelpGuideProvider>
+));
 
 HomePage.displayName = 'HomePage';
 

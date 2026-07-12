@@ -18,6 +18,7 @@ import {
   calculateBaseMaxBet,
   isValidRound,
   makeBetURL,
+  escapeHtmlText,
   shuffleArray,
   parseBetUrl,
   getMaxBet,
@@ -479,6 +480,34 @@ describe('Utility Functions', () => {
       const bets: Bet = new Map([[1, [0, 0, 0, 0, 0]]]);
       const result = makeBetURL(8500, bets);
       expect(result).toBe('/#round=8500');
+    });
+  });
+
+  describe('escapeHtmlText', () => {
+    it('escapes & to &amp;', () => {
+      expect(escapeHtmlText('Foo & Bar')).toBe('Foo &amp; Bar');
+    });
+
+    it('escapes < to &lt;', () => {
+      expect(escapeHtmlText('Foo <Bar')).toBe('Foo &lt;Bar');
+    });
+
+    it('escapes > to &gt;', () => {
+      expect(escapeHtmlText('Foo>Bar')).toBe('Foo&gt;Bar');
+    });
+
+    it('handles all three special characters together', () => {
+      expect(escapeHtmlText('Foo <bar> & Baz')).toBe('Foo &lt;bar&gt; &amp; Baz');
+    });
+
+    it('returns plain text unchanged when no special characters', () => {
+      expect(escapeHtmlText('Plain text without special chars')).toBe(
+        'Plain text without special chars',
+      );
+    });
+
+    it('returns empty string for empty input', () => {
+      expect(escapeHtmlText('')).toBe('');
     });
   });
 
