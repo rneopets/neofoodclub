@@ -55,7 +55,7 @@ describe('DragDropTipBanner', () => {
 
     render(<DragDropTipBanner />);
 
-    expect(screen.queryByText(/drag the link icon/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/drag a bet link/i)).not.toBeInTheDocument();
   });
 
   it('renders nothing when otherTabHasBets is false even if anyBets is true', () => {
@@ -64,7 +64,7 @@ describe('DragDropTipBanner', () => {
 
     render(<DragDropTipBanner />);
 
-    expect(screen.queryByText(/drag the link icon/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/drag a bet link/i)).not.toBeInTheDocument();
   });
 
   it('renders the tip text when both anyBets and otherTabHasBets are true', () => {
@@ -73,7 +73,7 @@ describe('DragDropTipBanner', () => {
 
     render(<DragDropTipBanner />);
 
-    expect(screen.getByText(/drag the link icon/i)).toBeInTheDocument();
+    expect(screen.getByText(/drag a bet link/i)).toBeInTheDocument();
   });
 
   it('hides the banner when the close button is clicked', () => {
@@ -84,7 +84,7 @@ describe('DragDropTipBanner', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /dismiss tip/i }));
 
-    expect(screen.queryByText(/drag the link icon/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/drag a bet link/i)).not.toBeInTheDocument();
   });
 
   it('persists dismissal across remounts via localStorage', () => {
@@ -97,7 +97,7 @@ describe('DragDropTipBanner', () => {
 
     render(<DragDropTipBanner />);
 
-    expect(screen.queryByText(/drag the link icon/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/drag a bet link/i)).not.toBeInTheDocument();
     expect(window.localStorage.getItem('dragDropTipDismissed')).toBe('true');
   });
 });
