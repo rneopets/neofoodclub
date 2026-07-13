@@ -334,9 +334,14 @@ useBetStore.subscribe(
       return;
     }
 
-    // Don't update URL if round data doesn't match selected round (round is switching)
-    // This prevents URL updates during round transitions
-    if (roundState.roundData.round !== roundState.currentSelectedRound) {
+    // Don't update URL before the round store has hydrated from the URL (currentSelectedRound
+    // is still its startup default of 0), or while round data doesn't match the selected round
+    // (round is switching) - otherwise this fires with round 0 and clobbers the real round in
+    // the URL before hydrateRoundStoreFromUrl() has a chance to read it.
+    if (
+      !roundState.currentSelectedRound ||
+      roundState.roundData.round !== roundState.currentSelectedRound
+    ) {
       return;
     }
 
