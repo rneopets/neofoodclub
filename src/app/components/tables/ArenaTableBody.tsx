@@ -44,6 +44,7 @@ import {
   useStableLegacyProbabilityStd,
   useStablePirateFA,
   useCustomOddsMode,
+  useCustomOddsValue,
   useFaDetails,
   useSwapPiratesForAllBets,
   useBetStore,
@@ -407,9 +408,14 @@ const PirateRow = React.memo(
     const legacyProbStd = useStableLegacyProbabilityStd(arenaId, pirateIndex + 1);
     const pirateFA = useStablePirateFA(arenaId, pirateIndex);
     const customOddsMode = useCustomOddsMode();
+    const customOddsValue = useCustomOddsValue(arenaId, pirateIndex + 1);
     const getPirateBgColor = useGetPirateBgColor();
     const faDetails = useFaDetails();
-    const useOdds = currentOdds;
+    // Payout should reflect Custom Odds when active, matching how the bet-level
+    // Odds/Payoff columns already resolve odds (see getOdds() in util.ts) -
+    // otherwise this cell silently ignores a pirate's edited custom odds value.
+    const useOdds =
+      bigBrain && customOddsMode && customOddsValue !== undefined ? customOddsValue : currentOdds;
     const payout = useOdds! * prob - 1;
 
     const payoutBackground = useMemo(() => {

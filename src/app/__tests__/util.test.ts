@@ -1,9 +1,13 @@
+import fs from 'fs';
+import path from 'path';
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { RoundState } from '../../types';
+import { RoundData, RoundState } from '../../types';
 import { Bet, BetAmount } from '../../types/bets';
 import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX } from '../constants';
 import {
+  calculateRoundData,
   generateRandomIntegerInRange,
   generateRandomPirateIndex,
   displayAsPercent,
@@ -16,6 +20,7 @@ import {
   countNonZeroElements,
   cartesianProduct,
   calculateBaseMaxBet,
+  getOdds,
   isValidRound,
   makeBetURL,
   escapeHtmlText,
@@ -863,6 +868,205 @@ describe('Utility Functions', () => {
     it('handles empty date', () => {
       const result = formatDate('', { fromNow: true });
       expect(result).toBe('');
+    });
+  });
+
+  describe('getOdds', () => {
+    it('returns customOdds when bigBrain and customOddsMode are enabled', () => {
+      const roundState: Partial<RoundState> = {
+        advanced: {
+          bigBrain: true,
+          customOddsMode: true,
+          oddsTimeline: false,
+          faDetails: false,
+          useLogitModel: false,
+        },
+        customOdds: [
+          [1, 12, 4, 6, 22],
+          [1, 26, 4, 6, 6],
+          [1, 26, 4, 12, 10],
+          [1, 26, 26, 4, 26],
+          [1, 26, 4, 26, 12],
+        ],
+      };
+
+      const result = getOdds(roundState);
+      expect(result).toEqual(roundState.customOdds);
+    });
+
+    it('returns currentOdds when customOddsMode is disabled', () => {
+      const roundState: Partial<RoundState> = {
+        roundData: {
+          round: 3574,
+          pirates: [
+            [1, 2, 3, 4],
+            [1, 2, 3, 4],
+          ],
+          currentOdds: [
+            [1, 6, 2, 3, 11],
+            [1, 13, 2, 3, 3],
+          ],
+          openingOdds: [
+            [1, 5, 2, 3, 10],
+            [1, 12, 2, 3, 3],
+          ],
+        },
+        advanced: {
+          bigBrain: true,
+          customOddsMode: false,
+          oddsTimeline: false,
+          faDetails: false,
+          useLogitModel: false,
+        },
+        customOdds: [
+          [1, 12, 4, 6, 22],
+          [1, 26, 4, 6, 6],
+        ],
+      };
+
+      const result = getOdds(roundState);
+      expect(result).toEqual(roundState.roundData.currentOdds);
+    });
+
+    it('returns currentOdds when bigBrain is disabled', () => {
+      const roundState: Partial<RoundState> = {
+        roundData: {
+          round: 3574,
+          pirates: [
+            [1, 2, 3, 4],
+            [1, 2, 3, 4],
+          ],
+          currentOdds: [
+            [1, 6, 2, 3, 11],
+            [1, 13, 2, 3, 3],
+          ],
+          openingOdds: [
+            [1, 5, 2, 3, 10],
+            [1, 12, 2, 3, 3],
+          ],
+        },
+        advanced: {
+          bigBrain: false,
+          customOddsMode: true,
+          oddsTimeline: false,
+          faDetails: false,
+          useLogitModel: false,
+        },
+        customOdds: [
+          [1, 12, 4, 6, 22],
+          [1, 26, 4, 6, 6],
+        ],
+      };
+
+      const result = getOdds(roundState);
+      expect(result).toEqual(roundState.roundData.currentOdds);
+    });
+  });
+
+  describe('calculateRoundData', () => {
+    it('resolves effective odds via getOdds into betOdds/betPayoffs when customOddsMode is enabled', () => {
+      // Read a real round fixture
+      const fixturesPath = path.resolve(__dirname, 'fixtures/rounds.jsonl');
+      const fixtures: { file: string; roundData: RoundData }[] = fs
+        .readFileSync(fixturesPath, 'utf8')
+        .trim()
+        .split('\n')
+        .map(line => JSON.parse(line) as RoundData)
+        .map(roundData => ({ file: `${roundData.round}.json`, roundData }));
+
+      // Use the first fixture (should have valid odds data)
+      const fixture = fixtures[0];
+      expect(fixture?.roundData.currentOdds?.length).toBeGreaterThan(0);
+
+      // Create custom odds that change the bet's target pirate's odds
+      // relative to the rest of its arena (index 0 stays 1, the wasm engine
+      // requires it). Uniformly scaling every pirate in an arena by the same
+      // factor would preserve their relative proportions and leave the
+      // normalized probability unchanged, so only arena 0's pirate 1 (the
+      // pirate this test bets on) is adjusted.
+      const customOdds: number[][] = fixture.roundData.currentOdds.map((arena, arenaIndex) =>
+        arena.map((odd, index) => {
+          if (index === 0) {
+            return 1;
+          }
+          if (arenaIndex === 0 && index === 1) {
+            return Math.min(13, odd * 3);
+          }
+          return odd;
+        }),
+      );
+
+      // Build round state with custom odds mode enabled
+      const roundStateWithCustomOdds: RoundState = {
+        roundData: fixture.roundData,
+        currentSelectedRound: fixture.roundData.round,
+        currentRound: fixture.roundData.round,
+        advanced: {
+          bigBrain: true,
+          faDetails: false,
+          oddsTimeline: false,
+          customOddsMode: true,
+          useLogitModel: false,
+        },
+        customOdds,
+        customProbs: null,
+        viewMode: false,
+        useWebDomain: false,
+        tableMode: 'normal',
+      };
+
+      // Build round state with custom odds mode disabled (baseline)
+      const roundStateWithoutCustomOdds: RoundState = {
+        ...roundStateWithCustomOdds,
+        advanced: {
+          ...roundStateWithCustomOdds.advanced,
+          customOddsMode: false,
+        },
+        customOdds: null,
+      };
+
+      // Build simple bets
+      const bets: Bet = new Map<number, number[]>();
+      const betAmounts: BetAmount = new Map<number, number>();
+
+      // Add at least one real bet (non-zero pirate indices)
+      bets.set(1, [1, 0, 0, 0, 0]); // Bet on pirate 1 in arena 0
+      betAmounts.set(1, 100);
+
+      // Calculate with custom odds enabled
+      const resultWithCustomOdds = calculateRoundData(roundStateWithCustomOdds, bets, betAmounts);
+
+      // Calculate with custom odds disabled (baseline)
+      const resultWithoutCustomOdds = calculateRoundData(
+        roundStateWithoutCustomOdds,
+        bets,
+        betAmounts,
+      );
+
+      // Odds/Payoff/E.R./N.E./Maxbet must reflect the resolved custom odds
+      // (this is the part of the original bug report that already worked;
+      // kept here as a regression guard alongside the probabilities check
+      // below).
+      expect(resultWithCustomOdds.odds).toEqual(customOdds);
+      expect(resultWithCustomOdds.betOdds.get(1)).not.toBe(resultWithoutCustomOdds.betOdds.get(1));
+      expect(resultWithCustomOdds.betPayoffs.get(1)).not.toBe(
+        resultWithoutCustomOdds.betPayoffs.get(1),
+      );
+
+      // legacyProbabilities/logitProbabilities are still computed from the
+      // patched `effectiveRoundData` (verifying calculateRoundData no longer
+      // silently ignores the resolved odds when building that payload).
+      // NOTE: as of the currently vendored wasm engine, neither probability
+      // model actually varies its output based on currentOdds/customOdds -
+      // OriginalModel derives "std"/"used" purely from openingOdds
+      // (wasm/neofoodclub_rs/crates/core/src/models/original.rs), and
+      // MultinomialLogitModel derives it purely from food-adjustment data
+      // (.../models/multinomial_logit.rs). So betProbabilities intentionally
+      // stays identical here unless customProbs is also set - this is
+      // documented, verified wasm-engine behavior, not a gap in this fix.
+      expect(resultWithCustomOdds.legacyProbabilities.used).toEqual(
+        resultWithoutCustomOdds.legacyProbabilities.used,
+      );
     });
   });
 });

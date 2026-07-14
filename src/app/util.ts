@@ -279,6 +279,17 @@ export function getOddsTimelineMode(): boolean {
   return getBooleanCookie('oddsTimelineMode');
 }
 
+export function getOdds(roundState?: RoundState | Partial<RoundState>): OddsData {
+  // the odds we will use for things.
+  // basically this just checks if the custom mode is on or not, and grabs the proper one.
+  // returns the current round odds if there are no custom odds
+  const odds = roundState?.roundData?.currentOdds ?? [];
+  if (roundState?.advanced?.bigBrain && roundState?.advanced?.customOddsMode) {
+    return roundState?.customOdds ?? odds;
+  }
+  return odds;
+}
+
 export function getUseWebDomain(): boolean {
   return getBooleanCookie('useWebDomain');
 }
@@ -418,17 +429,6 @@ export function sortedIndices(arr: number[]): number[] {
     .map(obj => obj.ind);
 }
 
-function getOdds(roundState?: RoundState | Partial<RoundState>): OddsData {
-  // the odds we will use for things.
-  // basically this just checks if the custom mode is on or not, and grabs the proper one.
-  // returns the current round odds if there are no custom odds
-  const odds = roundState?.roundData?.currentOdds ?? [];
-  if (roundState?.advanced?.bigBrain && roundState?.advanced?.customOddsMode) {
-    return roundState?.customOdds ?? odds;
-  }
-  return odds;
-}
-
 function getProbs(
   roundState: RoundState,
   legacyProbs: ProbabilityData,
@@ -546,8 +546,12 @@ export function calculateRoundData(
   const odds = getOdds(roundState);
   if (isValidRound(roundState) && odds && bets && betAmounts) {
     if (roundState && roundState.roundData) {
-      legacyProbabilities = computeLegacyProbabilities(roundState.roundData);
-      logitProbabilities = computeLogitProbabilities(roundState.roundData);
+      const effectiveRoundData =
+        odds !== roundState.roundData.currentOdds
+          ? { ...roundState.roundData, currentOdds: odds }
+          : roundState.roundData;
+      legacyProbabilities = computeLegacyProbabilities(effectiveRoundData);
+      logitProbabilities = computeLogitProbabilities(effectiveRoundData);
       usedProbabilities = getProbs(roundState, legacyProbabilities, logitProbabilities);
 
       pirateFAs = computePirateFAs(roundState.roundData);
