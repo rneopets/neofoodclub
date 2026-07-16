@@ -133,8 +133,8 @@ const PirateInfoRow = React.memo(
           onClick={onClick}
           cursor="pointer"
           title={`Click to view odds timeline for ${fullPirateName}`}
-          layerStyle="fill.muted"
-          colorPalette={getPirateBgColor(opening)}
+          layerStyle={didPirateWin ? 'fill.subtle' : 'fill.muted'}
+          colorPalette={didPirateWin ? 'nfc-green' : getPirateBgColor(opening)}
         >
           {pirateName}
         </Td>

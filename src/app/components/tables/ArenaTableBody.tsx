@@ -712,8 +712,8 @@ const PirateRow = React.memo(
         backgroundColor={pirateWon ? 'nfc-green.subtle' : 'transparent'}
       >
         <StickyTd
-          layerStyle="fill.muted"
-          colorPalette={getPirateBgColor(openingOdds!)}
+          layerStyle={pirateWon ? 'fill.subtle' : 'fill.muted'}
+          colorPalette={pirateWon ? 'nfc-green' : getPirateBgColor(openingOdds!)}
           onClick={handleTimelineClickLocal}
           cursor="pointer"
           title={`Click to view odds timeline for ${fullPirateName}`}
