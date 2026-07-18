@@ -1292,7 +1292,7 @@ const PirateTimelineView = React.memo(
     return (
       <>
         <DrawerHeader>
-          <VStack align="stretch">
+          <VStack align="stretch" width="full">
             {/* Breadcrumb Navigation */}
             <Breadcrumb.Root size="md" variant="underline" mb={3}>
               <Breadcrumb.List>
@@ -1361,13 +1361,15 @@ const PirateTimelineView = React.memo(
               </Box>
             </Flex>
             {timelineSegments.length > 0 && (
-              <Box mt={1}>
+              <Box mt={1} width="full">
                 <OddsTimelineBars
                   arenaId={arenaId}
                   pirateIndex={pirateIndex}
                   segments={timelineSegments}
                   readOnly
                   ariaLabel={`${pirateName} odds timeline`}
+                  maxW="full"
+                  size="lg"
                 />
               </Box>
             )}

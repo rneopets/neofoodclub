@@ -101,8 +101,9 @@ const TimelineBar = React.memo(
     odds: number;
     percent: number;
     timestamp: number;
+    size?: 'sm' | 'lg';
   }): React.ReactElement => {
-    const { index, odds, percent, timestamp } = props;
+    const { index, odds, percent, timestamp, size = 'sm' } = props;
 
     const palettes = [
       'nfc-cyan',
@@ -128,12 +129,12 @@ const TimelineBar = React.memo(
           width={`${percent}%`}
           whiteSpace="nowrap"
           overflow="hidden"
-          fontSize="xs"
+          fontSize={size === 'lg' ? 'sm' : 'xs'}
           layerStyle="fill.muted"
           colorPalette={palettes[odds % (palettes.length - 1)]}
           fontWeight="semibold"
           textAlign="center"
-          minH="6"
+          minH={size === 'lg' ? '9' : '6'}
           display="flex"
           alignItems="center"
           justifyContent="center"
@@ -162,6 +163,8 @@ interface OddsTimelineBarsProps {
   onClick?: () => void;
   readOnly?: boolean;
   ariaLabel?: string;
+  maxW?: string;
+  size?: 'sm' | 'lg';
 }
 
 export const OddsTimelineBars = React.memo((props: OddsTimelineBarsProps): React.ReactElement => {
@@ -172,19 +175,19 @@ export const OddsTimelineBars = React.memo((props: OddsTimelineBarsProps): React
     onClick,
     readOnly = false,
     ariaLabel = 'Example odds timeline',
+    maxW = '300px',
+    size = 'sm',
   } = props;
 
   return (
     <Box
-      maxW="300px"
+      maxW={maxW}
       onClick={readOnly ? undefined : onClick}
       cursor={readOnly ? 'default' : 'pointer'}
-      pointerEvents={readOnly ? 'none' : undefined}
       display="flex"
       px="0"
-      rounded="lg"
       overflow="hidden"
-      borderRadius="md"
+      borderRadius="lg"
       border="1px solid"
       borderColor="border"
       role={readOnly ? 'img' : undefined}
@@ -198,6 +201,7 @@ export const OddsTimelineBars = React.memo((props: OddsTimelineBarsProps): React
           odds={segment.odds}
           percent={segment.percent}
           timestamp={segment.timestamp}
+          size={size}
         />
       ))}
     </Box>
