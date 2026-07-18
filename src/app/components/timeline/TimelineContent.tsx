@@ -17,7 +17,7 @@ import {
   Badge,
   EmptyState,
 } from '@chakra-ui/react';
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import {
   FaUtensils,
   FaSkullCrossbones,
@@ -41,6 +41,8 @@ import { useRoundStore, useCurrentOddsValue, useOpeningOddsValue, useArenaRatios
 import { displayAsPercent } from '../../util';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../../utils/betUtils';
 import DateFormatter from '../format/DateFormatter';
+
+import { OddsTimelineBars, buildOddsTimelineSegments } from './OddsTimeline';
 
 import { Avatar } from '@/components/ui/avatar';
 import {
@@ -1211,6 +1213,10 @@ const PirateTimelineView = React.memo(
     const getPirateBgColor = useGetPirateBgColor();
     const currentOdds = useCurrentOddsValue(arenaId, pirateIndex);
     const openingOdds = useOpeningOddsValue(arenaId, pirateIndex);
+    const timelineSegments = useMemo(
+      () => buildOddsTimelineSegments(roundData, arenaId, pirateIndex),
+      [roundData, arenaId, pirateIndex],
+    );
 
     if (!pirateId || !start || !endTime) {
       return null;
@@ -1286,7 +1292,7 @@ const PirateTimelineView = React.memo(
     return (
       <>
         <DrawerHeader>
-          <VStack align="stretch">
+          <VStack align="stretch" width="full">
             {/* Breadcrumb Navigation */}
             <Breadcrumb.Root size="md" variant="underline" mb={3}>
               <Breadcrumb.List>
@@ -1354,6 +1360,19 @@ const PirateTimelineView = React.memo(
                 )}
               </Box>
             </Flex>
+            {timelineSegments.length > 0 && (
+              <Box mt={1} width="full">
+                <OddsTimelineBars
+                  arenaId={arenaId}
+                  pirateIndex={pirateIndex}
+                  segments={timelineSegments}
+                  readOnly
+                  ariaLabel={`${pirateName} odds timeline`}
+                  maxW="full"
+                  size="lg"
+                />
+              </Box>
+            )}
             <Text
               fontSize="sm"
               fontWeight="bold"
