@@ -1016,7 +1016,7 @@ const ArenaTimelineView = React.memo(
                 </Badge>
               )}
             </Flex>
-            <SimpleGrid mb={4} columns={4} gap={{ base: 2, md: 3 }} w="full">
+            <SimpleGrid mb={4} columns={2} gap={{ base: 2, md: 3 }} w="full">
               {arenaPirates.map((pirateId, pirateIndex) => {
                 if (!pirateId) {
                   return null;
