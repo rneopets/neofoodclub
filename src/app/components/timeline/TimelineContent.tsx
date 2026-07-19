@@ -4,8 +4,8 @@ import {
   DrawerBody,
   Flex,
   Heading,
+  HStack,
   Icon,
-  SimpleGrid,
   Text,
   VStack,
   Spacer,
@@ -37,7 +37,13 @@ import { useIsRoundOver } from '../../hooks/useIsRoundOver';
 import { useScrollPosition } from '../../hooks/useScrollPosition';
 import { useTimelineViewState } from '../../hooks/useTimelineViewState';
 import { makeEmpty } from '../../maths';
-import { useRoundStore, useCurrentOddsValue, useOpeningOddsValue, useArenaRatios, useBigBrain } from '../../stores';
+import {
+  useRoundStore,
+  useCurrentOddsValue,
+  useOpeningOddsValue,
+  useArenaRatios,
+  useBigBrain,
+} from '../../stores';
 import { displayAsPercent } from '../../util';
 import { getOrdinalSuffix, filterChangesByArenaPirate } from '../../utils/betUtils';
 import DateFormatter from '../format/DateFormatter';
@@ -148,8 +154,8 @@ function consolidateTimelineEvents(events: TimelineEvent[]): TimelineEvent[] {
           const hasIncreases = consecutiveChanges.some(c => c.pirates[0]?.isIncrease);
           const hasDecreases = consecutiveChanges.some(c => !c.pirates[0]?.isIncrease);
 
-          let color = 'gray';
-          let icon = <FaArrowUp />;
+          let color: string;
+          let icon: React.ReactElement;
 
           if (hasIncreases && hasDecreases) {
             color = 'nfc-blue';
@@ -309,8 +315,7 @@ const RegularChangesContent = React.memo(
       <VStack align="stretch" gap={1} mt={2}>
         {event.pirates.map(pirate => {
           const openingOdds = roundData.openingOdds?.[pirate.arenaId]?.[pirate.pirateIndex + 1] as
-            | number
-            | undefined;
+            number | undefined;
           const colorPalette = openingOdds ? getPirateBgColor(openingOdds) : undefined;
 
           return (
@@ -502,10 +507,7 @@ type TimelineEndEvent = {
 };
 
 type TimelineEvent =
-  | TimelineStartEvent
-  | TimelineChangeEvent
-  | TimelineConsolidatedEvent
-  | TimelineEndEvent;
+  TimelineStartEvent | TimelineChangeEvent | TimelineConsolidatedEvent | TimelineEndEvent;
 
 // Overall Timeline View Component
 const OverallTimelineView = React.memo(
@@ -584,8 +586,8 @@ const OverallTimelineView = React.memo(
       const hasDecreases = pirates.some(p => !p.isIncrease);
 
       // Determine color and icon based on changes
-      let color = 'gray';
-      let icon = <FaArrowUp />;
+      let color: string;
+      let icon: React.ReactElement;
 
       if (hasIncreases && hasDecreases) {
         color = 'nfc-blue';
@@ -901,8 +903,8 @@ const ArenaTimelineView = React.memo(
       const hasIncreases = pirates.some(p => p.isIncrease);
       const hasDecreases = pirates.some(p => !p.isIncrease);
 
-      let color = 'gray';
-      let icon = <FaArrowUp />;
+      let color: string;
+      let icon: React.ReactElement;
 
       if (hasIncreases && hasDecreases) {
         color = 'nfc-blue';
@@ -977,7 +979,7 @@ const ArenaTimelineView = React.memo(
     return (
       <>
         <DrawerHeader>
-          <VStack align="stretch">
+          <VStack align="stretch" width="full">
             {/* Breadcrumb Navigation */}
             <Breadcrumb.Root size="md" variant="underline" mb={3}>
               <Breadcrumb.List>
@@ -1014,7 +1016,7 @@ const ArenaTimelineView = React.memo(
                 </Badge>
               )}
             </Flex>
-            <SimpleGrid mb={4} columns={4} gap={{ base: 2, md: 3 }} w="full" justifyItems="center">
+            <HStack mb={4} gap={{ base: 2, md: 3 }} w="full" align="stretch">
               {arenaPirates.map((pirateId, pirateIndex) => {
                 if (!pirateId) {
                   return null;
@@ -1031,8 +1033,7 @@ const ArenaTimelineView = React.memo(
                     size="sm"
                     variant="outline"
                     onClick={() => onPirateClick(arenaId, pirateIndex)}
-                    w="full"
-                    maxW="132px"
+                    flex="1"
                     minW={0}
                     h="auto"
                     px={2}
@@ -1090,7 +1091,7 @@ const ArenaTimelineView = React.memo(
                   </Button>
                 );
               })}
-            </SimpleGrid>
+            </HStack>
 
             <Text
               fontSize="sm"
