@@ -4,8 +4,8 @@ import {
   DrawerBody,
   Flex,
   Heading,
+  HStack,
   Icon,
-  SimpleGrid,
   Text,
   VStack,
   Spacer,
@@ -1016,7 +1016,7 @@ const ArenaTimelineView = React.memo(
                 </Badge>
               )}
             </Flex>
-            <SimpleGrid mb={4} columns={2} gap={{ base: 2, md: 3 }} w="full">
+            <HStack mb={4} gap={{ base: 2, md: 3 }} w="full" align="stretch">
               {arenaPirates.map((pirateId, pirateIndex) => {
                 if (!pirateId) {
                   return null;
@@ -1033,7 +1033,7 @@ const ArenaTimelineView = React.memo(
                     size="sm"
                     variant="outline"
                     onClick={() => onPirateClick(arenaId, pirateIndex)}
-                    w="full"
+                    flex="1"
                     minW={0}
                     h="auto"
                     px={2}
@@ -1091,7 +1091,7 @@ const ArenaTimelineView = React.memo(
                   </Button>
                 );
               })}
-            </SimpleGrid>
+            </HStack>
 
             <Text
               fontSize="sm"
