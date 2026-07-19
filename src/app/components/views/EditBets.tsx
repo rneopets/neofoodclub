@@ -81,7 +81,7 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
         open={open}
         placement="end"
         onOpenChange={(e: { open: boolean }) => setOpen(e.open)}
-        size="md"
+        size="lg"
         preventScroll
         modal
       >
