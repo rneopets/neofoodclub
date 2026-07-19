@@ -979,7 +979,7 @@ const ArenaTimelineView = React.memo(
     return (
       <>
         <DrawerHeader>
-          <VStack align="stretch">
+          <VStack align="stretch" width="full">
             {/* Breadcrumb Navigation */}
             <Breadcrumb.Root size="md" variant="underline" mb={3}>
               <Breadcrumb.List>
