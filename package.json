@@ -4,7 +4,7 @@
   "private": true,
   "homepage": "/",
   "dependencies": {
-    "@chakra-ui/react": "3.36.0",
+    "@chakra-ui/react": "3.36.1",
     "@emotion/react": "^11.14.0",
     "chart.js": "^4.4.9",
     "chartjs-plugin-annotation": "^3.1.0",
