@@ -1,4 +1,4 @@
-import { Box, Table } from '@chakra-ui/react';
+import { Box, Skeleton, Table } from '@chakra-ui/react';
 import React, { useMemo } from 'react';
 
 import { RoundData } from '../../../types';
@@ -233,7 +233,11 @@ const OddsTimeline = React.memo(
     );
 
     if (!openingOdds || !start) {
-      return <Box>&nbsp;</Box>;
+      return (
+        <Table.Cell p={0}>
+          <Skeleton height="6" width="100%" borderRadius="md" />
+        </Table.Cell>
+      );
     }
 
     return (
