@@ -24,7 +24,7 @@ import {
   FOODS,
 } from '../../constants';
 import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
-import { computePirateBinary } from '../../maths';
+import { computePirateBinary, makeEmpty } from '../../maths';
 import {
   usePiratesForArena,
   useArenaRatios,
@@ -897,13 +897,13 @@ const ArenaTableBody = React.memo(
     );
 
     const pirateRows = useMemo(() => {
-      if (!piratesForArena) {
-        return null;
-      }
+      const pirateIdsForRows =
+        piratesForArena && piratesForArena.length > 0 ? piratesForArena : makeEmpty(4);
 
-      return piratesForArena.map((pirateId, pirateIndex) => (
+      return pirateIdsForRows.map((pirateId, pirateIndex) => (
         <PirateRow
-          key={`pirate-${arenaId}-${pirateId}`}
+          // eslint-disable-next-line react/no-array-index-key
+          key={`pirate-${arenaId}-${pirateIndex}-${pirateId}`}
           pirateIndex={pirateIndex}
           arenaId={arenaId}
           handleTimelineClick={handleTimelineClick}

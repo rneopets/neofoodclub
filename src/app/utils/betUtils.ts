@@ -1,3 +1,5 @@
+import type { RoundData } from '../../types';
+
 /**
  * Utility functions for bet operations
  */
@@ -105,4 +107,8 @@ export function filterChangesByArenaPirate<T extends { arena: number; pirate: nu
   pirateIndex: number,
 ): T[] {
   return changes.filter(change => change.arena === arenaId && change.pirate === pirateIndex + 1);
+}
+
+export function hasHistoricalOddsData(roundData: RoundData): boolean {
+  return Boolean(roundData.start && roundData.timestamp);
 }

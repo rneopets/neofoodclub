@@ -28,6 +28,7 @@ import {
   FaChartLine,
   FaChevronDown,
   FaWaveSquare,
+  FaClockRotateLeft,
 } from 'react-icons/fa6';
 
 import { OddsChange } from '../../../types';
@@ -45,7 +46,11 @@ import {
   useBigBrain,
 } from '../../stores';
 import { displayAsPercent } from '../../util';
-import { getOrdinalSuffix, filterChangesByArenaPirate } from '../../utils/betUtils';
+import {
+  getOrdinalSuffix,
+  filterChangesByArenaPirate,
+  hasHistoricalOddsData,
+} from '../../utils/betUtils';
 import DateFormatter from '../format/DateFormatter';
 
 import { OddsTimelineBars, buildOddsTimelineSegments } from './OddsTimeline';
@@ -435,6 +440,25 @@ const WinnersContent = React.memo(
 
 WinnersContent.displayName = 'WinnersContent';
 
+const NoHistoricalDataEmptyState = React.memo(
+  (props: { title: string; description: string }): React.ReactElement => {
+    const { title, description } = props;
+    return (
+      <EmptyState.Root>
+        <EmptyState.Content>
+          <EmptyState.Indicator>
+            <Icon as={FaClockRotateLeft} />
+          </EmptyState.Indicator>
+          <EmptyState.Title>{title}</EmptyState.Title>
+          <EmptyState.Description textAlign="center">{description}</EmptyState.Description>
+        </EmptyState.Content>
+      </EmptyState.Root>
+    );
+  },
+);
+
+NoHistoricalDataEmptyState.displayName = 'NoHistoricalDataEmptyState';
+
 // Types for timeline events
 type TimelineStartEvent = {
   id: string;
@@ -523,148 +547,151 @@ const OverallTimelineView = React.memo(
     const start = roundData.start;
     const endTime = roundData.timestamp;
 
-    if (!start || !endTime) {
-      return null;
-    }
+    const hasHistory = hasHistoricalOddsData(roundData);
 
-    const startDate = new Date(start);
-    const endDate = new Date(endTime);
-    const changes = roundData.changes || [];
-    const winners = roundData.winners || makeEmpty(5);
+    let changes: OddsChange[] = [];
+    let consolidatedEvents: TimelineEvent[] = [];
 
-    // Group changes by timestamp
-    const changesByTimestamp = new Map<string, PirateChange[]>();
-    changes.forEach(change => {
-      // change.pirate is 1-indexed (1-4), convert to 0-indexed for array access
-      const pirateIndex = change.pirate - 1;
-      const pirateId = roundData.pirates[change.arena]?.[pirateIndex];
-      if (!pirateId) {
-        return;
-      }
+    if (hasHistory) {
+      const startDate = new Date(start as string);
+      const endDate = new Date(endTime as string);
+      changes = roundData.changes || [];
+      const winners = roundData.winners || makeEmpty(5);
 
-      const pirateName = PIRATE_NAMES.get(pirateId);
-      const arenaName = ARENA_NAMES[change.arena];
-
-      if (!pirateName || !arenaName) {
-        return;
-      }
-
-      const timestamp = change.t;
-      if (!changesByTimestamp.has(timestamp)) {
-        changesByTimestamp.set(timestamp, []);
-      }
-
-      changesByTimestamp.get(timestamp)!.push({
-        arenaId: change.arena,
-        pirateIndex, // Already converted to 0-indexed
-        pirateName,
-        pirateId,
-        arenaName,
-        oldOdds: change.old,
-        newOdds: change.new,
-        isIncrease: change.new > change.old,
-      });
-    });
-
-    // Build timeline events
-    const allTimelineEvents: TimelineEvent[] = [
-      {
-        id: `start-${startDate.getTime()}`,
-        icon: <FaUtensils />,
-        title: 'Round Started',
-        description: '',
-        time: startDate,
-        color: 'nfc-blue',
-        type: 'start' as const,
-      },
-    ];
-
-    // Add grouped odds changes
-    changesByTimestamp.forEach((pirates, timestamp) => {
-      const time = new Date(timestamp);
-      const hasIncreases = pirates.some(p => p.isIncrease);
-      const hasDecreases = pirates.some(p => !p.isIncrease);
-
-      // Determine color and icon based on changes
-      let color: string;
-      let icon: React.ReactElement;
-
-      if (hasIncreases && hasDecreases) {
-        color = 'nfc-blue';
-        icon = <FaWaveSquare />;
-      } else if (hasIncreases) {
-        color = 'nfc-green';
-        icon = <FaArrowUp />;
-      } else {
-        color = 'nfc-red';
-        icon = <FaArrowDown />;
-      }
-
-      // Create title and description
-      const firstPirate = pirates[0];
-      if (!firstPirate) {
-        return;
-      }
-
-      const title =
-        pirates.length === 1
-          ? `${firstPirate.pirateName} - ${firstPirate.arenaName}`
-          : `${pirates.length} Pirates Changed`;
-
-      allTimelineEvents.push({
-        id: `change-${timestamp}`,
-        icon,
-        title,
-        description: '',
-        time,
-        color,
-        type: 'change' as const,
-        pirates,
-      });
-    });
-
-    // Add round end event if finished
-    if (isRoundOver) {
-      const winningPirates: WinningPirate[] = [];
-
-      winners.forEach((winningPirateIndex, arenaId) => {
-        if (winningPirateIndex > 0) {
-          const pirateIndex = winningPirateIndex - 1;
-          const pirateId = roundData.pirates[arenaId]?.[pirateIndex];
-          const pirateName = pirateId ? PIRATE_NAMES.get(pirateId) : undefined;
-          const arenaName = ARENA_NAMES[arenaId];
-          const finalOdds = roundData.currentOdds?.[arenaId]?.[winningPirateIndex];
-
-          if (pirateId && pirateName && arenaName && finalOdds) {
-            winningPirates.push({
-              arenaId,
-              pirateIndex,
-              pirateName,
-              pirateId,
-              arenaName,
-              finalOdds,
-            });
-          }
+      // Group changes by timestamp
+      const changesByTimestamp = new Map<string, PirateChange[]>();
+      changes.forEach(change => {
+        // change.pirate is 1-indexed (1-4), convert to 0-indexed for array access
+        const pirateIndex = change.pirate - 1;
+        const pirateId = roundData.pirates[change.arena]?.[pirateIndex];
+        if (!pirateId) {
+          return;
         }
+
+        const pirateName = PIRATE_NAMES.get(pirateId);
+        const arenaName = ARENA_NAMES[change.arena];
+
+        if (!pirateName || !arenaName) {
+          return;
+        }
+
+        const timestamp = change.t;
+        if (!changesByTimestamp.has(timestamp)) {
+          changesByTimestamp.set(timestamp, []);
+        }
+
+        changesByTimestamp.get(timestamp)!.push({
+          arenaId: change.arena,
+          pirateIndex, // Already converted to 0-indexed
+          pirateName,
+          pirateId,
+          arenaName,
+          oldOdds: change.old,
+          newOdds: change.new,
+          isIncrease: change.new > change.old,
+        });
       });
 
-      allTimelineEvents.push({
-        id: `end-${endDate.getTime()}`,
-        icon: <FaMedal />,
-        title: 'Round Ended',
-        description: `${winningPirates.length} winning pirate${winningPirates.length !== 1 ? 's' : ''}`,
-        time: endDate,
-        color: 'nfc-purple',
-        type: 'end' as const,
-        winners: winningPirates,
+      // Build timeline events
+      const allTimelineEvents: TimelineEvent[] = [
+        {
+          id: `start-${startDate.getTime()}`,
+          icon: <FaUtensils />,
+          title: 'Round Started',
+          description: '',
+          time: startDate,
+          color: 'nfc-blue',
+          type: 'start' as const,
+        },
+      ];
+
+      // Add grouped odds changes
+      changesByTimestamp.forEach((pirates, timestamp) => {
+        const time = new Date(timestamp);
+        const hasIncreases = pirates.some(p => p.isIncrease);
+        const hasDecreases = pirates.some(p => !p.isIncrease);
+
+        // Determine color and icon based on changes
+        let color: string;
+        let icon: React.ReactElement;
+
+        if (hasIncreases && hasDecreases) {
+          color = 'nfc-blue';
+          icon = <FaWaveSquare />;
+        } else if (hasIncreases) {
+          color = 'nfc-green';
+          icon = <FaArrowUp />;
+        } else {
+          color = 'nfc-red';
+          icon = <FaArrowDown />;
+        }
+
+        // Create title and description
+        const firstPirate = pirates[0];
+        if (!firstPirate) {
+          return;
+        }
+
+        const title =
+          pirates.length === 1
+            ? `${firstPirate.pirateName} - ${firstPirate.arenaName}`
+            : `${pirates.length} Pirates Changed`;
+
+        allTimelineEvents.push({
+          id: `change-${timestamp}`,
+          icon,
+          title,
+          description: '',
+          time,
+          color,
+          type: 'change' as const,
+          pirates,
+        });
       });
+
+      // Add round end event if finished
+      if (isRoundOver) {
+        const winningPirates: WinningPirate[] = [];
+
+        winners.forEach((winningPirateIndex, arenaId) => {
+          if (winningPirateIndex > 0) {
+            const pirateIndex = winningPirateIndex - 1;
+            const pirateId = roundData.pirates[arenaId]?.[pirateIndex];
+            const pirateName = pirateId ? PIRATE_NAMES.get(pirateId) : undefined;
+            const arenaName = ARENA_NAMES[arenaId];
+            const finalOdds = roundData.currentOdds?.[arenaId]?.[winningPirateIndex];
+
+            if (pirateId && pirateName && arenaName && finalOdds) {
+              winningPirates.push({
+                arenaId,
+                pirateIndex,
+                pirateName,
+                pirateId,
+                arenaName,
+                finalOdds,
+              });
+            }
+          }
+        });
+
+        allTimelineEvents.push({
+          id: `end-${endDate.getTime()}`,
+          icon: <FaMedal />,
+          title: 'Round Ended',
+          description: `${winningPirates.length} winning pirate${winningPirates.length !== 1 ? 's' : ''}`,
+          time: endDate,
+          color: 'nfc-purple',
+          type: 'end' as const,
+          winners: winningPirates,
+        });
+      }
+
+      // Sort by time
+      allTimelineEvents.sort((a, b) => a.time.getTime() - b.time.getTime());
+
+      // Consolidate consecutive single-pirate changes
+      consolidatedEvents = consolidateTimelineEvents(allTimelineEvents);
     }
-
-    // Sort by time
-    allTimelineEvents.sort((a, b) => a.time.getTime() - b.time.getTime());
-
-    // Consolidate consecutive single-pirate changes
-    const consolidatedEvents = consolidateTimelineEvents(allTimelineEvents);
 
     return (
       <>
@@ -678,14 +705,18 @@ const OverallTimelineView = React.memo(
                 </Heading>
                 <Text as="i" fontSize="md" color="fg.muted" fontStyle="italic">
                   Round {roundData.round}
-                  {' - '}
-                  <DateFormatter
-                    tz="America/Los_Angeles"
-                    format="dddd, MMMM Do YYYY"
-                    date={start}
-                    withTitle
-                    titleFormat="LLL [NST]"
-                  />
+                  {hasHistory && (
+                    <>
+                      {' - '}
+                      <DateFormatter
+                        tz="America/Los_Angeles"
+                        format="dddd, MMMM Do YYYY"
+                        date={start as string}
+                        withTitle
+                        titleFormat="LLL [NST]"
+                      />
+                    </>
+                  )}
                 </Text>
               </Box>
             </Flex>
@@ -723,107 +754,116 @@ const OverallTimelineView = React.memo(
                 </Flex>
               </Box>
             )}
-            <Text
-              fontSize="sm"
-              fontWeight="bold"
-              color="fg.muted"
-              textTransform="uppercase"
-              letterSpacing="wide"
-            >
-              <FaClock style={{ display: 'inline', marginRight: '8px' }} />
-              Timeline ({changes.length} odds change{changes.length !== 1 ? 's' : ''})
-            </Text>
+            {hasHistory && (
+              <Text
+                fontSize="sm"
+                fontWeight="bold"
+                color="fg.muted"
+                textTransform="uppercase"
+                letterSpacing="wide"
+              >
+                <FaClock style={{ display: 'inline', marginRight: '8px' }} />
+                Timeline ({changes.length} odds change{changes.length !== 1 ? 's' : ''})
+              </Text>
+            )}
           </VStack>
         </DrawerHeader>
 
         <DrawerBody ref={scrollContainerRef}>
-          <VStack align="stretch">
-            <Box>
-              <Timeline.Root size="xl" variant="subtle">
-                {consolidatedEvents.map(event => (
-                  <Timeline.Item key={event.id}>
-                    <Timeline.Connector>
-                      <Timeline.Separator />
-                      <Timeline.Indicator layerStyle="fill.surface" colorPalette={event.color}>
-                        {event.icon}
-                      </Timeline.Indicator>
-                    </Timeline.Connector>
-                    <Timeline.Content>
-                      <Flex flex="1" gap="4" alignItems="flex-start" flexWrap="wrap">
-                        <Box flex="1" minW={0}>
-                          <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
-                            {event.title}
-                          </Timeline.Title>
-                          <Timeline.Description color="fg.muted" fontSize="sm">
-                            <Text fontSize="sm">{event.description}</Text>
-                          </Timeline.Description>
+          {hasHistory ? (
+            <VStack align="stretch">
+              <Box>
+                <Timeline.Root size="xl" variant="subtle">
+                  {consolidatedEvents.map(event => (
+                    <Timeline.Item key={event.id}>
+                      <Timeline.Connector>
+                        <Timeline.Separator />
+                        <Timeline.Indicator layerStyle="fill.surface" colorPalette={event.color}>
+                          {event.icon}
+                        </Timeline.Indicator>
+                      </Timeline.Connector>
+                      <Timeline.Content>
+                        <Flex flex="1" gap="4" alignItems="flex-start" flexWrap="wrap">
+                          <Box flex="1" minW={0}>
+                            <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
+                              {event.title}
+                            </Timeline.Title>
+                            <Timeline.Description color="fg.muted" fontSize="sm">
+                              <Text fontSize="sm">{event.description}</Text>
+                            </Timeline.Description>
 
-                          {/* Consolidated changes (collapsible) */}
-                          {event.type === 'consolidated' && (
-                            <ConsolidatedChangesContent
-                              event={event}
-                              onPirateClick={onPirateClick}
-                            />
-                          )}
+                            {/* Consolidated changes (collapsible) */}
+                            {event.type === 'consolidated' && (
+                              <ConsolidatedChangesContent
+                                event={event}
+                                onPirateClick={onPirateClick}
+                              />
+                            )}
 
-                          {/* Regular changes */}
-                          {event.type === 'change' && (
-                            <RegularChangesContent
-                              event={event}
-                              onPirateClick={onPirateClick}
-                              showArenaName
-                            />
-                          )}
+                            {/* Regular changes */}
+                            {event.type === 'change' && (
+                              <RegularChangesContent
+                                event={event}
+                                onPirateClick={onPirateClick}
+                                showArenaName
+                              />
+                            )}
 
-                          {/* Round ended with winners */}
-                          {event.type === 'end' && event.winners && event.winners.length > 0 && (
-                            <WinnersContent
-                              winners={event.winners}
-                              onPirateClick={onPirateClick}
-                              showArenaName
-                            />
-                          )}
-                        </Box>
-                        <VStack
-                          gap={1}
-                          align="flex-end"
-                          alignSelf="flex-start"
-                          textAlign="right"
-                          minW="max-content"
-                        >
-                          <Text fontSize="sm" color="fg.muted" fontStyle="italic">
-                            <DateFormatter
-                              format="LTS [NST]"
-                              date={event.time}
-                              tz="America/Los_Angeles"
-                              withTitle
-                              titleFormat="LLL [NST]"
-                            />
-                          </Text>
-                          <Text
-                            fontSize="sm"
-                            color="fg.muted"
-                            fontStyle="italic"
-                            hidden={!isRoundOver}
+                            {/* Round ended with winners */}
+                            {event.type === 'end' && event.winners && event.winners.length > 0 && (
+                              <WinnersContent
+                                winners={event.winners}
+                                onPirateClick={onPirateClick}
+                                showArenaName
+                              />
+                            )}
+                          </Box>
+                          <VStack
+                            gap={1}
+                            align="flex-end"
+                            alignSelf="flex-start"
+                            textAlign="right"
+                            minW="max-content"
                           >
-                            <DateFormatter
-                              format="LTS [NST]"
-                              date={event.time}
-                              tz="America/Los_Angeles"
-                              fromNow
-                              withTitle
-                              titleFormat="LLL [NST]"
-                              interval={1}
-                            />
-                          </Text>
-                        </VStack>
-                      </Flex>
-                    </Timeline.Content>
-                  </Timeline.Item>
-                ))}
-              </Timeline.Root>
-            </Box>
-          </VStack>
+                            <Text fontSize="sm" color="fg.muted" fontStyle="italic">
+                              <DateFormatter
+                                format="LTS [NST]"
+                                date={event.time}
+                                tz="America/Los_Angeles"
+                                withTitle
+                                titleFormat="LLL [NST]"
+                              />
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color="fg.muted"
+                              fontStyle="italic"
+                              hidden={!isRoundOver}
+                            >
+                              <DateFormatter
+                                format="LTS [NST]"
+                                date={event.time}
+                                tz="America/Los_Angeles"
+                                fromNow
+                                withTitle
+                                titleFormat="LLL [NST]"
+                                interval={1}
+                              />
+                            </Text>
+                          </VStack>
+                        </Flex>
+                      </Timeline.Content>
+                    </Timeline.Item>
+                  ))}
+                </Timeline.Root>
+              </Box>
+            </VStack>
+          ) : (
+            <NoHistoricalDataEmptyState
+              title="No historical odds data"
+              description={`Round ${roundData.round} predates detailed odds-change tracking, so a full timeline isn't available for it. You can still browse arenas and pirates above to see whatever odds data we do have.`}
+            />
+          )}
         </DrawerBody>
       </>
     );
@@ -844,137 +884,141 @@ const ArenaTimelineView = React.memo(
 
     const roundData = useRoundStore(state => state.roundData);
     const isRoundOver = useIsRoundOver();
-    const start = roundData.start;
     const endTime = roundData.timestamp;
     const getPirateBgColor = useGetPirateBgColor();
     const arenaRatios = useArenaRatios();
     const bigBrain = useBigBrain();
     const arenaRatio = arenaRatios[arenaId];
 
-    if (!start || !endTime) {
-      return null;
-    }
+    const hasHistory = hasHistoricalOddsData(roundData);
 
     const arenaName = ARENA_NAMES[arenaId];
-    const changes = roundData.changes || [];
-    const winners = roundData.winners || makeEmpty(5);
     const arenaPirates = roundData.pirates?.[arenaId] ?? [];
 
-    // Filter changes for this arena only
-    const arenaChanges = changes.filter(change => change.arena === arenaId);
+    let arenaChanges: OddsChange[] = [];
+    let consolidatedArenaEvents: TimelineEvent[] = [];
 
-    // Group changes by timestamp for this arena
-    const changesByTimestamp = new Map<string, PirateChange[]>();
-    arenaChanges.forEach(change => {
-      const pirateIndex = change.pirate - 1;
-      const pirateId = roundData.pirates[change.arena]?.[pirateIndex];
-      if (!pirateId) {
-        return;
-      }
+    if (hasHistory) {
+      const endTimeStr = endTime as string;
+      const winners = roundData.winners || makeEmpty(5);
+      const changes = roundData.changes || [];
 
-      const pirateName = PIRATE_NAMES.get(pirateId);
-      if (!pirateName) {
-        return;
-      }
+      // Filter changes for this arena only
+      arenaChanges = changes.filter(change => change.arena === arenaId);
 
-      const timestamp = change.t;
-      if (!changesByTimestamp.has(timestamp)) {
-        changesByTimestamp.set(timestamp, []);
-      }
+      // Group changes by timestamp for this arena
+      const changesByTimestamp = new Map<string, PirateChange[]>();
+      arenaChanges.forEach(change => {
+        const pirateIndex = change.pirate - 1;
+        const pirateId = roundData.pirates[change.arena]?.[pirateIndex];
+        if (!pirateId) {
+          return;
+        }
 
-      changesByTimestamp.get(timestamp)!.push({
-        arenaId: change.arena,
-        pirateIndex,
-        pirateName,
-        pirateId,
-        arenaName: arenaName!,
-        oldOdds: change.old,
-        newOdds: change.new,
-        isIncrease: change.new > change.old,
+        const pirateName = PIRATE_NAMES.get(pirateId);
+        if (!pirateName) {
+          return;
+        }
+
+        const timestamp = change.t;
+        if (!changesByTimestamp.has(timestamp)) {
+          changesByTimestamp.set(timestamp, []);
+        }
+
+        changesByTimestamp.get(timestamp)!.push({
+          arenaId: change.arena,
+          pirateIndex,
+          pirateName,
+          pirateId,
+          arenaName: arenaName!,
+          oldOdds: change.old,
+          newOdds: change.new,
+          isIncrease: change.new > change.old,
+        });
       });
-    });
 
-    // Build timeline events for this arena
-    const arenaTimelineEvents: TimelineEvent[] = [];
+      // Build timeline events for this arena
+      const arenaTimelineEvents: TimelineEvent[] = [];
 
-    // Add grouped odds changes
-    changesByTimestamp.forEach((pirates, timestamp) => {
-      const time = new Date(timestamp);
-      const hasIncreases = pirates.some(p => p.isIncrease);
-      const hasDecreases = pirates.some(p => !p.isIncrease);
+      // Add grouped odds changes
+      changesByTimestamp.forEach((pirates, timestamp) => {
+        const time = new Date(timestamp);
+        const hasIncreases = pirates.some(p => p.isIncrease);
+        const hasDecreases = pirates.some(p => !p.isIncrease);
 
-      let color: string;
-      let icon: React.ReactElement;
+        let color: string;
+        let icon: React.ReactElement;
 
-      if (hasIncreases && hasDecreases) {
-        color = 'nfc-blue';
-        icon = <FaWaveSquare />;
-      } else if (hasIncreases) {
-        color = 'nfc-green';
-        icon = <FaArrowUp />;
-      } else {
-        color = 'nfc-red';
-        icon = <FaArrowDown />;
-      }
+        if (hasIncreases && hasDecreases) {
+          color = 'nfc-blue';
+          icon = <FaWaveSquare />;
+        } else if (hasIncreases) {
+          color = 'nfc-green';
+          icon = <FaArrowUp />;
+        } else {
+          color = 'nfc-red';
+          icon = <FaArrowDown />;
+        }
 
-      const firstPirate = pirates[0];
-      if (!firstPirate) {
-        return;
-      }
+        const firstPirate = pirates[0];
+        if (!firstPirate) {
+          return;
+        }
 
-      const title =
-        pirates.length === 1 ? `${firstPirate.pirateName}` : `${pirates.length} Pirates Changed`;
+        const title =
+          pirates.length === 1 ? `${firstPirate.pirateName}` : `${pirates.length} Pirates Changed`;
 
-      arenaTimelineEvents.push({
-        id: `change-${timestamp}`,
-        icon,
-        title,
-        description: '',
-        time,
-        color,
-        type: 'change' as const,
-        pirates,
+        arenaTimelineEvents.push({
+          id: `change-${timestamp}`,
+          icon,
+          title,
+          description: '',
+          time,
+          color,
+          type: 'change' as const,
+          pirates,
+        });
       });
-    });
 
-    // Add round end event if finished
-    if (isRoundOver) {
-      const winningPirateIndex = winners[arenaId];
-      if (winningPirateIndex !== undefined && winningPirateIndex > 0) {
-        const pirateIndex = winningPirateIndex - 1;
-        const pirateId = roundData.pirates[arenaId]?.[pirateIndex];
-        const pirateName = pirateId ? PIRATE_NAMES.get(pirateId) : undefined;
-        const finalOdds = roundData.currentOdds?.[arenaId]?.[winningPirateIndex];
+      // Add round end event if finished
+      if (isRoundOver) {
+        const winningPirateIndex = winners[arenaId];
+        if (winningPirateIndex !== undefined && winningPirateIndex > 0) {
+          const pirateIndex = winningPirateIndex - 1;
+          const pirateId = roundData.pirates[arenaId]?.[pirateIndex];
+          const pirateName = pirateId ? PIRATE_NAMES.get(pirateId) : undefined;
+          const finalOdds = roundData.currentOdds?.[arenaId]?.[winningPirateIndex];
 
-        if (pirateId && pirateName && finalOdds) {
-          const winningPirate: WinningPirate = {
-            arenaId,
-            pirateIndex,
-            pirateName,
-            pirateId,
-            arenaName: arenaName!,
-            finalOdds,
-          };
+          if (pirateId && pirateName && finalOdds) {
+            const winningPirate: WinningPirate = {
+              arenaId,
+              pirateIndex,
+              pirateName,
+              pirateId,
+              arenaName: arenaName!,
+              finalOdds,
+            };
 
-          arenaTimelineEvents.push({
-            id: `end-${endTime}`,
-            icon: <FaMedal />,
-            title: 'Round Ended',
-            description: `${pirateName} won!`,
-            time: new Date(endTime),
-            color: 'nfc-purple',
-            type: 'end' as const,
-            winners: [winningPirate],
-          });
+            arenaTimelineEvents.push({
+              id: `end-${endTimeStr}`,
+              icon: <FaMedal />,
+              title: 'Round Ended',
+              description: `${pirateName} won!`,
+              time: new Date(endTimeStr),
+              color: 'nfc-purple',
+              type: 'end' as const,
+              winners: [winningPirate],
+            });
+          }
         }
       }
+
+      // Sort by time
+      arenaTimelineEvents.sort((a, b) => a.time.getTime() - b.time.getTime());
+
+      // Consolidate consecutive single-pirate changes
+      consolidatedArenaEvents = consolidateTimelineEvents(arenaTimelineEvents);
     }
-
-    // Sort by time
-    arenaTimelineEvents.sort((a, b) => a.time.getTime() - b.time.getTime());
-
-    // Consolidate consecutive single-pirate changes
-    const consolidatedArenaEvents = consolidateTimelineEvents(arenaTimelineEvents);
 
     return (
       <>
@@ -1093,21 +1137,28 @@ const ArenaTimelineView = React.memo(
               })}
             </HStack>
 
-            <Text
-              fontSize="sm"
-              fontWeight="bold"
-              color="fg.muted"
-              textTransform="uppercase"
-              letterSpacing="wide"
-            >
-              <FaClock style={{ display: 'inline', marginRight: '8px' }} />
-              Timeline ({arenaChanges.length} odds change{arenaChanges.length !== 1 ? 's' : ''})
-            </Text>
+            {hasHistory && (
+              <Text
+                fontSize="sm"
+                fontWeight="bold"
+                color="fg.muted"
+                textTransform="uppercase"
+                letterSpacing="wide"
+              >
+                <FaClock style={{ display: 'inline', marginRight: '8px' }} />
+                Timeline ({arenaChanges.length} odds change{arenaChanges.length !== 1 ? 's' : ''})
+              </Text>
+            )}
           </VStack>
         </DrawerHeader>
 
         <DrawerBody ref={scrollContainerRef}>
-          {arenaChanges.length === 0 ? (
+          {!hasHistory ? (
+            <NoHistoricalDataEmptyState
+              title="No historical odds data"
+              description={`${arenaName} predates detailed odds-change tracking for Round ${roundData.round}, so a change-by-change timeline isn't available. You can still tap a pirate above to see their opening and current odds.`}
+            />
+          ) : arenaChanges.length === 0 ? (
             <EmptyState.Root>
               <EmptyState.Content>
                 <EmptyState.Indicator>
@@ -1219,75 +1270,92 @@ const PirateTimelineView = React.memo(
       [roundData, arenaId, pirateIndex],
     );
 
-    if (!pirateId || !start || !endTime) {
+    if (!pirateId) {
       return null;
     }
 
+    const hasHistory = hasHistoricalOddsData(roundData);
+
     const pirateName = PIRATE_NAMES.get(pirateId)!;
     const arenaName = ARENA_NAMES[arenaId]!;
-    const startDate = new Date(start!);
-    const endDate = new Date(endTime!);
-
-    const thisPiratesOdds = [openingOdds];
-    const thisPiratesChangesTimes = [startDate.getTime()];
-    const thisPiratesChanges: OddsChange[] = [];
-
-    const changes = roundData.changes || [];
-
-    // Consolidate odds changes processing for this pirate
-    filterChangesByArenaPirate(changes, arenaId, pirateIndex).map(change => {
-      thisPiratesOdds.push(change.new);
-      thisPiratesChangesTimes.push(new Date(change.t).getTime());
-      thisPiratesChanges.push(change);
-    });
 
     const winners = roundData.winners || makeEmpty(5);
     const winningPirate = winners[arenaId] ?? 0;
     const didPirateWin = winningPirate === pirateIndex + 1;
 
-    // Memoized label calculation
-    const oddsChangesCountLabel = `${thisPiratesChanges.length} odds change${thisPiratesChanges.length !== 1 ? 's' : ''}`;
+    let oddsChangesCountLabel = '';
+    let timelineEvents: {
+      id: string;
+      icon: React.ReactElement;
+      title: string;
+      description: string;
+      time: Date;
+      odds: number | undefined;
+      color: string;
+      change?: number;
+    }[] = [];
 
-    // Enhanced timeline events with more data
-    const timelineEvents = [
-      {
-        id: `start-${startDate.getTime()}`,
-        icon: <FaUtensils />,
-        title: 'Round Started',
-        description: `${pirateName} opened at ${openingOdds}:1`,
-        time: startDate,
-        odds: openingOdds,
-        color: 'nfc-blue',
-      },
-      ...thisPiratesChanges.map((change, index) => {
-        const isIncrease = change.new > change.old;
+    if (hasHistory) {
+      const startDate = new Date(start as string);
+      const endDate = new Date(endTime as string);
 
-        return {
-          id: `change-${change.t}-${index}`,
-          icon: isIncrease ? <FaArrowUp /> : <FaArrowDown />,
-          title: `${change.old} to ${change.new}`,
-          description: `${index + 1}${getOrdinalSuffix(index + 1)} change`,
-          time: new Date(change.t),
-          odds: change.new,
-          color: isIncrease ? 'nfc-green' : 'nfc-red',
-          change: change.new - change.old,
-        };
-      }),
-    ];
+      const thisPiratesOdds = [openingOdds];
+      const thisPiratesChangesTimes = [startDate.getTime()];
+      const thisPiratesChanges: OddsChange[] = [];
 
-    // Add round end event if finished
-    if (isRoundOver) {
-      timelineEvents.push({
-        id: `end-${endDate.getTime()}`,
-        icon: didPirateWin ? <FaMedal /> : <FaSkullCrossbones />,
-        title: didPirateWin ? '🏆 Pirate Won!' : '💀 Pirate Lost',
-        description: didPirateWin
-          ? `${pirateName} won ${arenaName}!`
-          : `${pirateName} lost ${arenaName}.`,
-        time: endDate,
-        odds: thisPiratesOdds[thisPiratesOdds.length - 1] || openingOdds,
-        color: didPirateWin ? 'nfc-green' : 'nfc-red',
+      const changes = roundData.changes || [];
+
+      // Consolidate odds changes processing for this pirate
+      filterChangesByArenaPirate(changes, arenaId, pirateIndex).map(change => {
+        thisPiratesOdds.push(change.new);
+        thisPiratesChangesTimes.push(new Date(change.t).getTime());
+        thisPiratesChanges.push(change);
       });
+
+      // Memoized label calculation
+      oddsChangesCountLabel = `${thisPiratesChanges.length} odds change${thisPiratesChanges.length !== 1 ? 's' : ''}`;
+
+      // Enhanced timeline events with more data
+      timelineEvents = [
+        {
+          id: `start-${startDate.getTime()}`,
+          icon: <FaUtensils />,
+          title: 'Round Started',
+          description: `${pirateName} opened at ${openingOdds}:1`,
+          time: startDate,
+          odds: openingOdds,
+          color: 'nfc-blue',
+        },
+        ...thisPiratesChanges.map((change, index) => {
+          const isIncrease = change.new > change.old;
+
+          return {
+            id: `change-${change.t}-${index}`,
+            icon: isIncrease ? <FaArrowUp /> : <FaArrowDown />,
+            title: `${change.old} to ${change.new}`,
+            description: `${index + 1}${getOrdinalSuffix(index + 1)} change`,
+            time: new Date(change.t),
+            odds: change.new,
+            color: isIncrease ? 'nfc-green' : 'nfc-red',
+            change: change.new - change.old,
+          };
+        }),
+      ];
+
+      // Add round end event if finished
+      if (isRoundOver) {
+        timelineEvents.push({
+          id: `end-${endDate.getTime()}`,
+          icon: didPirateWin ? <FaMedal /> : <FaSkullCrossbones />,
+          title: didPirateWin ? '🏆 Pirate Won!' : '💀 Pirate Lost',
+          description: didPirateWin
+            ? `${pirateName} won ${arenaName}!`
+            : `${pirateName} lost ${arenaName}.`,
+          time: endDate,
+          odds: thisPiratesOdds[thisPiratesOdds.length - 1] || openingOdds,
+          color: didPirateWin ? 'nfc-green' : 'nfc-red',
+        });
+      }
     }
 
     return (
@@ -1354,7 +1422,7 @@ const PirateTimelineView = React.memo(
                     </Badge>
                   )}
                 </Flex>
-                {oddsChangesCountLabel && (
+                {hasHistory && oddsChangesCountLabel && (
                   <Text fontSize="xs" color="fg.muted" fontStyle="italic">
                     {oddsChangesCountLabel}
                   </Text>
@@ -1388,68 +1456,75 @@ const PirateTimelineView = React.memo(
         </DrawerHeader>
 
         <DrawerBody>
-          <VStack align="stretch">
-            <Box>
-              <Timeline.Root size="xl" variant="subtle">
-                {timelineEvents.map(event => (
-                  <Timeline.Item key={event.id}>
-                    <Timeline.Connector>
-                      <Timeline.Separator />
-                      <Timeline.Indicator layerStyle="fill.surface" colorPalette={event.color}>
-                        {event.icon}
-                      </Timeline.Indicator>
-                    </Timeline.Connector>
-                    <Timeline.Content>
-                      <Flex flex="1" gap="4" alignItems="flex-start" flexWrap="wrap">
-                        <Box>
-                          <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
-                            {event.title}
-                          </Timeline.Title>
-                          <Timeline.Description color="fg.muted" fontSize="sm">
-                            <Text fontSize="sm">{event.description}</Text>
-                          </Timeline.Description>
-                        </Box>
-                        <Spacer />
-                        <VStack
-                          gap={1}
-                          align="flex-end"
-                          alignSelf="flex-start"
-                          textAlign="right"
-                          minW="max-content"
-                        >
-                          <Text fontSize="sm" color="fg.muted" fontStyle="italic">
-                            <DateFormatter
-                              format="LTS [NST]"
-                              date={event.time}
-                              tz="America/Los_Angeles"
-                              withTitle
-                              titleFormat="LLL [NST]"
-                            />
-                          </Text>
-                          <Text
-                            fontSize="sm"
-                            color="fg.muted"
-                            fontStyle="italic"
-                            hidden={!isRoundOver}
+          {hasHistory ? (
+            <VStack align="stretch">
+              <Box>
+                <Timeline.Root size="xl" variant="subtle">
+                  {timelineEvents.map(event => (
+                    <Timeline.Item key={event.id}>
+                      <Timeline.Connector>
+                        <Timeline.Separator />
+                        <Timeline.Indicator layerStyle="fill.surface" colorPalette={event.color}>
+                          {event.icon}
+                        </Timeline.Indicator>
+                      </Timeline.Connector>
+                      <Timeline.Content>
+                        <Flex flex="1" gap="4" alignItems="flex-start" flexWrap="wrap">
+                          <Box>
+                            <Timeline.Title fontSize="sm" fontWeight="bold" mb={1}>
+                              {event.title}
+                            </Timeline.Title>
+                            <Timeline.Description color="fg.muted" fontSize="sm">
+                              <Text fontSize="sm">{event.description}</Text>
+                            </Timeline.Description>
+                          </Box>
+                          <Spacer />
+                          <VStack
+                            gap={1}
+                            align="flex-end"
+                            alignSelf="flex-start"
+                            textAlign="right"
+                            minW="max-content"
                           >
-                            <DateFormatter
-                              format="LTS [NST]"
-                              date={event.time}
-                              tz="America/Los_Angeles"
-                              fromNow
-                              withTitle
-                              titleFormat="LLL [NST]"
-                              interval={1}
-                            />
-                          </Text>
-                        </VStack>
-                      </Flex>
-                    </Timeline.Content>
-                  </Timeline.Item>
-                ))}
-              </Timeline.Root>
-            </Box>
-          </VStack>
+                            <Text fontSize="sm" color="fg.muted" fontStyle="italic">
+                              <DateFormatter
+                                format="LTS [NST]"
+                                date={event.time}
+                                tz="America/Los_Angeles"
+                                withTitle
+                                titleFormat="LLL [NST]"
+                              />
+                            </Text>
+                            <Text
+                              fontSize="sm"
+                              color="fg.muted"
+                              fontStyle="italic"
+                              hidden={!isRoundOver}
+                            >
+                              <DateFormatter
+                                format="LTS [NST]"
+                                date={event.time}
+                                tz="America/Los_Angeles"
+                                fromNow
+                                withTitle
+                                titleFormat="LLL [NST]"
+                                interval={1}
+                              />
+                            </Text>
+                          </VStack>
+                        </Flex>
+                      </Timeline.Content>
+                    </Timeline.Item>
+                  ))}
+                </Timeline.Root>
+              </Box>
+            </VStack>
+          ) : (
+            <NoHistoricalDataEmptyState
+              title="No historical odds data"
+              description={`We don't have detailed odds-tracking history for ${pirateName} in Round ${roundData.round}.${openingOdds !== undefined ? ` Their opening odds were ${openingOdds}:1${currentOdds !== undefined && currentOdds !== openingOdds ? ` and current odds are ${currentOdds}:1` : ''}.` : ''}`}
+            />
+          )}
         </DrawerBody>
       </>
     );
