@@ -24,11 +24,10 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v7
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
       with:
-        node-version: '24'
-        cache: 'npm'
+        bun-version: '1.3.14'
 
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
@@ -44,24 +43,24 @@ jobs:
       uses: jetli/wasm-pack-action@v0.4.0
 
     - name: Install dependencies
-      run: npm ci
+      run: bun install --frozen-lockfile
 
     - name: Build wasm math core
-      run: npm run build:wasm
+      run: bun run build:wasm
 
     - name: Lint & Type Check
       continue-on-error: true
       run: |
-        npm run lint
-        npm run typecheck
+        bun run lint
+        bun run typecheck
 
     - name: Unit Tests with Coverage
-      run: npm run test:coverage
+      run: bun run test:coverage
 
     - name: Build
       env:
         VITE_GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      run: npm run build
+      run: bun run build
 
     - name: Upload Coverage
       if: github.event_name == 'pull_request'

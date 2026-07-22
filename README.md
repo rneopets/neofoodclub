@@ -17,11 +17,11 @@ submodule at `wasm/`. One-time setup after cloning:
 
 ```sh
 just wasm-setup   # rustup target add wasm32-unknown-unknown + git submodule init
-npm install       # also builds the wasm module (see prestart/prebuild/pretest in package.json)
+bun install       # also builds the wasm module (see prestart/prebuild/pretest in package.json)
 ```
 
 Requires a Rust toolchain and [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/).
-`just wasm-build` (or `npm run build:wasm`) rebuilds the wasm module on its own.
+`just wasm-build` (or `bun run build:wasm`) rebuilds the wasm module on its own.
 
 ---
 
