@@ -385,7 +385,16 @@ const baseConfig = defineConfig({
     slotRecipes: {
       radioGroup: defineSlotRecipe({
         className: 'chakra-radio-group',
-        slots: ['root', 'label', 'item', 'itemText', 'itemControl', 'indicator', 'itemAddon', 'itemIndicator'],
+        slots: [
+          'root',
+          'label',
+          'item',
+          'itemText',
+          'itemControl',
+          'indicator',
+          'itemAddon',
+          'itemIndicator',
+        ],
         variants: {
           variant: {
             solid: {

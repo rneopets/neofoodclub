@@ -31,9 +31,9 @@ function buildReactScanOptions(enabled: boolean): ReactScanRuntimeOptions {
   };
 }
 
-async function loadReactScanModule(): Promise<ReactScanModule> {
+function loadReactScanModule(): Promise<ReactScanModule> {
   if (reactScanModule) {
-    return reactScanModule;
+    return Promise.resolve(reactScanModule);
   }
 
   if (!reactScanLoadPromise) {
