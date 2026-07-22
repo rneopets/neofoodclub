@@ -5,6 +5,24 @@
 # CI already have wasm-pack installed and skip straight to the build.
 set -e
 
+WASM_SHA=$(git -C wasm/neofoodclub_rs rev-parse HEAD)
+PKG_DIR=wasm/pkg
+CACHE_URL="https://pub-fe0294c3912c4425b7e998411ef6e975.r2.dev/wasm-pkg-$WASM_SHA.tar.gz"
+
+if [ -f "$PKG_DIR/.build-sha" ] && [ "$(cat "$PKG_DIR/.build-sha")" = "$WASM_SHA" ] && [ -f "$PKG_DIR/neofoodclub_wasm_bg.wasm" ]; then
+  echo "wasm/pkg already built for $WASM_SHA, skipping"
+  exit 0
+fi
+
+rm -rf "$PKG_DIR" && mkdir -p "$PKG_DIR"
+if curl -fsSL -o /tmp/wasm-pkg-cache.tar.gz "$CACHE_URL"; then
+  tar -xzf /tmp/wasm-pkg-cache.tar.gz -C "$PKG_DIR"
+  echo "$WASM_SHA" > "$PKG_DIR/.build-sha"
+  echo "Restored prebuilt wasm/pkg for $WASM_SHA from cache"
+  exit 0
+fi
+echo "No cached wasm build found for $WASM_SHA, compiling from source"
+
 if ! command -v wasm-pack >/dev/null 2>&1; then
   export RUSTUP_HOME="${RUSTUP_HOME:-/tmp/rustup}"
   export CARGO_HOME="${CARGO_HOME:-/tmp/cargo}"
@@ -19,3 +37,9 @@ if ! command -v wasm-pack >/dev/null 2>&1; then
 fi
 
 wasm-pack build wasm/neofoodclub_rs/crates/wasm --target bundler --out-dir ../../../pkg --out-name neofoodclub_wasm
+echo "$WASM_SHA" > "$PKG_DIR/.build-sha"
+
+if [ -n "$WASM_CACHE_UPLOAD_TOKEN" ]; then
+  tar -czf /tmp/wasm-pkg-cache.tar.gz -C "$PKG_DIR" .
+  CLOUDFLARE_API_TOKEN="$WASM_CACHE_UPLOAD_TOKEN" npx wrangler r2 object put "neofoodclub-wasm-cache/wasm-pkg-$WASM_SHA.tar.gz" --file /tmp/wasm-pkg-cache.tar.gz --remote || echo "warning: failed to publish wasm cache to R2 (non-fatal)"
+fi
