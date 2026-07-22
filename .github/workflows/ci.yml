@@ -46,6 +46,8 @@ jobs:
       run: bun install --frozen-lockfile
 
     - name: Build wasm math core
+      env:
+        WASM_CACHE_UPLOAD_TOKEN: ${{ secrets.CF_R2_WASM_CACHE_TOKEN }}
       run: bun run build:wasm
 
     - name: Lint & Type Check
