@@ -910,6 +910,7 @@ describe('Utility Functions', () => {
             [1, 5, 2, 3, 10],
             [1, 12, 2, 3, 3],
           ],
+          foods: [],
         },
         advanced: {
           bigBrain: true,
@@ -925,7 +926,7 @@ describe('Utility Functions', () => {
       };
 
       const result = getOdds(roundState);
-      expect(result).toEqual(roundState.roundData.currentOdds);
+      expect(result).toEqual(roundState.roundData?.currentOdds);
     });
 
     it('returns currentOdds when bigBrain is disabled', () => {
@@ -944,6 +945,7 @@ describe('Utility Functions', () => {
             [1, 5, 2, 3, 10],
             [1, 12, 2, 3, 3],
           ],
+          foods: [],
         },
         advanced: {
           bigBrain: false,
@@ -959,7 +961,7 @@ describe('Utility Functions', () => {
       };
 
       const result = getOdds(roundState);
-      expect(result).toEqual(roundState.roundData.currentOdds);
+      expect(result).toEqual(roundState.roundData?.currentOdds);
     });
   });
 
@@ -976,7 +978,10 @@ describe('Utility Functions', () => {
 
       // Use the first fixture (should have valid odds data)
       const fixture = fixtures[0];
-      expect(fixture?.roundData.currentOdds?.length).toBeGreaterThan(0);
+      if (!fixture) {
+        throw new Error('Expected at least one round fixture');
+      }
+      expect(fixture.roundData.currentOdds?.length).toBeGreaterThan(0);
 
       // Create custom odds that change the bet's target pirate's odds
       // relative to the rest of its arena (index 0 stays 1, the wasm engine

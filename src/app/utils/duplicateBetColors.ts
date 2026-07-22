@@ -15,7 +15,9 @@ export function computeDuplicateBetGroupColors(
   const groups = new Map<number, number[]>();
 
   for (const [betNum, binary] of betBinariesMap) {
-    if (binary === 0) continue;
+    if (binary === 0) {
+      continue;
+    }
 
     const existing = groups.get(binary);
     if (existing) {
@@ -30,7 +32,9 @@ export function computeDuplicateBetGroupColors(
 
   for (const [binary, betNums] of groups) {
     if (betNums.length >= 2) {
-      const color = DUPLICATE_BET_COLOR_PALETTE[colorIndex % DUPLICATE_BET_COLOR_PALETTE.length] as string;
+      const color = DUPLICATE_BET_COLOR_PALETTE[
+        colorIndex % DUPLICATE_BET_COLOR_PALETTE.length
+      ] as string;
       result.set(binary, color);
       colorIndex += 1;
     }

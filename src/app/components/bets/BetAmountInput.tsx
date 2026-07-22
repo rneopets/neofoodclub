@@ -11,8 +11,10 @@ import {
   NumberInputValueChangeDetails,
 } from '@/components/ui/number-input';
 
-interface BetAmountInputProps
-  extends Omit<React.ComponentProps<typeof NumberInputRoot>, 'value' | 'onValueChange'> {
+interface BetAmountInputProps extends Omit<
+  React.ComponentProps<typeof NumberInputRoot>,
+  'value' | 'onValueChange'
+> {
   betIndex: number;
   invalid?: boolean;
   errorColor?: string;

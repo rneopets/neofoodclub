@@ -16,7 +16,7 @@ fi
 
 rm -rf "$PKG_DIR" && mkdir -p "$PKG_DIR"
 if curl -fsSL -o /tmp/wasm-pkg-cache.tar.gz "$CACHE_URL"; then
-  tar -xzf /tmp/wasm-pkg-cache.tar.gz -C "$PKG_DIR"
+  tar -xzf /tmp/wasm-pkg-cache.tar.gz -C "$PKG_DIR" --exclude='._*' --exclude='.DS_Store'
   echo "$WASM_SHA" > "$PKG_DIR/.build-sha"
   echo "Restored prebuilt wasm/pkg for $WASM_SHA from cache"
   exit 0
@@ -40,6 +40,6 @@ wasm-pack build wasm/neofoodclub_rs/crates/wasm --target bundler --out-dir ../..
 echo "$WASM_SHA" > "$PKG_DIR/.build-sha"
 
 if [ -n "$WASM_CACHE_UPLOAD_TOKEN" ]; then
-  tar -czf /tmp/wasm-pkg-cache.tar.gz -C "$PKG_DIR" .
+  COPYFILE_DISABLE=1 tar -czf /tmp/wasm-pkg-cache.tar.gz -C "$PKG_DIR" --exclude='._*' --exclude='.DS_Store' .
   CLOUDFLARE_API_TOKEN="$WASM_CACHE_UPLOAD_TOKEN" npx wrangler r2 object put "neofoodclub-wasm-cache/wasm-pkg-$WASM_SHA.tar.gz" --file /tmp/wasm-pkg-cache.tar.gz --remote || echo "warning: failed to publish wasm cache to R2 (non-fatal)"
 fi

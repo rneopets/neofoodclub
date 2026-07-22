@@ -709,7 +709,11 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                       defaultHeight={400}
                       rowCount={filteredBets.length}
                       rowHeight={32}
-                      rowComponent={Row}
+                      rowComponent={
+                        Row as (
+                          props: { index: number; style: React.CSSProperties } & RowData,
+                        ) => React.ReactElement | null
+                      }
                       rowProps={itemData as RowData}
                     />
                   </Box>

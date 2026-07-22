@@ -81,21 +81,21 @@ interface GlowCardProps extends BoxProps {
 
 const GlowCard: React.FC<GlowCardProps> = ({
   children,
-  animate,
+  animate = false,
   borderRadius = 'lg',
   ...props
 }) => {
-  const [borderColorValue] = useToken('colors', ['bg.panel']);
-  const [backgroundColorValue] = useToken('colors', ['border']);
-  const borderRadiusValue = useToken('radii', borderRadius as string);
+  const [borderColorValue = 'bg.panel'] = useToken('colors', ['bg.panel']);
+  const [backgroundColorValue = 'border'] = useToken('colors', ['border']);
+  const [borderRadiusValue = 'lg'] = useToken('radii', [borderRadius as string]);
 
   return (
     <CardContainer
+      {...props}
       animate={animate}
       backgroundColor={backgroundColorValue}
       borderColor={borderColorValue}
       borderRadius={borderRadiusValue}
-      {...props}
     >
       {children}
     </CardContainer>

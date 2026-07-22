@@ -50,11 +50,11 @@ jobs:
         WASM_CACHE_UPLOAD_TOKEN: ${{ secrets.CF_R2_WASM_CACHE_TOKEN }}
       run: bun run build:wasm
 
-    - name: Lint & Type Check
-      continue-on-error: true
-      run: |
-        bun run lint
-        bun run typecheck
+    - name: Lint
+      run: bun run lint
+
+    - name: Type Check
+      run: bun run typecheck
 
     - name: Unit Tests with Coverage
       run: bun run test:coverage

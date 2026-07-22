@@ -32,7 +32,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "downlevelIteration": true,
+    "types": ["node"],
     "paths": {
       "@/*": ["./src/*"],
       "@wasm/*": ["./wasm/pkg/*"]

@@ -1,6 +1,6 @@
 import { render, RenderOptions, RenderResult } from '@testing-library/react';
 import React, { ReactElement } from 'react';
-import { vi } from 'vitest';
+import { vi, Mock } from 'vitest';
 
 import { Provider } from '../components/ui/provider';
 
@@ -16,7 +16,19 @@ export * from '@testing-library/react';
 export { customRender as render };
 
 // Helper to create mock drag and drop events
-export const createMockDataTransfer = (data: Record<string, string> = {}): DataTransfer => ({
+export const createMockDataTransfer = (
+  data: Record<string, string> = {},
+): {
+  getData: Mock;
+  setData: Mock;
+  files: FileList;
+  items: DataTransferItemList;
+  types: string[];
+  effectAllowed: 'all';
+  dropEffect: 'none';
+  clearData: Mock;
+  setDragImage: Mock;
+} => ({
   getData: vi.fn((type: string) => data[type] || ''),
   setData: vi.fn(),
   files: [] as unknown as FileList,

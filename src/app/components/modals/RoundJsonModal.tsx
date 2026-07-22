@@ -32,7 +32,7 @@ const shikiAdapter = createShikiAdapter<HighlighterGeneric<'json', 'github-dark'
       langs: [json.default],
       themes: [githubDark.default],
       engine: createOnigurumaEngine(import('shiki/wasm')),
-    });
+    }) as Promise<HighlighterGeneric<'json', 'github-dark'>>;
   },
   theme: 'github-dark',
 });

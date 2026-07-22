@@ -96,7 +96,6 @@ const Footer: React.FC<FooterProps> = props => {
   const [rotation, setRotation] = React.useState(0);
   const clickTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasOpenedBefore = React.useRef<boolean>(
-    // eslint-disable-next-line no-undef
     typeof localStorage !== 'undefined' && localStorage.getItem('devModeOpened') === 'true',
   );
 
@@ -174,7 +173,6 @@ const Footer: React.FC<FooterProps> = props => {
         }
         // Mark that dev mode has been opened
         if (typeof localStorage !== 'undefined') {
-          // eslint-disable-next-line no-undef
           localStorage.setItem('devModeOpened', 'true');
           hasOpenedBefore.current = true;
         }
