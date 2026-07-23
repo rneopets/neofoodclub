@@ -16,6 +16,7 @@ import {
   AbsoluteCenter,
   Group,
   NumberInputControl,
+  useBreakpointValue,
 } from '@chakra-ui/react';
 import { addYears, differenceInMilliseconds } from 'date-fns';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -614,11 +615,26 @@ const HeaderContent: React.FC = () => {
 
 type HeaderProps = BoxProps;
 
+const HEADER_HIDE_SCROLL_THRESHOLD = 64;
+
 const Header: React.FC<HeaderProps> = props => {
   const [y, setY] = useState<number>(0);
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
+  const isMobile =
+    useBreakpointValue({ base: true, md: false }, { fallback: 'base', ssr: false }) ?? false;
 
   useEffect(() => {
-    const handleScroll = (): void => setY(window.scrollY);
+    const handleScroll = (): void => {
+      const currentY = window.scrollY;
+      setY(currentY);
+      if (currentY > lastY.current && currentY > HEADER_HIDE_SCROLL_THRESHOLD) {
+        setHidden(true);
+      } else if (currentY < lastY.current) {
+        setHidden(false);
+      }
+      lastY.current = currentY;
+    };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return (): void => window.removeEventListener('scroll', handleScroll);
@@ -628,7 +644,8 @@ const Header: React.FC<HeaderProps> = props => {
     <Box
       as={'header'}
       shadow={y > 0 ? 'lg' : ''}
-      transition="box-shadow 0.2s;"
+      transform={isMobile && hidden ? 'translateY(-100%)' : 'translateY(0)'}
+      transition="box-shadow 0.2s, transform 0.25s ease-in-out"
       pos="fixed"
       top="0"
       zIndex={'docked'}
