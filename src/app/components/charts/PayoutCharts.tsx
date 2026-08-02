@@ -284,14 +284,10 @@ const PayoutCharts: React.FC = React.memo(() => {
       }
 
       return (
-        <Table.Row>
-          <Table.Cell colSpan={4} pt={2} borderBottom="none" w="full">
-            <Box w="full" h={{ base: '160px', md: '180px' }}>
-              {/* @ts-ignore */}
-              <Scatter data={chartData} options={options} />
-            </Box>
-          </Table.Cell>
-        </Table.Row>
+        <Box w="full" h={{ base: '160px', md: '180px' }} pt={2} overflow="hidden">
+          {/* @ts-ignore */}
+          <Scatter data={chartData} options={options} />
+        </Box>
       );
     },
     [betBinaries, totalBetAmount, isDarkLikeMode, winningBetBinary, calculationsData],
@@ -366,11 +362,9 @@ const PayoutCharts: React.FC = React.memo(() => {
                       <Table.ColumnHeader>Tail</Table.ColumnHeader>
                     </Table.Row>
                   </Table.Header>
-                  <Table.Body>
-                    {tableRows}
-                    {makeChart(title, data, probabilityDecimals)}
-                  </Table.Body>
+                  <Table.Body>{tableRows}</Table.Body>
                 </Table.Root>
+                {makeChart(title, data, probabilityDecimals)}
               </Skeleton>
             </Card.Body>
           </Card.Root>
