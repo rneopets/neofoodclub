@@ -70,8 +70,29 @@ describe('maths.ts golden regression (wasm-backed)', () => {
         expect(computeLegacyProbabilities(roundData)).toMatchSnapshot();
       });
 
-      it('computeLogitProbabilities', () => {
-        expect(computeLogitProbabilities(roundData)).toMatchSnapshot();
+      it('computeLogitProbabilities produces a valid probability distribution per arena', () => {
+        // Unlike computeLegacyProbabilities, this is backed by a trained
+        // logit model whose coefficients get periodically retrained upstream
+        // (see neofoodclub.rs's update-logit-values workflow) - exact values
+        // shift on every wasm bump even without any bug. Assert the
+        // invariants that must hold regardless of the specific coefficients
+        // instead of snapshotting floats.
+        const { prob, used } = computeLogitProbabilities(roundData);
+
+        expect(prob).toHaveLength(5);
+        for (const row of prob) {
+          expect(row).toHaveLength(5);
+          expect(row[0]).toBe(1);
+
+          const pirateProbs = row.slice(1);
+          for (const p of pirateProbs) {
+            expect(p).toBeGreaterThanOrEqual(0);
+            expect(p).toBeLessThanOrEqual(1);
+          }
+          expect(pirateProbs.reduce((sum, p) => sum + p, 0)).toBeCloseTo(1, 9);
+        }
+
+        expect(used).toEqual(prob);
       });
 
       it('calculateArenaRatios (current odds)', () => {
