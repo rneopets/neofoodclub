@@ -51,6 +51,7 @@ interface GoToCurrentRoundButtonProps {
 const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo(
   ({ testId = 'go-to-current-round' }) => {
     const fetchCurrentRound = useRoundStore(state => state.fetchCurrentRound);
+    const isMobile = useIsMobile();
 
     const handleGoToCurrent = useCallback(async () => {
       await fetchCurrentRound();
@@ -63,14 +64,14 @@ const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo
     return (
       <Tooltip content="Go to current round" placement="top">
         <Button
-          size="xs"
+          size={isMobile ? 'sm' : 'xs'}
           variant="ghost"
           colorPalette="gray"
           onClick={handleGoToCurrent}
           fontSize="xs"
           height="auto"
           minH="auto"
-          p={1}
+          p={isMobile ? 2 : 1}
           data-testid={testId}
         >
           <FaPlay style={{ fontSize: '12px' }} />
@@ -265,6 +266,7 @@ const RoundInfo: React.FC<RoundInfoProps> = React.memo(({ display = 'block' }: R
 const MaxBetInput: React.FC = () => {
   const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
   const setMaxBet = useSetMaxBet();
+  const isMobile = useIsMobile();
   const [tempValue, setTempValue] = useState<string>(() =>
     getMaxBet(currentSelectedRound).toString(),
   );
@@ -417,7 +419,7 @@ const MaxBetInput: React.FC = () => {
       </Text>
       <NumberInputRoot
         data-testid="max-bet-input-field"
-        size="xs"
+        size={isMobile ? 'sm' : 'xs'}
         value={tempValue}
         onValueChange={handleChange}
         min={BET_AMOUNT_DEFAULT}
@@ -463,6 +465,7 @@ const MaxBetInput: React.FC = () => {
           isLocked={isLocked}
           onToggle={handleLockToggle}
           maxBet={parseInt(tempValue)}
+          size={isMobile ? 'sm' : '2xs'}
         />
       </Box>
     </Group>
