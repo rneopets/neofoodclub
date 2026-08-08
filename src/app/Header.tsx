@@ -16,7 +16,6 @@ import {
   AbsoluteCenter,
   Group,
   NumberInputControl,
-  useBreakpointValue,
 } from '@chakra-ui/react';
 import { addYears, differenceInMilliseconds } from 'date-fns';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -28,6 +27,7 @@ import DateFormatter from './components/format/DateFormatter';
 import RoundInput from './components/inputs/RoundInput';
 import GlowCard from './components/ui/GlowCard';
 import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX, BET_AMOUNT_MIN } from './constants';
+import { useIsMobile } from './hooks/useIsMobile';
 import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
@@ -621,8 +621,7 @@ const Header: React.FC<HeaderProps> = props => {
   const [y, setY] = useState<number>(0);
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
-  const isMobile =
-    useBreakpointValue({ base: true, md: false }, { fallback: 'base', ssr: false }) ?? false;
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleScroll = (): void => {
