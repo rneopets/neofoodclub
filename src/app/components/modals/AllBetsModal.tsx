@@ -374,7 +374,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                 <CloseButton size="sm" />
               </Dialog.CloseTrigger>
             </Dialog.Header>
-            <Dialog.Body display="flex" flexDirection="column" overflow="hidden">
+            <Dialog.Body display="flex" flexDirection="column" overflowX="hidden" overflowY="auto">
               <Stack gap={4} flex={1} minHeight={0}>
                 <Text fontSize="sm" color="fg.muted" flexShrink={0}>
                   Note: Settings changed here will not affect your saved settings.
@@ -660,9 +660,15 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                   </Box>
                 </Stack>
 
-                <Box flex={1} minHeight={0} display="flex" flexDirection="column">
+                <Box
+                  flex={1}
+                  minHeight={{ base: '320px', md: 0 }}
+                  display="flex"
+                  flexDirection="column"
+                >
                   {/* Header + List wrapper for horizontal scroll */}
                   <Box
+                    data-testid="all-bets-scroll-container"
                     overflowX="auto"
                     flex={1}
                     minHeight={0}
