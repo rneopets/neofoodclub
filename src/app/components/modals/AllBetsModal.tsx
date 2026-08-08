@@ -661,61 +661,78 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                 </Stack>
 
                 <Box flex={1} minHeight={0} display="flex" flexDirection="column">
-                  {/* Header */}
-                  <Box borderBottomWidth="2px" fontWeight="bold" bg="bg.muted" flexShrink={0}>
-                    <HStack px={2} py={2} fontSize="xs" gap={2} flexWrap="nowrap">
-                      <Text width="40px" textAlign="right" flexShrink={0}>
-                        #
-                      </Text>
-                      <Text width="350px" flexShrink={0}>
-                        Pirates
-                      </Text>
-                      <Text width="60px" textAlign="right" flexShrink={0}>
-                        Odds
-                      </Text>
-                      <Text width="80px" textAlign="right" flexShrink={0}>
-                        Payoff
-                      </Text>
-                      <Text width="60px" textAlign="right" flexShrink={0}>
-                        Prob
-                      </Text>
-                      <Text width="60px" textAlign="right" flexShrink={0}>
-                        ER
-                      </Text>
-                      <Text width="80px" textAlign="right" flexShrink={0}>
-                        NE
-                      </Text>
-                      <Text width="80px" textAlign="right" flexShrink={0}>
-                        MaxBet
-                      </Text>
-                      <Text
-                        width={showBinaryAsHex ? '80px' : '130px'}
-                        textAlign="center"
-                        flexShrink={0}
-                      >
-                        Binary
-                      </Text>
-                    </HStack>
-                  </Box>
-
-                  {/* Virtualized List */}
+                  {/* Header + List wrapper for horizontal scroll */}
                   <Box
+                    overflowX="auto"
                     flex={1}
                     minHeight={0}
-                    opacity={isPending ? 0.5 : 1}
-                    transition="opacity 0.2s"
+                    display="flex"
+                    flexDirection="column"
                   >
-                    <List<RowData>
-                      defaultHeight={400}
-                      rowCount={filteredBets.length}
-                      rowHeight={32}
-                      rowComponent={
-                        Row as (
-                          props: { index: number; style: React.CSSProperties } & RowData,
-                        ) => React.ReactElement | null
-                      }
-                      rowProps={itemData as RowData}
-                    />
+                    {/* Header */}
+                    <Box borderBottomWidth="2px" fontWeight="bold" bg="bg.muted" flexShrink={0}>
+                      <HStack
+                        px={2}
+                        py={2}
+                        fontSize="xs"
+                        gap={2}
+                        flexWrap="nowrap"
+                        minWidth="fit-content"
+                      >
+                        <Text width="40px" textAlign="right" flexShrink={0}>
+                          #
+                        </Text>
+                        <Text width="350px" flexShrink={0}>
+                          Pirates
+                        </Text>
+                        <Text width="60px" textAlign="right" flexShrink={0}>
+                          Odds
+                        </Text>
+                        <Text width="80px" textAlign="right" flexShrink={0}>
+                          Payoff
+                        </Text>
+                        <Text width="60px" textAlign="right" flexShrink={0}>
+                          Prob
+                        </Text>
+                        <Text width="60px" textAlign="right" flexShrink={0}>
+                          ER
+                        </Text>
+                        <Text width="80px" textAlign="right" flexShrink={0}>
+                          NE
+                        </Text>
+                        <Text width="80px" textAlign="right" flexShrink={0}>
+                          MaxBet
+                        </Text>
+                        <Text
+                          width={showBinaryAsHex ? '80px' : '130px'}
+                          textAlign="center"
+                          flexShrink={0}
+                        >
+                          Binary
+                        </Text>
+                      </HStack>
+                    </Box>
+
+                    {/* Virtualized List */}
+                    <Box
+                      flex={1}
+                      minHeight={0}
+                      minWidth="fit-content"
+                      opacity={isPending ? 0.5 : 1}
+                      transition="opacity 0.2s"
+                    >
+                      <List<RowData>
+                        defaultHeight={400}
+                        rowCount={filteredBets.length}
+                        rowHeight={32}
+                        rowComponent={
+                          Row as (
+                            props: { index: number; style: React.CSSProperties } & RowData,
+                          ) => React.ReactElement | null
+                        }
+                        rowProps={itemData as RowData}
+                      />
+                    </Box>
                   </Box>
                 </Box>
               </Stack>
