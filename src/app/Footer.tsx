@@ -285,7 +285,12 @@ const Footer: React.FC<FooterProps> = props => {
         <Box py={10}>
           <HStack>
             <Separator flex="1" />
-            <Box onClick={handleLogoClick} cursor="pointer" userSelect="none">
+            <Box
+              onClick={handleLogoClick}
+              cursor="pointer"
+              userSelect="none"
+              data-testid="footer-logo"
+            >
               <Logo rotation={rotation} />
             </Box>
             <Separator flex="1" />
