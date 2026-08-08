@@ -420,6 +420,8 @@ const MaxBetInput: React.FC = () => {
       <NumberInputRoot
         data-testid="max-bet-input-field"
         size={isMobile ? 'sm' : 'xs'}
+        height={isMobile ? '9' : '8'}
+        overflow="hidden"
         value={tempValue}
         onValueChange={handleChange}
         min={BET_AMOUNT_DEFAULT}
