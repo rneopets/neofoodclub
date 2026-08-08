@@ -16,7 +16,6 @@ import {
   AbsoluteCenter,
   Group,
   NumberInputControl,
-  useBreakpointValue,
 } from '@chakra-ui/react';
 import { addYears, differenceInMilliseconds } from 'date-fns';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -28,6 +27,7 @@ import DateFormatter from './components/format/DateFormatter';
 import RoundInput from './components/inputs/RoundInput';
 import GlowCard from './components/ui/GlowCard';
 import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX, BET_AMOUNT_MIN } from './constants';
+import { useIsMobile } from './hooks/useIsMobile';
 import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
@@ -51,6 +51,7 @@ interface GoToCurrentRoundButtonProps {
 const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo(
   ({ testId = 'go-to-current-round' }) => {
     const fetchCurrentRound = useRoundStore(state => state.fetchCurrentRound);
+    const isMobile = useIsMobile();
 
     const handleGoToCurrent = useCallback(async () => {
       await fetchCurrentRound();
@@ -63,14 +64,14 @@ const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo
     return (
       <Tooltip content="Go to current round" placement="top">
         <Button
-          size="xs"
+          size={isMobile ? 'sm' : 'xs'}
           variant="ghost"
           colorPalette="gray"
           onClick={handleGoToCurrent}
           fontSize="xs"
           height="auto"
           minH="auto"
-          p={1}
+          p={isMobile ? 2 : 1}
           data-testid={testId}
         >
           <FaPlay style={{ fontSize: '12px' }} />
@@ -265,6 +266,7 @@ const RoundInfo: React.FC<RoundInfoProps> = React.memo(({ display = 'block' }: R
 const MaxBetInput: React.FC = () => {
   const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
   const setMaxBet = useSetMaxBet();
+  const isMobile = useIsMobile();
   const [tempValue, setTempValue] = useState<string>(() =>
     getMaxBet(currentSelectedRound).toString(),
   );
@@ -408,6 +410,7 @@ const MaxBetInput: React.FC = () => {
         roundedStart="md"
         roundedEnd={0}
         px="2"
+        height={isMobile ? '9' : '8'}
         display="flex"
         alignItems="center"
         whiteSpace="nowrap"
@@ -417,7 +420,9 @@ const MaxBetInput: React.FC = () => {
       </Text>
       <NumberInputRoot
         data-testid="max-bet-input-field"
-        size="xs"
+        size={isMobile ? 'sm' : 'xs'}
+        height={isMobile ? '9' : '8'}
+        overflow="hidden"
         value={tempValue}
         onValueChange={handleChange}
         min={BET_AMOUNT_DEFAULT}
@@ -463,6 +468,7 @@ const MaxBetInput: React.FC = () => {
           isLocked={isLocked}
           onToggle={handleLockToggle}
           maxBet={parseInt(tempValue)}
+          size="2xs"
         />
       </Box>
     </Group>
@@ -621,8 +627,7 @@ const Header: React.FC<HeaderProps> = props => {
   const [y, setY] = useState<number>(0);
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
-  const isMobile =
-    useBreakpointValue({ base: true, md: false }, { fallback: 'base', ssr: false }) ?? false;
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleScroll = (): void => {

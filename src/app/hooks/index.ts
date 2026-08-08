@@ -7,6 +7,7 @@ export { useDuplicateBets } from './useDuplicateBets';
 export { useFormattedDate } from './useFormattedDate';
 export { useGetPirateBgColor } from './useGetPirateBgColor';
 export { useInterval } from './useInterval';
+export { useIsMobile } from './useIsMobile';
 export { useIsRoundOver } from './useIsRoundOver';
 export { useOtherTabHasBets } from './useOtherTabHasBets';
 export { useProbabilities } from './useProbabilities';

@@ -24,6 +24,7 @@ import {
   FOODS,
 } from '../../constants';
 import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import { computePirateBinary, makeEmpty } from '../../maths';
 import {
   usePiratesForArena,
@@ -390,6 +391,7 @@ const PirateRow = React.memo(
     handleTimelineClick: (a: number, p: number) => void;
     handleBetLineChange: (a: number, v: number) => void;
   }) => {
+    const isMobile = useIsMobile();
     const pirateId = usePirateId(arenaId, pirateIndex);
     const openingOdds = useOpeningOddsValue(arenaId, pirateIndex);
     const currentOdds = useCurrentOddsValue(arenaId, pirateIndex);
@@ -753,7 +755,7 @@ const PirateRow = React.memo(
             <Tooltip content="10-bet" openDelay={600} placement="top">
               <IconButton
                 aria-label="10-bet"
-                size="2xs"
+                size={isMobile ? 'sm' : '2xs'}
                 variant="ghost"
                 onClick={handleBetLineChangeLocal}
               >
@@ -778,7 +780,7 @@ const PirateRow = React.memo(
                   >
                     <IconButton
                       aria-label="Swap pirate"
-                      size="2xs"
+                      size={isMobile ? 'sm' : '2xs'}
                       variant="ghost"
                       disabled={!arenaHasAnyChosen}
                     >
@@ -789,7 +791,7 @@ const PirateRow = React.memo(
               </Popover.Trigger>
               <Portal>
                 <Popover.Positioner>
-                  <Popover.Content width="360px">
+                  <Popover.Content width={{ base: 'calc(100vw - 2rem)', md: '360px' }}>
                     <Popover.Arrow />
                     <Popover.Body>
                       <VStack align="center" gap={2}>
