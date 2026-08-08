@@ -2,7 +2,7 @@ import { Box, CloseButton, Flex, Text } from '@chakra-ui/react';
 import React, { useState } from 'react';
 import { FaLightbulb } from 'react-icons/fa6';
 
-import { useOtherTabHasBets } from '../hooks';
+import { useIsMobile, useOtherTabHasBets } from '../hooks';
 import { useHasAnyBets } from '../stores';
 
 const DISMISSED_STORAGE_KEY = 'dragDropTipDismissed';
@@ -13,9 +13,10 @@ const readDismissed = (): boolean =>
 export default React.memo(function DragDropTipBanner(): React.ReactElement | null {
   const anyBets = useHasAnyBets();
   const otherTabHasBets = useOtherTabHasBets();
+  const isMobile = useIsMobile();
   const [dismissed, setDismissed] = useState(readDismissed);
 
-  if (!anyBets || !otherTabHasBets || dismissed) {
+  if (!anyBets || !otherTabHasBets || dismissed || isMobile) {
     return null;
   }
 

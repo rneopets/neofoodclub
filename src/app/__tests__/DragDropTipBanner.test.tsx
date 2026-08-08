@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { render } from '../../test/utils';
 import DragDropTipBanner from '../components/DragDropTipBanner';
-import { useOtherTabHasBets } from '../hooks';
+import { useIsMobile, useOtherTabHasBets } from '../hooks';
 import { useHasAnyBets } from '../stores';
 
 vi.mock('../stores', () => ({
@@ -12,10 +12,12 @@ vi.mock('../stores', () => ({
 
 vi.mock('../hooks', () => ({
   useOtherTabHasBets: vi.fn(),
+  useIsMobile: vi.fn(),
 }));
 
 const mockUseHasAnyBets = vi.mocked(useHasAnyBets);
 const mockUseOtherTabHasBets = vi.mocked(useOtherTabHasBets);
+const mockUseIsMobile = vi.mocked(useIsMobile);
 
 /** In-memory localStorage stand-in, since jsdom's real implementation is
  * unreliable across Node versions/environments in this test setup. */
@@ -42,6 +44,7 @@ function createMockLocalStorage(): Storage {
 describe('DragDropTipBanner', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseIsMobile.mockReturnValue(false);
     Object.defineProperty(window, 'localStorage', {
       value: createMockLocalStorage(),
       writable: true,
@@ -74,6 +77,16 @@ describe('DragDropTipBanner', () => {
     render(<DragDropTipBanner />);
 
     expect(screen.getByText(/drag a bet link/i)).toBeInTheDocument();
+  });
+
+  it('renders nothing on mobile viewports even if anyBets and otherTabHasBets are true', () => {
+    mockUseHasAnyBets.mockReturnValue(true);
+    mockUseOtherTabHasBets.mockReturnValue(true);
+    mockUseIsMobile.mockReturnValue(true);
+
+    render(<DragDropTipBanner />);
+
+    expect(screen.queryByText(/drag a bet link/i)).not.toBeInTheDocument();
   });
 
   it('hides the banner when the close button is clicked', () => {
