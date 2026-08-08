@@ -410,6 +410,7 @@ const MaxBetInput: React.FC = () => {
         roundedStart="md"
         roundedEnd={0}
         px="2"
+        height={isMobile ? '9' : '8'}
         display="flex"
         alignItems="center"
         whiteSpace="nowrap"
