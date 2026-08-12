@@ -8,6 +8,7 @@ import { BET_AMOUNT_DEFAULT, defaultRoundData } from '../../constants';
 import { computePiratesBinary, computeBinaryToPirates } from '../../maths';
 import { useBetStore } from '../../stores/betStore';
 import { useRoundStore } from '../../stores/roundStore';
+import { rebuildEngine } from '../../wasmEngine';
 import { useBetManagement } from '../useBetManagement';
 
 // Mock universal-cookie before any store imports (roundStore reads cookies at module init).
@@ -90,6 +91,11 @@ function seedStores(
     allBetAmounts: new Map([[0, makeFullAmounts(amounts)]]),
     allNames: new Map([[0, 'Test Set']]),
   });
+  // Mirrors roundStore's own guard around rebuildEngine: skip it for the
+  // defaultRoundData sentinel / a round with no pirates, matching production.
+  if (roundData !== defaultRoundData && roundData.pirates?.length) {
+    rebuildEngine(JSON.stringify(roundData), null, false);
+  }
   useRoundStore.getState().recalculate();
 }
 

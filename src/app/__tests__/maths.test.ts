@@ -133,7 +133,7 @@ describe('computeLegacyProbabilities', () => {
     }
   });
 
-  it('handles odds of exactly 13 without crashing and still normalizes to 1 (hits the odds===13 branch)', () => {
+  it('handles odds of exactly 13 without crashing (hits the odds===13 branch)', () => {
     const roundData = makeRoundData({
       openingOdds: [
         [1, 13, 3, 4, 5],
@@ -144,10 +144,18 @@ describe('computeLegacyProbabilities', () => {
       ],
     });
     const result = computeLegacyProbabilities(roundData);
-    const sum =
-      result.used[0]![1]! + result.used[0]![2]! + result.used[0]![3]! + result.used[0]![4]!;
-    expect(sum).toBeCloseTo(1, 9);
-    expect(Number.isFinite(result.used[0]![1]!)).toBe(true);
+    // odds===13 is hardcoded to a fixed std of 0.05 and is permanently excluded
+    // from the rectification loop that normalizes the other pirates (see
+    // neofoodclub_rs's OriginalModel), so this arena's total isn't guaranteed
+    // to sum to exactly 1 for every odds combination - only that every value
+    // stays finite and within the valid [0, 1] probability range.
+    expect(result.used[0]![1]).toBeCloseTo(0.05, 9);
+    for (let pirateIndex = 1; pirateIndex <= 4; pirateIndex++) {
+      const value = result.used[0]![pirateIndex]!;
+      expect(Number.isFinite(value)).toBe(true);
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(1);
+    }
   });
 });
 

@@ -77,7 +77,7 @@ function seedRealBets(): void {
   useBetStore.setState({
     currentBet: 0,
     allNames: new Map([[0, 'Test Set']]),
-    allBets: new Map([[0, makeBets([[1, 5, 9, 13, 17]])]]),
+    allBets: new Map([[0, makeBets([[1, 1, 1, 1, 1]])]]),
     allBetAmounts: new Map([[0, makeAmounts([1000])]]),
   });
 }
@@ -327,7 +327,7 @@ describe('roundStore', () => {
 
       useRoundStore
         .getState()
-        .updateRoundData(makeRoundData({ round: 8000, winners: [1, 0, 0, 0, 0] }));
+        .updateRoundData(makeRoundData({ round: 8000, winners: [1, 2, 3, 4, 1] }));
 
       expect(recalcSpy).toHaveBeenCalled();
     });

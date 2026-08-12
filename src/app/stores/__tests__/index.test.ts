@@ -96,7 +96,7 @@ describe('stores/index hook smoke suite', () => {
         [1, 'Set B'],
       ]),
       allBets: new Map([
-        [0, makeBets([[1, 5, 9, 13, 17]])],
+        [0, makeBets([[1, 1, 1, 1, 1]])],
         [1, makeBets()],
       ]),
       allBetAmounts: new Map([

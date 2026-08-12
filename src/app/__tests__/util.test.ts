@@ -38,7 +38,6 @@ import {
   getBetSetPosition,
   getBigBrainMode,
   makeBetValues,
-  calculateRoundData,
   calculateBetMaps,
 } from '../util';
 
@@ -1315,13 +1314,13 @@ describe('calculateRoundData', () => {
           [1, 2, 3, 4, 5],
         ],
         foods: [
-          [1, 2, 3, 4],
-          [5, 6, 7, 8],
-          [9, 10, 11, 12],
-          [13, 14, 15, 16],
-          [17, 18, 19, 20],
+          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         ],
-        winners: [],
+        winners: [0, 0, 0, 0, 0],
       },
       currentSelectedRound: 8000,
       currentRound: 8000,
@@ -1370,10 +1369,7 @@ describe('calculateBetMaps', () => {
   });
 
   it('computes betOdds/betCaps for a small pirateChoices cartesian product without pirateCombos', () => {
-    const pirateChoices = [
-      [0, 1],
-      [0, 1],
-    ];
+    const pirateChoices = [[0, 1], [0, 1], [0], [0], [0]];
     const odds = [[0, 2], [0, 4], [], [], []];
 
     const result = calculateBetMaps(pirateChoices, odds, null, 0, {
@@ -1387,10 +1383,7 @@ describe('calculateBetMaps', () => {
   });
 
   it('also computes pirateCombos when includePirateCombos is true', () => {
-    const pirateChoices = [
-      [0, 1],
-      [0, 1],
-    ];
+    const pirateChoices = [[0, 1], [0, 1], [0], [0], [0]];
     const odds = [[0, 2], [0, 4], [], [], []];
     const probabilities = [[0, 0.5], [0, 0.6], [], [], []];
 
@@ -1402,16 +1395,13 @@ describe('calculateBetMaps', () => {
     expect(result.pirateCombos.size).toBe(3);
 
     // arena0=pirate1(odds 2), arena1=pirate1(odds 4) => betBinary for [1,1]
-    const binaryBothSelected = computePiratesBinary([1, 1]);
+    const binaryBothSelected = computePiratesBinary([1, 1, 0, 0, 0]);
     expect(result.betOdds.get(binaryBothSelected)).toBe(8); // 2 * 4
     expect(result.pirateCombos.get(binaryBothSelected)).toBeCloseTo(2.4, 9); // 8 * (0.5*0.6)
   });
 
   it('applies the maxBet > 0 branch when computing pirateCombos', () => {
-    const pirateChoices = [
-      [0, 1],
-      [0, 1],
-    ];
+    const pirateChoices = [[0, 1], [0, 1], [0], [0], [0]];
     const odds = [[0, 2], [0, 4], [], [], []];
     const probabilities = [[0, 0.5], [0, 0.6], [], [], []];
 
@@ -1419,7 +1409,7 @@ describe('calculateBetMaps', () => {
       includePirateCombos: true,
     });
 
-    const binaryBothSelected = computePiratesBinary([1, 1]);
+    const binaryBothSelected = computePiratesBinary([1, 1, 0, 0, 0]);
     // totalOdds=8, betCap=ceil(1_000_000/8)=125000, maxCap=min(125000,1000)=1000,
     // winnings=min(1000*8,1_000_000)=8000, winChance=0.5*0.6=0.3
     // pirateCombos = ((0.3*8000)/1000 - 1) * 1000 = 1400

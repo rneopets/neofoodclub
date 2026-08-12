@@ -107,7 +107,7 @@ export const makeRoundData = (overrides: Partial<RoundData> = {}): RoundData => 
     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   ],
-  winners: [],
+  winners: [0, 0, 0, 0, 0],
   ...overrides,
 });
 
