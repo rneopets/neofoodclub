@@ -59,10 +59,14 @@ const ColorModeToggle = memo(() => {
       }
 
       const nextMode = value as ColorMode;
+      if (nextMode === colorMode) {
+        return;
+      }
+
       setColorMode(nextMode);
       cookies.set('colorMode', nextMode);
     },
-    [setColorMode, cookies],
+    [colorMode, setColorMode, cookies],
   );
 
   return (
