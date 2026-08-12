@@ -87,7 +87,11 @@ export default defineConfig({
     command: 'npm start',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env['CI'],
-    timeout: 120000,
+    // `npm start` triggers `build:wasm`, which does a from-scratch Rust/wasm
+    // compile (3-4 min) whenever the R2 build cache misses - e.g. the first
+    // CI run to see a new wasm/neofoodclub_rs submodule commit. 120s isn't
+    // enough to cover that cold-build path, so give it more headroom.
+    timeout: 300000,
     stdout: 'pipe',
     stderr: 'pipe',
     env: {
