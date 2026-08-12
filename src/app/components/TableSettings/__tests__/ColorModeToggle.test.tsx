@@ -1,7 +1,7 @@
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { render, screen } from '../../../../test/utils';
+import { render, screen, waitFor } from '../../../../test/utils';
 import ColorModeToggle from '../ColorModeToggle';
 
 const cookiesSetMock = vi.fn();
@@ -60,6 +60,14 @@ describe('ColorModeToggle', () => {
   it('does not call setColorMode/cookies.set when clicking the already active option', async () => {
     const user = userEvent.setup();
     render(<ColorModeToggle />);
+
+    // next-themes resolves its theme asynchronously on mount; wait for that hydration
+    // to settle (and discard any hydration-triggered call) before measuring only the
+    // effect of the deliberate click below.
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    });
+    cookiesSetMock.mockClear();
 
     await user.click(screen.getByText('Dark'));
 

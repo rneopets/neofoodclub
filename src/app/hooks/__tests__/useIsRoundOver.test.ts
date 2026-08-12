@@ -47,7 +47,11 @@ describe('useIsRoundOver', () => {
   });
 
   it('returns false when winners is an empty array', () => {
-    useRoundStore.setState({ roundData: makeRoundData({ winners: [] }) });
+    // pirates: [] keeps this out of roundStore's wasm-backed recalculate() path (see its
+    // own `!roundData.pirates?.length` guard) - a stray requestAnimationFrame-scheduled
+    // recalculate from an earlier test's bet-store subscription could otherwise pick up
+    // this roundData later and crash, since winners: [] alone isn't valid wasm input.
+    useRoundStore.setState({ roundData: makeRoundData({ winners: [], pirates: [] }) });
 
     const { result } = renderHook(() => useIsRoundOver());
 
