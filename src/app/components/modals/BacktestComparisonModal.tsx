@@ -3,6 +3,7 @@ import {
   Button,
   Card,
   CloseButton,
+  Code,
   Dialog,
   HStack,
   Input,
@@ -95,6 +96,8 @@ function ModelSummaryCard({
   isWinner: boolean;
 }): React.JSX.Element {
   const winRate = result.roundsPlayed > 0 ? result.roundsWon / result.roundsPlayed : 0;
+  const [showExact, setShowExact] = React.useState(false);
+  const toggleExact = React.useCallback(() => setShowExact(prev => !prev), []);
 
   return (
     <Card.Root boxShadow="md" flex="1" minW="0">
@@ -112,19 +115,44 @@ function ModelSummaryCard({
             <Text fontSize="sm" color="fg.muted">
               Total Spent
             </Text>
-            <Text fontSize="sm">{formatBacktestAmount(result.totalSpent)}</Text>
+            <Text
+              fontSize="sm"
+              cursor="pointer"
+              onClick={toggleExact}
+              title={showExact ? 'Click to abbreviate' : 'Click for exact value'}
+            >
+              {showExact
+                ? result.totalSpent.toLocaleString()
+                : formatBacktestAmount(result.totalSpent)}
+            </Text>
           </HStack>
           <HStack justify="space-between">
             <Text fontSize="sm" color="fg.muted">
               Total Won
             </Text>
-            <Text fontSize="sm">{formatBacktestAmount(result.totalWon)}</Text>
+            <Text
+              fontSize="sm"
+              cursor="pointer"
+              onClick={toggleExact}
+              title={showExact ? 'Click to abbreviate' : 'Click for exact value'}
+            >
+              {showExact ? result.totalWon.toLocaleString() : formatBacktestAmount(result.totalWon)}
+            </Text>
           </HStack>
           <HStack justify="space-between">
             <Text fontSize="sm" color="fg.muted">
               Net Profit
             </Text>
-            <Text fontSize="sm">{formatBacktestAmount(result.netProfit)}</Text>
+            <Text
+              fontSize="sm"
+              cursor="pointer"
+              onClick={toggleExact}
+              title={showExact ? 'Click to abbreviate' : 'Click for exact value'}
+            >
+              {showExact
+                ? result.netProfit.toLocaleString()
+                : formatBacktestAmount(result.netProfit)}
+            </Text>
           </HStack>
           <HStack justify="space-between">
             <Text fontSize="sm" color="fg.muted">
@@ -326,10 +354,10 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                       </Button>
                     ))}
                   </HStack>
-                  <Text fontSize="xs" color="fg.muted">
+                  <Text fontSize="xs" color="fg.muted" fontStyle="italic">
                     Yes, we know the max bet amount on Neopets is{' '}
-                    {computeRealMaxBet().toLocaleString()}- amounts above that are
-                    hypothetical/exploratory only.
+                    <Code fontSize="xs">{computeRealMaxBet().toLocaleString()}</Code> - amounts
+                    above that are hypothetical/exploratory only.
                   </Text>
                 </Stack>
 

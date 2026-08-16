@@ -51,6 +51,17 @@ describe('backtestRound', () => {
     expect(result.spent).toBeGreaterThan(0);
     expect(result.won).toBeGreaterThanOrEqual(0);
   });
+
+  it('spent scales linearly with betAmount instead of being capped by the payout cap (regression: sweep chart used to flatten past ~70k)', () => {
+    const smallAmount = 10000;
+    const largeAmount = 100000;
+    const smallResult = backtestRound(round, false, smallAmount, 10);
+    const largeResult = backtestRound(round, false, largeAmount, 10);
+
+    const numActiveBets = smallResult.spent / smallAmount;
+    expect(numActiveBets).toBeGreaterThan(0);
+    expect(largeResult.spent).toBe(largeAmount * numActiveBets);
+  });
 });
 
 describe('runFullBacktest', () => {

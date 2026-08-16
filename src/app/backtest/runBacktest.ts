@@ -10,7 +10,7 @@ export function backtestRound(
   betCount: number,
 ): { spent: number; won: number } {
   rebuildEngine(JSON.stringify(round), betAmount, useLogit);
-  const { bets, betAmounts } = wasmMakeMaxTerBets(betCount);
+  const { bets } = wasmMakeMaxTerBets(betCount);
   const winningBetBinary = computePiratesBinary(round.winners);
 
   let spent = 0;
@@ -23,8 +23,14 @@ export function backtestRound(
       continue;
     }
 
-    const amount = betAmounts.get(betIndex) ?? 0;
-    spent += amount;
+    // Use the raw requested betAmount rather than the wasm engine's
+    // per-bet amount (which the Rust side pre-caps to whatever it takes
+    // to hit the 1,000,000 payout cap, via fill_bet_amounts in bets.rs -
+    // that's the real-game "don't waste NP" behavior, but this backtest
+    // is exploratory and wants to show what happens if you actually
+    // wager the full amount). The Math.min below still enforces the
+    // real payout cap on winnings either way.
+    spent += betAmount;
 
     let oddsProduct = 1;
     for (let arenaIndex = 0; arenaIndex < 5; arenaIndex++) {
@@ -35,7 +41,7 @@ export function backtestRound(
     }
 
     if ((winningBetBinary & betBinary) === betBinary) {
-      won += Math.min(oddsProduct * amount, 1_000_000);
+      won += Math.min(oddsProduct * betAmount, 1_000_000);
     }
   }
 
@@ -156,14 +162,17 @@ export async function runBacktestAmountSweep(
   return points;
 }
 
-/** Formats a backtest money amount (spent/won/net profit) with at most 2 decimal places. */
+/** Formats a backtest money amount (spent/won/net profit) with at most 2 decimal places, no trailing zeros. */
 export function formatBacktestAmount(value: number): string {
   const abs = Math.abs(value);
+  if (abs >= 1_000_000_000) {
+    return `${parseFloat((value / 1_000_000_000).toFixed(2))}B`;
+  }
   if (abs >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(2)}M`;
+    return `${parseFloat((value / 1_000_000).toFixed(2))}M`;
   }
   if (abs >= 1_000) {
-    return `${(value / 1_000).toFixed(2)}k`;
+    return `${parseFloat((value / 1_000).toFixed(2))}K`;
   }
   return value.toFixed(0);
 }
