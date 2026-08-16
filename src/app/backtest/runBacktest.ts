@@ -1,7 +1,7 @@
 import { computePiratesBinary } from '../maths';
 import { rebuildEngine, wasmMakeMaxTerBets } from '../wasmEngine';
 
-import type { BacktestRound, BacktestSummary } from './types';
+import type { AmountSweepPoint, BacktestRound, BacktestSummary } from './types';
 
 export function backtestRound(
   round: BacktestRound,
@@ -121,6 +121,51 @@ export async function runFullBacktest(
       cumulativeNet: logitCumulativeNet,
     },
   };
+}
+
+export interface RunAmountSweepOptions {
+  amounts: number[];
+  betCount: number;
+  onProgress?: (doneRounds: number, totalRounds: number) => void;
+  signal?: AbortSignal;
+}
+
+export async function runBacktestAmountSweep(
+  rounds: BacktestRound[],
+  opts: RunAmountSweepOptions,
+): Promise<AmountSweepPoint[]> {
+  const totalRounds = opts.amounts.length * rounds.length;
+  const points: AmountSweepPoint[] = [];
+
+  for (let stepIndex = 0; stepIndex < opts.amounts.length; stepIndex++) {
+    const amount = opts.amounts[stepIndex]!;
+    const completedRounds = stepIndex * rounds.length;
+
+    const summary = await runFullBacktest(rounds, {
+      betAmount: amount,
+      betCount: opts.betCount,
+      ...(opts.signal ? { signal: opts.signal } : {}),
+      onProgress: done => {
+        opts.onProgress?.(completedRounds + done, totalRounds);
+      },
+    });
+
+    points.push({ amount, legacy: summary.legacy, logit: summary.logit });
+  }
+
+  return points;
+}
+
+/** Formats a backtest money amount (spent/won/net profit) with at most 2 decimal places. */
+export function formatBacktestAmount(value: number): string {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(2)}M`;
+  }
+  if (abs >= 1_000) {
+    return `${(value / 1_000).toFixed(2)}k`;
+  }
+  return value.toFixed(0);
 }
 
 export function downsampleForChart(

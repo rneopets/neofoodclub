@@ -22,3 +22,9 @@ export interface BacktestSummary {
   legacy: ModelBacktestResult;
   logit: ModelBacktestResult;
 }
+
+export interface AmountSweepPoint {
+  amount: number;
+  legacy: ModelBacktestResult;
+  logit: ModelBacktestResult;
+}

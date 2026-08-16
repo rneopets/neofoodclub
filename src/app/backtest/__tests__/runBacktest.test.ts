@@ -6,7 +6,12 @@ import { describe, expect, it, beforeAll } from 'vitest';
 import type { RoundData } from '../../../types';
 import { computeLogitProbabilities } from '../../maths';
 import { initWasmMath } from '../../wasmMath';
-import { backtestRound, downsampleForChart, runFullBacktest } from '../runBacktest';
+import {
+  backtestRound,
+  downsampleForChart,
+  runBacktestAmountSweep,
+  runFullBacktest,
+} from '../runBacktest';
 import type { BacktestRound } from '../types';
 
 function toBacktestRound(roundData: RoundData): BacktestRound {
@@ -78,6 +83,46 @@ describe('runFullBacktest', () => {
         betAmount: 500000,
         betCount: 10,
         chunkSize: 1,
+        signal: controller.signal,
+      }),
+    ).rejects.toThrow();
+  });
+});
+
+describe('runBacktestAmountSweep', () => {
+  it('returns one point per requested amount, in order, each scored over all rounds', async () => {
+    const rounds = fixtureRounds.slice(0, 2);
+    const amounts = [10000, 20000];
+
+    const progressCalls: Array<[number, number]> = [];
+    const points = await runBacktestAmountSweep(rounds, {
+      amounts,
+      betCount: 10,
+      onProgress: (done, total) => {
+        progressCalls.push([done, total]);
+      },
+    });
+
+    expect(points.map(p => p.amount)).toEqual(amounts);
+    for (const point of points) {
+      expect(point.legacy.roundsPlayed).toBe(rounds.length);
+      expect(point.logit.roundsPlayed).toBe(rounds.length);
+    }
+
+    const [lastDone, lastTotal] = progressCalls[progressCalls.length - 1]!;
+    expect(lastTotal).toBe(amounts.length * rounds.length);
+    expect(lastDone).toBe(amounts.length * rounds.length);
+  });
+
+  it('can be aborted', async () => {
+    const rounds = fixtureRounds.slice(0, 2);
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      runBacktestAmountSweep(rounds, {
+        amounts: [10000, 20000],
+        betCount: 10,
         signal: controller.signal,
       }),
     ).rejects.toThrow();

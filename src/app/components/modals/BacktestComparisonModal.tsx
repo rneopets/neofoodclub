@@ -8,20 +8,41 @@ import {
   Input,
   Portal,
   Progress,
+  RadioGroup,
+  Separator,
   Stack,
   Text,
 } from '@chakra-ui/react';
 import * as React from 'react';
 import { FaBalanceScale } from 'react-icons/fa';
 
-import { runFullBacktest } from '../../backtest/runBacktest';
-import type { BacktestSummary, ModelBacktestResult } from '../../backtest/types';
+import {
+  formatBacktestAmount,
+  runBacktestAmountSweep,
+  runFullBacktest,
+} from '../../backtest/runBacktest';
+import type { AmountSweepPoint, BacktestSummary, ModelBacktestResult } from '../../backtest/types';
 import { useBacktestPreviousRounds } from '../../hooks/useBacktestPreviousRounds';
-import { amountAbbreviation, formatDate } from '../../util';
+import { BacktestAmountSweepChart } from '../charts/BacktestAmountSweepChart';
 import { BacktestComparisonChart } from '../charts/BacktestComparisonChart';
 
 const BET_COUNT = 10;
 const DEFAULT_BET_AMOUNT = 50000;
+const AMOUNT_PRESETS = [1000, 5000, 10000, 25000, 50000];
+const MAX_SWEEP_AMOUNT = 200000;
+const STEP_OPTIONS = [1000, 2000, 3000, 4000, 5000];
+const DEFAULT_STEP = 5000;
+const SECONDS_PER_STEP_ESTIMATE = 12;
+
+// The real max bet on Neopets increases by 2 NP/day since Food Club's
+// 2003-11-15 launch - referenced here so the sweep's higher amounts are
+// clearly understood as hypothetical, not currently placeable.
+const NFC_LAUNCH_DATE = Date.UTC(2003, 10, 15);
+
+function computeRealMaxBet(): number {
+  const daysSinceLaunch = Math.floor((Date.now() - NFC_LAUNCH_DATE) / (24 * 60 * 60 * 1000));
+  return daysSinceLaunch * 2 + 50;
+}
 
 interface BacktestComparisonModalProps {
   isOpen: boolean;
@@ -37,6 +58,22 @@ interface RunState {
 }
 
 const INITIAL_RUN_STATE: RunState = {
+  running: false,
+  done: 0,
+  total: 0,
+  result: null,
+  error: null,
+};
+
+interface SweepState {
+  running: boolean;
+  done: number;
+  total: number;
+  result: AmountSweepPoint[] | null;
+  error: string | null;
+}
+
+const INITIAL_SWEEP_STATE: SweepState = {
   running: false,
   done: 0,
   total: 0,
@@ -75,19 +112,19 @@ function ModelSummaryCard({
             <Text fontSize="sm" color="fg.muted">
               Total Spent
             </Text>
-            <Text fontSize="sm">{amountAbbreviation(result.totalSpent)}</Text>
+            <Text fontSize="sm">{formatBacktestAmount(result.totalSpent)}</Text>
           </HStack>
           <HStack justify="space-between">
             <Text fontSize="sm" color="fg.muted">
               Total Won
             </Text>
-            <Text fontSize="sm">{amountAbbreviation(result.totalWon)}</Text>
+            <Text fontSize="sm">{formatBacktestAmount(result.totalWon)}</Text>
           </HStack>
           <HStack justify="space-between">
             <Text fontSize="sm" color="fg.muted">
               Net Profit
             </Text>
-            <Text fontSize="sm">{amountAbbreviation(result.netProfit)}</Text>
+            <Text fontSize="sm">{formatBacktestAmount(result.netProfit)}</Text>
           </HStack>
           <HStack justify="space-between">
             <Text fontSize="sm" color="fg.muted">
@@ -113,7 +150,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
   isOpen,
   onClose,
 }) => {
-  const { status, rounds, newestRound, fetchedAt, error, refetch } = useBacktestPreviousRounds({
+  const { status, rounds, newestRound, error, refetch } = useBacktestPreviousRounds({
     enabled: isOpen,
   });
 
@@ -160,6 +197,53 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
     abortControllerRef.current?.abort();
   }, []);
 
+  const [sweepStep, setSweepStep] = React.useState(DEFAULT_STEP);
+  const [sweepState, setSweepState] = React.useState<SweepState>(INITIAL_SWEEP_STATE);
+  const sweepAbortControllerRef = React.useRef<AbortController | null>(null);
+
+  const sweepAmounts = React.useMemo(() => {
+    const amounts: number[] = [];
+    for (let amount = sweepStep; amount <= MAX_SWEEP_AMOUNT; amount += sweepStep) {
+      amounts.push(amount);
+    }
+    return amounts;
+  }, [sweepStep]);
+
+  const handleRunSweep = React.useCallback((): void => {
+    if (rounds.length === 0) {
+      return;
+    }
+
+    const controller = new AbortController();
+    sweepAbortControllerRef.current = controller;
+
+    const totalRounds = sweepAmounts.length * rounds.length;
+    setSweepState({ running: true, done: 0, total: totalRounds, result: null, error: null });
+
+    void runBacktestAmountSweep(rounds, {
+      amounts: sweepAmounts,
+      betCount: BET_COUNT,
+      signal: controller.signal,
+      onProgress: (done, total) => {
+        setSweepState(prev => ({ ...prev, done, total }));
+      },
+    })
+      .then(result => {
+        setSweepState(prev => ({ ...prev, running: false, result }));
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          setSweepState(INITIAL_SWEEP_STATE);
+          return;
+        }
+        setSweepState(prev => ({ ...prev, running: false, error: String(err) }));
+      });
+  }, [rounds, sweepAmounts]);
+
+  const handleCancelSweep = React.useCallback((): void => {
+    sweepAbortControllerRef.current?.abort();
+  }, []);
+
   const cacheStatusText = React.useMemo(() => {
     if (status === 'loading') {
       return 'Downloading previous.jsonl (~13MB)...';
@@ -168,11 +252,10 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
       return error ?? 'Failed to load round history.';
     }
     if (status === 'ready') {
-      const fetchedText = fetchedAt ? formatDate(fetchedAt, { fromNow: true }) : 'unknown';
-      return `${rounds.length} rounds loaded (newest #${newestRound}), fetched ${fetchedText}.`;
+      return `${rounds.length} rounds loaded (newest #${newestRound}).`;
     }
     return '';
-  }, [status, error, fetchedAt, rounds.length, newestRound]);
+  }, [status, error, rounds.length, newestRound]);
 
   const progressPercent =
     runState.total > 0 ? Math.round((runState.done / runState.total) * 100) : 0;
@@ -216,19 +299,39 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                   </Button>
                 </HStack>
 
-                <HStack>
-                  <Text fontSize="sm" fontWeight="medium" width="90px">
-                    Bet Amount:
+                <Stack gap={2}>
+                  <HStack>
+                    <Text fontSize="sm" fontWeight="medium" width="90px">
+                      Bet Amount:
+                    </Text>
+                    <Input
+                      type="number"
+                      value={betAmountInput}
+                      onChange={e => setBetAmountInput(e.target.value)}
+                      width="140px"
+                      size="sm"
+                      disabled={runState.running}
+                    />
+                  </HStack>
+                  <HStack gap={2} flexWrap="wrap">
+                    {AMOUNT_PRESETS.map(preset => (
+                      <Button
+                        key={preset}
+                        size="xs"
+                        variant="outline"
+                        onClick={() => setBetAmountInput(String(preset))}
+                        disabled={runState.running}
+                      >
+                        {formatBacktestAmount(preset)}
+                      </Button>
+                    ))}
+                  </HStack>
+                  <Text fontSize="xs" color="fg.muted">
+                    Yes, we know the max bet amount on Neopets is{' '}
+                    {computeRealMaxBet().toLocaleString()}- amounts above that are
+                    hypothetical/exploratory only.
                   </Text>
-                  <Input
-                    type="number"
-                    value={betAmountInput}
-                    onChange={e => setBetAmountInput(e.target.value)}
-                    width="140px"
-                    size="sm"
-                    disabled={runState.running}
-                  />
-                </HStack>
+                </Stack>
 
                 <HStack gap={3}>
                   <Button
@@ -289,6 +392,98 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                     />
                   </Stack>
                 )}
+
+                <Separator />
+
+                <Stack gap={3}>
+                  <Text fontSize="sm" fontWeight="medium">
+                    Sweep across bet amounts
+                  </Text>
+                  <Text fontSize="xs" color="fg.muted">
+                    Runs the full backtest once per bet-amount step from the chosen increment up to{' '}
+                    {formatBacktestAmount(MAX_SWEEP_AMOUNT)}, and plots ROI vs. bet amount.
+                  </Text>
+
+                  <HStack gap={4} flexWrap="wrap">
+                    <Text fontSize="sm" fontWeight="medium">
+                      Step size:
+                    </Text>
+                    <RadioGroup.Root
+                      value={String(sweepStep)}
+                      size="sm"
+                      onValueChange={(details: { value: string | null }) => {
+                        if (details.value === null) {
+                          return;
+                        }
+                        setSweepStep(Number(details.value));
+                      }}
+                    >
+                      <HStack gap={3}>
+                        {STEP_OPTIONS.map(step => (
+                          <RadioGroup.Item
+                            key={step}
+                            value={String(step)}
+                            cursor="pointer"
+                            disabled={sweepState.running}
+                          >
+                            <RadioGroup.ItemHiddenInput />
+                            <RadioGroup.ItemIndicator cursor="pointer" />
+                            <RadioGroup.ItemText>{formatBacktestAmount(step)}</RadioGroup.ItemText>
+                          </RadioGroup.Item>
+                        ))}
+                      </HStack>
+                    </RadioGroup.Root>
+                  </HStack>
+
+                  <Text fontSize="xs" color="fg.muted">
+                    {sweepAmounts.length} steps, ~
+                    {Math.round((sweepAmounts.length * SECONDS_PER_STEP_ESTIMATE) / 60) || 1} min
+                  </Text>
+
+                  <HStack gap={3}>
+                    <Button
+                      onClick={handleRunSweep}
+                      disabled={status !== 'ready' || sweepState.running || rounds.length === 0}
+                    >
+                      <FaBalanceScale />
+                      Run All Amounts
+                    </Button>
+                    {sweepState.running && (
+                      <Button variant="outline" onClick={handleCancelSweep}>
+                        Cancel
+                      </Button>
+                    )}
+                  </HStack>
+
+                  {sweepState.running && (
+                    <Stack gap={1}>
+                      <Progress.Root
+                        value={
+                          sweepState.total > 0
+                            ? Math.round((sweepState.done / sweepState.total) * 100)
+                            : 0
+                        }
+                        size="sm"
+                        colorPalette="nfc-blue"
+                      >
+                        <Progress.Track>
+                          <Progress.Range />
+                        </Progress.Track>
+                      </Progress.Root>
+                      <Text fontSize="xs" color="fg.muted">
+                        {sweepState.done} / {sweepState.total} rounds
+                      </Text>
+                    </Stack>
+                  )}
+
+                  {sweepState.error && (
+                    <Text fontSize="sm" color="nfc-red.fg">
+                      {sweepState.error}
+                    </Text>
+                  )}
+
+                  {sweepState.result && <BacktestAmountSweepChart points={sweepState.result} />}
+                </Stack>
               </Stack>
             </Dialog.Body>
             <Dialog.Footer>

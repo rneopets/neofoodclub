@@ -9,7 +9,6 @@ export interface UseBacktestPreviousRoundsResult {
   status: BacktestFetchStatus;
   rounds: BacktestRound[];
   newestRound: number;
-  fetchedAt: number | null;
   error: string | null;
   refetch: () => void;
 }
@@ -18,7 +17,6 @@ interface InternalState {
   status: BacktestFetchStatus;
   rounds: BacktestRound[];
   newestRound: number;
-  fetchedAt: number | null;
   error: string | null;
 }
 
@@ -26,7 +24,6 @@ const INITIAL_STATE: InternalState = {
   status: 'idle',
   rounds: [],
   newestRound: 0,
-  fetchedAt: null,
   error: null,
 };
 
@@ -58,18 +55,12 @@ export function useBacktestPreviousRounds({
 
     try {
       const { rounds, newestRound } = await fetchPreviousRounds(signal);
-      setState({ status: 'ready', rounds, newestRound, fetchedAt: Date.now(), error: null });
+      setState({ status: 'ready', rounds, newestRound, error: null });
     } catch (err) {
       if (isAbortError(err)) {
         return;
       }
-      setState({
-        status: 'error',
-        rounds: [],
-        newestRound: 0,
-        fetchedAt: null,
-        error: String(err),
-      });
+      setState({ status: 'error', rounds: [], newestRound: 0, error: String(err) });
     }
   }, []);
 
@@ -94,7 +85,6 @@ export function useBacktestPreviousRounds({
     status: state.status,
     rounds: state.rounds,
     newestRound: state.newestRound,
-    fetchedAt: state.fetchedAt,
     error: state.error,
     refetch,
   };
