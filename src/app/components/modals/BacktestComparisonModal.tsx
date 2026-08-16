@@ -462,10 +462,6 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                     </RadioGroup.Root>
                   </HStack>
 
-                  <Text fontSize="xs" color="fg.muted">
-                    {sweepAmounts.length} calculation steps
-                  </Text>
-
                   <HStack gap={3}>
                     <Button
                       onClick={handleRunSweep}
