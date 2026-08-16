@@ -9,6 +9,7 @@ import { initWasmMath } from '../../wasmMath';
 import {
   backtestRound,
   downsampleForChart,
+  formatBacktestAmount,
   runBacktestAmountSweep,
   runFullBacktest,
 } from '../runBacktest';
@@ -159,6 +160,27 @@ describe('logit model uses food-adjustment data', () => {
     const round = fixtureRounds[1]!;
     expect(round.foods).toBeTruthy();
     expect(round.foods).toEqual(fixtureRoundData[1]!.foods);
+  });
+});
+
+describe('formatBacktestAmount', () => {
+  it('omits the ~ prefix when the abbreviation is exact', () => {
+    expect(formatBacktestAmount(1000)).toBe('1K');
+    expect(formatBacktestAmount(5000)).toBe('5K');
+    expect(formatBacktestAmount(200000)).toBe('200K');
+    expect(formatBacktestAmount(1500000)).toBe('1.5M');
+    expect(formatBacktestAmount(2000000000)).toBe('2B');
+  });
+
+  it('adds a ~ prefix when the abbreviation loses precision', () => {
+    expect(formatBacktestAmount(2189012287)).toBe('~2.19B');
+    expect(formatBacktestAmount(457862870)).toBe('~457.86M');
+    expect(formatBacktestAmount(1234)).toBe('~1.23K');
+  });
+
+  it('never abbreviates values under 1000', () => {
+    expect(formatBacktestAmount(999)).toBe('999');
+    expect(formatBacktestAmount(0)).toBe('0');
   });
 });
 

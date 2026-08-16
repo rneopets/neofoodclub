@@ -162,17 +162,24 @@ export async function runBacktestAmountSweep(
   return points;
 }
 
-/** Formats a backtest money amount (spent/won/net profit) with at most 2 decimal places, no trailing zeros. */
+/** Scales `value` by `divisor` to at most 2 decimal places, prefixed with ~ only if that rounding lost precision. */
+function formatScaled(value: number, divisor: number, suffix: string): string {
+  const scaled = parseFloat((value / divisor).toFixed(2));
+  const isExact = scaled * divisor === value;
+  return `${isExact ? '' : '~'}${scaled}${suffix}`;
+}
+
+/** Formats a backtest money amount (spent/won/net profit), abbreviated with a ~ prefix only when rounded. */
 export function formatBacktestAmount(value: number): string {
   const abs = Math.abs(value);
   if (abs >= 1_000_000_000) {
-    return `~${parseFloat((value / 1_000_000_000).toFixed(2))}B`;
+    return formatScaled(value, 1_000_000_000, 'B');
   }
   if (abs >= 1_000_000) {
-    return `~${parseFloat((value / 1_000_000).toFixed(2))}M`;
+    return formatScaled(value, 1_000_000, 'M');
   }
   if (abs >= 1_000) {
-    return `~${parseFloat((value / 1_000).toFixed(2))}K`;
+    return formatScaled(value, 1_000, 'K');
   }
   return value.toFixed(0);
 }
