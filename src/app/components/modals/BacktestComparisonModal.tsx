@@ -54,6 +54,7 @@ interface RunState {
   done: number;
   total: number;
   result: BacktestSummary | null;
+  betAmount: number | null;
   error: string | null;
 }
 
@@ -62,6 +63,7 @@ const INITIAL_RUN_STATE: RunState = {
   done: 0,
   total: 0,
   result: null,
+  betAmount: null,
   error: null,
 };
 
@@ -198,7 +200,14 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    setRunState({ running: true, done: 0, total: rounds.length, result: null, error: null });
+    setRunState({
+      running: true,
+      done: 0,
+      total: rounds.length,
+      result: null,
+      betAmount,
+      error: null,
+    });
 
     void runFullBacktest(rounds, {
       betAmount,
@@ -396,6 +405,12 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
 
                 {runState.result && (
                   <Stack gap={4}>
+                    <Text fontSize="sm" color="fg.muted">
+                      Results for bet amount:{' '}
+                      <Code fontSize="sm">
+                        {formatBacktestAmount(runState.betAmount ?? betAmount)}
+                      </Code>
+                    </Text>
                     <Stack direction={{ base: 'column', md: 'row' }} gap={3}>
                       <ModelSummaryCard
                         title="Legacy model"
