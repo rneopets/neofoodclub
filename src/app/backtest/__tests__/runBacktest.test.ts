@@ -4,6 +4,7 @@ import path from 'path';
 import { describe, expect, it, beforeAll } from 'vitest';
 
 import type { RoundData } from '../../../types';
+import { computeLogitProbabilities } from '../../maths';
 import { initWasmMath } from '../../wasmMath';
 import { backtestRound, downsampleForChart, runFullBacktest } from '../runBacktest';
 import type { BacktestRound } from '../types';
@@ -15,16 +16,17 @@ function toBacktestRound(roundData: RoundData): BacktestRound {
     openingOdds: roundData.openingOdds,
     currentOdds: roundData.currentOdds,
     winners: roundData.winners ?? [],
+    foods: roundData.foods,
   };
 }
 
 const fixturesPath = path.resolve(__dirname, '../../__tests__/fixtures/rounds.jsonl');
-const fixtureRounds: BacktestRound[] = fs
+const fixtureRoundData: RoundData[] = fs
   .readFileSync(fixturesPath, 'utf8')
   .trim()
   .split('\n')
-  .map(line => JSON.parse(line) as RoundData)
-  .map(toBacktestRound);
+  .map(line => JSON.parse(line) as RoundData);
+const fixtureRounds: BacktestRound[] = fixtureRoundData.map(toBacktestRound);
 
 beforeAll(async () => {
   await initWasmMath();
@@ -79,6 +81,28 @@ describe('runFullBacktest', () => {
         signal: controller.signal,
       }),
     ).rejects.toThrow();
+  });
+});
+
+describe('logit model uses food-adjustment data', () => {
+  it('produces different probabilities when foods is present vs missing (regression for the backtest food-stripping bug)', () => {
+    // round 3795 (index 1) has foods; round 3574 (index 0) does not.
+    const roundData = fixtureRoundData[1]!;
+    expect(roundData.foods).toBeTruthy();
+
+    const { foods, ...roundWithoutFoods } = roundData;
+    void foods;
+
+    const withFoods = computeLogitProbabilities(roundData);
+    const withoutFoods = computeLogitProbabilities(roundWithoutFoods as RoundData);
+
+    expect(withFoods.used).not.toEqual(withoutFoods.used);
+  });
+
+  it('carries foods through into backtestRound via BacktestRound', () => {
+    const round = fixtureRounds[1]!;
+    expect(round.foods).toBeTruthy();
+    expect(round.foods).toEqual(fixtureRoundData[1]!.foods);
   });
 });
 

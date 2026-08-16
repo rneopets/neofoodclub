@@ -4,6 +4,7 @@ export interface BacktestRound {
   openingOdds: number[][];
   currentOdds: number[][];
   winners: number[];
+  foods?: number[][];
 }
 
 export interface ModelBacktestResult {
@@ -20,11 +21,4 @@ export interface BacktestSummary {
   rounds: number[];
   legacy: ModelBacktestResult;
   logit: ModelBacktestResult;
-}
-
-export interface CachedPreviousRounds {
-  version: number;
-  newestRound: number;
-  fetchedAt: number;
-  rounds: BacktestRound[];
 }

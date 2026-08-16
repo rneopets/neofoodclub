@@ -113,8 +113,9 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
   isOpen,
   onClose,
 }) => {
-  const { status, rounds, fromCache, newestRound, fetchedAt, error, refetch } =
-    useBacktestPreviousRounds({ enabled: isOpen });
+  const { status, rounds, newestRound, fetchedAt, error, refetch } = useBacktestPreviousRounds({
+    enabled: isOpen,
+  });
 
   const [betAmountInput, setBetAmountInput] = React.useState(String(DEFAULT_BET_AMOUNT));
   const [runState, setRunState] = React.useState<RunState>(INITIAL_RUN_STATE);
@@ -168,11 +169,10 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
     }
     if (status === 'ready') {
       const fetchedText = fetchedAt ? formatDate(fetchedAt, { fromNow: true }) : 'unknown';
-      const sourceText = fromCache ? 'cached' : 'freshly fetched';
-      return `${rounds.length} rounds loaded (newest #${newestRound}), ${sourceText}, ${fetchedText}.`;
+      return `${rounds.length} rounds loaded (newest #${newestRound}), fetched ${fetchedText}.`;
     }
     return '';
-  }, [status, error, fetchedAt, fromCache, rounds.length, newestRound]);
+  }, [status, error, fetchedAt, rounds.length, newestRound]);
 
   const progressPercent =
     runState.total > 0 ? Math.round((runState.done / runState.total) * 100) : 0;
@@ -209,7 +209,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                   <Button
                     size="xs"
                     variant="outline"
-                    onClick={() => refetch(true)}
+                    onClick={() => refetch()}
                     disabled={status === 'loading' || runState.running}
                   >
                     Refresh

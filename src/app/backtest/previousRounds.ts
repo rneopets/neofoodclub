@@ -1,41 +1,4 @@
-import type { BacktestRound, CachedPreviousRounds } from './types';
-
-const CACHE_KEY = 'nfc.previousRoundsCache.v1';
-const CACHE_VERSION = 1;
-
-export function loadCache(): CachedPreviousRounds | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (raw === null) {
-      return null;
-    }
-    const parsed = JSON.parse(raw) as CachedPreviousRounds;
-    if (parsed.version !== CACHE_VERSION) {
-      return null;
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-export function saveCache(data: CachedPreviousRounds): void {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-  } catch (error) {
-    console.warn('Failed to cache previous rounds:', error);
-  }
-}
-
-export function isStale(cache: CachedPreviousRounds | null, currentRoundFromCdn: number): boolean {
-  if (cache === null) {
-    return true;
-  }
-  if (currentRoundFromCdn > 0) {
-    return currentRoundFromCdn - cache.newestRound > 1;
-  }
-  return Date.now() - cache.fetchedAt > 24 * 60 * 60 * 1000;
-}
+import type { BacktestRound } from './types';
 
 export async function fetchPreviousRounds(
   signal?: AbortSignal,
@@ -58,6 +21,7 @@ export async function fetchPreviousRounds(
       openingOdds: number[][];
       currentOdds: number[][];
       winners?: number[] | null;
+      foods?: number[][] | null;
     };
 
     if (parsed.winners === null || parsed.winners === undefined) {
@@ -76,6 +40,7 @@ export async function fetchPreviousRounds(
       openingOdds: parsed.openingOdds,
       currentOdds: parsed.currentOdds,
       winners: parsed.winners,
+      ...(parsed.foods ? { foods: parsed.foods } : {}),
     });
   }
 
