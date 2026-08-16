@@ -33,7 +33,6 @@ const AMOUNT_PRESETS = [1000, 5000, 10000, 25000, 50000];
 const MAX_SWEEP_AMOUNT = 200000;
 const STEP_OPTIONS = [1000, 2000, 3000, 4000, 5000];
 const DEFAULT_STEP = 5000;
-const SECONDS_PER_STEP_ESTIMATE = 12;
 
 // The real max bet on Neopets increases by 2 NP/day since Food Club's
 // 2003-11-15 launch - referenced here so the sweep's higher amounts are
@@ -464,8 +463,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                   </HStack>
 
                   <Text fontSize="xs" color="fg.muted">
-                    {sweepAmounts.length} steps, ~
-                    {Math.round((sweepAmounts.length * SECONDS_PER_STEP_ESTIMATE) / 60) || 1} min
+                    {sweepAmounts.length} steps
                   </Text>
 
                   <HStack gap={3}>
