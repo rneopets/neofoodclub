@@ -463,7 +463,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                   </HStack>
 
                   <Text fontSize="xs" color="fg.muted">
-                    {sweepAmounts.length} steps
+                    {sweepAmounts.length} calculation steps
                   </Text>
 
                   <HStack gap={3}>
