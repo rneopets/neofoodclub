@@ -192,6 +192,12 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
     return !isNaN(value) && value > 0 ? value : DEFAULT_BET_AMOUNT;
   }, [betAmountInput]);
 
+  const handleBetAmountInputChange = React.useCallback((newValue: string): void => {
+    abortControllerRef.current?.abort();
+    setBetAmountInput(newValue);
+    setRunState(INITIAL_RUN_STATE);
+  }, []);
+
   const handleRunBacktest = React.useCallback((): void => {
     if (rounds.length === 0) {
       return;
@@ -343,7 +349,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                     <Input
                       type="number"
                       value={betAmountInput}
-                      onChange={e => setBetAmountInput(e.target.value)}
+                      onChange={e => handleBetAmountInputChange(e.target.value)}
                       width="140px"
                       size="sm"
                       disabled={runState.running}
@@ -355,7 +361,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                         key={preset}
                         size="xs"
                         variant="outline"
-                        onClick={() => setBetAmountInput(String(preset))}
+                        onClick={() => handleBetAmountInputChange(String(preset))}
                         disabled={runState.running}
                       >
                         {formatBacktestAmount(preset)}
@@ -372,7 +378,12 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                 <HStack gap={3}>
                   <Button
                     onClick={handleRunBacktest}
-                    disabled={status !== 'ready' || runState.running || rounds.length === 0}
+                    disabled={
+                      status !== 'ready' ||
+                      runState.running ||
+                      rounds.length === 0 ||
+                      runState.result !== null
+                    }
                   >
                     <FaBalanceScale />
                     Run Backtest
