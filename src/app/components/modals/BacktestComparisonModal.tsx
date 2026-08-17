@@ -501,7 +501,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                               value={String(amount)}
                               disabled={sweepState.running}
                             >
-                              <SegmentGroup.ItemText>
+                              <SegmentGroup.ItemText _checked={{ fontWeight: 'bold' }}>
                                 {formatBacktestAmount(amount)}
                               </SegmentGroup.ItemText>
                               <SegmentGroup.ItemHiddenInput />
@@ -531,7 +531,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                               value={String(step)}
                               disabled={sweepState.running}
                             >
-                              <SegmentGroup.ItemText>
+                              <SegmentGroup.ItemText _checked={{ fontWeight: 'bold' }}>
                                 {formatBacktestAmount(step)}
                               </SegmentGroup.ItemText>
                               <SegmentGroup.ItemHiddenInput />
