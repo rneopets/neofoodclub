@@ -269,6 +269,12 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
       onProgress: (done, total) => {
         setSweepState(prev => ({ ...prev, done, total }));
       },
+      onStepComplete: point => {
+        setSweepState(prev => ({
+          ...prev,
+          result: prev.result ? [...prev.result, point] : [point],
+        }));
+      },
     })
       .then(result => {
         setSweepState(prev => ({ ...prev, running: false, result }));
@@ -531,7 +537,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                             </Progress.Track>
                           </Progress.Root>
                           <Text fontSize="xs" color="fg.muted">
-                            {sweepState.done} / {sweepState.total} rounds
+                            {sweepState.done} / {sweepState.total} steps
                           </Text>
                         </Stack>
                       )}

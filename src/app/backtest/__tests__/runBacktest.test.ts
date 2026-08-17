@@ -139,6 +139,23 @@ describe('runBacktestAmountSweep', () => {
       }),
     ).rejects.toThrow();
   });
+
+  it('calls onStepComplete once per amount, in order, matching the final result (for live-updating charts)', async () => {
+    const rounds = fixtureRounds.slice(0, 2);
+    const amounts = [10000, 20000, 30000];
+
+    const stepPoints: number[] = [];
+    const points = await runBacktestAmountSweep(rounds, {
+      amounts,
+      betCount: 10,
+      onStepComplete: point => {
+        stepPoints.push(point.amount);
+      },
+    });
+
+    expect(stepPoints).toEqual(amounts);
+    expect(stepPoints).toEqual(points.map(p => p.amount));
+  });
 });
 
 describe('logit model uses food-adjustment data', () => {

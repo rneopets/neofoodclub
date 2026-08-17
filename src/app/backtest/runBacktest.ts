@@ -133,6 +133,7 @@ export interface RunAmountSweepOptions {
   amounts: number[];
   betCount: number;
   onProgress?: (doneRounds: number, totalRounds: number) => void;
+  onStepComplete?: (point: AmountSweepPoint) => void;
   signal?: AbortSignal;
 }
 
@@ -156,7 +157,9 @@ export async function runBacktestAmountSweep(
       },
     });
 
-    points.push({ amount, legacy: summary.legacy, logit: summary.logit });
+    const point: AmountSweepPoint = { amount, legacy: summary.legacy, logit: summary.logit };
+    points.push(point);
+    opts.onStepComplete?.(point);
   }
 
   return points;
