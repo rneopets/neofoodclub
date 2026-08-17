@@ -1,15 +1,27 @@
 import { computePiratesBinary } from '../maths';
 import { rebuildEngine, wasmMakeMaxTerBets } from '../wasmEngine';
 
-import type { AmountSweepPoint, BacktestRound, BacktestSummary } from './types';
+import type {
+  AmountSweepPoint,
+  BacktestRound,
+  BacktestSummary,
+  ModelBacktestResult,
+} from './types';
 
 export function backtestRound(
   round: BacktestRound,
   useLogit: boolean,
   betAmount: number,
   betCount: number,
+  useEr: boolean,
 ): { spent: number; won: number } {
-  rebuildEngine(JSON.stringify(round), betAmount, useLogit);
+  // useEr selects a different bet-selection strategy in the wasm engine:
+  // passing a bet amount ranks bets by Net Expected at that (odds-capped)
+  // amount ("max-TER"); passing null instead switches the engine to rank by
+  // raw, amount-independent Expected Ratio ("general ER" - see is_general()
+  // in bets_factory.rs). Scoring below always uses the real betAmount
+  // regardless of which strategy selected the bets.
+  rebuildEngine(JSON.stringify(round), useEr ? null : betAmount, useLogit);
   const { bets } = wasmMakeMaxTerBets(betCount);
   const winningBetBinary = computePiratesBinary(round.winners);
 
@@ -56,46 +68,64 @@ export interface RunBacktestOptions {
   signal?: AbortSignal;
 }
 
+interface Accumulator {
+  totalSpent: number;
+  totalWon: number;
+  roundsPlayed: number;
+  roundsWon: number;
+  cumulativeNet: number[];
+}
+
+function createAccumulator(): Accumulator {
+  return { totalSpent: 0, totalWon: 0, roundsPlayed: 0, roundsWon: 0, cumulativeNet: [] };
+}
+
+function accumulate(acc: Accumulator, result: { spent: number; won: number }): void {
+  acc.totalSpent += result.spent;
+  acc.totalWon += result.won;
+  acc.roundsPlayed += 1;
+  if (result.won > result.spent) {
+    acc.roundsWon += 1;
+  }
+  acc.cumulativeNet.push(acc.totalWon - acc.totalSpent);
+}
+
+function finalizeAccumulator(acc: Accumulator): ModelBacktestResult {
+  const netProfit = acc.totalWon - acc.totalSpent;
+  return {
+    totalSpent: acc.totalSpent,
+    totalWon: acc.totalWon,
+    netProfit,
+    roi: acc.totalSpent > 0 ? netProfit / acc.totalSpent : 0,
+    roundsPlayed: acc.roundsPlayed,
+    roundsWon: acc.roundsWon,
+    cumulativeNet: acc.cumulativeNet,
+  };
+}
+
 export async function runFullBacktest(
   rounds: BacktestRound[],
   opts: RunBacktestOptions,
 ): Promise<BacktestSummary> {
   const chunkSize = opts.chunkSize ?? 100;
 
-  let legacyTotalSpent = 0;
-  let legacyTotalWon = 0;
-  let legacyRoundsWon = 0;
-  let legacyRoundsPlayed = 0;
-  let logitTotalSpent = 0;
-  let logitTotalWon = 0;
-  let logitRoundsWon = 0;
-  let logitRoundsPlayed = 0;
+  const legacyAcc = createAccumulator();
+  const logitAcc = createAccumulator();
+  const legacyGeneralErAcc = createAccumulator();
+  const logitGeneralErAcc = createAccumulator();
   const roundNumbers: number[] = [];
-  const legacyCumulativeNet: number[] = [];
-  const logitCumulativeNet: number[] = [];
 
   for (let i = 0; i < rounds.length; i++) {
     const round = rounds[i]!;
-    const legacyResult = backtestRound(round, false, opts.betAmount, opts.betCount);
-    const logitResult = backtestRound(round, true, opts.betAmount, opts.betCount);
-
-    legacyTotalSpent += legacyResult.spent;
-    legacyTotalWon += legacyResult.won;
-    legacyRoundsPlayed += 1;
-    if (legacyResult.won > legacyResult.spent) {
-      legacyRoundsWon += 1;
-    }
-
-    logitTotalSpent += logitResult.spent;
-    logitTotalWon += logitResult.won;
-    logitRoundsPlayed += 1;
-    if (logitResult.won > logitResult.spent) {
-      logitRoundsWon += 1;
-    }
+    accumulate(legacyAcc, backtestRound(round, false, opts.betAmount, opts.betCount, false));
+    accumulate(logitAcc, backtestRound(round, true, opts.betAmount, opts.betCount, false));
+    accumulate(
+      legacyGeneralErAcc,
+      backtestRound(round, false, opts.betAmount, opts.betCount, true),
+    );
+    accumulate(logitGeneralErAcc, backtestRound(round, true, opts.betAmount, opts.betCount, true));
 
     roundNumbers.push(round.round);
-    legacyCumulativeNet.push(legacyTotalWon - legacyTotalSpent);
-    logitCumulativeNet.push(logitTotalWon - logitTotalSpent);
 
     if ((i + 1) % chunkSize === 0 || i === rounds.length - 1) {
       if (opts.signal?.aborted) {
@@ -108,24 +138,10 @@ export async function runFullBacktest(
 
   return {
     rounds: roundNumbers,
-    legacy: {
-      totalSpent: legacyTotalSpent,
-      totalWon: legacyTotalWon,
-      netProfit: legacyTotalWon - legacyTotalSpent,
-      roi: legacyTotalSpent > 0 ? (legacyTotalWon - legacyTotalSpent) / legacyTotalSpent : 0,
-      roundsPlayed: legacyRoundsPlayed,
-      roundsWon: legacyRoundsWon,
-      cumulativeNet: legacyCumulativeNet,
-    },
-    logit: {
-      totalSpent: logitTotalSpent,
-      totalWon: logitTotalWon,
-      netProfit: logitTotalWon - logitTotalSpent,
-      roi: logitTotalSpent > 0 ? (logitTotalWon - logitTotalSpent) / logitTotalSpent : 0,
-      roundsPlayed: logitRoundsPlayed,
-      roundsWon: logitRoundsWon,
-      cumulativeNet: logitCumulativeNet,
-    },
+    legacy: finalizeAccumulator(legacyAcc),
+    logit: finalizeAccumulator(logitAcc),
+    legacyGeneralEr: finalizeAccumulator(legacyGeneralErAcc),
+    logitGeneralEr: finalizeAccumulator(logitGeneralErAcc),
   };
 }
 
@@ -157,7 +173,13 @@ export async function runBacktestAmountSweep(
       },
     });
 
-    const point: AmountSweepPoint = { amount, legacy: summary.legacy, logit: summary.logit };
+    const point: AmountSweepPoint = {
+      amount,
+      legacy: summary.legacy,
+      logit: summary.logit,
+      legacyGeneralEr: summary.legacyGeneralEr,
+      logitGeneralEr: summary.logitGeneralEr,
+    };
     points.push(point);
     opts.onStepComplete?.(point);
   }

@@ -21,10 +21,14 @@ export interface BacktestSummary {
   rounds: number[];
   legacy: ModelBacktestResult;
   logit: ModelBacktestResult;
+  legacyGeneralEr: ModelBacktestResult;
+  logitGeneralEr: ModelBacktestResult;
 }
 
 export interface AmountSweepPoint {
   amount: number;
   legacy: ModelBacktestResult;
   logit: ModelBacktestResult;
+  legacyGeneralEr: ModelBacktestResult;
+  logitGeneralEr: ModelBacktestResult;
 }

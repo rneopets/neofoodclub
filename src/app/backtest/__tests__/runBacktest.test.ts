@@ -41,14 +41,26 @@ beforeAll(async () => {
 describe('backtestRound', () => {
   const round = fixtureRounds[0]!;
 
-  it('returns a sane result for the legacy model', () => {
-    const result = backtestRound(round, false, 500000, 10);
+  it('returns a sane result for the legacy model (max-TER)', () => {
+    const result = backtestRound(round, false, 500000, 10, false);
     expect(result.spent).toBeGreaterThan(0);
     expect(result.won).toBeGreaterThanOrEqual(0);
   });
 
-  it('returns a sane result for the logit model', () => {
-    const result = backtestRound(round, true, 500000, 10);
+  it('returns a sane result for the logit model (max-TER)', () => {
+    const result = backtestRound(round, true, 500000, 10, false);
+    expect(result.spent).toBeGreaterThan(0);
+    expect(result.won).toBeGreaterThanOrEqual(0);
+  });
+
+  it('returns a sane result for the legacy model (general ER)', () => {
+    const result = backtestRound(round, false, 500000, 10, true);
+    expect(result.spent).toBeGreaterThan(0);
+    expect(result.won).toBeGreaterThanOrEqual(0);
+  });
+
+  it('returns a sane result for the logit model (general ER)', () => {
+    const result = backtestRound(round, true, 500000, 10, true);
     expect(result.spent).toBeGreaterThan(0);
     expect(result.won).toBeGreaterThanOrEqual(0);
   });
@@ -56,8 +68,8 @@ describe('backtestRound', () => {
   it('spent scales linearly with betAmount instead of being capped by the payout cap (regression: sweep chart used to flatten past ~70k)', () => {
     const smallAmount = 10000;
     const largeAmount = 100000;
-    const smallResult = backtestRound(round, false, smallAmount, 10);
-    const largeResult = backtestRound(round, false, largeAmount, 10);
+    const smallResult = backtestRound(round, false, smallAmount, 10, false);
+    const largeResult = backtestRound(round, false, largeAmount, 10, false);
 
     const numActiveBets = smallResult.spent / smallAmount;
     expect(numActiveBets).toBeGreaterThan(0);
@@ -72,7 +84,12 @@ describe('runFullBacktest', () => {
 
     expect(summary.rounds).toEqual(rounds.map(r => r.round));
 
-    for (const model of [summary.legacy, summary.logit]) {
+    for (const model of [
+      summary.legacy,
+      summary.logit,
+      summary.legacyGeneralEr,
+      summary.logitGeneralEr,
+    ]) {
       expect(model.roundsPlayed).toBe(rounds.length);
       expect(model.cumulativeNet).toHaveLength(rounds.length);
       expect(model.netProfit).toBe(model.totalWon - model.totalSpent);
@@ -119,6 +136,8 @@ describe('runBacktestAmountSweep', () => {
     for (const point of points) {
       expect(point.legacy.roundsPlayed).toBe(rounds.length);
       expect(point.logit.roundsPlayed).toBe(rounds.length);
+      expect(point.legacyGeneralEr.roundsPlayed).toBe(rounds.length);
+      expect(point.logitGeneralEr.roundsPlayed).toBe(rounds.length);
     }
 
     const [lastDone, lastTotal] = progressCalls[progressCalls.length - 1]!;

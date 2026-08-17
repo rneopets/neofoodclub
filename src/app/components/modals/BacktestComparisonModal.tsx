@@ -10,6 +10,7 @@ import {
   Portal,
   Progress,
   SegmentGroup,
+  SimpleGrid,
   Stack,
   Tabs,
   Text,
@@ -41,12 +42,12 @@ const MAX_SWEEP_AMOUNT_OPTIONS = Array.from(
 );
 
 // The real max bet on Neopets increases by 2 NP/day since Food Club's
-// 2003-11-15 launch - referenced here so the sweep's higher amounts are
+// 1999-11-15 launch - referenced here so the sweep's higher amounts are
 // clearly understood as hypothetical, not currently placeable.
-const NFC_LAUNCH_DATE = Date.UTC(2003, 10, 15);
+const NEO_LAUNCH_DATE = Date.UTC(1999, 10, 15);
 
 function computeRealMaxBet(): number {
-  const daysSinceLaunch = Math.floor((Date.now() - NFC_LAUNCH_DATE) / (24 * 60 * 60 * 1000));
+  const daysSinceLaunch = Math.floor((Date.now() - NEO_LAUNCH_DATE) / (24 * 60 * 60 * 1000));
   return daysSinceLaunch * 2 + 50;
 }
 
@@ -362,6 +363,13 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
 
                   <Tabs.Content value="single">
                     <Stack gap={4}>
+                      <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+                        Max-TER bets are ranked by Net Expected at your chosen bet amount - the same
+                        selection the app&apos;s &quot;Generate&quot; button uses. General ER bets
+                        are ranked by raw Expected Ratio, independent of amount, so the two
+                        strategies can select genuinely different bets, not just score the same bets
+                        differently.
+                      </Text>
                       <Stack gap={2}>
                         <HStack>
                           <Text fontSize="sm" fontWeight="medium" width="90px">
@@ -443,26 +451,46 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                               {formatBacktestAmount(runState.betAmount ?? betAmount)}
                             </Code>
                           </Text>
-                          <Stack direction={{ base: 'column', md: 'row' }} gap={3}>
+                          <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                             <ModelSummaryCard
-                              title="Legacy model"
+                              title="Legacy (Max-TER)"
                               result={runState.result.legacy}
                               isWinner={
                                 runState.result.legacy.netProfit >= runState.result.logit.netProfit
                               }
                             />
                             <ModelSummaryCard
-                              title="Logit model"
+                              title="Logit (Max-TER)"
                               result={runState.result.logit}
                               isWinner={
                                 runState.result.logit.netProfit > runState.result.legacy.netProfit
                               }
                             />
-                          </Stack>
+                            <ModelSummaryCard
+                              title="Legacy (General ER)"
+                              result={runState.result.legacyGeneralEr}
+                              isWinner={
+                                runState.result.legacyGeneralEr.netProfit >=
+                                runState.result.logitGeneralEr.netProfit
+                              }
+                            />
+                            <ModelSummaryCard
+                              title="Logit (General ER)"
+                              result={runState.result.logitGeneralEr}
+                              isWinner={
+                                runState.result.logitGeneralEr.netProfit >
+                                runState.result.legacyGeneralEr.netProfit
+                              }
+                            />
+                          </SimpleGrid>
                           <BacktestComparisonChart
                             rounds={runState.result.rounds}
-                            legacyCumulative={runState.result.legacy.cumulativeNet}
-                            logitCumulative={runState.result.logit.cumulativeNet}
+                            legacyMaxTerCumulative={runState.result.legacy.cumulativeNet}
+                            logitMaxTerCumulative={runState.result.logit.cumulativeNet}
+                            legacyGeneralErCumulative={
+                              runState.result.legacyGeneralEr.cumulativeNet
+                            }
+                            logitGeneralErCumulative={runState.result.logitGeneralEr.cumulativeNet}
                           />
                         </Stack>
                       )}
