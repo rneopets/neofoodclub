@@ -11,3 +11,25 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+/* Smoothly cross-fade table cell colors (e.g. red <-> green) when odds change.
+   Chakra writes backgrounds as inline styles, so !important is required for the
+   transition shorthand to win. Scoped to table cells only. */
+td,
+th {
+  transition:
+    background-color 0.6s ease,
+    color 0.6s ease !important;
+}
+
+/* Ease-in for the up/down arrow next to a changed current odds value. */
+@keyframes odds-arrow-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

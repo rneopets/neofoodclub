@@ -22,6 +22,7 @@ import { displayAsPercent } from '../../util';
 import { computeDuplicateBetGroupColors } from '../../utils/duplicateBetColors';
 import ClearBetsButton from '../bets/ClearBetsButton';
 import PirateSelect from '../bets/PirateSelect';
+import AnimatedNumber from '../ui/AnimatedNumber';
 
 import Td from './Td';
 
@@ -140,7 +141,10 @@ const PirateInfoRow = React.memo(
         </Td>
         <Td style={{ textAlign: 'end' }}>{opening}:1</Td>
         <Td style={{ textAlign: 'end' }}>
-          <Text fontWeight={current === opening ? 'normal' : 'bold'}>{current}:1</Text>
+          <Text fontWeight={current === opening ? 'normal' : 'bold'}>
+            <AnimatedNumber value={current} />
+            :1
+          </Text>
         </Td>
       </Table.Row>
     );

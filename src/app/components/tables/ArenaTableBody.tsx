@@ -56,6 +56,7 @@ import CustomOddsInput from '../bets/CustomOddsInput';
 import CustomProbsInput from '../bets/CustomProbsInput';
 import PirateSelect from '../bets/PirateSelect';
 import OddsTimeline from '../timeline/OddsTimeline';
+import AnimatedNumber from '../ui/AnimatedNumber';
 import FaDetailsElement from '../ui/FaDetailsElement';
 import TextTooltip from '../ui/TextTooltip';
 
@@ -685,7 +686,7 @@ const PirateRow = React.memo(
           textAlign="end"
           {...(payoutBackground && { layerStyle: 'fill.subtle', colorPalette: payoutBackground })}
         >
-          {displayAsPercent(payout, 1)}
+          <AnimatedNumber value={payout} format={v => displayAsPercent(v, 1)} />
         </Td>
       );
     }, [payout, payoutBackground, bigBrain]);
@@ -740,11 +741,19 @@ const PirateRow = React.memo(
         >
           <Box display="flex" alignItems="center" justifyContent="flex-end">
             {oddsChanged && (
-              <Icon color={oddsIncreased ? 'nfc-green.fg' : 'nfc-red.fg'} mr={1}>
-                {oddsIncreased ? <FaCaretUp /> : <FaCaretDown />}
-              </Icon>
+              <Box
+                key={`${currentOdds}-${oddsIncreased ? 'up' : 'down'}`}
+                animation="odds-arrow-in 0.3s ease-out"
+              >
+                <Icon color={oddsIncreased ? 'nfc-green.fg' : 'nfc-red.fg'} mr={1}>
+                  {oddsIncreased ? <FaCaretUp /> : <FaCaretDown />}
+                </Icon>
+              </Box>
             )}
-            <Text fontWeight={oddsChanged ? 'bold' : 'normal'}>{currentOdds}:1</Text>
+            <Text fontWeight={oddsChanged ? 'bold' : 'normal'}>
+              <AnimatedNumber value={currentOdds!} />
+              :1
+            </Text>
           </Box>
         </Td>
         {customOddsInputElement}
