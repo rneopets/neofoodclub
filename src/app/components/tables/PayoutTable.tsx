@@ -39,6 +39,7 @@ import {
 import { displayAsPercent, displayAsPercentSmart, getMaxSmartPercentDecimals } from '../../util';
 import BetAmountInput from '../bets/BetAmountInput';
 import PlaceThisBetButton from '../bets/PlaceThisBetButton';
+import AnimatedNumber from '../ui/AnimatedNumber';
 import TextTooltip from '../ui/TextTooltip';
 
 import Td from './Td';
@@ -194,7 +195,12 @@ const PayoutTableRow = React.memo(
 
     const probabilityTooltip = useMemo(
       () => ({
-        text: displayAsPercent(probabilities, probabilityDecimals),
+        text: (
+          <AnimatedNumber
+            value={probabilities}
+            format={v => displayAsPercent(v, probabilityDecimals)}
+          />
+        ),
         label: displayAsPercentSmart(probabilities),
       }),
       [probabilities, probabilityDecimals],
@@ -202,7 +208,12 @@ const PayoutTableRow = React.memo(
 
     const expectedRatioTooltip = useMemo(
       () => ({
-        text: `${er.toFixed(3)}:1`,
+        text: (
+          <>
+            <AnimatedNumber value={er} format={v => v.toFixed(3)} />
+            :1
+          </>
+        ),
         label: er.toString(),
       }),
       [er],
@@ -210,7 +221,14 @@ const PayoutTableRow = React.memo(
 
     const netExpectedTooltip = useMemo(
       () => ({
-        text: ne.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        text: (
+          <AnimatedNumber
+            value={ne}
+            format={v =>
+              v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+            }
+          />
+        ),
         label: ne.toString(),
       }),
       [ne],
@@ -298,10 +316,12 @@ const PayoutTableRow = React.memo(
           />
         </Td>
         <Td style={{ textAlign: 'end' }}>
-          {odds?.toLocaleString() ?? '0'}
+          <AnimatedNumber value={odds ?? 0} />
           :1
         </Td>
-        <Td style={{ textAlign: 'end' }}>{payoffs?.toLocaleString() ?? '0'}</Td>
+        <Td style={{ textAlign: 'end' }}>
+          <AnimatedNumber value={payoffs ?? 0} />
+        </Td>
         <Td style={{ textAlign: 'end' }}>
           <MemoizedTextTooltip text={probabilityTooltip.text} content={probabilityTooltip.label} />
         </Td>
@@ -327,7 +347,7 @@ const PayoutTableRow = React.memo(
           {mbBg ? (
             <TextTooltip
               placement="top"
-              text={maxBets?.toLocaleString() ?? '0'}
+              text={<AnimatedNumber value={maxBets ?? 0} />}
               content={
                 mbBg === 'nfc-yellow'
                   ? 'Bet amount is 1 NP over maxbet'
@@ -337,7 +357,7 @@ const PayoutTableRow = React.memo(
               textDecoration="underline dotted"
             />
           ) : (
-            (maxBets?.toLocaleString() ?? '0')
+            <AnimatedNumber value={maxBets ?? 0} />
           )}
         </Td>
         {[0, 1, 2, 3, 4].map(arenaIndex => {
@@ -424,7 +444,7 @@ const PayoutTable = React.memo((): React.ReactElement => {
 
   const totalExpectedRatioTooltip = useMemo(
     () => ({
-      text: totalBetExpectedRatios.toFixed(3),
+      text: <AnimatedNumber value={totalBetExpectedRatios} format={v => v.toFixed(3)} />,
       label: totalBetExpectedRatios.toString(),
     }),
     [totalBetExpectedRatios],
@@ -432,10 +452,14 @@ const PayoutTable = React.memo((): React.ReactElement => {
 
   const totalNetExpectedTooltip = useMemo(
     () => ({
-      text: totalBetNetExpected.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }),
+      text: (
+        <AnimatedNumber
+          value={totalBetNetExpected}
+          format={v =>
+            v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          }
+        />
+      ),
       label: totalBetNetExpected.toString(),
     }),
     [totalBetNetExpected],
@@ -482,12 +506,16 @@ const PayoutTable = React.memo((): React.ReactElement => {
               <Table.ColumnHeader style={{ textAlign: 'end' }}>
                 {winningBetBinary > 0 && (
                   <Text>
-                    {totalWinningOdds.toLocaleString()}:{totalEnabledBets}
+                    <AnimatedNumber value={totalWinningOdds} />:{totalEnabledBets}
                   </Text>
                 )}
               </Table.ColumnHeader>
               <Table.ColumnHeader style={{ textAlign: 'end' }}>
-                {winningBetBinary > 0 && <Text>{totalWinningPayoff.toLocaleString()}</Text>}
+                {winningBetBinary > 0 && (
+                  <Text>
+                    <AnimatedNumber value={totalWinningPayoff} />
+                  </Text>
+                )}
               </Table.ColumnHeader>
               <Table.ColumnHeader style={{ textAlign: 'end' }} />
               <Table.ColumnHeader
