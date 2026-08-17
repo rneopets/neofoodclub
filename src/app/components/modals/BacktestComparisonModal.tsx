@@ -462,6 +462,10 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                         Runs the full backtest once per bet-amount step from the chosen increment up
                         to {formatBacktestAmount(MAX_SWEEP_AMOUNT)}, and plots ROI vs. bet amount.
                       </Text>
+                      <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+                        This can take a while - more steps means more full backtests to run, so
+                        lower increments (more steps) take even longer.
+                      </Text>
 
                       <HStack gap={4} flexWrap="wrap">
                         <Text fontSize="sm" fontWeight="medium">
