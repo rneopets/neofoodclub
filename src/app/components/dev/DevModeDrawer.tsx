@@ -1,6 +1,6 @@
 import { Button, Drawer, Portal, Stack, CloseButton, Text, Separator } from '@chakra-ui/react';
 import * as React from 'react';
-import { FaCode, FaTable } from 'react-icons/fa';
+import { FaBalanceScale, FaCode, FaTable } from 'react-icons/fa';
 import { FaMagnifyingGlassChart } from 'react-icons/fa6';
 
 import { useDisclosureState } from '../../hooks/useDisclosureState';
@@ -8,6 +8,7 @@ import { useCurrentRound } from '../../stores';
 import { getReactScanEnabled, setReactScanEnabled } from '../../util/reactScan';
 import RoundInput from '../inputs/RoundInput';
 import { AllBetsModal } from '../modals/AllBetsModal';
+import { BacktestComparisonModal } from '../modals/BacktestComparisonModal';
 import { RoundJsonModal } from '../modals/RoundJsonModal';
 import SettingsSwitch from '../TableSettings/SettingsSwitch';
 
@@ -19,6 +20,7 @@ interface DevModeDrawerProps {
 export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose }) => {
   const jsonModal = useDisclosureState(false);
   const allBetsModal = useDisclosureState(false);
+  const backtestModal = useDisclosureState(false);
   const currentRoundFromCdn = useCurrentRound();
   const [isReactScanEnabled, setIsReactScanEnabled] = React.useState(getReactScanEnabled);
 
@@ -77,6 +79,10 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
                     <FaTable />
                     View All Possible Bets
                   </Button>
+                  <Button width="full" onClick={backtestModal.onOpen}>
+                    <FaBalanceScale />
+                    Compare Max-TER Models
+                  </Button>
                 </Stack>
               </Drawer.Body>
               <Drawer.Footer>
@@ -91,6 +97,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
 
       <RoundJsonModal isOpen={jsonModal.isOpen} onClose={jsonModal.onClose} />
       <AllBetsModal isOpen={allBetsModal.isOpen} onClose={allBetsModal.onClose} />
+      <BacktestComparisonModal isOpen={backtestModal.isOpen} onClose={backtestModal.onClose} />
     </>
   );
 };
