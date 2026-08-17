@@ -141,6 +141,30 @@ export const HelpGuideModal: React.FC<HelpGuideModalProps> = ({
                   size="sm"
                   mb="3"
                   data-testid="help-guide-tab-switcher"
+                  css={{
+                    bg: 'bg.subtle',
+                    borderWidth: '1px',
+                    borderColor: 'border',
+                    '& [data-state=unchecked]': {
+                      color: 'fg.muted',
+                    },
+                    '& [data-state=checked]': {
+                      color: 'fg',
+                      fontWeight: 'semibold',
+                    },
+                    _dark: {
+                      borderColor: 'border.emphasized',
+                      '& [data-state=unchecked]': {
+                        color: 'fg.subtle',
+                      },
+                    },
+                    '& [data-part=indicator]': {
+                      borderWidth: '1px',
+                      borderColor: 'border',
+                      bg: { base: 'bg', _dark: 'bg.emphasized' },
+                      shadow: 'sm',
+                    },
+                  }}
                 >
                   <SegmentGroup.Indicator />
                   <SegmentGroup.Items items={SEGMENT_OPTIONS} />

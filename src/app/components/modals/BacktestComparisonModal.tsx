@@ -51,6 +51,31 @@ function computeRealMaxBet(): number {
   return daysSinceLaunch * 2 + 50;
 }
 
+const SEGMENT_GROUP_CSS = {
+  bg: 'bg.subtle',
+  borderWidth: '1px',
+  borderColor: 'border',
+  '& [data-state=unchecked]': {
+    color: 'fg.muted',
+  },
+  '& [data-state=checked]': {
+    color: 'fg',
+    fontWeight: 'semibold',
+  },
+  _dark: {
+    borderColor: 'border.emphasized',
+    '& [data-state=unchecked]': {
+      color: 'fg.subtle',
+    },
+  },
+  '& [data-part=indicator]': {
+    borderWidth: '1px',
+    borderColor: 'border',
+    bg: { base: 'bg', _dark: 'bg.emphasized' },
+    shadow: 'sm',
+  },
+} as const;
+
 interface BacktestComparisonModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -521,6 +546,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                             }
                             setSweepMaxAmount(Number(details.value));
                           }}
+                          css={SEGMENT_GROUP_CSS}
                         >
                           <SegmentGroup.Indicator />
                           {MAX_SWEEP_AMOUNT_OPTIONS.map(amount => (
@@ -529,7 +555,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                               value={String(amount)}
                               disabled={sweepState.running}
                             >
-                              <SegmentGroup.ItemText _checked={{ fontWeight: 'bold' }}>
+                              <SegmentGroup.ItemText>
                                 {formatBacktestAmount(amount)}
                               </SegmentGroup.ItemText>
                               <SegmentGroup.ItemHiddenInput />
@@ -551,6 +577,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                             }
                             setSweepStep(Number(details.value));
                           }}
+                          css={SEGMENT_GROUP_CSS}
                         >
                           <SegmentGroup.Indicator />
                           {STEP_OPTIONS.map(step => (
@@ -559,7 +586,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                               value={String(step)}
                               disabled={sweepState.running}
                             >
-                              <SegmentGroup.ItemText _checked={{ fontWeight: 'bold' }}>
+                              <SegmentGroup.ItemText>
                                 {formatBacktestAmount(step)}
                               </SegmentGroup.ItemText>
                               <SegmentGroup.ItemHiddenInput />
