@@ -30,9 +30,15 @@ import { BacktestComparisonChart } from '../charts/BacktestComparisonChart';
 const BET_COUNT = 10;
 const DEFAULT_BET_AMOUNT = 50000;
 const AMOUNT_PRESETS = [1000, 5000, 10000, 25000, 50000];
-const MAX_SWEEP_AMOUNT = 500000;
 const STEP_OPTIONS = [1000, 2000, 3000, 4000, 5000];
 const DEFAULT_STEP = 5000;
+const MAX_SWEEP_AMOUNT_CEILING = 500000;
+const MAX_SWEEP_AMOUNT_INCREMENT = 50000;
+const DEFAULT_MAX_SWEEP_AMOUNT = 100000;
+const MAX_SWEEP_AMOUNT_OPTIONS = Array.from(
+  { length: MAX_SWEEP_AMOUNT_CEILING / MAX_SWEEP_AMOUNT_INCREMENT },
+  (_, i) => (i + 1) * MAX_SWEEP_AMOUNT_INCREMENT,
+);
 
 // The real max bet on Neopets increases by 2 NP/day since Food Club's
 // 2003-11-15 launch - referenced here so the sweep's higher amounts are
@@ -240,16 +246,17 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
   }, []);
 
   const [sweepStep, setSweepStep] = React.useState(DEFAULT_STEP);
+  const [sweepMaxAmount, setSweepMaxAmount] = React.useState(DEFAULT_MAX_SWEEP_AMOUNT);
   const [sweepState, setSweepState] = React.useState<SweepState>(INITIAL_SWEEP_STATE);
   const sweepAbortControllerRef = React.useRef<AbortController | null>(null);
 
   const sweepAmounts = React.useMemo(() => {
     const amounts: number[] = [];
-    for (let amount = sweepStep; amount <= MAX_SWEEP_AMOUNT; amount += sweepStep) {
+    for (let amount = sweepStep; amount <= sweepMaxAmount; amount += sweepStep) {
       amounts.push(amount);
     }
     return amounts;
-  }, [sweepStep]);
+  }, [sweepStep, sweepMaxAmount]);
 
   const handleRunSweep = React.useCallback((): void => {
     if (rounds.length === 0) {
@@ -466,12 +473,45 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                     <Stack gap={3}>
                       <Text fontSize="xs" color="fg.muted">
                         Runs the full backtest once per bet-amount step from the chosen increment up
-                        to {formatBacktestAmount(MAX_SWEEP_AMOUNT)}, and plots ROI vs. bet amount.
+                        to {formatBacktestAmount(sweepMaxAmount)}, and plots ROI vs. bet amount.
                       </Text>
                       <Text fontSize="xs" color="fg.muted" fontStyle="italic">
                         This can take a while - more steps means more full backtests to run, so
                         lower increments (more steps) take even longer.
                       </Text>
+
+                      <HStack gap={4} flexWrap="wrap">
+                        <Text fontSize="sm" fontWeight="medium">
+                          Max amount:
+                        </Text>
+                        <RadioGroup.Root
+                          value={String(sweepMaxAmount)}
+                          size="sm"
+                          onValueChange={(details: { value: string | null }) => {
+                            if (details.value === null) {
+                              return;
+                            }
+                            setSweepMaxAmount(Number(details.value));
+                          }}
+                        >
+                          <HStack gap={3} flexWrap="wrap">
+                            {MAX_SWEEP_AMOUNT_OPTIONS.map(amount => (
+                              <RadioGroup.Item
+                                key={amount}
+                                value={String(amount)}
+                                cursor="pointer"
+                                disabled={sweepState.running}
+                              >
+                                <RadioGroup.ItemHiddenInput />
+                                <RadioGroup.ItemIndicator cursor="pointer" />
+                                <RadioGroup.ItemText>
+                                  {formatBacktestAmount(amount)}
+                                </RadioGroup.ItemText>
+                              </RadioGroup.Item>
+                            ))}
+                          </HStack>
+                        </RadioGroup.Root>
+                      </HStack>
 
                       <HStack gap={4} flexWrap="wrap">
                         <Text fontSize="sm" fontWeight="medium">
