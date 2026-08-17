@@ -10,8 +10,8 @@ import {
   Portal,
   Progress,
   RadioGroup,
-  Separator,
   Stack,
+  Tabs,
   Text,
 } from '@chakra-ui/react';
 import * as React from 'react';
@@ -341,197 +341,207 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                   </Button>
                 </HStack>
 
-                <Stack gap={2}>
-                  <HStack>
-                    <Text fontSize="sm" fontWeight="medium" width="90px">
-                      Bet Amount:
-                    </Text>
-                    <Input
-                      type="number"
-                      value={betAmountInput}
-                      onChange={e => handleBetAmountInputChange(e.target.value)}
-                      width="140px"
-                      size="sm"
-                      disabled={runState.running}
-                    />
-                  </HStack>
-                  <HStack gap={2} flexWrap="wrap">
-                    {AMOUNT_PRESETS.map(preset => (
-                      <Button
-                        key={preset}
-                        size="xs"
-                        variant="outline"
-                        onClick={() => handleBetAmountInputChange(String(preset))}
-                        disabled={runState.running}
-                      >
-                        {formatBacktestAmount(preset)}
-                      </Button>
-                    ))}
-                  </HStack>
-                  <Text fontSize="xs" color="fg.muted" fontStyle="italic">
-                    Yes, we know the max bet amount on Neopets is{' '}
-                    <Code fontSize="xs">{computeRealMaxBet().toLocaleString()}</Code> - amounts
-                    above that are hypothetical/exploratory only.
-                  </Text>
-                </Stack>
+                <Tabs.Root defaultValue="single" variant="line">
+                  <Tabs.List>
+                    <Tabs.Trigger value="single">Single Amount</Tabs.Trigger>
+                    <Tabs.Trigger value="sweep">Sweep Amounts</Tabs.Trigger>
+                  </Tabs.List>
 
-                <HStack gap={3}>
-                  <Button
-                    onClick={handleRunBacktest}
-                    disabled={
-                      status !== 'ready' ||
-                      runState.running ||
-                      rounds.length === 0 ||
-                      runState.result !== null
-                    }
-                  >
-                    <FaBalanceScale />
-                    Run Backtest
-                  </Button>
-                  {runState.running && (
-                    <Button variant="outline" onClick={handleCancel}>
-                      Cancel
-                    </Button>
-                  )}
-                </HStack>
+                  <Tabs.Content value="single">
+                    <Stack gap={4}>
+                      <Stack gap={2}>
+                        <HStack>
+                          <Text fontSize="sm" fontWeight="medium" width="90px">
+                            Bet Amount:
+                          </Text>
+                          <Input
+                            type="number"
+                            value={betAmountInput}
+                            onChange={e => handleBetAmountInputChange(e.target.value)}
+                            width="140px"
+                            size="sm"
+                            disabled={runState.running}
+                          />
+                        </HStack>
+                        <HStack gap={2} flexWrap="wrap">
+                          {AMOUNT_PRESETS.map(preset => (
+                            <Button
+                              key={preset}
+                              size="xs"
+                              variant="outline"
+                              onClick={() => handleBetAmountInputChange(String(preset))}
+                              disabled={runState.running}
+                            >
+                              {formatBacktestAmount(preset)}
+                            </Button>
+                          ))}
+                        </HStack>
+                        <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+                          Yes, we know the max bet amount on Neopets is{' '}
+                          <Code fontSize="xs">{computeRealMaxBet().toLocaleString()}</Code> -
+                          amounts above that are hypothetical/exploratory only.
+                        </Text>
+                      </Stack>
 
-                {runState.running && (
-                  <Stack gap={1}>
-                    <Progress.Root value={progressPercent} size="sm" colorPalette="nfc-blue">
-                      <Progress.Track>
-                        <Progress.Range />
-                      </Progress.Track>
-                    </Progress.Root>
-                    <Text fontSize="xs" color="fg.muted">
-                      {runState.done} / {runState.total} rounds ({progressPercent}%)
-                    </Text>
-                  </Stack>
-                )}
-
-                {runState.error && (
-                  <Text fontSize="sm" color="nfc-red.fg">
-                    {runState.error}
-                  </Text>
-                )}
-
-                {runState.result && (
-                  <Stack gap={4}>
-                    <Text fontSize="sm" color="fg.muted">
-                      Results for bet amount:{' '}
-                      <Code fontSize="sm">
-                        {formatBacktestAmount(runState.betAmount ?? betAmount)}
-                      </Code>
-                    </Text>
-                    <Stack direction={{ base: 'column', md: 'row' }} gap={3}>
-                      <ModelSummaryCard
-                        title="Legacy model"
-                        result={runState.result.legacy}
-                        isWinner={
-                          runState.result.legacy.netProfit >= runState.result.logit.netProfit
-                        }
-                      />
-                      <ModelSummaryCard
-                        title="Logit model"
-                        result={runState.result.logit}
-                        isWinner={
-                          runState.result.logit.netProfit > runState.result.legacy.netProfit
-                        }
-                      />
-                    </Stack>
-                    <BacktestComparisonChart
-                      rounds={runState.result.rounds}
-                      legacyCumulative={runState.result.legacy.cumulativeNet}
-                      logitCumulative={runState.result.logit.cumulativeNet}
-                    />
-                  </Stack>
-                )}
-
-                <Separator />
-
-                <Stack gap={3}>
-                  <Text fontSize="sm" fontWeight="medium">
-                    Sweep across bet amounts
-                  </Text>
-                  <Text fontSize="xs" color="fg.muted">
-                    Runs the full backtest once per bet-amount step from the chosen increment up to{' '}
-                    {formatBacktestAmount(MAX_SWEEP_AMOUNT)}, and plots ROI vs. bet amount.
-                  </Text>
-
-                  <HStack gap={4} flexWrap="wrap">
-                    <Text fontSize="sm" fontWeight="medium">
-                      Step size:
-                    </Text>
-                    <RadioGroup.Root
-                      value={String(sweepStep)}
-                      size="sm"
-                      onValueChange={(details: { value: string | null }) => {
-                        if (details.value === null) {
-                          return;
-                        }
-                        setSweepStep(Number(details.value));
-                      }}
-                    >
                       <HStack gap={3}>
-                        {STEP_OPTIONS.map(step => (
-                          <RadioGroup.Item
-                            key={step}
-                            value={String(step)}
-                            cursor="pointer"
-                            disabled={sweepState.running}
-                          >
-                            <RadioGroup.ItemHiddenInput />
-                            <RadioGroup.ItemIndicator cursor="pointer" />
-                            <RadioGroup.ItemText>{formatBacktestAmount(step)}</RadioGroup.ItemText>
-                          </RadioGroup.Item>
-                        ))}
+                        <Button
+                          onClick={handleRunBacktest}
+                          disabled={
+                            status !== 'ready' ||
+                            runState.running ||
+                            rounds.length === 0 ||
+                            runState.result !== null
+                          }
+                        >
+                          <FaBalanceScale />
+                          Run Backtest
+                        </Button>
+                        {runState.running && (
+                          <Button variant="outline" onClick={handleCancel}>
+                            Cancel
+                          </Button>
+                        )}
                       </HStack>
-                    </RadioGroup.Root>
-                  </HStack>
 
-                  <HStack gap={3}>
-                    <Button
-                      onClick={handleRunSweep}
-                      disabled={status !== 'ready' || sweepState.running || rounds.length === 0}
-                    >
-                      <FaBalanceScale />
-                      Run All Amounts
-                    </Button>
-                    {sweepState.running && (
-                      <Button variant="outline" onClick={handleCancelSweep}>
-                        Cancel
-                      </Button>
-                    )}
-                  </HStack>
+                      {runState.running && (
+                        <Stack gap={1}>
+                          <Progress.Root value={progressPercent} size="sm" colorPalette="nfc-blue">
+                            <Progress.Track>
+                              <Progress.Range />
+                            </Progress.Track>
+                          </Progress.Root>
+                          <Text fontSize="xs" color="fg.muted">
+                            {runState.done} / {runState.total} rounds ({progressPercent}%)
+                          </Text>
+                        </Stack>
+                      )}
 
-                  {sweepState.running && (
-                    <Stack gap={1}>
-                      <Progress.Root
-                        value={
-                          sweepState.total > 0
-                            ? Math.round((sweepState.done / sweepState.total) * 100)
-                            : 0
-                        }
-                        size="sm"
-                        colorPalette="nfc-blue"
-                      >
-                        <Progress.Track>
-                          <Progress.Range />
-                        </Progress.Track>
-                      </Progress.Root>
-                      <Text fontSize="xs" color="fg.muted">
-                        {sweepState.done} / {sweepState.total} rounds
-                      </Text>
+                      {runState.error && (
+                        <Text fontSize="sm" color="nfc-red.fg">
+                          {runState.error}
+                        </Text>
+                      )}
+
+                      {runState.result && (
+                        <Stack gap={4}>
+                          <Text fontSize="sm" color="fg.muted">
+                            Results for bet amount:{' '}
+                            <Code fontSize="sm">
+                              {formatBacktestAmount(runState.betAmount ?? betAmount)}
+                            </Code>
+                          </Text>
+                          <Stack direction={{ base: 'column', md: 'row' }} gap={3}>
+                            <ModelSummaryCard
+                              title="Legacy model"
+                              result={runState.result.legacy}
+                              isWinner={
+                                runState.result.legacy.netProfit >= runState.result.logit.netProfit
+                              }
+                            />
+                            <ModelSummaryCard
+                              title="Logit model"
+                              result={runState.result.logit}
+                              isWinner={
+                                runState.result.logit.netProfit > runState.result.legacy.netProfit
+                              }
+                            />
+                          </Stack>
+                          <BacktestComparisonChart
+                            rounds={runState.result.rounds}
+                            legacyCumulative={runState.result.legacy.cumulativeNet}
+                            logitCumulative={runState.result.logit.cumulativeNet}
+                          />
+                        </Stack>
+                      )}
                     </Stack>
-                  )}
+                  </Tabs.Content>
 
-                  {sweepState.error && (
-                    <Text fontSize="sm" color="nfc-red.fg">
-                      {sweepState.error}
-                    </Text>
-                  )}
+                  <Tabs.Content value="sweep">
+                    <Stack gap={3}>
+                      <Text fontSize="xs" color="fg.muted">
+                        Runs the full backtest once per bet-amount step from the chosen increment up
+                        to {formatBacktestAmount(MAX_SWEEP_AMOUNT)}, and plots ROI vs. bet amount.
+                      </Text>
 
-                  {sweepState.result && <BacktestAmountSweepChart points={sweepState.result} />}
-                </Stack>
+                      <HStack gap={4} flexWrap="wrap">
+                        <Text fontSize="sm" fontWeight="medium">
+                          Step size:
+                        </Text>
+                        <RadioGroup.Root
+                          value={String(sweepStep)}
+                          size="sm"
+                          onValueChange={(details: { value: string | null }) => {
+                            if (details.value === null) {
+                              return;
+                            }
+                            setSweepStep(Number(details.value));
+                          }}
+                        >
+                          <HStack gap={3}>
+                            {STEP_OPTIONS.map(step => (
+                              <RadioGroup.Item
+                                key={step}
+                                value={String(step)}
+                                cursor="pointer"
+                                disabled={sweepState.running}
+                              >
+                                <RadioGroup.ItemHiddenInput />
+                                <RadioGroup.ItemIndicator cursor="pointer" />
+                                <RadioGroup.ItemText>
+                                  {formatBacktestAmount(step)}
+                                </RadioGroup.ItemText>
+                              </RadioGroup.Item>
+                            ))}
+                          </HStack>
+                        </RadioGroup.Root>
+                      </HStack>
+
+                      <HStack gap={3}>
+                        <Button
+                          onClick={handleRunSweep}
+                          disabled={status !== 'ready' || sweepState.running || rounds.length === 0}
+                        >
+                          <FaBalanceScale />
+                          Run All Amounts
+                        </Button>
+                        {sweepState.running && (
+                          <Button variant="outline" onClick={handleCancelSweep}>
+                            Cancel
+                          </Button>
+                        )}
+                      </HStack>
+
+                      {sweepState.running && (
+                        <Stack gap={1}>
+                          <Progress.Root
+                            value={
+                              sweepState.total > 0
+                                ? Math.round((sweepState.done / sweepState.total) * 100)
+                                : 0
+                            }
+                            size="sm"
+                            colorPalette="nfc-blue"
+                          >
+                            <Progress.Track>
+                              <Progress.Range />
+                            </Progress.Track>
+                          </Progress.Root>
+                          <Text fontSize="xs" color="fg.muted">
+                            {sweepState.done} / {sweepState.total} rounds
+                          </Text>
+                        </Stack>
+                      )}
+
+                      {sweepState.error && (
+                        <Text fontSize="sm" color="nfc-red.fg">
+                          {sweepState.error}
+                        </Text>
+                      )}
+
+                      {sweepState.result && <BacktestAmountSweepChart points={sweepState.result} />}
+                    </Stack>
+                  </Tabs.Content>
+                </Tabs.Root>
               </Stack>
             </Dialog.Body>
             <Dialog.Footer>
