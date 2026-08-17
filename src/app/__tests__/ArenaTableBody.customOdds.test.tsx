@@ -74,8 +74,13 @@ describe('ArenaTableBody Payout cell vs Custom Odds', () => {
     const percentCellsBefore = rowBefore.querySelectorAll('td');
     // Column order (Big Brain, Logit model, Custom Odds mode off) is:
     // [pirate name, Prob%, Payout%, FA, ...]. Take the 2nd '%' cell (Payout).
+    // Payout renders via AnimatedNumber, which tweens its visible text on a rAF
+    // loop, so read the span's aria-label (always the final formatted value)
+    // rather than textContent (which lags behind mid-tween).
+    const getPercentText = (td: Element): string | null | undefined =>
+      td.querySelector('span[aria-label]')?.getAttribute('aria-label') ?? td.textContent;
     const payoutTextBefore = Array.from(percentCellsBefore)
-      .map(td => td.textContent)
+      .map(getPercentText)
       .filter(text => text?.includes('%'))[1];
 
     // Now enable Custom Odds mode with a value for pirate 1 (index 0) in arena 0
@@ -98,7 +103,7 @@ describe('ArenaTableBody Payout cell vs Custom Odds', () => {
     // Column order now includes the Custom Prob input before Payout, but
     // that's a NumberInput (no '%' text node), so Payout is still the 2nd match.
     const payoutTextAfter = Array.from(percentCellsAfter)
-      .map(td => td.textContent)
+      .map(getPercentText)
       .filter(text => text?.includes('%'))[1];
 
     expect(payoutTextAfter).not.toBe(payoutTextBefore);

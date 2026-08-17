@@ -686,7 +686,7 @@ const PirateRow = React.memo(
           textAlign="end"
           {...(payoutBackground && { layerStyle: 'fill.subtle', colorPalette: payoutBackground })}
         >
-          {displayAsPercent(payout, 1)}
+          <AnimatedNumber value={payout} format={v => displayAsPercent(v, 1)} />
         </Td>
       );
     }, [payout, payoutBackground, bigBrain]);
