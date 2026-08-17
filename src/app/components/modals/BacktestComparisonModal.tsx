@@ -9,7 +9,7 @@ import {
   Input,
   Portal,
   Progress,
-  RadioGroup,
+  SegmentGroup,
   Stack,
   Tabs,
   Text,
@@ -480,11 +480,11 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                         lower increments (more steps) take even longer.
                       </Text>
 
-                      <HStack gap={4} flexWrap="wrap">
+                      <Stack gap={1}>
                         <Text fontSize="sm" fontWeight="medium">
                           Max amount:
                         </Text>
-                        <RadioGroup.Root
+                        <SegmentGroup.Root
                           value={String(sweepMaxAmount)}
                           size="sm"
                           onValueChange={(details: { value: string | null }) => {
@@ -494,30 +494,27 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                             setSweepMaxAmount(Number(details.value));
                           }}
                         >
-                          <HStack gap={3} flexWrap="wrap">
-                            {MAX_SWEEP_AMOUNT_OPTIONS.map(amount => (
-                              <RadioGroup.Item
-                                key={amount}
-                                value={String(amount)}
-                                cursor="pointer"
-                                disabled={sweepState.running}
-                              >
-                                <RadioGroup.ItemHiddenInput />
-                                <RadioGroup.ItemIndicator cursor="pointer" />
-                                <RadioGroup.ItemText>
-                                  {formatBacktestAmount(amount)}
-                                </RadioGroup.ItemText>
-                              </RadioGroup.Item>
-                            ))}
-                          </HStack>
-                        </RadioGroup.Root>
-                      </HStack>
+                          <SegmentGroup.Indicator />
+                          {MAX_SWEEP_AMOUNT_OPTIONS.map(amount => (
+                            <SegmentGroup.Item
+                              key={amount}
+                              value={String(amount)}
+                              disabled={sweepState.running}
+                            >
+                              <SegmentGroup.ItemText>
+                                {formatBacktestAmount(amount)}
+                              </SegmentGroup.ItemText>
+                              <SegmentGroup.ItemHiddenInput />
+                            </SegmentGroup.Item>
+                          ))}
+                        </SegmentGroup.Root>
+                      </Stack>
 
-                      <HStack gap={4} flexWrap="wrap">
+                      <Stack gap={1}>
                         <Text fontSize="sm" fontWeight="medium">
                           Step size:
                         </Text>
-                        <RadioGroup.Root
+                        <SegmentGroup.Root
                           value={String(sweepStep)}
                           size="sm"
                           onValueChange={(details: { value: string | null }) => {
@@ -527,24 +524,21 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                             setSweepStep(Number(details.value));
                           }}
                         >
-                          <HStack gap={3}>
-                            {STEP_OPTIONS.map(step => (
-                              <RadioGroup.Item
-                                key={step}
-                                value={String(step)}
-                                cursor="pointer"
-                                disabled={sweepState.running}
-                              >
-                                <RadioGroup.ItemHiddenInput />
-                                <RadioGroup.ItemIndicator cursor="pointer" />
-                                <RadioGroup.ItemText>
-                                  {formatBacktestAmount(step)}
-                                </RadioGroup.ItemText>
-                              </RadioGroup.Item>
-                            ))}
-                          </HStack>
-                        </RadioGroup.Root>
-                      </HStack>
+                          <SegmentGroup.Indicator />
+                          {STEP_OPTIONS.map(step => (
+                            <SegmentGroup.Item
+                              key={step}
+                              value={String(step)}
+                              disabled={sweepState.running}
+                            >
+                              <SegmentGroup.ItemText>
+                                {formatBacktestAmount(step)}
+                              </SegmentGroup.ItemText>
+                              <SegmentGroup.ItemHiddenInput />
+                            </SegmentGroup.Item>
+                          ))}
+                        </SegmentGroup.Root>
+                      </Stack>
 
                       <HStack gap={3}>
                         <Button
