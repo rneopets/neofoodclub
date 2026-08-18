@@ -1,5 +1,5 @@
-import React, { useRef, useLayoutEffect } from 'react';
 import { Chart as ChartJS, ChartData, ChartOptions } from 'chart.js';
+import React, { useRef, useLayoutEffect } from 'react';
 
 interface PayoutScatterProps {
   data: ChartData<'scatter'>;
@@ -11,31 +11,35 @@ const PayoutScatter: React.FC<PayoutScatterProps> = React.memo(
   ({ data, options, height = 180 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const chartRef = useRef<ChartJS<'scatter'> | null>(null);
+    const initialDataRef = useRef(data);
+    const initialOptionsRef = useRef(options);
 
     // Create chart on mount, destroy on unmount
     useLayoutEffect(() => {
-      if (!canvasRef.current) return;
+      if (!canvasRef.current) {
+        return undefined;
+      }
 
       chartRef.current = new ChartJS(canvasRef.current, {
         type: 'scatter',
-        data,
-        options,
+        data: initialDataRef.current,
+        options: initialOptionsRef.current,
       });
 
-      return () => {
+      return (): void => {
         if (chartRef.current) {
           chartRef.current.destroy();
           chartRef.current = null;
         }
       };
-      // Only run on mount/unmount
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Update chart data and options before paint
     useLayoutEffect(() => {
       const chart = chartRef.current;
-      if (!chart) return;
+      if (!chart) {
+        return;
+      }
 
       // Update options
       if (options) {
@@ -61,14 +65,7 @@ const PayoutScatter: React.FC<PayoutScatterProps> = React.memo(
       chart.update('none');
     }, [data, options]);
 
-    return (
-      <canvas
-        ref={canvasRef}
-        role="img"
-        height={height}
-        style={{ width: '100%' }}
-      />
-    );
+    return <canvas ref={canvasRef} role="img" height={height} style={{ width: '100%' }} />;
   },
 );
 

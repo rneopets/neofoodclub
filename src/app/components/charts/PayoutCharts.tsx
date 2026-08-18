@@ -10,7 +10,6 @@ import {
 } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import React, { useCallback, useMemo } from 'react';
-import PayoutScatter from './PayoutScatter';
 
 import { PayoutData } from '../../../types';
 import {
@@ -26,6 +25,8 @@ import {
   getMaxSmartPercentDecimals,
 } from '../../util';
 import TextTooltip from '../ui/TextTooltip';
+
+import PayoutScatter from './PayoutScatter';
 
 import { useColorMode } from '@/components/ui/color-mode';
 
