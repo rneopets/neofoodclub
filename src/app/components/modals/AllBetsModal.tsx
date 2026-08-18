@@ -7,7 +7,6 @@ import {
   Box,
   HStack,
   Text,
-  Input,
   Stack,
   RadioGroup,
   Checkbox,
@@ -16,7 +15,7 @@ import {
 import * as React from 'react';
 import { List } from 'react-window';
 
-import { ARENA_NAMES, PIRATE_NAMES } from '../../constants';
+import { ARENA_NAMES, PIRATE_NAMES, BET_AMOUNT_MIN, BET_AMOUNT_MAX } from '../../constants';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
 import { useIsRoundOver } from '../../hooks/useIsRoundOver';
@@ -24,6 +23,8 @@ import { useProbabilities } from '../../hooks/useProbabilities';
 import { computeBinaryToPirates } from '../../maths';
 import { useRoundStore } from '../../stores';
 import { calculateBetMaps, getMaxBet } from '../../util';
+
+import { NumberInputRoot, NumberInputField } from '@/components/ui/number-input';
 
 interface AllBet {
   binary: number;
@@ -386,13 +387,21 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                     <Text fontSize="sm" fontWeight="medium" width="70px">
                       Max Bet:
                     </Text>
-                    <Input
-                      type="number"
+                    <NumberInputRoot
                       value={maxBetInput}
-                      onChange={e => setMaxBetInput(e.target.value)}
+                      min={BET_AMOUNT_MIN}
+                      max={BET_AMOUNT_MAX}
+                      clampValueOnBlur
+                      allowMouseWheel
+                      onValueChange={(details: { value: string }) => setMaxBetInput(details.value)}
                       width="120px"
                       size="sm"
-                    />
+                    >
+                      <NumberInputField
+                        name="all-bets-max-bet"
+                        data-testid="all-bets-max-bet-input"
+                      />
+                    </NumberInputRoot>
                   </HStack>
 
                   {/* Sort Controls */}
