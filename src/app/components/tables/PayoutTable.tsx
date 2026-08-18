@@ -316,11 +316,11 @@ const PayoutTableRow = React.memo(
           />
         </Td>
         <Td style={{ textAlign: 'end' }}>
-          <AnimatedNumber value={odds ?? 0} />
+          <AnimatedNumber value={odds ?? 0} precision={0} />
           :1
         </Td>
         <Td style={{ textAlign: 'end' }}>
-          <AnimatedNumber value={payoffs ?? 0} />
+          <AnimatedNumber value={payoffs ?? 0} precision={0} />
         </Td>
         <Td style={{ textAlign: 'end' }}>
           <MemoizedTextTooltip text={probabilityTooltip.text} content={probabilityTooltip.label} />
@@ -347,7 +347,7 @@ const PayoutTableRow = React.memo(
           {mbBg ? (
             <TextTooltip
               placement="top"
-              text={<AnimatedNumber value={maxBets ?? 0} />}
+              text={<AnimatedNumber value={maxBets ?? 0} precision={0} />}
               content={
                 mbBg === 'nfc-yellow'
                   ? 'Bet amount is 1 NP over maxbet'
@@ -357,7 +357,7 @@ const PayoutTableRow = React.memo(
               textDecoration="underline dotted"
             />
           ) : (
-            <AnimatedNumber value={maxBets ?? 0} />
+            <AnimatedNumber value={maxBets ?? 0} precision={0} />
           )}
         </Td>
         {[0, 1, 2, 3, 4].map(arenaIndex => {
@@ -506,14 +506,14 @@ const PayoutTable = React.memo((): React.ReactElement => {
               <Table.ColumnHeader style={{ textAlign: 'end' }}>
                 {winningBetBinary > 0 && (
                   <Text>
-                    <AnimatedNumber value={totalWinningOdds} />:{totalEnabledBets}
+                    <AnimatedNumber value={totalWinningOdds} precision={0} />:{totalEnabledBets}
                   </Text>
                 )}
               </Table.ColumnHeader>
               <Table.ColumnHeader style={{ textAlign: 'end' }}>
                 {winningBetBinary > 0 && (
                   <Text>
-                    <AnimatedNumber value={totalWinningPayoff} />
+                    <AnimatedNumber value={totalWinningPayoff} precision={0} />
                   </Text>
                 )}
               </Table.ColumnHeader>

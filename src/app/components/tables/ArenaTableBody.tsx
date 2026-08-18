@@ -751,7 +751,7 @@ const PirateRow = React.memo(
               </Box>
             )}
             <Text fontWeight={oddsChanged ? 'bold' : 'normal'}>
-              <AnimatedNumber value={currentOdds!} />
+              <AnimatedNumber value={currentOdds!} precision={0} />
               :1
             </Text>
           </Box>
