@@ -10,7 +10,6 @@ import {
 } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import React, { useCallback, useMemo } from 'react';
-import { Scatter } from 'react-chartjs-2';
 
 import { PayoutData } from '../../../types';
 import {
@@ -26,6 +25,8 @@ import {
   getMaxSmartPercentDecimals,
 } from '../../util';
 import TextTooltip from '../ui/TextTooltip';
+
+import PayoutScatter from './PayoutScatter';
 
 import { useColorMode } from '@/components/ui/color-mode';
 
@@ -286,7 +287,7 @@ const PayoutCharts: React.FC = React.memo(() => {
       return (
         <Box w="full" h={{ base: '160px', md: '180px' }} pt={2} overflow="hidden">
           {/* @ts-ignore */}
-          <Scatter data={chartData} options={options} />
+          <PayoutScatter data={chartData} options={options} />
         </Box>
       );
     },

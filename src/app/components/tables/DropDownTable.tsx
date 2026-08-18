@@ -142,7 +142,7 @@ const PirateInfoRow = React.memo(
         <Td style={{ textAlign: 'end' }}>{opening}:1</Td>
         <Td style={{ textAlign: 'end' }}>
           <Text fontWeight={current === opening ? 'normal' : 'bold'}>
-            <AnimatedNumber value={current} />
+            <AnimatedNumber value={current} precision={0} />
             :1
           </Text>
         </Td>

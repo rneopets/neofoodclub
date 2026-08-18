@@ -86,6 +86,26 @@ describe('AnimatedNumber', () => {
     expect(screen.getByText('22')).toBeInTheDocument();
   });
 
+  it('rounds the tweened value to whole numbers when precision is 0', () => {
+    const { rerender } = render(<AnimatedNumber value={2} precision={0} />);
+    rerender(<AnimatedNumber value={5} precision={0} />);
+
+    act(() => {
+      const frame = rafQueue.shift()!;
+      now += 16;
+      frame.cb(now);
+    });
+    const mid = screen.getByText(/2|3|4/).textContent as string;
+    expect(mid).toMatch(/^[0-9]+$/);
+    const midNum = Number(mid);
+    expect(Number.isInteger(midNum)).toBe(true);
+    expect(midNum).toBeGreaterThanOrEqual(2);
+    expect(midNum).toBeLessThanOrEqual(5);
+
+    flushFrames(400);
+    expect(screen.getByText('5')).toBeInTheDocument();
+  });
+
   it('uses the custom format function', () => {
     render(<AnimatedNumber value={1234.5} format={v => `${v.toFixed(2)}%`} />);
     expect(screen.getByText('1234.50%')).toBeInTheDocument();
