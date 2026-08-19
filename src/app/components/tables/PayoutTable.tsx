@@ -1,5 +1,5 @@
 import { Box, HStack, IconButton, Skeleton, Spacer, Table, Text } from '@chakra-ui/react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa6';
 
 import { PIRATE_NAMES } from '../../constants';
@@ -41,6 +41,7 @@ import BetAmountInput from '../bets/BetAmountInput';
 import PlaceThisBetButton from '../bets/PlaceThisBetButton';
 import AnimatedNumber from '../ui/AnimatedNumber';
 import TextTooltip from '../ui/TextTooltip';
+import { useTween } from '../ui/useTween';
 
 import Td from './Td';
 
@@ -71,7 +72,9 @@ const stickySubmitHeaderProps = {
   zIndex: 2,
 } as const;
 
-const parseColorToRgba = (value: string): [number, number, number, number] => {
+type Rgba = [number, number, number, number];
+
+const parseColorToRgba = (value: string): Rgba => {
   const trimmed = value.trim();
   if (!trimmed || trimmed === 'transparent') {
     return [0, 0, 0, 0];
@@ -94,7 +97,7 @@ const parseColorToRgba = (value: string): [number, number, number, number] => {
   return [0, 0, 0, 0];
 };
 
-const resolveSubtleColor = (colorKey: string | undefined): [number, number, number, number] => {
+const resolveSubtleColor = (colorKey: string | undefined): Rgba => {
   if (!colorKey || typeof window === 'undefined') {
     return [0, 0, 0, 0];
   }
@@ -104,81 +107,26 @@ const resolveSubtleColor = (colorKey: string | undefined): [number, number, numb
   return parseColorToRgba(raw);
 };
 
-const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
+const lerpRgba = (from: Rgba, to: Rgba, t: number): Rgba => [
+  from[0] + (to[0] - from[0]) * t,
+  from[1] + (to[1] - from[1]) * t,
+  from[2] + (to[2] - from[2]) * t,
+  from[3] + (to[3] - from[3]) * t,
+];
 
-// Animates a cell's background color frame-by-frame in JS - the same
-// requestAnimationFrame approach AnimatedNumber uses for numbers - instead of
-// a CSS transition. A CSS transition here proved unreliable: cells could get
-// stuck showing a stale color after a round switch even though the DOM's
-// computed style was already correct (a browser repaint bug), and the
-// workarounds tried (forcing a reflow, promoting a GPU layer) either didn't
-// fix it reliably or introduced their own visible glitches. Setting the
-// color explicitly every frame sidesteps the browser's paint invalidation
-// for this property entirely.
+const rgbaEqual = (a: Rgba, b: Rgba): boolean =>
+  a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+
+// Animates a cell's background color frame-by-frame in JS instead of via a
+// CSS transition, which proved unreliable here: cells could get stuck
+// showing a stale color after a round switch even though the DOM's computed
+// style was already correct (a browser repaint bug), and workarounds that
+// forced a repaint afterward either didn't fix it consistently or
+// introduced their own visible glitches. Reuses the same tween mechanics
+// AnimatedNumber uses for numbers.
 function useBackgroundColorTween(colorKey: string | undefined, durationMs = 600): string {
-  const [rgba, setRgba] = useState<[number, number, number, number]>(() =>
-    resolveSubtleColor(colorKey),
-  );
-  const rgbaRef = useRef(rgba);
-  const frameRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    rgbaRef.current = rgba;
-  });
-
-  useEffect(() => {
-    if (frameRef.current !== null) {
-      window.cancelAnimationFrame(frameRef.current);
-      frameRef.current = null;
-    }
-
-    const prefersReducedMotion =
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const target = resolveSubtleColor(colorKey);
-    const from = rgbaRef.current;
-    const unchanged = from.every((component, i) => component === target[i]);
-
-    if (prefersReducedMotion || durationMs <= 0 || unchanged) {
-      rgbaRef.current = target;
-      setRgba(target);
-      return;
-    }
-
-    const start = window.performance.now();
-
-    const tick = (now: number): void => {
-      const t = Math.min(1, (now - start) / durationMs);
-      const eased = easeOutCubic(t);
-      const next: [number, number, number, number] = [
-        from[0] + (target[0] - from[0]) * eased,
-        from[1] + (target[1] - from[1]) * eased,
-        from[2] + (target[2] - from[2]) * eased,
-        from[3] + (target[3] - from[3]) * eased,
-      ];
-      rgbaRef.current = next;
-      setRgba(next);
-      if (t < 1) {
-        frameRef.current = window.requestAnimationFrame(tick);
-      } else {
-        frameRef.current = null;
-        rgbaRef.current = target;
-        setRgba(target);
-      }
-    };
-
-    frameRef.current = window.requestAnimationFrame(tick);
-
-    return (): void => {
-      if (frameRef.current !== null) {
-        window.cancelAnimationFrame(frameRef.current);
-        frameRef.current = null;
-      }
-    };
-  }, [colorKey, durationMs]);
-
-  const [r, g, b, a] = rgba;
+  const target = useMemo(() => resolveSubtleColor(colorKey), [colorKey]);
+  const [r, g, b, a] = useTween(target, { durationMs, interpolate: lerpRgba, isEqual: rgbaEqual });
   return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`;
 }
 
