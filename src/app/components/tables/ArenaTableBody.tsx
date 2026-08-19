@@ -272,15 +272,19 @@ const ArenaRatioDisplay = React.memo(
 
     return (
       <Skeleton loading={currentArenaRatio === undefined}>
-        <TextTooltip
-          text={
-            <AnimatedNumber
-              value={currentArenaRatio as number}
-              format={v => displayAsPercent(v, 1)}
-            />
-          }
-          content={`${(currentArenaRatio as number) * 100}%`}
-        />
+        {currentArenaRatio !== undefined ? (
+          <TextTooltip
+            text={<AnimatedNumber value={currentArenaRatio} format={v => displayAsPercent(v, 1)} />}
+            content={`${currentArenaRatio * 100}%`}
+          />
+        ) : (
+          // Placeholder so the Skeleton has something to size itself
+          // against before currentArenaRatio is ready - never render
+          // AnimatedNumber with an undefined value, since useTween's lerp
+          // (from + (to - from) * t) produces NaN when interpolating from
+          // undefined.
+          <Text>0.0%</Text>
+        )}
       </Skeleton>
     );
   },

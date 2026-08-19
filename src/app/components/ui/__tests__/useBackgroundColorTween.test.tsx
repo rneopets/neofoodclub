@@ -1,7 +1,16 @@
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useIsStillSettling } from '../../../hooks/useIsStillSettling';
 import { useBackgroundColorTween } from '../useBackgroundColorTween';
+
+// Most of these tests exercise the CSS-resolution-driven instant logic,
+// not the "app hasn't finished its first calculation yet" gate - default
+// to already settled so colorKey changes tween as they normally would,
+// and override per-test where the settling behavior itself is under test.
+vi.mock('../../../hooks/useIsStillSettling', () => ({
+  useIsStillSettling: vi.fn(() => false),
+}));
 
 function TestCell({ colorKey }: { colorKey: string | undefined }): React.ReactElement {
   // durationMs=0 so the returned color is the resolved target immediately,
@@ -146,5 +155,28 @@ describe('useBackgroundColorTween', () => {
     flushRaf(30);
 
     expect(screen.getByTestId('cell').style.backgroundColor).toBe('rgb(247, 108, 108)');
+  });
+
+  /**
+   * Regression test: a colorKey driven by calculation-derived data (e.g.
+   * pirateWon, from winningBetBinary) can change from its placeholder
+   * value to the real one only once the round store's first calculation
+   * completes - a moment separate from (and later than) the CSS
+   * resolution covered above. That transition must snap too, not animate
+   * like a genuine mid-session change.
+   */
+  it('snaps a colorKey change while the app is still settling, even if the CSS resolves fine', () => {
+    vi.mocked(useIsStillSettling).mockReturnValue(true);
+
+    mockCssVar({
+      '--chakra-colors-nfc-green-subtle': ['#50C17F'],
+      '--chakra-colors-nfc-red-subtle': ['#F76C6C'],
+    });
+
+    const { rerender } = render(<TestCellAnimated colorKey="nfc-green" />);
+    rerender(<TestCellAnimated colorKey="nfc-red" />);
+
+    expect(screen.getByTestId('cell').style.backgroundColor).toBe('rgb(247, 108, 108)');
+    expect(rafQueue).toHaveLength(0);
   });
 });

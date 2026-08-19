@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { useIsStillSettling } from '../../hooks/useIsStillSettling';
+
 import { useTween } from './useTween';
 
 // this element displays a number that smoothly tweens (counts) from its
@@ -29,7 +31,13 @@ const AnimatedNumber = React.memo(
     className,
     precision,
   }: AnimatedNumberProps): React.ReactElement => {
-    const displayed = useTween(value, { durationMs, interpolate: lerp, isEqual: numbersEqual });
+    const isStillSettling = useIsStillSettling();
+    const displayed = useTween(value, {
+      durationMs,
+      interpolate: lerp,
+      isEqual: numbersEqual,
+      instant: isStillSettling,
+    });
 
     const formatter = format ?? ((v: number): string => v.toLocaleString());
     const formatValue = (v: number): string =>

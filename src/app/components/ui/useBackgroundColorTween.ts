@@ -1,6 +1,8 @@
 import { oklab, rgb, formatRgb, type Oklab } from 'culori';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
+import { useIsStillSettling } from '../../hooks/useIsStillSettling';
+
 import { useTween } from './useTween';
 
 const TRANSPARENT: Oklab = { mode: 'oklab', l: 0, a: 0, b: 0, alpha: 0 };
@@ -50,8 +52,16 @@ export function useBackgroundColorTween(colorKey: string | undefined, durationMs
   // (not a visible transition) and should snap instead of animating -
   // otherwise every cell would visibly fade in from transparent once its
   // CSS custom property finally resolves.
-  const [instant, setInstant] = useState(true);
+  const [cssResolveInstant, setCssResolveInstant] = useState(true);
   const hasResolvedOnceRef = useRef(false);
+  // colorKey itself can be driven by calculation-derived data (e.g.
+  // pirateWon, from state.calculations.winningBetBinary) that starts
+  // empty/wrong and only becomes real once the round store's first
+  // calculation completes - a moment separate from (and later than) the
+  // CSS resolution above. Without this, that transition would animate
+  // like a genuine mid-session change (e.g. a pirate winning) instead of
+  // snapping like the rest of the initial load.
+  const isStillSettling = useIsStillSettling();
 
   useEffect(() => {
     // The CSS custom property backing this color can still be unset on the
@@ -67,7 +77,7 @@ export function useBackgroundColorTween(colorKey: string | undefined, durationMs
     const tryResolve = (): void => {
       const resolved = resolveSubtleColor(colorKey);
       if (resolved) {
-        setInstant(!hasResolvedOnceRef.current);
+        setCssResolveInstant(!hasResolvedOnceRef.current);
         hasResolvedOnceRef.current = true;
         setTarget(resolved);
         return;
@@ -90,7 +100,7 @@ export function useBackgroundColorTween(colorKey: string | undefined, durationMs
     durationMs,
     interpolate: lerpOklab,
     isEqual: oklabEqual,
-    instant,
+    instant: cssResolveInstant || isStillSettling,
   });
   return formatRgb(rgb(displayed));
 }

@@ -3,6 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import AnimatedNumber from '../AnimatedNumber';
 
+// These tests exercise the tween mechanics directly, not the "don't
+// animate before the app's first calculation finishes" behavior - treat
+// the app as already settled so value changes tween as they normally
+// would once real data is loaded.
+vi.mock('../../../hooks/useIsStillSettling', () => ({
+  useIsStillSettling: (): boolean => false,
+}));
+
 describe('AnimatedNumber', () => {
   let rafQueue: { id: number; cb: (now: number) => void }[];
   let nextRafId: number;

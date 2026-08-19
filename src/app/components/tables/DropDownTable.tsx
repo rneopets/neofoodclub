@@ -184,14 +184,9 @@ const TableHeaderCell = React.memo(
         _hover={{ bg: 'bg.muted' }}
       >
         {ARENA_NAMES[arenaId]}{' '}
-        {bigBrain && (
+        {bigBrain && arenaRatios[arenaId] !== undefined && (
           <>
-            (
-            <AnimatedNumber
-              value={arenaRatios[arenaId] as number}
-              format={v => displayAsPercent(v, 1)}
-            />
-            )
+            (<AnimatedNumber value={arenaRatios[arenaId]} format={v => displayAsPercent(v, 1)} />)
           </>
         )}
       </Table.ColumnHeader>
