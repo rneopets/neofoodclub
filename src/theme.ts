@@ -365,20 +365,6 @@ const baseConfig = defineConfig({
         'nfc-cyan': nfcPalette('cyan'),
         'nfc-purple': nfcPalette('purple'),
         'nfc-pink': nfcPalette('pink'),
-        // Fully transparent/inherited palette so cells that toggle between a
-        // win/loss/warning color and "no color" can keep the same fill.subtle
-        // layerStyle mounted at all times - only the colorPalette CSS variable's
-        // value changes, which lets the background-color transition in
-        // src/index.css interpolate reliably instead of a class add/remove.
-        'nfc-neutral': {
-          contrast: semanticColor('inherit', 'inherit'),
-          fg: semanticColor('inherit', 'inherit'),
-          subtle: semanticColor('transparent', 'transparent'),
-          muted: semanticColor('transparent', 'transparent'),
-          emphasized: semanticColor('transparent', 'transparent'),
-          solid: semanticColor('transparent', 'transparent'),
-          focusRing: semanticColor('transparent', 'transparent'),
-        },
         radiomark: {
           ring: semanticColor(v2Gray[200], 'rgba(255, 255, 255, 0.4)', v2Gray[700]),
           checked: semanticColor(v2Colors.blue[500], v2Colors.blue[200], v2Gray[200]),

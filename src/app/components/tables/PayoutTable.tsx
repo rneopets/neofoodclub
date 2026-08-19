@@ -71,6 +71,17 @@ const stickySubmitHeaderProps = {
   zIndex: 2,
 } as const;
 
+// Cells that toggle between a win/loss/warning color and "no color" set
+// backgroundColor/color directly (rather than Chakra's layerStyle+colorPalette,
+// which compiles to a different static CSS class per distinct color value) so
+// the DOM node's class never changes - only these two inline style values do.
+// That's what lets the background-color transition in src/index.css interpolate
+// reliably; swapping between classes was leaving cells stuck mid-transition.
+const fillColorStyle = (colorKey?: string): React.CSSProperties => ({
+  backgroundColor: colorKey ? `var(--chakra-colors-${colorKey}-subtle)` : 'transparent',
+  color: colorKey ? `var(--chakra-colors-${colorKey}-fg)` : 'inherit',
+});
+
 const PirateNameCell = React.memo(
   ({ arenaIndex, pirateIndex }: { arenaIndex: number; pirateIndex: number }) => {
     const getPirateBgColor = useGetPirateBgColor();
@@ -137,7 +148,7 @@ const PirateNameCell = React.memo(
     }, [hasModifications, hasCustomOdds, hasCustomProbs]);
 
     return (
-      <Td layerStyle="fill.subtle" colorPalette={bgColor ?? 'nfc-neutral'}>
+      <Td style={fillColorStyle(bgColor)}>
         <HStack gap={1} display="inline-flex" alignItems="center">
           <Text>{pirateName}</Text>
           {hasModifications && (
@@ -273,7 +284,7 @@ const PayoutTableRow = React.memo(
 
     return (
       <Table.Row key={betKey}>
-        <Td layerStyle="fill.subtle" colorPalette={betNumBgColor ?? 'nfc-neutral'}>
+        <Td style={fillColorStyle(betNumBgColor)}>
           <HStack px={2} gap={1}>
             <Spacer />
             <Text minW="2ch" textAlign="center">
@@ -325,28 +336,16 @@ const PayoutTableRow = React.memo(
         <Td style={{ textAlign: 'end' }}>
           <MemoizedTextTooltip text={probabilityTooltip.text} content={probabilityTooltip.label} />
         </Td>
-        <Td
-          style={{ textAlign: 'end' }}
-          layerStyle="fill.subtle"
-          colorPalette={erBg ?? 'nfc-neutral'}
-        >
+        <Td style={{ textAlign: 'end', ...fillColorStyle(erBg) }}>
           <MemoizedTextTooltip
             text={expectedRatioTooltip.text}
             content={expectedRatioTooltip.label}
           />
         </Td>
-        <Td
-          style={{ textAlign: 'end' }}
-          layerStyle="fill.subtle"
-          colorPalette={neBg ?? 'nfc-neutral'}
-        >
+        <Td style={{ textAlign: 'end', ...fillColorStyle(neBg) }}>
           <MemoizedTextTooltip text={netExpectedTooltip.text} content={netExpectedTooltip.label} />
         </Td>
-        <Td
-          style={{ textAlign: 'end' }}
-          layerStyle="fill.subtle"
-          colorPalette={mbBg ?? 'nfc-neutral'}
-        >
+        <Td style={{ textAlign: 'end', ...fillColorStyle(mbBg) }}>
           {mbBg ? (
             <TextTooltip
               placement="top"
@@ -521,21 +520,13 @@ const PayoutTable = React.memo((): React.ReactElement => {
                 )}
               </Table.ColumnHeader>
               <Table.ColumnHeader style={{ textAlign: 'end' }} />
-              <Table.ColumnHeader
-                style={{ textAlign: 'end' }}
-                layerStyle="fill.subtle"
-                colorPalette={totalErBg ?? 'nfc-neutral'}
-              >
+              <Table.ColumnHeader style={{ textAlign: 'end', ...fillColorStyle(totalErBg) }}>
                 <MemoizedTextTooltip
                   text={totalExpectedRatioTooltip.text}
                   content={totalExpectedRatioTooltip.label}
                 />
               </Table.ColumnHeader>
-              <Table.ColumnHeader
-                style={{ textAlign: 'end' }}
-                layerStyle="fill.subtle"
-                colorPalette={totalNeBg ?? 'nfc-neutral'}
-              >
+              <Table.ColumnHeader style={{ textAlign: 'end', ...fillColorStyle(totalNeBg) }}>
                 <MemoizedTextTooltip
                   text={totalNetExpectedTooltip.text}
                   content={totalNetExpectedTooltip.label}
