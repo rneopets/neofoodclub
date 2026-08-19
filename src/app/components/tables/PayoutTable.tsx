@@ -1,5 +1,5 @@
 import { Box, HStack, IconButton, Skeleton, Spacer, Table, Text } from '@chakra-ui/react';
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa6';
 
 import { PIRATE_NAMES } from '../../constants';
@@ -71,14 +71,122 @@ const stickySubmitHeaderProps = {
   zIndex: 2,
 } as const;
 
-// Cells that toggle between a win/loss/warning color and "no color" set
-// backgroundColor/color directly (rather than Chakra's layerStyle+colorPalette,
-// which compiles to a different static CSS class per distinct color value) so
-// the DOM node's class never changes - only these two inline style values do.
-// That's what lets the background-color transition in src/index.css interpolate
-// reliably; swapping between classes was leaving cells stuck mid-transition.
-const fillColorStyle = (colorKey?: string): React.CSSProperties => ({
-  backgroundColor: colorKey ? `var(--chakra-colors-${colorKey}-subtle)` : 'transparent',
+const parseColorToRgba = (value: string): [number, number, number, number] => {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === 'transparent') {
+    return [0, 0, 0, 0];
+  }
+  const hexMatch = trimmed.match(/^#([0-9a-f]{6})$/i);
+  if (hexMatch) {
+    const hex = hexMatch[1] ?? '000000';
+    return [
+      parseInt(hex.slice(0, 2), 16),
+      parseInt(hex.slice(2, 4), 16),
+      parseInt(hex.slice(4, 6), 16),
+      1,
+    ];
+  }
+  const rgbMatch = trimmed.match(/rgba?\(([^)]+)\)/i);
+  if (rgbMatch) {
+    const parts = (rgbMatch[1] ?? '').split(',').map(part => parseFloat(part.trim()));
+    return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0, parts[3] ?? 1];
+  }
+  return [0, 0, 0, 0];
+};
+
+const resolveSubtleColor = (colorKey: string | undefined): [number, number, number, number] => {
+  if (!colorKey || typeof window === 'undefined') {
+    return [0, 0, 0, 0];
+  }
+  const raw = window
+    .getComputedStyle(document.documentElement)
+    .getPropertyValue(`--chakra-colors-${colorKey}-subtle`);
+  return parseColorToRgba(raw);
+};
+
+const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
+
+// Animates a cell's background color frame-by-frame in JS - the same
+// requestAnimationFrame approach AnimatedNumber uses for numbers - instead of
+// a CSS transition. A CSS transition here proved unreliable: cells could get
+// stuck showing a stale color after a round switch even though the DOM's
+// computed style was already correct (a browser repaint bug), and the
+// workarounds tried (forcing a reflow, promoting a GPU layer) either didn't
+// fix it reliably or introduced their own visible glitches. Setting the
+// color explicitly every frame sidesteps the browser's paint invalidation
+// for this property entirely.
+function useBackgroundColorTween(colorKey: string | undefined, durationMs = 600): string {
+  const [rgba, setRgba] = useState<[number, number, number, number]>(() =>
+    resolveSubtleColor(colorKey),
+  );
+  const rgbaRef = useRef(rgba);
+  const frameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    rgbaRef.current = rgba;
+  });
+
+  useEffect(() => {
+    if (frameRef.current !== null) {
+      window.cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+
+    const prefersReducedMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const target = resolveSubtleColor(colorKey);
+    const from = rgbaRef.current;
+    const unchanged = from.every((component, i) => component === target[i]);
+
+    if (prefersReducedMotion || durationMs <= 0 || unchanged) {
+      rgbaRef.current = target;
+      setRgba(target);
+      return;
+    }
+
+    const start = window.performance.now();
+
+    const tick = (now: number): void => {
+      const t = Math.min(1, (now - start) / durationMs);
+      const eased = easeOutCubic(t);
+      const next: [number, number, number, number] = [
+        from[0] + (target[0] - from[0]) * eased,
+        from[1] + (target[1] - from[1]) * eased,
+        from[2] + (target[2] - from[2]) * eased,
+        from[3] + (target[3] - from[3]) * eased,
+      ];
+      rgbaRef.current = next;
+      setRgba(next);
+      if (t < 1) {
+        frameRef.current = window.requestAnimationFrame(tick);
+      } else {
+        frameRef.current = null;
+        rgbaRef.current = target;
+        setRgba(target);
+      }
+    };
+
+    frameRef.current = window.requestAnimationFrame(tick);
+
+    return (): void => {
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+    };
+  }, [colorKey, durationMs]);
+
+  const [r, g, b, a] = rgba;
+  return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`;
+}
+
+const fillColorStyle = (
+  backgroundColor: string,
+  colorKey: string | undefined,
+): React.CSSProperties => ({
+  backgroundColor,
   color: colorKey ? `var(--chakra-colors-${colorKey}-fg)` : 'inherit',
 });
 
@@ -147,8 +255,10 @@ const PirateNameCell = React.memo(
       return parts.join(', ');
     }, [hasModifications, hasCustomOdds, hasCustomProbs]);
 
+    const bg = useBackgroundColorTween(bgColor);
+
     return (
-      <Td style={fillColorStyle(bgColor)}>
+      <Td className="nfc-color-tween" style={fillColorStyle(bg, bgColor)}>
         <HStack gap={1} display="inline-flex" alignItems="center">
           <Text>{pirateName}</Text>
           {hasModifications && (
@@ -248,10 +358,6 @@ const PayoutTableRow = React.memo(
     const handleSwapUp = useCallback(() => onSwapUp(betIndex), [onSwapUp, betIndex]);
     const handleSwapDown = useCallback(() => onSwapDown(betIndex), [onSwapDown, betIndex]);
 
-    if (betBinary === 0) {
-      return null;
-    }
-
     const erBg = er - 1 < 0 ? 'nfc-red' : undefined;
     const neBg = ne - 1 < 0 ? 'nfc-red' : undefined;
 
@@ -273,6 +379,16 @@ const PayoutTableRow = React.memo(
 
     const mbBg = maxBetColor;
 
+    // Hooks must run unconditionally before the betBinary===0 early return below.
+    const betNumBgAnimated = useBackgroundColorTween(betNumBgColor);
+    const erBgAnimated = useBackgroundColorTween(erBg);
+    const neBgAnimated = useBackgroundColorTween(neBg);
+    const mbBgAnimated = useBackgroundColorTween(mbBg);
+
+    if (betBinary === 0) {
+      return null;
+    }
+
     const betKey = `bet-${currentBet}-${betIndex + 1}`;
 
     let baBg = undefined;
@@ -284,7 +400,7 @@ const PayoutTableRow = React.memo(
 
     return (
       <Table.Row key={betKey}>
-        <Td style={fillColorStyle(betNumBgColor)}>
+        <Td className="nfc-color-tween" style={fillColorStyle(betNumBgAnimated, betNumBgColor)}>
           <HStack px={2} gap={1}>
             <Spacer />
             <Text minW="2ch" textAlign="center">
@@ -336,16 +452,25 @@ const PayoutTableRow = React.memo(
         <Td style={{ textAlign: 'end' }}>
           <MemoizedTextTooltip text={probabilityTooltip.text} content={probabilityTooltip.label} />
         </Td>
-        <Td style={{ textAlign: 'end', ...fillColorStyle(erBg) }}>
+        <Td
+          className="nfc-color-tween"
+          style={{ textAlign: 'end', ...fillColorStyle(erBgAnimated, erBg) }}
+        >
           <MemoizedTextTooltip
             text={expectedRatioTooltip.text}
             content={expectedRatioTooltip.label}
           />
         </Td>
-        <Td style={{ textAlign: 'end', ...fillColorStyle(neBg) }}>
+        <Td
+          className="nfc-color-tween"
+          style={{ textAlign: 'end', ...fillColorStyle(neBgAnimated, neBg) }}
+        >
           <MemoizedTextTooltip text={netExpectedTooltip.text} content={netExpectedTooltip.label} />
         </Td>
-        <Td style={{ textAlign: 'end', ...fillColorStyle(mbBg) }}>
+        <Td
+          className="nfc-color-tween"
+          style={{ textAlign: 'end', ...fillColorStyle(mbBgAnimated, mbBg) }}
+        >
           {mbBg ? (
             <TextTooltip
               placement="top"
@@ -387,39 +512,6 @@ const PayoutTable = React.memo((): React.ReactElement => {
 
   const calculated = useCalculationsStatus();
   const winningBetBinary = useWinningBetBinary();
-  // calculations is a new object reference every time recalculate() runs
-  // (round switches, live odds polling, bet changes) - which is exactly
-  // when a cell's color could change, so it's a more complete trigger than
-  // the round number alone (the round number changes synchronously, before
-  // the fetch resolves and colors actually update).
-  const calculations = useRoundStore(state => state.calculations);
-
-  const tableRef = useRef<HTMLTableElement>(null);
-
-  useEffect(() => {
-    // Work around a browser repaint bug: some cells' background-color
-    // transitions leave stale pixels on screen even though the DOM's
-    // computed style is already correct (verified in devtools - computed
-    // backgroundColor reads transparent while the cell still shows the
-    // previous color). Toggling display forces a full repaint, which a
-    // paint-only style change isn't reliably triggering here.
-    //
-    // Delayed until just after the 0.6s CSS transition (src/index.css)
-    // should have finished - doing this immediately cancels the transition
-    // before the browser ever paints an intermediate frame, so cells snap
-    // straight to their final color instead of animating.
-    const el = tableRef.current;
-    if (!el) {
-      return;
-    }
-    const timeoutId = window.setTimeout(() => {
-      const previousDisplay = el.style.display;
-      el.style.display = 'none';
-      void el.offsetHeight;
-      el.style.display = previousDisplay;
-    }, 650);
-    return (): void => window.clearTimeout(timeoutId);
-  }, [calculations]);
 
   // Use individual hooks instead of object selector to avoid infinite loops
   const totalBetAmounts = useTotalBetAmounts();
@@ -501,9 +593,11 @@ const PayoutTable = React.memo((): React.ReactElement => {
   );
   const totalErBg = totalBetExpectedRatios - 1 < 0 ? 'nfc-red' : undefined;
   const totalNeBg = totalBetNetExpected - 1 < 0 ? 'nfc-red' : undefined;
+  const totalErBgAnimated = useBackgroundColorTween(totalErBg);
+  const totalNeBgAnimated = useBackgroundColorTween(totalNeBg);
 
   return (
-    <Table.Root ref={tableRef} size="sm" width="auto" interactive>
+    <Table.Root size="sm" width="auto" interactive>
       <Table.Header>
         <Table.Row>
           <Table.ColumnHeader w="3.5rem">Bet #</Table.ColumnHeader>
@@ -553,13 +647,19 @@ const PayoutTable = React.memo((): React.ReactElement => {
                 )}
               </Table.ColumnHeader>
               <Table.ColumnHeader style={{ textAlign: 'end' }} />
-              <Table.ColumnHeader style={{ textAlign: 'end', ...fillColorStyle(totalErBg) }}>
+              <Table.ColumnHeader
+                className="nfc-color-tween"
+                style={{ textAlign: 'end', ...fillColorStyle(totalErBgAnimated, totalErBg) }}
+              >
                 <MemoizedTextTooltip
                   text={totalExpectedRatioTooltip.text}
                   content={totalExpectedRatioTooltip.label}
                 />
               </Table.ColumnHeader>
-              <Table.ColumnHeader style={{ textAlign: 'end', ...fillColorStyle(totalNeBg) }}>
+              <Table.ColumnHeader
+                className="nfc-color-tween"
+                style={{ textAlign: 'end', ...fillColorStyle(totalNeBgAnimated, totalNeBg) }}
+              >
                 <MemoizedTextTooltip
                   text={totalNetExpectedTooltip.text}
                   content={totalNetExpectedTooltip.label}

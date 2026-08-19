@@ -22,6 +22,15 @@ th {
     color 0.6s ease !important;
 }
 
+/* Cells whose background color is animated frame-by-frame in JS (see
+   useBackgroundColorTween in PayoutTable.tsx) instead of via the CSS
+   transition above. A higher-specificity class is needed to opt out, since
+   without it the transition above would also try to animate between each
+   already-interpolated frame we set, causing lag. */
+.nfc-color-tween {
+  transition: none !important;
+}
+
 /* Ease-in for the up/down arrow next to a changed current odds value. */
 @keyframes odds-arrow-in {
   from {
