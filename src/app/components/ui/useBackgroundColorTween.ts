@@ -1,5 +1,5 @@
 import { oklab, rgb, formatRgb, type Oklab } from 'culori';
-import { useMemo, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 
 import { useTween } from './useTween';
 
@@ -24,20 +24,20 @@ const lerpOklab = (from: Oklab, to: Oklab, t: number): Oklab => ({
 const oklabEqual = (x: Oklab, y: Oklab): boolean =>
   x.l === y.l && x.a === y.a && x.b === y.b && (x.alpha ?? 1) === (y.alpha ?? 1);
 
-// Animates a cell's background color frame-by-frame in JS instead of via a
-// CSS transition, which proved unreliable: cells could get stuck showing a
-// stale color after a round switch even though the DOM's computed style was
-// already correct (a browser repaint bug), and workarounds that forced a
-// repaint afterward either didn't fix it consistently or introduced their
-// own visible glitches. Reuses the same tween mechanics AnimatedNumber uses
-// for numbers.
-//
-// Interpolates in OKLab (a perceptually-uniform color space) rather than raw
-// sRGB - a plain RGB lerp between e.g. nfc-green and nfc-red (a direct
-// win-to-loss flip on the same bet slot) passes through a muddy tan/khaki
-// midpoint, since red and green are near-opposite on the RGB cube.
+// Animates a cell's background color in JS (same tween mechanics as
+// AnimatedNumber) instead of a CSS transition, which proved unreliable.
+// Interpolates in OKLab so e.g. nfc-green <-> nfc-red doesn't pass through
+// a muddy midpoint the way a raw RGB lerp would.
 export function useBackgroundColorTween(colorKey: string | undefined, durationMs = 600): string {
-  const target = useMemo(() => resolveSubtleColor(colorKey), [colorKey]);
+  // Lazy-initialized in case the CSS vars aren't applied yet on the very
+  // first render; the effect below re-resolves post-paint (it also runs
+  // once right after mount, not just on colorKey changes), correcting that
+  // initial read if needed.
+  const [target, setTarget] = useState(() => resolveSubtleColor(colorKey));
+  useEffect(() => {
+    setTarget(resolveSubtleColor(colorKey));
+  }, [colorKey]);
+
   const displayed = useTween(target, { durationMs, interpolate: lerpOklab, isEqual: oklabEqual });
   return formatRgb(rgb(displayed));
 }
