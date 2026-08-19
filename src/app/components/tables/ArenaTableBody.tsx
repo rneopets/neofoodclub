@@ -932,10 +932,15 @@ const ArenaTableBody = React.memo(
       const pirateIdsForRows =
         piratesForArena && piratesForArena.length > 0 ? piratesForArena : makeEmpty(4);
 
-      return pirateIdsForRows.map((pirateId, pirateIndex) => (
+      return pirateIdsForRows.map((_pirateId, pirateIndex) => (
         <PirateRow
+          // Keyed by slot (arena + position), not pirateId: a different
+          // pirate occupies the same slot on a different round, and keying
+          // by pirateId would remount the row on every round switch,
+          // resetting the color tween's in-flight state instead of letting
+          // it animate from the previous color.
           // eslint-disable-next-line react/no-array-index-key
-          key={`pirate-${arenaId}-${pirateIndex}-${pirateId}`}
+          key={`pirate-${arenaId}-${pirateIndex}`}
           pirateIndex={pirateIndex}
           arenaId={arenaId}
           handleTimelineClick={handleTimelineClick}
