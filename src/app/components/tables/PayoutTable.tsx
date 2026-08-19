@@ -1,4 +1,5 @@
 import { Box, HStack, IconButton, Skeleton, Spacer, Table, Text } from '@chakra-ui/react';
+import { oklab, rgb, formatRgb, type Oklab } from 'culori';
 import React, { useCallback, useMemo } from 'react';
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa6';
 
@@ -72,50 +73,26 @@ const stickySubmitHeaderProps = {
   zIndex: 2,
 } as const;
 
-type Rgba = [number, number, number, number];
-
-const parseColorToRgba = (value: string): Rgba => {
-  const trimmed = value.trim();
-  if (!trimmed || trimmed === 'transparent') {
-    return [0, 0, 0, 0];
-  }
-  const hexMatch = trimmed.match(/^#([0-9a-f]{6})$/i);
-  if (hexMatch) {
-    const hex = hexMatch[1] ?? '000000';
-    return [
-      parseInt(hex.slice(0, 2), 16),
-      parseInt(hex.slice(2, 4), 16),
-      parseInt(hex.slice(4, 6), 16),
-      1,
-    ];
-  }
-  const rgbMatch = trimmed.match(/rgba?\(([^)]+)\)/i);
-  if (rgbMatch) {
-    const parts = (rgbMatch[1] ?? '').split(',').map(part => parseFloat(part.trim()));
-    return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0, parts[3] ?? 1];
-  }
-  return [0, 0, 0, 0];
-};
-
-const resolveSubtleColor = (colorKey: string | undefined): Rgba => {
+const resolveSubtleColor = (colorKey: string | undefined): Oklab => {
   if (!colorKey || typeof window === 'undefined') {
-    return [0, 0, 0, 0];
+    return { mode: 'oklab', l: 0, a: 0, b: 0, alpha: 0 };
   }
   const raw = window
     .getComputedStyle(document.documentElement)
     .getPropertyValue(`--chakra-colors-${colorKey}-subtle`);
-  return parseColorToRgba(raw);
+  return oklab(raw) ?? { mode: 'oklab', l: 0, a: 0, b: 0, alpha: 0 };
 };
 
-const lerpRgba = (from: Rgba, to: Rgba, t: number): Rgba => [
-  from[0] + (to[0] - from[0]) * t,
-  from[1] + (to[1] - from[1]) * t,
-  from[2] + (to[2] - from[2]) * t,
-  from[3] + (to[3] - from[3]) * t,
-];
+const lerpOklab = (from: Oklab, to: Oklab, t: number): Oklab => ({
+  mode: 'oklab',
+  l: (from.l ?? 0) + ((to.l ?? 0) - (from.l ?? 0)) * t,
+  a: (from.a ?? 0) + ((to.a ?? 0) - (from.a ?? 0)) * t,
+  b: (from.b ?? 0) + ((to.b ?? 0) - (from.b ?? 0)) * t,
+  alpha: (from.alpha ?? 1) + ((to.alpha ?? 1) - (from.alpha ?? 1)) * t,
+});
 
-const rgbaEqual = (a: Rgba, b: Rgba): boolean =>
-  a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+const oklabEqual = (x: Oklab, y: Oklab): boolean =>
+  x.l === y.l && x.a === y.a && x.b === y.b && (x.alpha ?? 1) === (y.alpha ?? 1);
 
 // Animates a cell's background color frame-by-frame in JS instead of via a
 // CSS transition, which proved unreliable here: cells could get stuck
@@ -124,10 +101,15 @@ const rgbaEqual = (a: Rgba, b: Rgba): boolean =>
 // forced a repaint afterward either didn't fix it consistently or
 // introduced their own visible glitches. Reuses the same tween mechanics
 // AnimatedNumber uses for numbers.
+//
+// Interpolates in OKLab (a perceptually-uniform color space) rather than
+// raw sRGB - a plain RGB lerp between e.g. nfc-green and nfc-red (a direct
+// win-to-loss flip on the same bet slot) passes through a muddy tan/khaki
+// midpoint, since red and green are near-opposite on the RGB cube.
 function useBackgroundColorTween(colorKey: string | undefined, durationMs = 600): string {
   const target = useMemo(() => resolveSubtleColor(colorKey), [colorKey]);
-  const [r, g, b, a] = useTween(target, { durationMs, interpolate: lerpRgba, isEqual: rgbaEqual });
-  return `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, ${a})`;
+  const displayed = useTween(target, { durationMs, interpolate: lerpOklab, isEqual: oklabEqual });
+  return formatRgb(rgb(displayed));
 }
 
 const fillColorStyle = (
