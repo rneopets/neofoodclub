@@ -1,7 +1,5 @@
 import { oklab, rgb, formatRgb, type Oklab } from 'culori';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-
-import { useIsStillSettling } from '../../hooks/useIsStillSettling';
+import { useEffect, useState, type CSSProperties } from 'react';
 
 import { useTween } from './useTween';
 
@@ -47,21 +45,6 @@ const oklabEqual = (x: Oklab, y: Oklab): boolean =>
 // a muddy midpoint the way a raw RGB lerp would.
 export function useBackgroundColorTween(colorKey: string | undefined, durationMs = 600): string {
   const [target, setTarget] = useState(() => resolveSubtleColor(colorKey) ?? TRANSPARENT);
-  // Whether we've ever successfully resolved a real color for this hook
-  // instance. Until then, any correction is establishing the initial state
-  // (not a visible transition) and should snap instead of animating -
-  // otherwise every cell would visibly fade in from transparent once its
-  // CSS custom property finally resolves.
-  const [cssResolveInstant, setCssResolveInstant] = useState(true);
-  const hasResolvedOnceRef = useRef(false);
-  // colorKey itself can be driven by calculation-derived data (e.g.
-  // pirateWon, from state.calculations.winningBetBinary) that starts
-  // empty/wrong and only becomes real once the round store's first
-  // calculation completes - a moment separate from (and later than) the
-  // CSS resolution above. Without this, that transition would animate
-  // like a genuine mid-session change (e.g. a pirate winning) instead of
-  // snapping like the rest of the initial load.
-  const isStillSettling = useIsStillSettling();
 
   useEffect(() => {
     // The CSS custom property backing this color can still be unset on the
@@ -77,8 +60,6 @@ export function useBackgroundColorTween(colorKey: string | undefined, durationMs
     const tryResolve = (): void => {
       const resolved = resolveSubtleColor(colorKey);
       if (resolved) {
-        setCssResolveInstant(!hasResolvedOnceRef.current);
-        hasResolvedOnceRef.current = true;
         setTarget(resolved);
         return;
       }
@@ -96,12 +77,7 @@ export function useBackgroundColorTween(colorKey: string | undefined, durationMs
     };
   }, [colorKey]);
 
-  const displayed = useTween(target, {
-    durationMs,
-    interpolate: lerpOklab,
-    isEqual: oklabEqual,
-    instant: cssResolveInstant || isStillSettling,
-  });
+  const displayed = useTween(target, { durationMs, interpolate: lerpOklab, isEqual: oklabEqual });
   return formatRgb(rgb(displayed));
 }
 

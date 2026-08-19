@@ -1,16 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useIsStillSettling } from '../../../hooks/useIsStillSettling';
 import { useBackgroundColorTween } from '../useBackgroundColorTween';
-
-// Most of these tests exercise the CSS-resolution-driven instant logic,
-// not the "app hasn't finished its first calculation yet" gate - default
-// to already settled so colorKey changes tween as they normally would,
-// and override per-test where the settling behavior itself is under test.
-vi.mock('../../../hooks/useIsStillSettling', () => ({
-  useIsStillSettling: vi.fn(() => false),
-}));
 
 function TestCell({ colorKey }: { colorKey: string | undefined }): React.ReactElement {
   // durationMs=0 so the returned color is the resolved target immediately,
@@ -128,24 +119,32 @@ describe('useBackgroundColorTween', () => {
     expect(rafQueue).toHaveLength(0);
   });
 
-  /**
-   * Regression test: establishing a cell's first-ever color (whether on the
-   * very first render or after a few CSS-var retries) must never itself be
-   * a visible animation - only a real colorKey change afterward (e.g. a
-   * pirate winning) should tween. An earlier attempt at this used a global
-   * page-load timer, which incorrectly suppressed genuine changes that
-   * happened to land shortly after mount too (e.g. a fast round switch).
-   */
-  it('snaps to the first resolved color but animates a later genuine colorKey change', () => {
+  it('animates establishing the first color when the CSS var needed a retry to resolve', () => {
+    mockCssVar({
+      '--chakra-colors-nfc-green-subtle': ['', '', '#50C17F'],
+    });
+
+    render(<TestCellAnimated colorKey="nfc-green" />);
+
+    expect(screen.getByTestId('cell').style.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    expect(rafQueue.length).toBeGreaterThan(0);
+
+    flushRaf(5); // resolve the CSS var, retargeting the tween
+    expect(screen.getByTestId('cell').style.backgroundColor).not.toBe('rgb(80, 193, 127)');
+
+    flushRaf(30);
+    expect(screen.getByTestId('cell').style.backgroundColor).toBe('rgb(80, 193, 127)');
+  });
+
+  it('animates a later genuine colorKey change', () => {
     mockCssVar({
       '--chakra-colors-nfc-green-subtle': ['#50C17F'],
       '--chakra-colors-nfc-red-subtle': ['#F76C6C'],
     });
 
     const { rerender } = render(<TestCellAnimated colorKey="nfc-green" />);
-
+    flushRaf(30);
     expect(screen.getByTestId('cell').style.backgroundColor).toBe('rgb(80, 193, 127)');
-    expect(rafQueue).toHaveLength(0);
 
     rerender(<TestCellAnimated colorKey="nfc-red" />);
 
@@ -153,30 +152,6 @@ describe('useBackgroundColorTween', () => {
     expect(screen.getByTestId('cell').style.backgroundColor).not.toBe('rgb(247, 108, 108)');
 
     flushRaf(30);
-
     expect(screen.getByTestId('cell').style.backgroundColor).toBe('rgb(247, 108, 108)');
-  });
-
-  /**
-   * Regression test: a colorKey driven by calculation-derived data (e.g.
-   * pirateWon, from winningBetBinary) can change from its placeholder
-   * value to the real one only once the round store's first calculation
-   * completes - a moment separate from (and later than) the CSS
-   * resolution covered above. That transition must snap too, not animate
-   * like a genuine mid-session change.
-   */
-  it('snaps a colorKey change while the app is still settling, even if the CSS resolves fine', () => {
-    vi.mocked(useIsStillSettling).mockReturnValue(true);
-
-    mockCssVar({
-      '--chakra-colors-nfc-green-subtle': ['#50C17F'],
-      '--chakra-colors-nfc-red-subtle': ['#F76C6C'],
-    });
-
-    const { rerender } = render(<TestCellAnimated colorKey="nfc-green" />);
-    rerender(<TestCellAnimated colorKey="nfc-red" />);
-
-    expect(screen.getByTestId('cell').style.backgroundColor).toBe('rgb(247, 108, 108)');
-    expect(rafQueue).toHaveLength(0);
   });
 });
