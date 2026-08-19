@@ -14,20 +14,40 @@ import {
 // Hook to get error state from the store
 const useErrorState = (): string | null => useRoundStore(state => state.error);
 
+interface RoundInputProps {
+  /** Displayed round; falls back to the store's `currentSelectedRound` when omitted. */
+  selectedRound?: number;
+  /** Round to revert to on empty/invalid input; falls back to the store's `currentRound`. */
+  referenceRound?: number;
+  /** Called with the debounced-commit round instead of the store's `updateSelectedRound`. */
+  onRoundChange?: (round: number) => void;
+  /** Falls back to the store's error state when omitted. */
+  hasError?: boolean;
+}
+
 // this element is the number input to say which round's data you're viewing
 
-const RoundInput: React.FC = () => {
-  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
-  const currentRound = useRoundStore(state => state.currentRound);
+const RoundInput: React.FC<RoundInputProps> = ({
+  selectedRound,
+  referenceRound,
+  onRoundChange,
+  hasError: hasErrorProp,
+}) => {
+  const storeSelectedRound = useRoundStore(state => state.currentSelectedRound);
+  const storeCurrentRound = useRoundStore(state => state.currentRound);
   const updateSelectedRound = useRoundStore(state => state.updateSelectedRound);
-  const error = useErrorState();
+  const storeError = useErrorState();
+
+  const currentSelectedRound = selectedRound ?? storeSelectedRound;
+  const currentRound = referenceRound ?? storeCurrentRound;
+  const commitRound = onRoundChange ?? updateSelectedRound;
 
   const initialRoundNumber = useMemo(() => currentSelectedRound || 0, [currentSelectedRound]);
 
   const [tempValue, setTempValue] = useState<string>(() => initialRoundNumber.toString());
 
   // Check if there's an error related to the current round
-  const hasError = Boolean(error);
+  const hasError = hasErrorProp ?? Boolean(storeError);
 
   // Use custom hook to handle debouncing with cancellation on external changes
   useDebouncedRoundInput(
@@ -51,10 +71,9 @@ const RoundInput: React.FC = () => {
           return;
         }
 
-        // Use the new updateSelectedRound action which handles data fetching automatically
-        updateSelectedRound(roundNumber);
+        commitRound(roundNumber);
       },
-      [currentSelectedRound, updateSelectedRound],
+      [currentSelectedRound, commitRound],
     ),
   );
 
