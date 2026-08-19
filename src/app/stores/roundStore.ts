@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
+import { shallow } from 'zustand/shallow';
 
 import { RoundData, RoundCalculationResult } from '../../types';
 import { OddsData, ProbabilitiesData } from '../../types/bets';
@@ -762,7 +763,13 @@ import('./betStore').then(() => {
     () => {
       scheduleRecalculate();
     },
-    { fireImmediately: false },
+    // Without this, the selector's object literal is a new reference on every
+    // call, so the default Object.is check always sees "changed" and this
+    // fires a recalculation on every betStore update, not just bet/amount
+    // changes - including ones that happen to land during a round switch,
+    // producing a second, out-of-order recalculation that briefly recolors
+    // cells with stale data before the real one lands.
+    { equalityFn: shallow, fireImmediately: false },
   );
   // Trigger initial calculation manually
   scheduleRecalculate();
