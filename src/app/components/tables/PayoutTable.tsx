@@ -137,7 +137,7 @@ const PirateNameCell = React.memo(
     }, [hasModifications, hasCustomOdds, hasCustomProbs]);
 
     return (
-      <Td {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}>
+      <Td layerStyle="fill.subtle" colorPalette={bgColor ?? 'nfc-neutral'}>
         <HStack gap={1} display="inline-flex" alignItems="center">
           <Text>{pirateName}</Text>
           {hasModifications && (
@@ -273,7 +273,7 @@ const PayoutTableRow = React.memo(
 
     return (
       <Table.Row key={betKey}>
-        <Td {...(betNumBgColor && { layerStyle: 'fill.subtle', colorPalette: betNumBgColor })}>
+        <Td layerStyle="fill.subtle" colorPalette={betNumBgColor ?? 'nfc-neutral'}>
           <HStack px={2} gap={1}>
             <Spacer />
             <Text minW="2ch" textAlign="center">
@@ -327,7 +327,8 @@ const PayoutTableRow = React.memo(
         </Td>
         <Td
           style={{ textAlign: 'end' }}
-          {...(erBg && { layerStyle: 'fill.subtle', colorPalette: erBg })}
+          layerStyle="fill.subtle"
+          colorPalette={erBg ?? 'nfc-neutral'}
         >
           <MemoizedTextTooltip
             text={expectedRatioTooltip.text}
@@ -336,13 +337,15 @@ const PayoutTableRow = React.memo(
         </Td>
         <Td
           style={{ textAlign: 'end' }}
-          {...(neBg && { layerStyle: 'fill.subtle', colorPalette: neBg })}
+          layerStyle="fill.subtle"
+          colorPalette={neBg ?? 'nfc-neutral'}
         >
           <MemoizedTextTooltip text={netExpectedTooltip.text} content={netExpectedTooltip.label} />
         </Td>
         <Td
           style={{ textAlign: 'end' }}
-          {...(mbBg && { layerStyle: 'fill.subtle', colorPalette: mbBg })}
+          layerStyle="fill.subtle"
+          colorPalette={mbBg ?? 'nfc-neutral'}
         >
           {mbBg ? (
             <TextTooltip
@@ -520,7 +523,8 @@ const PayoutTable = React.memo((): React.ReactElement => {
               <Table.ColumnHeader style={{ textAlign: 'end' }} />
               <Table.ColumnHeader
                 style={{ textAlign: 'end' }}
-                {...(totalErBg && { layerStyle: 'fill.subtle', colorPalette: totalErBg })}
+                layerStyle="fill.subtle"
+                colorPalette={totalErBg ?? 'nfc-neutral'}
               >
                 <MemoizedTextTooltip
                   text={totalExpectedRatioTooltip.text}
@@ -529,7 +533,8 @@ const PayoutTable = React.memo((): React.ReactElement => {
               </Table.ColumnHeader>
               <Table.ColumnHeader
                 style={{ textAlign: 'end' }}
-                {...(totalNeBg && { layerStyle: 'fill.subtle', colorPalette: totalNeBg })}
+                layerStyle="fill.subtle"
+                colorPalette={totalNeBg ?? 'nfc-neutral'}
               >
                 <MemoizedTextTooltip
                   text={totalNetExpectedTooltip.text}
