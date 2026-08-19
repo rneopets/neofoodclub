@@ -1,5 +1,5 @@
 import { Box, HStack, IconButton, Skeleton, Spacer, Table, Text } from '@chakra-ui/react';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa6';
 
 import { PIRATE_NAMES } from '../../constants';
@@ -35,6 +35,7 @@ import {
   useCustomOddsMode,
   useRoundStore,
   useBetProbabilities,
+  useSelectedRound,
 } from '../../stores';
 import { displayAsPercent, displayAsPercentSmart, getMaxSmartPercentDecimals } from '../../util';
 import BetAmountInput from '../bets/BetAmountInput';
@@ -387,6 +388,26 @@ const PayoutTable = React.memo((): React.ReactElement => {
 
   const calculated = useCalculationsStatus();
   const winningBetBinary = useWinningBetBinary();
+  const selectedRound = useSelectedRound();
+
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  useEffect(() => {
+    // Work around a browser repaint bug: after a round switch, some cells'
+    // background-color transitions leave stale pixels on screen even though
+    // the DOM's computed style is already correct (verified in devtools -
+    // computed backgroundColor reads transparent while the cell still shows
+    // the previous round's color). Toggling display forces a full repaint,
+    // which a paint-only style change isn't reliably triggering here.
+    const el = tableRef.current;
+    if (!el) {
+      return;
+    }
+    const previousDisplay = el.style.display;
+    el.style.display = 'none';
+    void el.offsetHeight;
+    el.style.display = previousDisplay;
+  }, [selectedRound]);
 
   // Use individual hooks instead of object selector to avoid infinite loops
   const totalBetAmounts = useTotalBetAmounts();
@@ -470,7 +491,7 @@ const PayoutTable = React.memo((): React.ReactElement => {
   const totalNeBg = totalBetNetExpected - 1 < 0 ? 'nfc-red' : undefined;
 
   return (
-    <Table.Root size="sm" width="auto" interactive>
+    <Table.Root ref={tableRef} size="sm" width="auto" interactive>
       <Table.Header>
         <Table.Row>
           <Table.ColumnHeader w="3.5rem">Bet #</Table.ColumnHeader>
