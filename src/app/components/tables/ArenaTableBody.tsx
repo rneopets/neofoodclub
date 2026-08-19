@@ -59,6 +59,7 @@ import OddsTimeline from '../timeline/OddsTimeline';
 import AnimatedNumber from '../ui/AnimatedNumber';
 import FaDetailsElement from '../ui/FaDetailsElement';
 import TextTooltip from '../ui/TextTooltip';
+import { fillColorStyle, useBackgroundColorTween } from '../ui/useBackgroundColorTween';
 
 import Td from './Td';
 
@@ -91,12 +92,15 @@ const PirateFA = React.memo(
       indicator = `-${neg}`;
     }
 
+    const bg = useBackgroundColorTween(color);
+
     return (
       <FaDetailsElement
         key={`fa-${foodId}-pirate-${pirateId}`}
         as={Td}
         textAlign="end"
-        {...(color && { layerStyle: 'fill.subtle', colorPalette: color })}
+        className="nfc-color-tween"
+        style={fillColorStyle(bg, color)}
         whiteSpace="nowrap"
       >
         <Text as={'b'}>{indicator}</Text>
@@ -110,7 +114,7 @@ PirateFA.displayName = 'PirateFA';
 // A sticky Td component for the first column
 const StickyTd = React.memo(
   (props: React.ComponentProps<typeof Table.Cell> & { cursor?: string }): React.ReactElement => {
-    const { children, onClick, cursor = undefined, ...rest } = props;
+    const { children, onClick, cursor = undefined, style, ...rest } = props;
 
     // Filter out undefined values to satisfy exactOptionalPropertyTypes
     const filteredRest = Object.fromEntries(
@@ -118,14 +122,17 @@ const StickyTd = React.memo(
     );
 
     const tdProps: React.ComponentProps<typeof Table.Cell> = {
-      style: {
-        position: 'sticky',
-        left: '0',
-      } as React.CSSProperties,
       zIndex: 1,
       ...(cursor && { cursor }),
       onClick,
       ...filteredRest,
+      // Merged (not spread before filteredRest) so a caller-supplied style
+      // adds to the sticky positioning instead of replacing it.
+      style: {
+        position: 'sticky',
+        left: '0',
+        ...style,
+      } as React.CSSProperties,
     };
 
     return <Td {...tdProps}>{children}</Td>;
@@ -266,7 +273,12 @@ const ArenaRatioDisplay = React.memo(
     return (
       <Skeleton loading={currentArenaRatio === undefined}>
         <TextTooltip
-          text={displayAsPercent(currentArenaRatio as number, 1)}
+          text={
+            <AnimatedNumber
+              value={currentArenaRatio as number}
+              format={v => displayAsPercent(v, 1)}
+            />
+          }
           content={`${(currentArenaRatio as number) * 100}%`}
         />
       </Skeleton>
@@ -403,6 +415,12 @@ const PirateRow = React.memo(
     const winningBetBinary = useWinningBetBinary();
     const pirateBin = computePirateBinary(arenaId, pirateIndex + 1);
     const pirateWon = (winningBetBinary & pirateBin) === pirateBin;
+    // Hooks must run unconditionally before the !pirateId early return below,
+    // so these are computed here rather than inline in the JSX/memos that use
+    // them. winColorKey/winBg are reused everywhere a cell just wants "green
+    // when this pirate won, otherwise no color".
+    const winColorKey = pirateWon ? 'nfc-green' : undefined;
+    const winBg = useBackgroundColorTween(winColorKey);
     const betCount = useBetCount();
     const prob = useStableUsedProbability(arenaId, pirateIndex + 1);
     const logitProb = useStableLogitProbability(arenaId, pirateIndex + 1);
@@ -413,6 +431,10 @@ const PirateRow = React.memo(
     const customOddsMode = useCustomOddsMode();
     const customOddsValue = useCustomOddsValue(arenaId, pirateIndex + 1);
     const getPirateBgColor = useGetPirateBgColor();
+    // The pirate-name cell's "off" state is a real odds-tier color, not
+    // transparent, so it needs its own tween separate from winBg.
+    const nameCellColorKey = pirateWon ? 'nfc-green' : getPirateBgColor(openingOdds!);
+    const nameCellBg = useBackgroundColorTween(nameCellColorKey);
     const faDetails = useFaDetails();
     // Payout should reflect Custom Odds when active, matching how the bet-level
     // Odds/Payoff columns already resolve odds (see getOdds() in util.ts) -
@@ -429,6 +451,7 @@ const PirateRow = React.memo(
       }
       return undefined;
     }, [payout, pirateWon]);
+    const payoutBg = useBackgroundColorTween(payoutBackground);
 
     const handleTimelineClickLocal = useCallback(() => {
       handleTimelineClick(arenaId, pirateIndex);
@@ -543,14 +566,11 @@ const PirateRow = React.memo(
       }
 
       return (
-        <Td
-          textAlign="end"
-          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
-        >
-          {displayAsPercent(logitProb, 1)}
+        <Td textAlign="end" className="nfc-color-tween" style={fillColorStyle(winBg, winColorKey)}>
+          <AnimatedNumber value={logitProb} format={v => displayAsPercent(v, 1)} />
         </Td>
       );
-    }, [logitProb, useLogitModel, bigBrain, pirateWon]);
+    }, [logitProb, useLogitModel, bigBrain, winBg, winColorKey]);
 
     const faElement = useMemo(() => {
       if (!bigBrain) {
@@ -558,14 +578,11 @@ const PirateRow = React.memo(
       }
 
       return (
-        <Td
-          textAlign="end"
-          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
-        >
-          {pirateFA}
+        <Td textAlign="end" className="nfc-color-tween" style={fillColorStyle(winBg, winColorKey)}>
+          <AnimatedNumber value={pirateFA} precision={0} />
         </Td>
       );
-    }, [pirateFA, bigBrain, pirateWon]);
+    }, [pirateFA, bigBrain, winBg, winColorKey]);
 
     const legacyProbElements = useMemo(() => {
       if (!bigBrain) {
@@ -580,25 +597,28 @@ const PirateRow = React.memo(
         <>
           <Td
             textAlign="end"
-            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
+            className="nfc-color-tween"
+            style={fillColorStyle(winBg, winColorKey)}
           >
-            {displayAsPercent(legacyProbMin, 1)}
+            <AnimatedNumber value={legacyProbMin} format={v => displayAsPercent(v, 1)} />
           </Td>
           <Td
             textAlign="end"
-            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
+            className="nfc-color-tween"
+            style={fillColorStyle(winBg, winColorKey)}
           >
-            {displayAsPercent(legacyProbMax, 1)}
+            <AnimatedNumber value={legacyProbMax} format={v => displayAsPercent(v, 1)} />
           </Td>
           <Td
             textAlign="end"
-            {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
+            className="nfc-color-tween"
+            style={fillColorStyle(winBg, winColorKey)}
           >
-            {displayAsPercent(legacyProbStd, 1)}
+            <AnimatedNumber value={legacyProbStd} format={v => displayAsPercent(v, 1)} />
           </Td>
         </>
       );
-    }, [legacyProbMin, legacyProbMax, legacyProbStd, useLogitModel, bigBrain, pirateWon]);
+    }, [legacyProbMin, legacyProbMax, legacyProbStd, useLogitModel, bigBrain, winBg, winColorKey]);
 
     const faDetailsElement = useMemo(() => {
       if (!foods) {
@@ -684,12 +704,13 @@ const PirateRow = React.memo(
       return (
         <Td
           textAlign="end"
-          {...(payoutBackground && { layerStyle: 'fill.subtle', colorPalette: payoutBackground })}
+          className="nfc-color-tween"
+          style={fillColorStyle(payoutBg, payoutBackground)}
         >
           <AnimatedNumber value={payout} format={v => displayAsPercent(v, 1)} />
         </Td>
       );
-    }, [payout, payoutBackground, bigBrain]);
+    }, [payout, payoutBackground, payoutBg, bigBrain]);
 
     // Odds comparison logic
     const oddsIncreased = currentOdds! > openingOdds!;
@@ -712,11 +733,12 @@ const PirateRow = React.memo(
     return (
       <Table.Row
         key={`pirate-${pirateId}-${arenaId}`}
-        backgroundColor={pirateWon ? 'nfc-green.subtle' : 'transparent'}
+        className="nfc-color-tween"
+        style={fillColorStyle(winBg, winColorKey)}
       >
         <StickyTd
-          layerStyle={pirateWon ? 'fill.subtle' : 'fill.muted'}
-          colorPalette={pirateWon ? 'nfc-green' : getPirateBgColor(openingOdds!)}
+          className="nfc-color-tween"
+          style={fillColorStyle(nameCellBg, nameCellColorKey)}
           onClick={handleTimelineClickLocal}
           cursor="pointer"
           title={`Click to view odds timeline for ${fullPirateName}`}
@@ -728,16 +750,15 @@ const PirateRow = React.memo(
         {payoutElement}
         {faElement}
         {faDetailsElement}
-        <Td
-          textAlign="end"
-          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
-        >
-          {openingOdds}:1
+        <Td textAlign="end" className="nfc-color-tween" style={fillColorStyle(winBg, winColorKey)}>
+          <AnimatedNumber value={openingOdds!} precision={0} />
+          :1
         </Td>
         <Td
           textAlign="end"
           whiteSpace="nowrap"
-          {...(pirateWon && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
+          className="nfc-color-tween"
+          style={fillColorStyle(winBg, winColorKey)}
         >
           <Box display="flex" alignItems="center" justifyContent="flex-end">
             {oddsChanged && (
