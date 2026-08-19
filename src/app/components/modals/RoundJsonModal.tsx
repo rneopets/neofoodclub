@@ -9,12 +9,15 @@ import {
   Badge,
   HStack,
   Icon,
+  Stack,
+  Text,
 } from '@chakra-ui/react';
 import * as React from 'react';
 import { FaCode } from 'react-icons/fa';
 import type { HighlighterGeneric } from 'shiki';
 
-import { useRoundStore } from '../../stores';
+import { useCurrentRound, useRoundStore } from '../../stores';
+import RoundInput from '../inputs/RoundInput';
 
 // Uses the fine-grained core API (rather than `createHighlighter` from the
 // `shiki` package) so the bundler only includes the json language and
@@ -126,6 +129,7 @@ const formatJsonWithDepth = (
 
 export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose }) => {
   const roundData = useRoundStore(state => state.roundData);
+  const currentRoundFromCdn = useCurrentRound();
 
   // Pretty-format the JSON with depth limit and special case for winners
   const formattedJson = formatJsonWithDepth(roundData, 2, ['winners']);
@@ -148,31 +152,42 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
               </Dialog.CloseTrigger>
             </Dialog.Header>
             <Dialog.Body>
-              <CodeBlock.AdapterProvider value={shikiAdapter}>
-                <CodeBlock.Root code={formattedJson} language="json">
-                  <CodeBlock.Header>
-                    <HStack gap={2} flex={1}>
-                      <CodeBlock.Title>
-                        <Icon as={FaCode} color="nfc-green.solid" />
-                        {roundData.round || 'unknown'}.json
-                      </CodeBlock.Title>
-                      <Badge size="sm" colorPalette="nfc-blue">
-                        JSON
-                      </Badge>
-                    </HStack>
-                    <CodeBlock.CopyTrigger asChild>
-                      <IconButton variant="ghost" size="2xs">
-                        <CodeBlock.CopyIndicator />
-                      </IconButton>
-                    </CodeBlock.CopyTrigger>
-                  </CodeBlock.Header>
-                  <CodeBlock.Content maxH="calc(100vh - 300px)" overflowY="auto">
-                    <CodeBlock.Code>
-                      <CodeBlock.CodeText />
-                    </CodeBlock.Code>
-                  </CodeBlock.Content>
-                </CodeBlock.Root>
-              </CodeBlock.AdapterProvider>
+              <Stack gap={3}>
+                <Stack gap={1} align="stretch">
+                  <Text fontSize="sm" fontWeight="medium">
+                    Change round
+                  </Text>
+                  <Text fontSize="xs" color="fg.muted">
+                    Current round on Neopets: {currentRoundFromCdn > 0 ? currentRoundFromCdn : '—'}
+                  </Text>
+                  <RoundInput />
+                </Stack>
+                <CodeBlock.AdapterProvider value={shikiAdapter}>
+                  <CodeBlock.Root code={formattedJson} language="json">
+                    <CodeBlock.Header>
+                      <HStack gap={2} flex={1}>
+                        <CodeBlock.Title>
+                          <Icon as={FaCode} color="nfc-green.solid" />
+                          {roundData.round || 'unknown'}.json
+                        </CodeBlock.Title>
+                        <Badge size="sm" colorPalette="nfc-blue">
+                          JSON
+                        </Badge>
+                      </HStack>
+                      <CodeBlock.CopyTrigger asChild>
+                        <IconButton variant="ghost" size="2xs">
+                          <CodeBlock.CopyIndicator />
+                        </IconButton>
+                      </CodeBlock.CopyTrigger>
+                    </CodeBlock.Header>
+                    <CodeBlock.Content maxH="calc(100vh - 300px)" overflowY="auto">
+                      <CodeBlock.Code>
+                        <CodeBlock.CodeText />
+                      </CodeBlock.Code>
+                    </CodeBlock.Content>
+                  </CodeBlock.Root>
+                </CodeBlock.AdapterProvider>
+              </Stack>
             </Dialog.Body>
             <Dialog.Footer>
               <Button variant="outline" onClick={onClose}>
