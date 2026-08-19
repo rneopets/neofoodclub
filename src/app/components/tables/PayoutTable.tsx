@@ -403,14 +403,22 @@ const PayoutTable = React.memo((): React.ReactElement => {
     // backgroundColor reads transparent while the cell still shows the
     // previous color). Toggling display forces a full repaint, which a
     // paint-only style change isn't reliably triggering here.
+    //
+    // Delayed until just after the 0.6s CSS transition (src/index.css)
+    // should have finished - doing this immediately cancels the transition
+    // before the browser ever paints an intermediate frame, so cells snap
+    // straight to their final color instead of animating.
     const el = tableRef.current;
     if (!el) {
       return;
     }
-    const previousDisplay = el.style.display;
-    el.style.display = 'none';
-    void el.offsetHeight;
-    el.style.display = previousDisplay;
+    const timeoutId = window.setTimeout(() => {
+      const previousDisplay = el.style.display;
+      el.style.display = 'none';
+      void el.offsetHeight;
+      el.style.display = previousDisplay;
+    }, 650);
+    return (): void => window.clearTimeout(timeoutId);
   }, [calculations]);
 
   // Use individual hooks instead of object selector to avoid infinite loops
