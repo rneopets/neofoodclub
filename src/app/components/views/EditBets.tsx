@@ -36,6 +36,7 @@ import {
 } from '../../stores';
 import DropDownTable from '../tables/DropDownTable';
 import NormalTable from '../tables/NormalTable';
+import BetGenerationMaxBetToggle from '../TableSettings/BetGenerationMaxBetToggle';
 import BetSetPosition from '../TableSettings/BetSetPosition';
 import ColorModeToggle from '../TableSettings/ColorModeToggle';
 import CopyDomainToggle from '../TableSettings/CopyDomainToggle';
@@ -346,6 +347,8 @@ export default React.memo(function EditBets(): React.ReactElement {
                     <TableModes />
 
                     <BetSetPosition />
+
+                    <BetGenerationMaxBetToggle />
 
                     <LogitModelToggle />
 

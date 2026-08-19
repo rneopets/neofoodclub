@@ -1,7 +1,7 @@
 import { useMemo, useCallback } from 'react';
 
 import { Bet, BetAmount } from '../../types/bets';
-import { BET_AMOUNT_DEFAULT } from '../constants';
+import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MIN } from '../constants';
 import { computePiratesBinary } from '../maths';
 import {
   useAllBetsForURLData,
@@ -15,6 +15,7 @@ import {
   useBetStore,
   useUsedProbabilities,
   useBetCount,
+  useBetGenerationMaxBetMode,
 } from '../stores';
 import {
   makeEmptyBets,
@@ -22,6 +23,7 @@ import {
   getMaxBet,
   anyBetsExist as anyBetsExistInSet,
   calculateBetMaps,
+  type BetGenerationMaxBetMode,
 } from '../util';
 import {
   wasmMakeMaxTerBets,
@@ -34,6 +36,28 @@ import {
 } from '../wasmEngine';
 
 import { useDuplicateBets } from './useDuplicateBets';
+
+// When the user's "Bet Generation Max Bet" setting is "uncapped", override every
+// generated bet's amount to a flat `maxBet`, ignoring the wasm engine's default
+// odds-based cap (min(maxBet, ceil(1_000_000 / odds))). "Capped" mode is a no-op
+// here since the wasm engine already returns odds-capped amounts.
+function applyBetGenerationMaxBetMode(
+  bets: Bet,
+  betAmounts: BetAmount,
+  maxBet: number,
+  mode: BetGenerationMaxBetMode,
+): BetAmount {
+  if (mode !== 'uncapped' || maxBet < BET_AMOUNT_MIN) {
+    return betAmounts;
+  }
+
+  const flattened: BetAmount = new Map();
+  for (const [betIndex, bet] of bets.entries()) {
+    const hasPirate = bet.some(pirate => pirate > 0);
+    flattened.set(betIndex, hasPirate ? maxBet : (betAmounts.get(betIndex) ?? BET_AMOUNT_DEFAULT));
+  }
+  return flattened;
+}
 
 export function useBetManagement(): {
   currentBetIndex: number;
@@ -68,6 +92,7 @@ export function useBetManagement(): {
 } {
   const currentSelectedRound = useSelectedRound();
   const usedProbabilities = useUsedProbabilities();
+  const betGenerationMaxBetMode = useBetGenerationMaxBetMode();
 
   // Use selective hooks for better performance
   const currentBetIndex = useCurrentBet();
@@ -267,8 +292,14 @@ export function useBetManagement(): {
   const generateMaxTERSet = useCallback((): void => {
     const maxBet = getMaxBet(currentSelectedRound);
     const { bets, betAmounts } = wasmMakeMaxTerBets(betCount);
-    addNewSet(`Max TER Set (${maxBet} NP)`, bets, betAmounts, true);
-  }, [addNewSet, betCount, currentSelectedRound]);
+    const finalAmounts = applyBetGenerationMaxBetMode(
+      bets,
+      betAmounts,
+      maxBet,
+      betGenerationMaxBetMode,
+    );
+    addNewSet(`Max TER Set (${maxBet} NP)`, bets, finalAmounts, true);
+  }, [addNewSet, betCount, currentSelectedRound, betGenerationMaxBetMode]);
 
   const generateTenbetSet = useCallback(
     (tenbetIndices: number[]): void => {
@@ -279,12 +310,18 @@ export function useBetManagement(): {
       // unsatisfiable selection), the wasm engine errors instead of hanging.
       try {
         const { bets, betAmounts } = wasmMakeTenbetBets(tenbetBinary, betCount);
-        addNewSet(`Custom Ten-bet Set (${maxBet} NP)`, bets, betAmounts, true);
+        const finalAmounts = applyBetGenerationMaxBetMode(
+          bets,
+          betAmounts,
+          maxBet,
+          betGenerationMaxBetMode,
+        );
+        addNewSet(`Custom Ten-bet Set (${maxBet} NP)`, bets, finalAmounts, true);
       } catch (error) {
         console.error('Could not generate ten-bet set:', error);
       }
     },
-    [betCount, currentSelectedRound, addNewSet],
+    [betCount, currentSelectedRound, addNewSet, betGenerationMaxBetMode],
   );
 
   // Helper function that returns bets and betAmounts
@@ -308,16 +345,28 @@ export function useBetManagement(): {
       if (bets.size === 0) {
         return;
       }
-      addNewSet(`Custom Gambit Set (${maxBet} NP)`, bets, betAmounts, true);
+      const finalAmounts = applyBetGenerationMaxBetMode(
+        bets,
+        betAmounts,
+        maxBet,
+        betGenerationMaxBetMode,
+      );
+      addNewSet(`Custom Gambit Set (${maxBet} NP)`, bets, finalAmounts, true);
     },
-    [createGambitWithPirates, currentSelectedRound, addNewSet],
+    [createGambitWithPirates, currentSelectedRound, addNewSet, betGenerationMaxBetMode],
   );
 
   const generateGambitSet = useCallback((): void => {
     const maxBet = getMaxBet(currentSelectedRound);
     const { bets, betAmounts } = wasmMakeBestGambitBets(betCount);
-    addNewSet(`Custom Gambit Set (${maxBet} NP)`, bets, betAmounts, true);
-  }, [addNewSet, betCount, currentSelectedRound]);
+    const finalAmounts = applyBetGenerationMaxBetMode(
+      bets,
+      betAmounts,
+      maxBet,
+      betGenerationMaxBetMode,
+    );
+    addNewSet(`Custom Gambit Set (${maxBet} NP)`, bets, finalAmounts, true);
+  }, [addNewSet, betCount, currentSelectedRound, betGenerationMaxBetMode]);
 
   const generateBustproofSet = useCallback((): void => {
     const result = wasmMakeBustproofBets(betCount);
@@ -325,13 +374,15 @@ export function useBetManagement(): {
       console.warn('Bustproof set not possible: no arena has a positive ratio this round.');
       return;
     }
-    addNewSet(
-      `Bustproof Set (round ${currentSelectedRound})`,
+    const maxBet = getMaxBet(currentSelectedRound);
+    const finalAmounts = applyBetGenerationMaxBetMode(
       result.bets,
       result.betAmounts,
-      true,
+      maxBet,
+      betGenerationMaxBetMode,
     );
-  }, [addNewSet, currentSelectedRound, betCount]);
+    addNewSet(`Bustproof Set (round ${currentSelectedRound})`, result.bets, finalAmounts, true);
+  }, [addNewSet, currentSelectedRound, betCount, betGenerationMaxBetMode]);
 
   const generateWinningGambitSet = useCallback((): void => {
     const maxBet = getMaxBet(currentSelectedRound);
@@ -340,14 +391,26 @@ export function useBetManagement(): {
       console.warn('No winners yet: cannot generate a winning gambit set.');
       return;
     }
-    addNewSet(`Custom Gambit Set (${maxBet} NP)`, result.bets, result.betAmounts, true);
-  }, [addNewSet, currentSelectedRound, betCount]);
+    const finalAmounts = applyBetGenerationMaxBetMode(
+      result.bets,
+      result.betAmounts,
+      maxBet,
+      betGenerationMaxBetMode,
+    );
+    addNewSet(`Custom Gambit Set (${maxBet} NP)`, result.bets, finalAmounts, true);
+  }, [addNewSet, currentSelectedRound, betCount, betGenerationMaxBetMode]);
 
   const generateRandomCrazySet = useCallback((): void => {
     const maxBet = getMaxBet(currentSelectedRound);
     const { bets, betAmounts } = wasmMakeCrazyBets(betCount);
-    addNewSet(`Crazy Set (${maxBet} NP)`, bets, betAmounts, true);
-  }, [addNewSet, betCount, currentSelectedRound]);
+    const finalAmounts = applyBetGenerationMaxBetMode(
+      bets,
+      betAmounts,
+      maxBet,
+      betGenerationMaxBetMode,
+    );
+    addNewSet(`Crazy Set (${maxBet} NP)`, bets, finalAmounts, true);
+  }, [addNewSet, betCount, currentSelectedRound, betGenerationMaxBetMode]);
 
   return {
     // Current data

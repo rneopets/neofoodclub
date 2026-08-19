@@ -229,6 +229,13 @@ export function getBetSetPosition(): BetSetPosition {
   return getCookieOption('betSetPosition', BET_SET_POSITIONS, 'below');
 }
 
+export const BET_GENERATION_MAX_BET_MODES = ['capped', 'uncapped'] as const;
+export type BetGenerationMaxBetMode = (typeof BET_GENERATION_MAX_BET_MODES)[number];
+
+export function getBetGenerationMaxBetMode(): BetGenerationMaxBetMode {
+  return getCookieOption('betGenerationMaxBetMode', BET_GENERATION_MAX_BET_MODES, 'capped');
+}
+
 function getCookieOption<const T extends readonly string[]>(
   key: string,
   validOptions: T,
