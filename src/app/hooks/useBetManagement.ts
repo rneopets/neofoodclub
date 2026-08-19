@@ -374,15 +374,16 @@ export function useBetManagement(): {
       console.warn('Bustproof set not possible: no arena has a positive ratio this round.');
       return;
     }
-    const maxBet = getMaxBet(currentSelectedRound);
-    const finalAmounts = applyBetGenerationMaxBetMode(
+    // Bustproof amounts are precisely calculated to guarantee no loss - the
+    // Bet Generation Max Bet setting (which would flatten amounts in "uncapped"
+    // mode) must not be applied here, or it would break that guarantee.
+    addNewSet(
+      `Bustproof Set (round ${currentSelectedRound})`,
       result.bets,
       result.betAmounts,
-      maxBet,
-      betGenerationMaxBetMode,
+      true,
     );
-    addNewSet(`Bustproof Set (round ${currentSelectedRound})`, result.bets, finalAmounts, true);
-  }, [addNewSet, currentSelectedRound, betCount, betGenerationMaxBetMode]);
+  }, [addNewSet, currentSelectedRound, betCount]);
 
   const generateWinningGambitSet = useCallback((): void => {
     const maxBet = getMaxBet(currentSelectedRound);
