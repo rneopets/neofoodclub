@@ -36,16 +36,23 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock HTMLCanvasElement.getContext for Chart.js tests
-HTMLCanvasElement.prototype.getContext = vi.fn().mockImplementation((contextId: string) => {
+// Mock HTMLCanvasElement.getContext for Chart.js tests.
+// Chart.js's DomPlatform.acquireContext() only accepts the returned context if
+// `context.canvas === canvas` (see chart.js's DomPlatform.acquireContext), so the mock
+// must be a real `function` (not an arrow function) and echo back `this` as `canvas` -
+// otherwise Chart.js silently refuses to construct any chart in tests ("can't acquire
+// context from the given item"), masking real bugs instead of exercising them.
+HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, contextId: string) {
   if (contextId === '2d') {
     return {
+      canvas: this,
       fillRect: vi.fn(),
       clearRect: vi.fn(),
       getImageData: vi.fn(() => ({ data: new Uint8ClampedArray(4) })),
       putImageData: vi.fn(),
       createImageData: vi.fn(() => new Uint8ClampedArray(4)),
       setTransform: vi.fn(),
+      resetTransform: vi.fn(),
       drawImage: vi.fn(),
       save: vi.fn(),
       fillText: vi.fn(),
@@ -67,13 +74,15 @@ HTMLCanvasElement.prototype.getContext = vi.fn().mockImplementation((contextId: 
     } as unknown as CanvasRenderingContext2D;
   }
   return null;
-}) as HTMLCanvasElement['getContext'];
+} as HTMLCanvasElement['getContext'];
 
-// Mock ResizeObserver
-(globalThis as unknown as { ResizeObserver: typeof ResizeObserver }).ResizeObserver = vi
-  .fn()
-  .mockImplementation(() => ({
+// Mock ResizeObserver. Chart.js's responsive plugin does `new ResizeObserver(...)`, and an
+// arrow-function mock implementation can't be used with `new` - use a real `function` (as a
+// constructor) instead, like the getContext mock above.
+(globalThis as unknown as { ResizeObserver: typeof ResizeObserver }).ResizeObserver = function () {
+  return {
     observe: vi.fn(),
     unobserve: vi.fn(),
     disconnect: vi.fn(),
-  })) as unknown as typeof ResizeObserver;
+  };
+} as unknown as typeof ResizeObserver;
