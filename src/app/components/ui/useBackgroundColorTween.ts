@@ -1,14 +1,16 @@
 import { oklab, rgb, formatRgb, type Oklab } from 'culori';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 import { useTween } from './useTween';
 
 const TRANSPARENT: Oklab = { mode: 'oklab', l: 0, a: 0, b: 0, alpha: 0 };
 
-// Safety net so a colorKey that can genuinely never resolve doesn't retry
-// forever - real resolution succeeds within a frame or two once Chakra's
-// stylesheet is in the DOM.
-const MAX_RESOLVE_ATTEMPTS = 30;
+// Safety net so a colorKey that can genuinely never resolve (e.g. a typo'd
+// token that has no CSS custom property at all) doesn't retry forever.
+// Time-based rather than a frame count, since a backgrounded/throttled tab
+// can take far longer than usual to accumulate a handful of animation
+// frames even though resolution would otherwise succeed almost instantly.
+const MAX_RESOLVE_MS = 10_000;
 
 // Returns null (instead of a color) when colorKey is set but the backing CSS
 // custom property can't be read/parsed yet, so callers can tell "off" apart
@@ -43,6 +45,13 @@ const oklabEqual = (x: Oklab, y: Oklab): boolean =>
 // a muddy midpoint the way a raw RGB lerp would.
 export function useBackgroundColorTween(colorKey: string | undefined, durationMs = 600): string {
   const [target, setTarget] = useState(() => resolveSubtleColor(colorKey) ?? TRANSPARENT);
+  // Whether we've ever successfully resolved a real color for this hook
+  // instance. Until then, any correction is establishing the initial state
+  // (not a visible transition) and should snap instead of animating -
+  // otherwise every cell would visibly fade in from transparent once its
+  // CSS custom property finally resolves.
+  const [instant, setInstant] = useState(true);
+  const hasResolvedOnceRef = useRef(false);
 
   useEffect(() => {
     // The CSS custom property backing this color can still be unset on the
@@ -53,16 +62,17 @@ export function useBackgroundColorTween(colorKey: string | undefined, durationMs
     // frames until it actually resolves, instead of getting stuck on one bad
     // read forever.
     let frame: number | null = null;
-    let attempts = 0;
+    const start = window.performance.now();
 
     const tryResolve = (): void => {
       const resolved = resolveSubtleColor(colorKey);
       if (resolved) {
+        setInstant(!hasResolvedOnceRef.current);
+        hasResolvedOnceRef.current = true;
         setTarget(resolved);
         return;
       }
-      attempts += 1;
-      if (attempts < MAX_RESOLVE_ATTEMPTS) {
+      if (window.performance.now() - start < MAX_RESOLVE_MS) {
         frame = window.requestAnimationFrame(tryResolve);
       }
     };
@@ -76,7 +86,12 @@ export function useBackgroundColorTween(colorKey: string | undefined, durationMs
     };
   }, [colorKey]);
 
-  const displayed = useTween(target, { durationMs, interpolate: lerpOklab, isEqual: oklabEqual });
+  const displayed = useTween(target, {
+    durationMs,
+    interpolate: lerpOklab,
+    isEqual: oklabEqual,
+    instant,
+  });
   return formatRgb(rgb(displayed));
 }
 

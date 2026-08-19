@@ -13,30 +13,17 @@ interface UseTweenOptions<T> {
   durationMs?: number;
   interpolate: (from: T, to: T, t: number) => T;
   isEqual: (a: T, b: T) => boolean;
+  // When true for the render that produces a new `value`, that specific
+  // update is applied immediately instead of animating - e.g. a caller
+  // correcting a placeholder first reading to the real one shouldn't count
+  // as a visible transition. Only gates that one update; later value
+  // changes with instant=false animate normally.
+  instant?: boolean;
 }
-
-// Values often only settle to their real reading a moment after the page
-// loads (CSS custom properties not yet inserted, round data not yet
-// fetched, etc.) - that settling shouldn't be a visible animation, only
-// genuine changes after the app has finished loading should tween. Grace
-// period is measured from module load, which is close enough to page load
-// for this purpose, and comfortably covers both the color hook's CSS-var
-// retry loop and typical round-data fetch times.
-const pageLoadedAt = typeof window !== 'undefined' ? window.performance.now() : 0;
-const INITIAL_LOAD_GRACE_MS = 2000;
-
-// Tests drive their own fake requestAnimationFrame/performance clocks (see
-// AnimatedNumber.test.tsx) that aren't in the same time domain as
-// pageLoadedAt above - opting out under Vitest keeps this grace period from
-// silently turning every animation in those tests into an instant snap.
-const isWithinInitialLoadGrace = (): boolean =>
-  typeof window !== 'undefined' &&
-  !import.meta.env.VITEST &&
-  window.performance.now() - pageLoadedAt < INITIAL_LOAD_GRACE_MS;
 
 export function useTween<T>(
   value: T,
-  { durationMs = 400, interpolate, isEqual }: UseTweenOptions<T>,
+  { durationMs = 400, interpolate, isEqual, instant = false }: UseTweenOptions<T>,
 ): T {
   const [displayed, setDisplayed] = useState(value);
   const displayedRef = useRef(value);
@@ -59,12 +46,7 @@ export function useTween<T>(
 
     const from = displayedRef.current;
 
-    if (
-      prefersReducedMotion ||
-      isEqual(value, from) ||
-      durationMs <= 0 ||
-      isWithinInitialLoadGrace()
-    ) {
+    if (prefersReducedMotion || isEqual(value, from) || durationMs <= 0 || instant) {
       displayedRef.current = value;
       setDisplayed(value);
       return;
@@ -94,7 +76,7 @@ export function useTween<T>(
         frameRef.current = null;
       }
     };
-  }, [value, durationMs, interpolate, isEqual]);
+  }, [value, durationMs, interpolate, isEqual, instant]);
 
   return displayed;
 }

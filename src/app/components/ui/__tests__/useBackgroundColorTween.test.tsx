@@ -11,6 +11,11 @@ function TestCell({ colorKey }: { colorKey: string | undefined }): React.ReactEl
   return <div data-testid="cell" style={{ backgroundColor: bg }} />;
 }
 
+function TestCellAnimated({ colorKey }: { colorKey: string | undefined }): React.ReactElement {
+  const bg = useBackgroundColorTween(colorKey, 400);
+  return <div data-testid="cell" style={{ backgroundColor: bg }} />;
+}
+
 /**
  * Regression test: a pirate whose name-cell color key is 'nfc-green' from
  * the very first render (the default odds tier) previously stayed stuck
@@ -22,10 +27,12 @@ function TestCell({ colorKey }: { colorKey: string | undefined }): React.ReactEl
 describe('useBackgroundColorTween', () => {
   let rafQueue: { id: number; cb: (now: number) => void }[];
   let nextRafId: number;
+  let now: number;
 
   beforeEach(() => {
     rafQueue = [];
     nextRafId = 1;
+    now = 0;
     vi.stubGlobal(
       'requestAnimationFrame',
       vi.fn((cb: (t: number) => void) => {
@@ -40,6 +47,7 @@ describe('useBackgroundColorTween', () => {
         rafQueue = rafQueue.filter(entry => entry.id !== id);
       }),
     );
+    vi.stubGlobal('performance', { now: () => now });
   });
 
   afterEach(() => {
@@ -47,11 +55,12 @@ describe('useBackgroundColorTween', () => {
     vi.restoreAllMocks();
   });
 
-  const flushRaf = (times: number): void => {
+  const flushRaf = (times: number, step = 16): void => {
     act(() => {
       for (let i = 0; i < times && rafQueue.length > 0; i++) {
         const frame = rafQueue.shift()!;
-        frame.cb(0);
+        now += step;
+        frame.cb(now);
       }
     });
   };
@@ -108,5 +117,34 @@ describe('useBackgroundColorTween', () => {
 
     expect(screen.getByTestId('cell').style.backgroundColor).toBe('rgba(0, 0, 0, 0)');
     expect(rafQueue).toHaveLength(0);
+  });
+
+  /**
+   * Regression test: establishing a cell's first-ever color (whether on the
+   * very first render or after a few CSS-var retries) must never itself be
+   * a visible animation - only a real colorKey change afterward (e.g. a
+   * pirate winning) should tween. An earlier attempt at this used a global
+   * page-load timer, which incorrectly suppressed genuine changes that
+   * happened to land shortly after mount too (e.g. a fast round switch).
+   */
+  it('snaps to the first resolved color but animates a later genuine colorKey change', () => {
+    mockCssVar({
+      '--chakra-colors-nfc-green-subtle': ['#50C17F'],
+      '--chakra-colors-nfc-red-subtle': ['#F76C6C'],
+    });
+
+    const { rerender } = render(<TestCellAnimated colorKey="nfc-green" />);
+
+    expect(screen.getByTestId('cell').style.backgroundColor).toBe('rgb(80, 193, 127)');
+    expect(rafQueue).toHaveLength(0);
+
+    rerender(<TestCellAnimated colorKey="nfc-red" />);
+
+    expect(rafQueue.length).toBeGreaterThan(0);
+    expect(screen.getByTestId('cell').style.backgroundColor).not.toBe('rgb(247, 108, 108)');
+
+    flushRaf(30);
+
+    expect(screen.getByTestId('cell').style.backgroundColor).toBe('rgb(247, 108, 108)');
   });
 });
