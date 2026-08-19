@@ -1,12 +1,10 @@
-import { Button, Drawer, Portal, Stack, CloseButton, Text, Separator } from '@chakra-ui/react';
+import { Button, Drawer, Portal, Stack, CloseButton, Separator } from '@chakra-ui/react';
 import * as React from 'react';
 import { FaBalanceScale, FaCode, FaTable } from 'react-icons/fa';
 import { FaMagnifyingGlassChart } from 'react-icons/fa6';
 
 import { useDisclosureState } from '../../hooks/useDisclosureState';
-import { useCurrentRound } from '../../stores';
 import { getReactScanEnabled, setReactScanEnabled } from '../../util/reactScan';
-import RoundInput from '../inputs/RoundInput';
 import { AllBetsModal } from '../modals/AllBetsModal';
 import { BacktestComparisonModal } from '../modals/BacktestComparisonModal';
 import { RoundJsonModal } from '../modals/RoundJsonModal';
@@ -21,7 +19,6 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
   const jsonModal = useDisclosureState(false);
   const allBetsModal = useDisclosureState(false);
   const backtestModal = useDisclosureState(false);
-  const currentRoundFromCdn = useCurrentRound();
   const [isReactScanEnabled, setIsReactScanEnabled] = React.useState(getReactScanEnabled);
 
   const handleReactScanToggle = React.useCallback((): void => {
@@ -52,17 +49,6 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
               </Drawer.Header>
               <Drawer.Body>
                 <Stack gap={3}>
-                  <Stack gap={1} align="stretch">
-                    <Text fontSize="sm" fontWeight="medium">
-                      Change round
-                    </Text>
-                    <Text fontSize="xs" color="fg.muted">
-                      Current round on Neopets:{' '}
-                      {currentRoundFromCdn > 0 ? currentRoundFromCdn : '—'}
-                    </Text>
-                    <RoundInput />
-                  </Stack>
-                  <Separator />
                   <SettingsSwitch
                     icon={FaMagnifyingGlassChart}
                     label="React Scan"
