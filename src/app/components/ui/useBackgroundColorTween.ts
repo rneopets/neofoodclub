@@ -3,14 +3,27 @@ import { useEffect, useState, type CSSProperties } from 'react';
 
 import { useTween } from './useTween';
 
-const resolveSubtleColor = (colorKey: string | undefined): Oklab => {
-  if (!colorKey || typeof window === 'undefined') {
-    return { mode: 'oklab', l: 0, a: 0, b: 0, alpha: 0 };
+const TRANSPARENT: Oklab = { mode: 'oklab', l: 0, a: 0, b: 0, alpha: 0 };
+
+// Safety net so a colorKey that can genuinely never resolve doesn't retry
+// forever - real resolution succeeds within a frame or two once Chakra's
+// stylesheet is in the DOM.
+const MAX_RESOLVE_ATTEMPTS = 30;
+
+// Returns null (instead of a color) when colorKey is set but the backing CSS
+// custom property can't be read/parsed yet, so callers can tell "off" apart
+// from "not ready yet" and retry only the latter.
+const resolveSubtleColor = (colorKey: string | undefined): Oklab | null => {
+  if (!colorKey) {
+    return TRANSPARENT;
+  }
+  if (typeof window === 'undefined') {
+    return null;
   }
   const raw = window
     .getComputedStyle(document.documentElement)
     .getPropertyValue(`--chakra-colors-${colorKey}-subtle`);
-  return oklab(raw) ?? { mode: 'oklab', l: 0, a: 0, b: 0, alpha: 0 };
+  return oklab(raw) ?? null;
 };
 
 const lerpOklab = (from: Oklab, to: Oklab, t: number): Oklab => ({
@@ -29,13 +42,38 @@ const oklabEqual = (x: Oklab, y: Oklab): boolean =>
 // Interpolates in OKLab so e.g. nfc-green <-> nfc-red doesn't pass through
 // a muddy midpoint the way a raw RGB lerp would.
 export function useBackgroundColorTween(colorKey: string | undefined, durationMs = 600): string {
-  // Lazy-initialized in case the CSS vars aren't applied yet on the very
-  // first render; the effect below re-resolves post-paint (it also runs
-  // once right after mount, not just on colorKey changes), correcting that
-  // initial read if needed.
-  const [target, setTarget] = useState(() => resolveSubtleColor(colorKey));
+  const [target, setTarget] = useState(() => resolveSubtleColor(colorKey) ?? TRANSPARENT);
+
   useEffect(() => {
-    setTarget(resolveSubtleColor(colorKey));
+    // The CSS custom property backing this color can still be unset on the
+    // very first read - its stylesheet insertion isn't guaranteed to have
+    // run before this effect does. colorKey often never changes again after
+    // mount (e.g. a pirate that's been in the default tier the whole time),
+    // so a single re-read on mount isn't enough: keep retrying on successive
+    // frames until it actually resolves, instead of getting stuck on one bad
+    // read forever.
+    let frame: number | null = null;
+    let attempts = 0;
+
+    const tryResolve = (): void => {
+      const resolved = resolveSubtleColor(colorKey);
+      if (resolved) {
+        setTarget(resolved);
+        return;
+      }
+      attempts += 1;
+      if (attempts < MAX_RESOLVE_ATTEMPTS) {
+        frame = window.requestAnimationFrame(tryResolve);
+      }
+    };
+
+    tryResolve();
+
+    return (): void => {
+      if (frame !== null) {
+        window.cancelAnimationFrame(frame);
+      }
+    };
   }, [colorKey]);
 
   const displayed = useTween(target, { durationMs, interpolate: lerpOklab, isEqual: oklabEqual });
