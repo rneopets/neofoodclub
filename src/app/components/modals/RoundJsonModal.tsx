@@ -237,12 +237,8 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
                     hasError={previewError !== null}
                   />
                 </Stack>
-                <Box minH="300px">
-                  {previewLoading ? (
-                    <Text fontSize="sm" color="fg.muted">
-                      Loading round {previewRound}...
-                    </Text>
-                  ) : previewError ? (
+                <Box minH="300px" opacity={previewLoading ? 0.6 : 1} transition="opacity 0.15s">
+                  {previewError ? (
                     <Text fontSize="sm" color="nfc-red.fg">
                       {previewError}
                     </Text>
