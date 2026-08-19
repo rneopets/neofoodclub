@@ -15,6 +15,25 @@ interface UseTweenOptions<T> {
   isEqual: (a: T, b: T) => boolean;
 }
 
+// Values often only settle to their real reading a moment after the page
+// loads (CSS custom properties not yet inserted, round data not yet
+// fetched, etc.) - that settling shouldn't be a visible animation, only
+// genuine changes after the app has finished loading should tween. Grace
+// period is measured from module load, which is close enough to page load
+// for this purpose, and comfortably covers both the color hook's CSS-var
+// retry loop and typical round-data fetch times.
+const pageLoadedAt = typeof window !== 'undefined' ? window.performance.now() : 0;
+const INITIAL_LOAD_GRACE_MS = 2000;
+
+// Tests drive their own fake requestAnimationFrame/performance clocks (see
+// AnimatedNumber.test.tsx) that aren't in the same time domain as
+// pageLoadedAt above - opting out under Vitest keeps this grace period from
+// silently turning every animation in those tests into an instant snap.
+const isWithinInitialLoadGrace = (): boolean =>
+  typeof window !== 'undefined' &&
+  !import.meta.env.VITEST &&
+  window.performance.now() - pageLoadedAt < INITIAL_LOAD_GRACE_MS;
+
 export function useTween<T>(
   value: T,
   { durationMs = 400, interpolate, isEqual }: UseTweenOptions<T>,
@@ -40,7 +59,12 @@ export function useTween<T>(
 
     const from = displayedRef.current;
 
-    if (prefersReducedMotion || isEqual(value, from) || durationMs <= 0) {
+    if (
+      prefersReducedMotion ||
+      isEqual(value, from) ||
+      durationMs <= 0 ||
+      isWithinInitialLoadGrace()
+    ) {
       displayedRef.current = value;
       setDisplayed(value);
       return;
