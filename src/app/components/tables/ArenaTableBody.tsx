@@ -571,10 +571,14 @@ const PirateRow = React.memo(
 
       return (
         <Td textAlign="end" className="nfc-color-tween" style={fillColorStyle(winBg, winColorKey)}>
-          <AnimatedNumber value={logitProb} format={v => displayAsPercent(v, 1)} />
+          <AnimatedNumber
+            value={logitProb}
+            format={v => displayAsPercent(v, 1)}
+            persistKey={`pirate-${arenaId}-${pirateIndex}-logitProb`}
+          />
         </Td>
       );
-    }, [logitProb, useLogitModel, bigBrain, winBg, winColorKey]);
+    }, [logitProb, useLogitModel, bigBrain, winBg, winColorKey, arenaId, pirateIndex]);
 
     const faElement = useMemo(() => {
       if (!bigBrain) {
@@ -583,10 +587,14 @@ const PirateRow = React.memo(
 
       return (
         <Td textAlign="end" className="nfc-color-tween" style={fillColorStyle(winBg, winColorKey)}>
-          <AnimatedNumber value={pirateFA} precision={0} />
+          <AnimatedNumber
+            value={pirateFA}
+            precision={0}
+            persistKey={`pirate-${arenaId}-${pirateIndex}-fa`}
+          />
         </Td>
       );
-    }, [pirateFA, bigBrain, winBg, winColorKey]);
+    }, [pirateFA, bigBrain, winBg, winColorKey, arenaId, pirateIndex]);
 
     const legacyProbElements = useMemo(() => {
       if (!bigBrain) {
@@ -604,25 +612,47 @@ const PirateRow = React.memo(
             className="nfc-color-tween"
             style={fillColorStyle(winBg, winColorKey)}
           >
-            <AnimatedNumber value={legacyProbMin} format={v => displayAsPercent(v, 1)} />
+            <AnimatedNumber
+              value={legacyProbMin}
+              format={v => displayAsPercent(v, 1)}
+              persistKey={`pirate-${arenaId}-${pirateIndex}-legacyProbMin`}
+            />
           </Td>
           <Td
             textAlign="end"
             className="nfc-color-tween"
             style={fillColorStyle(winBg, winColorKey)}
           >
-            <AnimatedNumber value={legacyProbMax} format={v => displayAsPercent(v, 1)} />
+            <AnimatedNumber
+              value={legacyProbMax}
+              format={v => displayAsPercent(v, 1)}
+              persistKey={`pirate-${arenaId}-${pirateIndex}-legacyProbMax`}
+            />
           </Td>
           <Td
             textAlign="end"
             className="nfc-color-tween"
             style={fillColorStyle(winBg, winColorKey)}
           >
-            <AnimatedNumber value={legacyProbStd} format={v => displayAsPercent(v, 1)} />
+            <AnimatedNumber
+              value={legacyProbStd}
+              format={v => displayAsPercent(v, 1)}
+              persistKey={`pirate-${arenaId}-${pirateIndex}-legacyProbStd`}
+            />
           </Td>
         </>
       );
-    }, [legacyProbMin, legacyProbMax, legacyProbStd, useLogitModel, bigBrain, winBg, winColorKey]);
+    }, [
+      legacyProbMin,
+      legacyProbMax,
+      legacyProbStd,
+      useLogitModel,
+      bigBrain,
+      winBg,
+      winColorKey,
+      arenaId,
+      pirateIndex,
+    ]);
 
     const faDetailsElement = useMemo(() => {
       if (!foods) {
@@ -711,10 +741,14 @@ const PirateRow = React.memo(
           className="nfc-color-tween"
           style={fillColorStyle(payoutBg, payoutBackground)}
         >
-          <AnimatedNumber value={payout} format={v => displayAsPercent(v, 1)} />
+          <AnimatedNumber
+            value={payout}
+            format={v => displayAsPercent(v, 1)}
+            persistKey={`pirate-${arenaId}-${pirateIndex}-payout`}
+          />
         </Td>
       );
-    }, [payout, payoutBackground, payoutBg, bigBrain]);
+    }, [payout, payoutBackground, payoutBg, bigBrain, arenaId, pirateIndex]);
 
     // Odds comparison logic
     const oddsIncreased = currentOdds! > openingOdds!;
@@ -755,7 +789,11 @@ const PirateRow = React.memo(
         {faElement}
         {faDetailsElement}
         <Td textAlign="end" className="nfc-color-tween" style={fillColorStyle(winBg, winColorKey)}>
-          <AnimatedNumber value={openingOdds!} precision={0} />
+          <AnimatedNumber
+            value={openingOdds!}
+            precision={0}
+            persistKey={`pirate-${arenaId}-${pirateIndex}-openingOdds`}
+          />
           :1
         </Td>
         <Td
@@ -776,7 +814,11 @@ const PirateRow = React.memo(
               </Box>
             )}
             <Text fontWeight={oddsChanged ? 'bold' : 'normal'}>
-              <AnimatedNumber value={currentOdds!} precision={0} />
+              <AnimatedNumber
+                value={currentOdds!}
+                precision={0}
+                persistKey={`pirate-${arenaId}-${pirateIndex}-currentOdds`}
+              />
               :1
             </Text>
           </Box>

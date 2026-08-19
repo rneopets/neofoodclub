@@ -149,12 +149,20 @@ const PirateInfoRow = React.memo(
           {pirateName}
         </Td>
         <Td style={{ textAlign: 'end' }}>
-          <AnimatedNumber value={opening} precision={0} />
+          <AnimatedNumber
+            value={opening}
+            precision={0}
+            persistKey={`pirate-${arenaId}-${pirateIndex}-openingOdds`}
+          />
           :1
         </Td>
         <Td style={{ textAlign: 'end' }}>
           <Text fontWeight={current === opening ? 'normal' : 'bold'}>
-            <AnimatedNumber value={current} precision={0} />
+            <AnimatedNumber
+              value={current}
+              precision={0}
+              persistKey={`pirate-${arenaId}-${pirateIndex}-currentOdds`}
+            />
             :1
           </Text>
         </Td>

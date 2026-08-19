@@ -119,6 +119,38 @@ describe('AnimatedNumber', () => {
     expect(screen.getByText('1234.50%')).toBeInTheDocument();
   });
 
+  /**
+   * Regression test: a row can unmount and remount at the same table
+   * position (e.g. a different pirate occupying the same slot after a
+   * round switch) - a fresh AnimatedNumber instance has no history of its
+   * own to tween from and would otherwise just snap straight to the new
+   * value. With a persistKey, it recovers the last value shown under that
+   * key (from whatever instance displayed it last) and animates from
+   * there instead.
+   */
+  it('recovers the last value for a persistKey across an unmount/remount and animates from it', () => {
+    const { unmount } = render(<AnimatedNumber value={20} persistKey="pirate-0-0-currentOdds" />);
+    unmount();
+
+    render(<AnimatedNumber value={24} persistKey="pirate-0-0-currentOdds" />);
+
+    expect(screen.getByText('20')).toBeInTheDocument();
+    expect(rafQueue.length).toBeGreaterThan(0);
+
+    flushFrames(400);
+    expect(screen.getByText('24')).toBeInTheDocument();
+  });
+
+  it('with no persistKey, a fresh instance just shows the new value with nothing to animate from', () => {
+    const { unmount } = render(<AnimatedNumber value={20} />);
+    unmount();
+
+    render(<AnimatedNumber value={24} />);
+
+    expect(screen.getByText('24')).toBeInTheDocument();
+    expect(rafQueue).toHaveLength(0);
+  });
+
   it('jumps instantly when prefers-reduced-motion is set', () => {
     vi.spyOn(window, 'matchMedia').mockImplementation(
       query =>
