@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Dialog,
   Portal,
@@ -236,41 +237,43 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
                     hasError={previewError !== null}
                   />
                 </Stack>
-                {previewLoading ? (
-                  <Text fontSize="sm" color="fg.muted">
-                    Loading round {previewRound}...
-                  </Text>
-                ) : previewError ? (
-                  <Text fontSize="sm" color="nfc-red.fg">
-                    {previewError}
-                  </Text>
-                ) : (
-                  <CodeBlock.AdapterProvider value={shikiAdapter}>
-                    <CodeBlock.Root code={formattedJson} language="json">
-                      <CodeBlock.Header>
-                        <HStack gap={2} flex={1}>
-                          <CodeBlock.Title>
-                            <Icon as={FaCode} color="nfc-green.solid" />
-                            {displayedRoundData.round || 'unknown'}.json
-                          </CodeBlock.Title>
-                          <Badge size="sm" colorPalette="nfc-blue">
-                            JSON
-                          </Badge>
-                        </HStack>
-                        <CodeBlock.CopyTrigger asChild>
-                          <IconButton variant="ghost" size="2xs">
-                            <CodeBlock.CopyIndicator />
-                          </IconButton>
-                        </CodeBlock.CopyTrigger>
-                      </CodeBlock.Header>
-                      <CodeBlock.Content maxH="calc(100vh - 300px)" overflowY="auto">
-                        <CodeBlock.Code>
-                          <CodeBlock.CodeText />
-                        </CodeBlock.Code>
-                      </CodeBlock.Content>
-                    </CodeBlock.Root>
-                  </CodeBlock.AdapterProvider>
-                )}
+                <Box minH="300px">
+                  {previewLoading ? (
+                    <Text fontSize="sm" color="fg.muted">
+                      Loading round {previewRound}...
+                    </Text>
+                  ) : previewError ? (
+                    <Text fontSize="sm" color="nfc-red.fg">
+                      {previewError}
+                    </Text>
+                  ) : (
+                    <CodeBlock.AdapterProvider value={shikiAdapter}>
+                      <CodeBlock.Root code={formattedJson} language="json">
+                        <CodeBlock.Header>
+                          <HStack gap={2} flex={1}>
+                            <CodeBlock.Title>
+                              <Icon as={FaCode} color="nfc-green.solid" />
+                              {displayedRoundData.round || 'unknown'}.json
+                            </CodeBlock.Title>
+                            <Badge size="sm" colorPalette="nfc-blue">
+                              JSON
+                            </Badge>
+                          </HStack>
+                          <CodeBlock.CopyTrigger asChild>
+                            <IconButton variant="ghost" size="2xs">
+                              <CodeBlock.CopyIndicator />
+                            </IconButton>
+                          </CodeBlock.CopyTrigger>
+                        </CodeBlock.Header>
+                        <CodeBlock.Content maxH="calc(100vh - 300px)" overflowY="auto">
+                          <CodeBlock.Code>
+                            <CodeBlock.CodeText />
+                          </CodeBlock.Code>
+                        </CodeBlock.Content>
+                      </CodeBlock.Root>
+                    </CodeBlock.AdapterProvider>
+                  )}
+                </Box>
               </Stack>
             </Dialog.Body>
             <Dialog.Footer>
