@@ -35,7 +35,6 @@ import {
   useCustomOddsMode,
   useRoundStore,
   useBetProbabilities,
-  useSelectedRound,
 } from '../../stores';
 import { displayAsPercent, displayAsPercentSmart, getMaxSmartPercentDecimals } from '../../util';
 import BetAmountInput from '../bets/BetAmountInput';
@@ -388,17 +387,22 @@ const PayoutTable = React.memo((): React.ReactElement => {
 
   const calculated = useCalculationsStatus();
   const winningBetBinary = useWinningBetBinary();
-  const selectedRound = useSelectedRound();
+  // calculations is a new object reference every time recalculate() runs
+  // (round switches, live odds polling, bet changes) - which is exactly
+  // when a cell's color could change, so it's a more complete trigger than
+  // the round number alone (the round number changes synchronously, before
+  // the fetch resolves and colors actually update).
+  const calculations = useRoundStore(state => state.calculations);
 
   const tableRef = useRef<HTMLTableElement>(null);
 
   useEffect(() => {
-    // Work around a browser repaint bug: after a round switch, some cells'
-    // background-color transitions leave stale pixels on screen even though
-    // the DOM's computed style is already correct (verified in devtools -
-    // computed backgroundColor reads transparent while the cell still shows
-    // the previous round's color). Toggling display forces a full repaint,
-    // which a paint-only style change isn't reliably triggering here.
+    // Work around a browser repaint bug: some cells' background-color
+    // transitions leave stale pixels on screen even though the DOM's
+    // computed style is already correct (verified in devtools - computed
+    // backgroundColor reads transparent while the cell still shows the
+    // previous color). Toggling display forces a full repaint, which a
+    // paint-only style change isn't reliably triggering here.
     const el = tableRef.current;
     if (!el) {
       return;
@@ -407,7 +411,7 @@ const PayoutTable = React.memo((): React.ReactElement => {
     el.style.display = 'none';
     void el.offsetHeight;
     el.style.display = previousDisplay;
-  }, [selectedRound]);
+  }, [calculations]);
 
   // Use individual hooks instead of object selector to avoid infinite loops
   const totalBetAmounts = useTotalBetAmounts();
