@@ -4,6 +4,7 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  ScatterController,
   Tooltip,
   Legend,
   TooltipItem,
@@ -30,7 +31,15 @@ import PayoutScatter from './PayoutScatter';
 
 import { useColorMode } from '@/components/ui/color-mode';
 
-ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, annotationPlugin);
+ChartJS.register(
+  LinearScale,
+  PointElement,
+  LineElement,
+  ScatterController,
+  Tooltip,
+  Legend,
+  annotationPlugin,
+);
 
 interface ChartPoint {
   x: number;
