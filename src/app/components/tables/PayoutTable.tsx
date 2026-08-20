@@ -1,4 +1,5 @@
 import { Box, HStack, IconButton, Skeleton, Spacer, Table, Text } from '@chakra-ui/react';
+import { oklab, rgb, formatRgb, type Oklab } from 'culori';
 import React, { useCallback, useMemo } from 'react';
 import { FaArrowDown, FaArrowUp } from 'react-icons/fa6';
 
@@ -41,6 +42,7 @@ import BetAmountInput from '../bets/BetAmountInput';
 import PlaceThisBetButton from '../bets/PlaceThisBetButton';
 import AnimatedNumber from '../ui/AnimatedNumber';
 import TextTooltip from '../ui/TextTooltip';
+import { useTween } from '../ui/useTween';
 
 import Td from './Td';
 
@@ -70,6 +72,53 @@ const stickySubmitHeaderProps = {
   ...stickySubmitColumnProps,
   zIndex: 2,
 } as const;
+
+const resolveSubtleColor = (colorKey: string | undefined): Oklab => {
+  if (!colorKey || typeof window === 'undefined') {
+    return { mode: 'oklab', l: 0, a: 0, b: 0, alpha: 0 };
+  }
+  const raw = window
+    .getComputedStyle(document.documentElement)
+    .getPropertyValue(`--chakra-colors-${colorKey}-subtle`);
+  return oklab(raw) ?? { mode: 'oklab', l: 0, a: 0, b: 0, alpha: 0 };
+};
+
+const lerpOklab = (from: Oklab, to: Oklab, t: number): Oklab => ({
+  mode: 'oklab',
+  l: (from.l ?? 0) + ((to.l ?? 0) - (from.l ?? 0)) * t,
+  a: (from.a ?? 0) + ((to.a ?? 0) - (from.a ?? 0)) * t,
+  b: (from.b ?? 0) + ((to.b ?? 0) - (from.b ?? 0)) * t,
+  alpha: (from.alpha ?? 1) + ((to.alpha ?? 1) - (from.alpha ?? 1)) * t,
+});
+
+const oklabEqual = (x: Oklab, y: Oklab): boolean =>
+  x.l === y.l && x.a === y.a && x.b === y.b && (x.alpha ?? 1) === (y.alpha ?? 1);
+
+// Animates a cell's background color frame-by-frame in JS instead of via a
+// CSS transition, which proved unreliable here: cells could get stuck
+// showing a stale color after a round switch even though the DOM's computed
+// style was already correct (a browser repaint bug), and workarounds that
+// forced a repaint afterward either didn't fix it consistently or
+// introduced their own visible glitches. Reuses the same tween mechanics
+// AnimatedNumber uses for numbers.
+//
+// Interpolates in OKLab (a perceptually-uniform color space) rather than
+// raw sRGB - a plain RGB lerp between e.g. nfc-green and nfc-red (a direct
+// win-to-loss flip on the same bet slot) passes through a muddy tan/khaki
+// midpoint, since red and green are near-opposite on the RGB cube.
+function useBackgroundColorTween(colorKey: string | undefined, durationMs = 600): string {
+  const target = useMemo(() => resolveSubtleColor(colorKey), [colorKey]);
+  const displayed = useTween(target, { durationMs, interpolate: lerpOklab, isEqual: oklabEqual });
+  return formatRgb(rgb(displayed));
+}
+
+const fillColorStyle = (
+  backgroundColor: string,
+  colorKey: string | undefined,
+): React.CSSProperties => ({
+  backgroundColor,
+  color: colorKey ? `var(--chakra-colors-${colorKey}-fg)` : 'inherit',
+});
 
 const PirateNameCell = React.memo(
   ({ arenaIndex, pirateIndex }: { arenaIndex: number; pirateIndex: number }) => {
@@ -136,8 +185,10 @@ const PirateNameCell = React.memo(
       return parts.join(', ');
     }, [hasModifications, hasCustomOdds, hasCustomProbs]);
 
+    const bg = useBackgroundColorTween(bgColor);
+
     return (
-      <Td {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}>
+      <Td className="nfc-color-tween" style={fillColorStyle(bg, bgColor)}>
         <HStack gap={1} display="inline-flex" alignItems="center">
           <Text>{pirateName}</Text>
           {hasModifications && (
@@ -237,10 +288,6 @@ const PayoutTableRow = React.memo(
     const handleSwapUp = useCallback(() => onSwapUp(betIndex), [onSwapUp, betIndex]);
     const handleSwapDown = useCallback(() => onSwapDown(betIndex), [onSwapDown, betIndex]);
 
-    if (betBinary === 0) {
-      return null;
-    }
-
     const erBg = er - 1 < 0 ? 'nfc-red' : undefined;
     const neBg = ne - 1 < 0 ? 'nfc-red' : undefined;
 
@@ -262,6 +309,16 @@ const PayoutTableRow = React.memo(
 
     const mbBg = maxBetColor;
 
+    // Hooks must run unconditionally before the betBinary===0 early return below.
+    const betNumBgAnimated = useBackgroundColorTween(betNumBgColor);
+    const erBgAnimated = useBackgroundColorTween(erBg);
+    const neBgAnimated = useBackgroundColorTween(neBg);
+    const mbBgAnimated = useBackgroundColorTween(mbBg);
+
+    if (betBinary === 0) {
+      return null;
+    }
+
     const betKey = `bet-${currentBet}-${betIndex + 1}`;
 
     let baBg = undefined;
@@ -273,7 +330,7 @@ const PayoutTableRow = React.memo(
 
     return (
       <Table.Row key={betKey}>
-        <Td {...(betNumBgColor && { layerStyle: 'fill.subtle', colorPalette: betNumBgColor })}>
+        <Td className="nfc-color-tween" style={fillColorStyle(betNumBgAnimated, betNumBgColor)}>
           <HStack px={2} gap={1}>
             <Spacer />
             <Text minW="2ch" textAlign="center">
@@ -326,8 +383,8 @@ const PayoutTableRow = React.memo(
           <MemoizedTextTooltip text={probabilityTooltip.text} content={probabilityTooltip.label} />
         </Td>
         <Td
-          style={{ textAlign: 'end' }}
-          {...(erBg && { layerStyle: 'fill.subtle', colorPalette: erBg })}
+          className="nfc-color-tween"
+          style={{ textAlign: 'end', ...fillColorStyle(erBgAnimated, erBg) }}
         >
           <MemoizedTextTooltip
             text={expectedRatioTooltip.text}
@@ -335,14 +392,14 @@ const PayoutTableRow = React.memo(
           />
         </Td>
         <Td
-          style={{ textAlign: 'end' }}
-          {...(neBg && { layerStyle: 'fill.subtle', colorPalette: neBg })}
+          className="nfc-color-tween"
+          style={{ textAlign: 'end', ...fillColorStyle(neBgAnimated, neBg) }}
         >
           <MemoizedTextTooltip text={netExpectedTooltip.text} content={netExpectedTooltip.label} />
         </Td>
         <Td
-          style={{ textAlign: 'end' }}
-          {...(mbBg && { layerStyle: 'fill.subtle', colorPalette: mbBg })}
+          className="nfc-color-tween"
+          style={{ textAlign: 'end', ...fillColorStyle(mbBgAnimated, mbBg) }}
         >
           {mbBg ? (
             <TextTooltip
@@ -466,6 +523,8 @@ const PayoutTable = React.memo((): React.ReactElement => {
   );
   const totalErBg = totalBetExpectedRatios - 1 < 0 ? 'nfc-red' : undefined;
   const totalNeBg = totalBetNetExpected - 1 < 0 ? 'nfc-red' : undefined;
+  const totalErBgAnimated = useBackgroundColorTween(totalErBg);
+  const totalNeBgAnimated = useBackgroundColorTween(totalNeBg);
 
   return (
     <Table.Root size="sm" width="auto" interactive>
@@ -519,8 +578,8 @@ const PayoutTable = React.memo((): React.ReactElement => {
               </Table.ColumnHeader>
               <Table.ColumnHeader style={{ textAlign: 'end' }} />
               <Table.ColumnHeader
-                style={{ textAlign: 'end' }}
-                {...(totalErBg && { layerStyle: 'fill.subtle', colorPalette: totalErBg })}
+                className="nfc-color-tween"
+                style={{ textAlign: 'end', ...fillColorStyle(totalErBgAnimated, totalErBg) }}
               >
                 <MemoizedTextTooltip
                   text={totalExpectedRatioTooltip.text}
@@ -528,8 +587,8 @@ const PayoutTable = React.memo((): React.ReactElement => {
                 />
               </Table.ColumnHeader>
               <Table.ColumnHeader
-                style={{ textAlign: 'end' }}
-                {...(totalNeBg && { layerStyle: 'fill.subtle', colorPalette: totalNeBg })}
+                className="nfc-color-tween"
+                style={{ textAlign: 'end', ...fillColorStyle(totalNeBgAnimated, totalNeBg) }}
               >
                 <MemoizedTextTooltip
                   text={totalNetExpectedTooltip.text}
