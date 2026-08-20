@@ -1,29 +1,17 @@
+import { getPreviousRoundsFeed } from '../data/previousRoundsFeed';
+
 import type { BacktestRound } from './types';
 
 export async function fetchPreviousRounds(
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
+  options?: { forceRefresh?: boolean },
 ): Promise<{ rounds: BacktestRound[]; newestRound: number }> {
-  const response = await fetch('https://cdn.neofood.club/previous.jsonl', {
-    signal: signal ?? null,
-  });
-  const text = await response.text();
-
-  const lines = text
-    .trim()
-    .split('\n')
-    .filter(line => line.trim().length > 0);
+  const lines = await getPreviousRoundsFeed(
+    options?.forceRefresh ? { forceRefresh: true } : undefined,
+  );
 
   const rounds: BacktestRound[] = [];
-  for (const line of lines) {
-    const parsed = JSON.parse(line) as {
-      round: number;
-      pirates: number[][];
-      openingOdds: number[][];
-      currentOdds: number[][];
-      winners?: number[] | null;
-      foods?: number[][] | null;
-    };
-
+  for (const parsed of lines) {
     if (parsed.winners === null || parsed.winners === undefined) {
       continue;
     }
