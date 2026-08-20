@@ -1,4 +1,4 @@
-import { HStack } from '@chakra-ui/react';
+import { Badge, HStack, Text } from '@chakra-ui/react';
 import React, { useCallback, useMemo, useRef } from 'react';
 import { FaLock, FaLockOpen } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
@@ -53,7 +53,14 @@ const BetGenerationMaxBetToggle = (): React.ReactElement => {
   return (
     <SegmentedSettingsRow
       icon={FaLock}
-      label="Bet Generation Max Bet"
+      label={
+        <HStack gap={2}>
+          <Text>Bet Generation Max Bet</Text>
+          <Badge colorPalette="cyan" variant="subtle" size="sm" rounded="full">
+            New
+          </Badge>
+        </HStack>
+      }
       value={mode}
       options={options}
       onChange={persistMode}
