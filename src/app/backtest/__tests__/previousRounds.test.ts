@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { clearPreviousRoundsFeedCache } from '../../data/previousRoundsFeed';
 import { fetchPreviousRounds } from '../previousRounds';
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  clearPreviousRoundsFeedCache();
 });
 
 describe('fetchPreviousRounds', () => {

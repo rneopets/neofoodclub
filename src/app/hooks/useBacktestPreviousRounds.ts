@@ -50,11 +50,11 @@ export function useBacktestPreviousRounds({
   const [state, setState] = useState<InternalState>(INITIAL_STATE);
   const hasLoadedRef = useRef<boolean>(false);
 
-  const load = useCallback(async (signal: AbortSignal): Promise<void> => {
+  const load = useCallback(async (signal: AbortSignal, forceRefresh = false): Promise<void> => {
     setState(prev => ({ ...prev, status: 'loading', error: null }));
 
     try {
-      const { rounds, newestRound } = await fetchPreviousRounds(signal);
+      const { rounds, newestRound } = await fetchPreviousRounds(signal, { forceRefresh });
       setState({ status: 'ready', rounds, newestRound, error: null });
     } catch (err) {
       if (isAbortError(err)) {
@@ -78,7 +78,7 @@ export function useBacktestPreviousRounds({
 
   const refetch = useCallback((): void => {
     const controller = new AbortController();
-    void load(controller.signal);
+    void load(controller.signal, true);
   }, [load]);
 
   return {
