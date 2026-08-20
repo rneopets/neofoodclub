@@ -8,7 +8,7 @@ import type {
 import type { Bet, BetAmount, OddsData, ProbabilitiesData } from '../../types/bets';
 import { BET_AMOUNT_DEFAULT } from '../constants';
 import { computePiratesBinary } from '../maths';
-import { anyBetsExist, type BetSetPosition } from '../util';
+import { anyBetsExist, type BetSetPosition, type BetGenerationMaxBetMode } from '../util';
 
 import { useBetStore } from './betStore';
 import { useRoundStore } from './roundStore';
@@ -160,6 +160,10 @@ export const useToggleUseLogitModel = (): (() => void) =>
 export const useMaxBet = (): number => useRoundStore(state => state.maxBet);
 export const useSetMaxBet = (): ((maxBet: number) => void) =>
   useRoundStore(state => state.setMaxBet);
+export const useBetGenerationMaxBetMode = (): BetGenerationMaxBetMode =>
+  useRoundStore(state => state.betGenerationMaxBetMode);
+export const useSetBetGenerationMaxBetMode = (): ((mode: BetGenerationMaxBetMode) => void) =>
+  useRoundStore(state => state.setBetGenerationMaxBetMode);
 export const useSetCustomOdds = (): ((odds: OddsData) => void) =>
   useRoundStore(state => state.setCustomOdds);
 export const useSetCustomProbs = (): ((probs: ProbabilitiesData) => void) =>

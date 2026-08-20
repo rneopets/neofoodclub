@@ -8,6 +8,7 @@ import { defaultRoundData, BET_AMOUNT_MIN } from '../constants';
 import {
   calculateRoundData,
   getBetSetPosition,
+  getBetGenerationMaxBetMode,
   parseBetUrl,
   getTableMode,
   getUseWebDomain,
@@ -21,6 +22,7 @@ import {
   makeBetURL,
   getMaxBet,
   type BetSetPosition,
+  type BetGenerationMaxBetMode,
 } from '../util';
 import {
   rebuildEngine,
@@ -102,6 +104,7 @@ interface RoundStore {
   oddsTimeline: boolean;
   useLogitModel: boolean;
   maxBet: number;
+  betGenerationMaxBetMode: BetGenerationMaxBetMode;
 
   // Calculations
   calculations: RoundCalculationResult;
@@ -128,6 +131,7 @@ interface RoundStore {
   toggleCustomOddsMode: () => void;
   toggleUseLogitModel: () => void;
   setMaxBet: (maxBet: number) => void;
+  setBetGenerationMaxBetMode: (mode: BetGenerationMaxBetMode) => void;
 
   // Calculations
   recalculate: () => void;
@@ -166,6 +170,7 @@ export const useRoundStore = create<RoundStore>()(
     oddsTimeline: getOddsTimelineMode(),
     useLogitModel: getUseLogitModel(),
     maxBet: getMaxBet(0),
+    betGenerationMaxBetMode: getBetGenerationMaxBetMode(),
 
     // Calculations
     calculations: emptyCalculations,
@@ -319,6 +324,9 @@ export const useRoundStore = create<RoundStore>()(
         }
       }
     },
+
+    setBetGenerationMaxBetMode: (mode: BetGenerationMaxBetMode): void =>
+      set({ betGenerationMaxBetMode: mode }),
 
     toggleBigBrain: (): void => set(state => ({ bigBrain: !state.bigBrain })),
     toggleFaDetails: (): void => set(state => ({ faDetails: !state.faDetails })),
