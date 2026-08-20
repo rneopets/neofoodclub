@@ -23,6 +23,7 @@ import { computeDuplicateBetGroupColors } from '../../utils/duplicateBetColors';
 import ClearBetsButton from '../bets/ClearBetsButton';
 import PirateSelect from '../bets/PirateSelect';
 import AnimatedNumber from '../ui/AnimatedNumber';
+import { fillColorStyle, useBackgroundColorTween } from '../ui/useBackgroundColorTween';
 
 import Td from './Td';
 
@@ -121,28 +122,47 @@ const PirateInfoRow = React.memo(
     const opening = openingOdds[pirateIndex + 1] as number;
     const current = currentOdds[pirateIndex + 1] as number;
 
+    const winColorKey = didPirateWin ? 'nfc-green' : undefined;
+    const winBg = useBackgroundColorTween(winColorKey);
+    // The pirate-name cell's "off" state is a real odds-tier color, not
+    // transparent, so it needs its own tween separate from winBg.
+    const nameCellColorKey = didPirateWin ? 'nfc-green' : getPirateBgColor(opening);
+    const nameCellBg = useBackgroundColorTween(nameCellColorKey);
+
     const fullPirateName = FULL_PIRATE_NAMES.get(pirateId) as string;
     const pirateName = PIRATE_NAMES.get(pirateId) as string;
 
     return (
       <Table.Row
         key={`pirate-${pirateId}-${arenaId}-${pirateIndex}`}
-        {...(didPirateWin && { layerStyle: 'fill.subtle', colorPalette: 'nfc-green' })}
+        className="nfc-color-tween"
+        style={fillColorStyle(winBg, winColorKey)}
       >
         <Td
           whiteSpace="nowrap"
           onClick={onClick}
           cursor="pointer"
           title={`Click to view odds timeline for ${fullPirateName}`}
-          layerStyle={didPirateWin ? 'fill.subtle' : 'fill.muted'}
-          colorPalette={didPirateWin ? 'nfc-green' : getPirateBgColor(opening)}
+          className="nfc-color-tween"
+          style={fillColorStyle(nameCellBg, nameCellColorKey)}
         >
           {pirateName}
         </Td>
-        <Td style={{ textAlign: 'end' }}>{opening}:1</Td>
+        <Td style={{ textAlign: 'end' }}>
+          <AnimatedNumber
+            value={opening}
+            precision={0}
+            persistKey={`pirate-${arenaId}-${pirateIndex}-openingOdds`}
+          />
+          :1
+        </Td>
         <Td style={{ textAlign: 'end' }}>
           <Text fontWeight={current === opening ? 'normal' : 'bold'}>
-            <AnimatedNumber value={current} precision={0} />
+            <AnimatedNumber
+              value={current}
+              precision={0}
+              persistKey={`pirate-${arenaId}-${pirateIndex}-currentOdds`}
+            />
             :1
           </Text>
         </Td>
@@ -162,9 +182,6 @@ const TableHeaderCell = React.memo(
   ({ arenaId, onArenaClick }: { arenaId: number; onArenaClick: (arenaId: number) => void }) => {
     const arenaRatios = useArenaRatios();
     const bigBrain = useBigBrain();
-    const arenaRatioString = bigBrain
-      ? `(${displayAsPercent(arenaRatios[arenaId] as number, 1)})`
-      : '';
 
     return (
       <Table.ColumnHeader
@@ -174,7 +191,12 @@ const TableHeaderCell = React.memo(
         title={`Click to view odds timeline for ${ARENA_NAMES[arenaId]}`}
         _hover={{ bg: 'bg.muted' }}
       >
-        {ARENA_NAMES[arenaId]} {arenaRatioString}
+        {ARENA_NAMES[arenaId]}{' '}
+        {bigBrain && arenaRatios[arenaId] !== undefined && (
+          <>
+            (<AnimatedNumber value={arenaRatios[arenaId]} format={v => displayAsPercent(v, 1)} />)
+          </>
+        )}
       </Table.ColumnHeader>
     );
   },
@@ -219,8 +241,13 @@ const ArenaCell = React.memo(
 
           return (
             <PirateInfoRow
+              // Keyed by slot (arena + position), not pirateId: a different
+              // pirate occupies the same slot on a different round, and
+              // keying by pirateId would remount the row on every round
+              // switch, resetting the color tween's in-flight state instead
+              // of letting it animate from the previous color.
               // eslint-disable-next-line react/no-array-index-key
-              key={`pirate-${pirateId}-${arenaId}-${pirateIndex}`}
+              key={`pirate-${arenaId}-${pirateIndex}`}
               pirateId={pirateId}
               pirateIndex={pirateIndex}
               arenaId={arenaId}
