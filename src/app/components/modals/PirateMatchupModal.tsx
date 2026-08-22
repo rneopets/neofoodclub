@@ -35,6 +35,8 @@ import {
 } from '../charts/MatchupSplitDoughnut';
 import { MatchupTrendChart } from '../charts/MatchupTrendChart';
 
+import { Tooltip } from '@/components/ui/tooltip';
+
 interface PirateMatchupModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -61,10 +63,6 @@ function pirateFullName(id: number): string {
 
 function displayPercent(value: number): string {
   return `${(value * 100).toFixed(2)}%`;
-}
-
-function streakText(side: string, count: number): string {
-  return `${side} won ${count} in a row`;
 }
 
 function PirateColumn({
@@ -421,14 +419,16 @@ export function PirateMatchupModal({
                           <HStack gap={4} flexWrap="wrap">
                             {aLongest && (
                               <Text fontSize="xs" color="fg.muted">
-                                Longest {aName} run: <b>{streakText(aName, aLongest.count)}</b>{' '}
-                                (rounds {aLongest.startRound}&ndash;{aLongest.endRound})
+                                Longest {aName} streak:{' '}
+                                <b>{aLongest.count} shared arenas won in a row</b> (rounds{' '}
+                                {aLongest.startRound}&ndash;{aLongest.endRound})
                               </Text>
                             )}
                             {bLongest && (
                               <Text fontSize="xs" color="fg.muted">
-                                Longest {bName} run: <b>{streakText(bName, bLongest.count)}</b>{' '}
-                                (rounds {bLongest.startRound}&ndash;{bLongest.endRound})
+                                Longest {bName} streak:{' '}
+                                <b>{bLongest.count} shared arenas won in a row</b> (rounds{' '}
+                                {bLongest.startRound}&ndash;{bLongest.endRound})
                               </Text>
                             )}
                           </HStack>
@@ -439,26 +439,29 @@ export function PirateMatchupModal({
                             </Text>
                             <HStack gap={1}>
                               {recentForm.map(encounter => (
-                                <Box
+                                <Tooltip
                                   key={`${encounter.round}-${encounter.arena}`}
-                                  w="10px"
-                                  h="10px"
-                                  borderRadius="2px"
-                                  bg={
-                                    encounter.outcome === 'a'
-                                      ? MATCHUP_A_COLOR
-                                      : encounter.outcome === 'b'
-                                        ? MATCHUP_B_COLOR
-                                        : MATCHUP_NEITHER_COLOR
-                                  }
-                                  title={`Round ${encounter.round} (${ARENA_NAMES[encounter.arena]}): ${
+                                  content={`Round ${encounter.round} (${ARENA_NAMES[encounter.arena]}): ${
                                     encounter.outcome === 'a'
                                       ? `${aName} won`
                                       : encounter.outcome === 'b'
                                         ? `${bName} won`
                                         : 'neither won'
                                   }`}
-                                />
+                                >
+                                  <Box
+                                    w="10px"
+                                    h="10px"
+                                    borderRadius="2px"
+                                    bg={
+                                      encounter.outcome === 'a'
+                                        ? MATCHUP_A_COLOR
+                                        : encounter.outcome === 'b'
+                                          ? MATCHUP_B_COLOR
+                                          : MATCHUP_NEITHER_COLOR
+                                    }
+                                  />
+                                </Tooltip>
                               ))}
                             </HStack>
                             {(aCurrent || bCurrent) && (
