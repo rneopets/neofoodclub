@@ -25,6 +25,7 @@ import {
   displayAsPercentSmart,
   getMaxSmartPercentDecimals,
 } from '../../util';
+import AnimatedNumber from '../ui/AnimatedNumber';
 import TextTooltip from '../ui/TextTooltip';
 
 import PayoutScatter from './PayoutScatter';
@@ -315,7 +316,11 @@ const PayoutCharts: React.FC = React.memo(() => {
 
       const { totalWinningOdds, totalWinningPayoff } = calculationsData;
 
-      const tableRows = data.map(dataObj => {
+      // Rows are keyed by position (not by their payout value) so that when the
+      // underlying odds tick and every outcome's value shifts, each row stays
+      // mounted at its slot - which is what lets the AnimatedNumber cells tween
+      // from their old value to the new one instead of remounting and snapping.
+      const tableRows = data.map((dataObj, rowIndex) => {
         let bgColor: string | undefined = undefined;
 
         if (
@@ -330,27 +335,58 @@ const PayoutCharts: React.FC = React.memo(() => {
           }
         }
 
+        // The row set can shrink and regrow (bet sets changing size, round
+        // switches), so a row at position N can unmount and remount later with
+        // different data - persistKey lets its numbers recover the last value
+        // shown at that slot and animate from there instead of snapping.
+        const persistPrefix = `payout-chart-${title}-${rowIndex}`;
+
         return (
           <Table.Row
-            key={dataObj.value}
+            // eslint-disable-next-line react/no-array-index-key
+            key={`payout-chart-row-${title}-${rowIndex}`}
             {...(bgColor && { layerStyle: 'fill.subtle', colorPalette: bgColor })}
           >
-            <Table.Cell textAlign="end">{dataObj.value.toLocaleString()}</Table.Cell>
+            <Table.Cell textAlign="end">
+              <AnimatedNumber
+                value={dataObj.value}
+                precision={0}
+                persistKey={`${persistPrefix}-value`}
+              />
+            </Table.Cell>
             <Table.Cell textAlign="end">
               <TextTooltip
-                text={displayAsPercent(dataObj.probability, probabilityDecimals)}
+                text={
+                  <AnimatedNumber
+                    value={dataObj.probability}
+                    format={v => displayAsPercent(v, probabilityDecimals)}
+                    persistKey={`${persistPrefix}-probability`}
+                  />
+                }
                 content={displayAsPercentSmart(dataObj.probability)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
               <TextTooltip
-                text={displayAsPercent(dataObj.cumulative || 0, cumulativeDecimals)}
+                text={
+                  <AnimatedNumber
+                    value={dataObj.cumulative || 0}
+                    format={v => displayAsPercent(v, cumulativeDecimals)}
+                    persistKey={`${persistPrefix}-cumulative`}
+                  />
+                }
                 content={displayAsPercentSmart(dataObj.cumulative || 0)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
               <TextTooltip
-                text={displayAsPercent(dataObj.tail || 0, tailDecimals)}
+                text={
+                  <AnimatedNumber
+                    value={dataObj.tail || 0}
+                    format={v => displayAsPercent(v, tailDecimals)}
+                    persistKey={`${persistPrefix}-tail`}
+                  />
+                }
                 content={displayAsPercentSmart(dataObj.tail || 0)}
               />
             </Table.Cell>
