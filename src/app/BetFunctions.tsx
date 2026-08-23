@@ -46,6 +46,7 @@ import { PayoutData, RoundData, RoundState, RoundCalculationResult } from '../ty
 import { Bet, BetAmount } from '../types/bets';
 
 import PirateSelect from './components/bets/PirateSelect';
+import AnimatedNumber from './components/ui/AnimatedNumber';
 import SettingsBox from './components/ui/SettingsBox';
 import {
   ARENA_NAMES,
@@ -1503,10 +1504,27 @@ const BetBadges = React.memo(
       const result: React.ReactElement[] = [];
       const isInvalid = hasDuplicateBets || !calculated;
 
+      // Badges appear and disappear as conditions change (and the card itself
+      // unmounts on round switches), so each one is keyed per bet set to
+      // recover the last value shown for this slot and animate from there.
+      const persistPrefix = `betset-${index}`;
+
       if (totalTer !== null) {
         result.push(
           <Badge key="ter" colorPalette="nfc-teal" variant="surface">
-            TER: {totalTer.toFixed(3)}
+            {/* Badge is inline-flex with a 4px gap between flex items, so the
+                AnimatedNumber span would be its own item and the gap would show as
+                extra space around the number. Wrapping label + number in one span
+                keeps them a single flex item with normal inline spacing (same on the
+                other badges containing an AnimatedNumber below). */}
+            <span>
+              TER:{' '}
+              <AnimatedNumber
+                value={totalTer}
+                format={v => v.toFixed(3)}
+                persistKey={`${persistPrefix}-ter`}
+              />
+            </span>
           </Badge>,
         );
       }
@@ -1531,7 +1549,16 @@ const BetBadges = React.memo(
         const bustEmoji = bustChance > 99 ? '💀' : '';
         result.push(
           <Badge key="bust-chance" variant="surface">
-            {bustEmoji} {Math.floor(bustChance)}% Bust
+            {/* One span = one flex item, so the badge's gap doesn't land around the number */}
+            <span>
+              {bustEmoji && `${bustEmoji} `}
+              <AnimatedNumber
+                value={bustChance}
+                format={v => `${Math.floor(v)}%`}
+                persistKey={`${persistPrefix}-bust-chance`}
+              />{' '}
+              Bust
+            </span>
           </Badge>,
         );
       }
@@ -1547,13 +1574,31 @@ const BetBadges = React.memo(
       if (betAmountsTotal < lowestProfit) {
         result.push(
           <Badge key="guaranteed-profit" colorPalette="nfc-green" variant="surface">
-            💰 Guaranteed profit ({lowestProfit - betAmountsTotal}+ NP)
+            {/* One span = one flex item, so the badge's gap doesn't land around the number */}
+            <span>
+              💰 Guaranteed profit (
+              <AnimatedNumber
+                value={lowestProfit - betAmountsTotal}
+                precision={0}
+                persistKey={`${persistPrefix}-guaranteed-profit`}
+              />
+              + NP)
+            </span>
           </Badge>,
         );
       }
 
       return result;
-    }, [betCount, isRoundOver, hasDuplicateBets, calculated, payoutTables, betAmounts, totalTer]);
+    }, [
+      betCount,
+      isRoundOver,
+      hasDuplicateBets,
+      calculated,
+      payoutTables,
+      betAmounts,
+      totalTer,
+      index,
+    ]);
 
     const resultsBadges: React.ReactElement[] = useMemo(() => {
       const result: React.ReactElement[] = [];
@@ -1578,6 +1623,12 @@ const BetBadges = React.memo(
         });
       }
 
+      // Same per-bet-set persistKey scheme as the performance badges above:
+      // navigating between finished rounds remounts these, so each number
+      // recovers the last value shown for this bet set's slot and animates
+      // from there instead of snapping.
+      const persistPrefix = `betset-${index}`;
+
       if (unitsWon === 0) {
         result.push(
           <Badge key="busted" variant="surface">
@@ -1587,14 +1638,30 @@ const BetBadges = React.memo(
       } else {
         result.push(
           <Badge key="units-won" colorPalette="nfc-green" variant="surface">
-            Units won: {unitsWon.toLocaleString()}
+            {/* One span = one flex item, so the badge's gap doesn't land around the number */}
+            <span>
+              Units won:{' '}
+              <AnimatedNumber
+                value={unitsWon}
+                precision={0}
+                persistKey={`${persistPrefix}-units-won`}
+              />
+            </span>
           </Badge>,
         );
 
         if (npWon > 0) {
           result.push(
             <Badge key="np-won" colorPalette="nfc-green" variant="surface">
-              💰 NP won: {npWon.toLocaleString()}
+              {/* One span = one flex item, so the badge's gap doesn't land around the number */}
+              <span>
+                💰 NP won:{' '}
+                <AnimatedNumber
+                  value={npWon}
+                  precision={0}
+                  persistKey={`${persistPrefix}-np-won`}
+                />
+              </span>
             </Badge>,
           );
         }
@@ -1610,6 +1677,7 @@ const BetBadges = React.memo(
       betAmounts,
       hasDuplicateBets,
       calculated,
+      index,
     ]);
 
     const prefixBadges = useMemo(
