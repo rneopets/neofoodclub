@@ -36,6 +36,28 @@ const getBadgeLabels = (container: HTMLElement): string[] =>
     .filter(el => el.getAttribute('aria-label') !== 'edit')
     .map((el): string => el.getAttribute('aria-label')!);
 
+// Chakra's Badge recipe is inline-flex with a gap between its flex items (the badge's
+// direct children), so if the AnimatedNumber span is a direct child of the badge, that
+// gap renders as extra space around the number. The DOM text itself is clean - it's a
+// layout effect jsdom can't show, so guard the structure instead: every number span in
+// a badge must be wrapped (not a direct child), and the badge's content must be a
+// single element child so nothing else becomes a second flex item. Plain-text badges
+// are one contiguous text run already, so they're exempt.
+const assertNumberBadgesWrapTheirSpan = (container: HTMLElement): void => {
+  for (const badge of Array.from(container.querySelectorAll('.chakra-badge'))) {
+    const numberSpans = Array.from(badge.querySelectorAll('span[aria-label]'));
+    if (numberSpans.length === 0) {
+      continue;
+    }
+
+    for (const span of numberSpans) {
+      expect(span.parentElement, `number in badge "${badge.textContent}"`).not.toBe(badge);
+    }
+
+    expect(Array.from(badge.children), `badge "${badge.textContent}"`).toHaveLength(1);
+  }
+};
+
 // The badge values come from the same store calculations the component reads, so
 // mirror BetBadges' formulas here (including which badges appear at all) to build
 // the expected aria-labels in DOM order.
@@ -142,6 +164,10 @@ describe('BetBadges (AnimatedNumber)', () => {
     // The only aria-label spans in the rendered component are the badge numbers,
     // in DOM order: TER then bust chance.
     expect(getBadgeLabels(container!)).toEqual(buildExpectedLabels(calcs, false));
+
+    // The number badges must keep their spans wrapped so the badge's flex gap can't
+    // land around the numbers (see assertNumberBadgesWrapTheirSpan).
+    assertNumberBadgesWrapTheirSpan(container!);
   });
 
   it('shows the units-won and NP-won badges as numbers matching the calculations once the round is over', () => {
@@ -167,5 +193,8 @@ describe('BetBadges (AnimatedNumber)', () => {
 
     // DOM order: TER, then units won and NP won.
     expect(getBadgeLabels(container!)).toEqual(buildExpectedLabels(calcs, true));
+
+    // Same wrapped-span guarantee for the results badges.
+    assertNumberBadgesWrapTheirSpan(container!);
   });
 });
