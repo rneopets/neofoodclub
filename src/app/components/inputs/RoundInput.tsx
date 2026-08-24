@@ -1,5 +1,6 @@
-import { Group, NumberInputControl, Text } from '@chakra-ui/react';
+import { Group, Text, chakra } from '@chakra-ui/react';
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa6';
 
 import { useDebouncedRoundInput } from '../../hooks/useDebouncedRoundInput';
 import { useSelectOnFocus } from '../../hooks/useSelectOnFocus';
@@ -24,6 +25,30 @@ interface RoundInputProps {
   /** Falls back to the store's error state when omitted. */
   hasError?: boolean;
 }
+
+// Full-height left/right stepper buttons (replacing the old tiny up/down control) for
+// easier tapping on mobile. Each carries a full 1px border; the attached Group overlaps
+// adjacent borders via negative margins so the whole control reads as one rounded box.
+const StepperButton = chakra('button', {
+  base: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    h: '8',
+    w: '7',
+    flexShrink: 0,
+    fontSize: 'sm',
+    lineHeight: '1',
+    color: 'fg.muted',
+    bg: 'bg.subtle',
+    borderWidth: '1px',
+    cursor: 'pointer',
+    userSelect: 'none',
+    transitionProperty: 'common',
+    _hover: { bg: 'bg.muted' },
+    _active: { bg: 'bg.emphasized' },
+  },
+});
 
 // this element is the number input to say which round's data you're viewing
 
@@ -109,6 +134,23 @@ const RoundInput: React.FC<RoundInputProps> = ({
     setTempValue(roundNumber.toString());
   }, [tempValue, currentRound]);
 
+  // Step the displayed round by +/-1 (clamped at min 1, matching NumberInputRoot's min).
+  // Steps from whatever is currently displayed, falling back to the selected round when
+  // empty/invalid. Like typing, this flows through tempValue + the debounced commit.
+  const stepRoundInput = useCallback(
+    (delta: number): void => {
+      const displayed = parseInt(tempValue, 10);
+      const base = isNaN(displayed) ? currentSelectedRound || 0 : displayed;
+      setTempValue(Math.max(1, base + delta).toString());
+    },
+    [tempValue, currentSelectedRound],
+  );
+
+  const stepperButtonProps = {
+    borderColor: hasError ? 'border.error' : 'border',
+    rounded: 0,
+  } as const;
+
   return (
     <Group attached w="full" gap={0} alignItems="stretch">
       <Text
@@ -119,7 +161,7 @@ const RoundInput: React.FC<RoundInputProps> = ({
         bg="bg.muted"
         borderWidth="1px"
         borderEndWidth="0"
-        borderColor="border"
+        borderColor={hasError ? 'border.error' : 'border'}
         roundedStart="md"
         roundedEnd={0}
         px="2"
@@ -130,25 +172,47 @@ const RoundInput: React.FC<RoundInputProps> = ({
       >
         Round
       </Text>
+      <StepperButton
+        {...stepperButtonProps}
+        type="button"
+        aria-label="Previous round"
+        data-testid="round-input-decrement"
+        onClick={(): void => stepRoundInput(-1)}
+      >
+        <FaChevronLeft />
+      </StepperButton>
       <NumberInputRoot
         value={tempValue}
         min={1}
         allowMouseWheel
+        showControl={false}
         onValueChange={handleChange}
         name="round-input"
         data-testid="round-input"
         size="xs"
         invalid={hasError}
+        flex="1"
+        minW="0"
       >
         <NumberInputField
           onFocus={selectRoundInput}
           onBlur={commitRoundInput}
           name="round-input-field"
           data-testid="round-input-field"
-          roundedStart={0}
+          rounded={0}
+          pe="2"
         />
-        <NumberInputControl />
       </NumberInputRoot>
+      <StepperButton
+        {...stepperButtonProps}
+        type="button"
+        aria-label="Next round"
+        data-testid="round-input-increment"
+        roundedEnd="md"
+        onClick={(): void => stepRoundInput(1)}
+      >
+        <FaChevronRight />
+      </StepperButton>
     </Group>
   );
 };
