@@ -8,7 +8,7 @@ import {
   FaStopwatch,
   FaTable,
 } from 'react-icons/fa';
-import { FaMagnifyingGlassChart } from 'react-icons/fa6';
+import { FaGauge, FaMagnifyingGlassChart } from 'react-icons/fa6';
 
 import { useDisclosureState } from '../../hooks/useDisclosureState';
 import { getReactScanEnabled, setReactScanEnabled } from '../../util/reactScan';
@@ -18,6 +18,7 @@ import { FcDataModal } from '../modals/FcDataModal';
 import { PirateMatchupModal } from '../modals/PirateMatchupModal';
 import { RoundEndDriftModal } from '../modals/RoundEndDriftModal';
 import { RoundJsonModal } from '../modals/RoundJsonModal';
+import { WasmEnginePerfModal } from '../modals/WasmEnginePerfModal';
 import SettingsSwitch from '../TableSettings/SettingsSwitch';
 
 interface DevModeDrawerProps {
@@ -29,6 +30,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
   const jsonModal = useDisclosureState(false);
   const allBetsModal = useDisclosureState(false);
   const backtestModal = useDisclosureState(false);
+  const perfModal = useDisclosureState(false);
   const driftModal = useDisclosureState(false);
   const matchupModal = useDisclosureState(false);
   const fcDataModal = useDisclosureState(false);
@@ -82,6 +84,10 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
                     <FaBalanceScale />
                     Compare Max-TER Models
                   </Button>
+                  <Button width="full" onClick={perfModal.onOpen}>
+                    <FaGauge />
+                    Wasm Engine Perf
+                  </Button>
                   <Button width="full" onClick={driftModal.onOpen}>
                     <FaStopwatch />
                     Round End-Time Drift
@@ -112,6 +118,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
       <RoundEndDriftModal isOpen={driftModal.isOpen} onClose={driftModal.onClose} />
       <PirateMatchupModal isOpen={matchupModal.isOpen} onClose={matchupModal.onClose} />
       <FcDataModal isOpen={fcDataModal.isOpen} onClose={fcDataModal.onClose} />
+      <WasmEnginePerfModal isOpen={perfModal.isOpen} onClose={perfModal.onClose} />
     </>
   );
 };
