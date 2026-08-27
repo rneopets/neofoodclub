@@ -259,8 +259,7 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
                 </Stack>
                 <HStack justify="space-between" flexWrap="wrap" gap={2}>
                   <Text fontSize="xs" color="fg.muted">
-                    Download the full previous-rounds history feed (~13MB) used by the backtesting
-                    tools.
+                    Download the full previous-rounds history feed (~13MB).
                   </Text>
                   <Button
                     size="xs"
