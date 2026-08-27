@@ -92,7 +92,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
                   </Button>
                   <Button width="full" onClick={fcDataModal.onOpen}>
                     <FaFileCsv />
-                    Import FC Data (NeoBot CSV)
+                    FC Data Visualizer (NeoBot CSV)
                   </Button>
                 </Stack>
               </Drawer.Body>

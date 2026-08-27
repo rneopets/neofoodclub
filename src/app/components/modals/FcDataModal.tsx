@@ -379,7 +379,7 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
         <Dialog.Positioner>
           <Dialog.Content>
             <Dialog.Header>
-              <Dialog.Title>FC Data Import</Dialog.Title>
+              <Dialog.Title>FC Data Visualizer</Dialog.Title>
               <Dialog.CloseTrigger asChild>
                 <CloseButton size="sm" />
               </Dialog.CloseTrigger>
