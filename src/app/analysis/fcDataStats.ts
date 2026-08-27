@@ -552,7 +552,7 @@ export function buildShareSummary(totals: FcDataTotals): string {
 
   const lines: string[] = [
     `NeoFoodClub stats: ${totals.roundsRecorded.toLocaleString()} rounds tracked`,
-    `Total won: ${Math.round(totals.totalUnitsWon).toLocaleString()} units | Win rate: ${(totals.winRate * 100).toFixed(1)}% | Avg/round: ${totals.averageUnitsPerRound.toFixed(1)} | ROI: ${totals.roi.toFixed(3)}x`,
+    `Total won: ${Math.round(totals.totalUnitsWon).toLocaleString()} units | Win rate: ${(totals.winRate * 100).toFixed(1)}% | ROI: ${totals.roi.toFixed(3)}x`,
   ];
 
   if (totals.bestRound) {
