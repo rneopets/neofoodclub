@@ -250,12 +250,14 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
                   <Text fontSize="xs" color="fg.muted">
                     Current round on Neopets: {currentRoundFromCdn > 0 ? currentRoundFromCdn : '—'}
                   </Text>
-                  <RoundInput
-                    selectedRound={previewRound}
-                    referenceRound={currentRoundFromCdn}
-                    onRoundChange={setPreviewRound}
-                    hasError={previewError !== null}
-                  />
+                  <Box maxW="170px">
+                    <RoundInput
+                      selectedRound={previewRound}
+                      referenceRound={currentRoundFromCdn}
+                      onRoundChange={setPreviewRound}
+                      hasError={previewError !== null}
+                    />
+                  </Box>
                 </Stack>
                 <HStack justify="space-between" flexWrap="wrap" gap={2}>
                   <Text fontSize="xs" color="fg.muted">
@@ -263,7 +265,8 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
                   </Text>
                   <Button
                     size="xs"
-                    variant="outline"
+                    variant="solid"
+                    colorPalette="nfc-green"
                     onClick={handleDownloadPreviousJsonl}
                     disabled={downloadStatus === 'downloading'}
                   >
