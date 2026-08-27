@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Card,
   Dialog,
   Portal,
   CloseButton,
@@ -14,11 +15,12 @@ import {
   Text,
 } from '@chakra-ui/react';
 import * as React from 'react';
-import { FaCode } from 'react-icons/fa';
+import { FaCode, FaDownload } from 'react-icons/fa';
 import type { HighlighterGeneric } from 'shiki';
 
 import { defaultRoundData } from '../../constants';
 import { useCurrentRound, useRoundStore } from '../../stores';
+import { downloadBlob } from '../../util/downloadFile';
 import RoundInput from '../inputs/RoundInput';
 
 import { RoundData } from '@/types';
@@ -143,6 +145,25 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
   const [previewLoading, setPreviewLoading] = React.useState(false);
   const [previewError, setPreviewError] = React.useState<string | null>(null);
 
+  const [downloadStatus, setDownloadStatus] = React.useState<'idle' | 'downloading' | 'error'>(
+    'idle',
+  );
+
+  const handleDownloadPreviousJsonl = React.useCallback(async (): Promise<void> => {
+    setDownloadStatus('downloading');
+    try {
+      const response = await fetch('https://cdn.neofood.club/previous.jsonl');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      downloadBlob(await response.blob(), 'previous.jsonl');
+      setDownloadStatus('idle');
+    } catch (error) {
+      console.error('Failed to download previous.jsonl:', error);
+      setDownloadStatus('error');
+    }
+  }, []);
+
   // Reset the preview to the live round each time the modal opens. Runs as a
   // layout effect so the reset is committed before the fetch effect below
   // sees `previewRound` in this same pass - otherwise the fetch effect would
@@ -223,20 +244,58 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
             </Dialog.Header>
             <Dialog.Body>
               <Stack gap={3}>
-                <Stack gap={1} align="stretch">
-                  <Text fontSize="sm" fontWeight="medium">
-                    Change round
-                  </Text>
-                  <Text fontSize="xs" color="fg.muted">
-                    Current round on Neopets: {currentRoundFromCdn > 0 ? currentRoundFromCdn : '—'}
-                  </Text>
-                  <RoundInput
-                    selectedRound={previewRound}
-                    referenceRound={currentRoundFromCdn}
-                    onRoundChange={setPreviewRound}
-                    hasError={previewError !== null}
-                  />
-                </Stack>
+                <HStack align="stretch" flexWrap="wrap" gap={3}>
+                  <Card.Root boxShadow="sm" flex="1" minW="200px">
+                    <Card.Body p={3}>
+                      <Stack gap={1}>
+                        <Text fontSize="sm" fontWeight="medium">
+                          Change round
+                        </Text>
+                        <Text fontSize="xs" color="fg.muted">
+                          Current round on Neopets:{' '}
+                          {currentRoundFromCdn > 0 ? currentRoundFromCdn : '—'}
+                        </Text>
+                        <Box maxW="170px">
+                          <RoundInput
+                            selectedRound={previewRound}
+                            referenceRound={currentRoundFromCdn}
+                            onRoundChange={setPreviewRound}
+                            hasError={previewError !== null}
+                          />
+                        </Box>
+                      </Stack>
+                    </Card.Body>
+                  </Card.Root>
+                  <Card.Root boxShadow="sm" flex="1" minW="200px">
+                    <Card.Body p={3}>
+                      <Stack gap={1}>
+                        <Text fontSize="sm" fontWeight="medium">
+                          Download history
+                        </Text>
+                        <Text fontSize="xs" color="fg.muted">
+                          Download the full previous-rounds history feed (~13MB).
+                        </Text>
+                        <Button
+                          size="xs"
+                          variant="solid"
+                          colorPalette="nfc-green"
+                          onClick={handleDownloadPreviousJsonl}
+                          disabled={downloadStatus === 'downloading'}
+                        >
+                          <FaDownload />
+                          {downloadStatus === 'downloading'
+                            ? 'Downloading...'
+                            : 'Download previous.jsonl'}
+                        </Button>
+                        {downloadStatus === 'error' && (
+                          <Text fontSize="xs" color="fg.error">
+                            Failed to download previous.jsonl.
+                          </Text>
+                        )}
+                      </Stack>
+                    </Card.Body>
+                  </Card.Root>
+                </HStack>
                 <Box minH="300px" opacity={previewLoading ? 0.6 : 1} transition="opacity 0.15s">
                   {previewError ? (
                     <Text fontSize="sm" color="nfc-red.fg">
