@@ -16,6 +16,7 @@ import {
 import { format } from 'date-fns';
 import * as React from 'react';
 import { FaChartBar, FaFileCsv } from 'react-icons/fa';
+import { LuExternalLink } from 'react-icons/lu';
 
 import { computeAdvancedStats, type FcDataAdvancedStats } from '../../analysis/fcDataAdvancedStats';
 import {
@@ -163,7 +164,8 @@ function FcDataTotalsSection({ totals }: { totals: FcDataTotals }): React.JSX.El
           value={
             totals.bestRound ? (
               <Link href={totals.bestRound.url} target="_blank" fontSize="lg">
-                #{totals.bestRound.round} ({formatUnits(totals.bestRound.unitsWon)})
+                #{totals.bestRound.round} ({formatUnits(totals.bestRound.unitsWon)}){' '}
+                <LuExternalLink />
               </Link>
             ) : (
               '-'
@@ -267,7 +269,8 @@ function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.J
                 <Table.Cell textAlign="right">
                   {month.bestRound && (
                     <Link href={month.bestRound.url} target="_blank" fontSize="sm">
-                      #{month.bestRound.round} ({formatUnits(month.bestRound.unitsWon)})
+                      #{month.bestRound.round} ({formatUnits(month.bestRound.unitsWon)}){' '}
+                      <LuExternalLink />
                     </Link>
                   )}
                 </Table.Cell>
@@ -311,7 +314,7 @@ function FcDataMissedRoundsSection({
               {gap.missingCount} round{gap.missingCount === 1 ? '' : 's'} missed between{' '}
               {afterUrl ? (
                 <Link href={afterUrl} target="_blank" fontSize="sm">
-                  #{gap.afterRound}
+                  #{gap.afterRound} <LuExternalLink />
                 </Link>
               ) : (
                 `#${gap.afterRound}`
@@ -319,7 +322,7 @@ function FcDataMissedRoundsSection({
               and{' '}
               {beforeUrl ? (
                 <Link href={beforeUrl} target="_blank" fontSize="sm">
-                  #{gap.beforeRound}
+                  #{gap.beforeRound} <LuExternalLink />
                 </Link>
               ) : (
                 `#${gap.beforeRound}`
