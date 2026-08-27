@@ -69,6 +69,11 @@ export interface FcDataMissedRoundGap {
   missingCount: number;
 }
 
+export type FcDataReturnBucket = 'bust' | 'partial' | 'profit' | 'double';
+
+/** Round counts per return bucket (see `classifyRoundReturn`). `total` is the sum of all four. */
+export type FcDataReturnDistribution = Record<FcDataReturnBucket, number> & { total: number };
+
 /** Number of bet lines with at least one non-zero pirate pick, decoded from the round's URL. */
 export function activeBetLineCount(url: string): number {
   const hashIndex = url.indexOf('#');
@@ -82,6 +87,45 @@ export function activeBetLineCount(url: string): number {
     }
   }
   return count;
+}
+
+/**
+ * Buckets a single round's return relative to its active bet lines: `bust`
+ * (won nothing), `partial` (won something but under 1x per line), `profit`
+ * (1x-2x per line), `double` (2x or more per line).
+ */
+export function classifyRoundReturn(row: FcDataRow): FcDataReturnBucket {
+  if (row.unitsWon === 0) {
+    return 'bust';
+  }
+
+  const lines = activeBetLineCount(row.url);
+  const roi = lines > 0 ? row.unitsWon / lines : 0;
+
+  if (roi < 1) {
+    return 'partial';
+  }
+  if (roi < 2) {
+    return 'profit';
+  }
+  return 'double';
+}
+
+export function computeReturnDistribution(rows: FcDataRow[]): FcDataReturnDistribution {
+  const distribution: FcDataReturnDistribution = {
+    bust: 0,
+    partial: 0,
+    profit: 0,
+    double: 0,
+    total: 0,
+  };
+
+  for (const row of rows) {
+    distribution[classifyRoundReturn(row)] += 1;
+    distribution.total += 1;
+  }
+
+  return distribution;
 }
 
 function longestWinStreak(rows: FcDataRow[]): FcDataWinStreak | null {

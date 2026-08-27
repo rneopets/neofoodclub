@@ -15,19 +15,24 @@ import {
 } from '@chakra-ui/react';
 import { format } from 'date-fns';
 import * as React from 'react';
-import { FaFileCsv } from 'react-icons/fa';
+import { FaChartBar, FaFileCsv } from 'react-icons/fa';
 
+import { computeAdvancedStats, type FcDataAdvancedStats } from '../../analysis/fcDataAdvancedStats';
 import {
   computeCumulativeSeries,
   computeMonthlyStats,
+  computeReturnDistribution,
   computeRoiSeries,
   computeTotals,
   findMissedRoundGaps,
   type FcDataMissedRoundGap,
   type FcDataMonthStats,
+  type FcDataReturnBucket,
+  type FcDataReturnDistribution,
   type FcDataTotals,
 } from '../../analysis/fcDataStats';
 import { parseFcDataCsv, type FcDataParseResult, type FcDataRow } from '../../data/fcDataCsv';
+import { useBacktestPreviousRounds } from '../../hooks/useBacktestPreviousRounds';
 import { FcDataCumulativeChart } from '../charts/FcDataCumulativeChart';
 import { FcDataMonthlyBarChart } from '../charts/FcDataMonthlyBarChart';
 import { FcDataRoiChart } from '../charts/FcDataRoiChart';
@@ -51,7 +56,7 @@ function displayPercent(value: number): string {
 }
 
 function formatRoi(value: number): string {
-  return `${value.toFixed(2)}x`;
+  return `${value.toFixed(3)}x`;
 }
 
 function roiColor(value: number): string {
@@ -178,6 +183,56 @@ function FcDataTotalsSection({ totals }: { totals: FcDataTotals }): React.JSX.El
   );
 }
 
+const RETURN_BUCKET_ORDER: FcDataReturnBucket[] = ['bust', 'partial', 'profit', 'double'];
+
+const RETURN_BUCKET_LABELS: Record<FcDataReturnBucket, string> = {
+  bust: 'Bust',
+  partial: 'Partial',
+  profit: 'Profit',
+  double: 'Double+',
+};
+
+const RETURN_BUCKET_COLORS: Record<FcDataReturnBucket, string> = {
+  bust: '#e53e3e',
+  partial: '#dd6b20',
+  profit: '#38a169',
+  double: '#3182ce',
+};
+
+function FcDataReturnDistributionSection({
+  distribution,
+}: {
+  distribution: FcDataReturnDistribution;
+}): React.JSX.Element | null {
+  if (distribution.total === 0) {
+    return null;
+  }
+
+  return (
+    <SectionCard title="Return Distribution">
+      <Box h="20px" borderRadius="md" overflow="hidden" display="flex">
+        {RETURN_BUCKET_ORDER.filter(bucket => distribution[bucket] > 0).map(bucket => (
+          <Box
+            key={bucket}
+            bg={RETURN_BUCKET_COLORS[bucket]}
+            flexBasis={`${(distribution[bucket] / distribution.total) * 100}%`}
+          />
+        ))}
+      </Box>
+      <Text fontSize="sm" color="fg.muted">
+        {RETURN_BUCKET_ORDER.map(
+          bucket =>
+            `${RETURN_BUCKET_LABELS[bucket]} ${displayPercent(distribution[bucket] / distribution.total)}`,
+        ).join(' · ')}
+      </Text>
+      <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+        Per round, relative to that round&apos;s active bet lines: Bust = won nothing, Partial =
+        under 1x, Profit = 1x-2x, Double+ = 2x or more.
+      </Text>
+    </SectionCard>
+  );
+}
+
 function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.JSX.Element {
   return (
     <SectionCard title="Per-Month Breakdown">
@@ -223,7 +278,7 @@ function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.J
       </Box>
       <Text fontSize="xs" color="fg.muted" fontStyle="italic">
         ROI is units won per active bet line (not real NP wagered - the CSV has no bet amounts),
-        where 1.00x means breaking even. Running ROI accumulates from the first recorded round
+        where 1.000x means breaking even. Running ROI accumulates from the first recorded round
         through the end of that month.
       </Text>
     </SectionCard>
@@ -299,6 +354,139 @@ function FcDataWarningsSection({
         ))}
       </Stack>
     </Stack>
+  );
+}
+
+const EXPOSURE_BAR_COLOR = '#3182ce';
+const MAX_EXPOSURE_ROWS = 10;
+
+function PirateExposureBar({
+  name,
+  rate,
+  maxRate,
+}: {
+  name: string;
+  rate: number;
+  maxRate: number;
+}): React.JSX.Element {
+  return (
+    <HStack gap={2}>
+      <Text fontSize="sm" w="120px" flexShrink={0} truncate>
+        {name}
+      </Text>
+      <Box flex={1} h="14px" bg="bg.muted" borderRadius="sm" overflow="hidden">
+        <Box h="full" bg={EXPOSURE_BAR_COLOR} w={`${(rate / maxRate) * 100}%`} />
+      </Box>
+      <Text fontSize="sm" w="46px" textAlign="right" flexShrink={0}>
+        {displayPercent(rate)}
+      </Text>
+    </HStack>
+  );
+}
+
+function FcDataAdvancedStatsSection({
+  stats,
+}: {
+  stats: FcDataAdvancedStats;
+}): React.JSX.Element | null {
+  if (stats.fingerprint.matchedRounds === 0) {
+    return null;
+  }
+
+  const topPirates = stats.pirateExposure.slice(0, MAX_EXPOSURE_ROWS);
+  const maxRate = Math.max(...topPirates.map(p => p.roundParticipationRate), 0.01);
+  const maxArenaRate = Math.max(...stats.arenaUsage.map(a => a.lineParticipationRate), 0.01);
+  const shapeTotal = stats.betShapes.total;
+
+  return (
+    <SectionCard title="Advanced Stats (from round history)">
+      <Text fontSize="xs" color="fg.muted">
+        Decoded from {stats.fingerprint.matchedRounds.toLocaleString()} round
+        {stats.fingerprint.matchedRounds === 1 ? '' : 's'} matched against the round history feed
+        {stats.fingerprint.unmatchedRounds > 0
+          ? ` (${stats.fingerprint.unmatchedRounds.toLocaleString()} not found)`
+          : ''}
+        .
+      </Text>
+
+      <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
+        <StatBlock
+          label="Avg pirates/line"
+          value={stats.fingerprint.averagePiratesPerLine.toFixed(2)}
+        />
+        <StatBlock
+          label="Avg unique pirates/round"
+          value={stats.fingerprint.averageUniquePiratesPerRound.toFixed(1)}
+        />
+        <StatBlock label="10-line rounds" value={displayPercent(stats.fingerprint.tenLineShare)} />
+        <StatBlock
+          label="Favorite anchor"
+          value={stats.favoriteAnchorPirate ? stats.favoriteAnchorPirate.name : '-'}
+          sub={
+            stats.favoriteAnchorPirate &&
+            `anchor in ${displayPercent(stats.favoriteAnchorPirate.share)} of rounds`
+          }
+        />
+      </SimpleGrid>
+
+      {topPirates.length > 0 && (
+        <Stack gap={2}>
+          <Text fontSize="sm" fontWeight="medium">
+            Most bet pirates:
+          </Text>
+          <Stack gap={1}>
+            {topPirates.map(pirate => (
+              <PirateExposureBar
+                key={pirate.pirateId}
+                name={pirate.name}
+                rate={pirate.roundParticipationRate}
+                maxRate={maxRate}
+              />
+            ))}
+          </Stack>
+          <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+            Share of matched rounds where the pirate appeared in at least one active bet line.
+            &quot;Net when included&quot; isn&apos;t shown per-pirate since a round&apos;s total
+            units won can&apos;t be split between co-occurring pirates without knowing which line
+            actually won.
+          </Text>
+        </Stack>
+      )}
+
+      <Stack gap={2}>
+        <Text fontSize="sm" fontWeight="medium">
+          Arena usage:
+        </Text>
+        <Stack gap={1}>
+          {stats.arenaUsage.map(arena => (
+            <PirateExposureBar
+              key={arena.arenaIndex}
+              name={arena.name}
+              rate={arena.lineParticipationRate}
+              maxRate={maxArenaRate}
+            />
+          ))}
+        </Stack>
+      </Stack>
+
+      {shapeTotal > 0 && (
+        <Stack gap={2}>
+          <Text fontSize="sm" fontWeight="medium">
+            Bet shapes:
+          </Text>
+          <Text fontSize="sm" color="fg.muted">
+            Gambit-shaped {displayPercent(stats.betShapes.gambitShaped / shapeTotal)} ·
+            Tenbet-shaped {displayPercent(stats.betShapes.tenbetShaped / shapeTotal)} · Other{' '}
+            {displayPercent(stats.betShapes.other / shapeTotal)}
+          </Text>
+          <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+            Gambit-shaped: every line is a subset of one fixed 5-pirate combo. Tenbet-shaped: one
+            pirate is held fixed across every line while the rest vary. Structural guesses only -
+            not based on which NeoBot command generated the bet.
+          </Text>
+        </Stack>
+      )}
+    </SectionCard>
   );
 }
 
@@ -409,8 +597,31 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
   const months = React.useMemo(() => computeMonthlyStats(rows), [rows]);
   const cumulativeSeries = React.useMemo(() => computeCumulativeSeries(rows), [rows]);
   const roiSeries = React.useMemo(() => computeRoiSeries(rows), [rows]);
+  const returnDistribution = React.useMemo(() => computeReturnDistribution(rows), [rows]);
   const missedRoundGaps = React.useMemo(() => findMissedRoundGaps(rows), [rows]);
   const rowsByRound = React.useMemo(() => new Map(rows.map(row => [row.round, row])), [rows]);
+
+  const [advancedStatsRequested, setAdvancedStatsRequested] = React.useState(false);
+  const feed = useBacktestPreviousRounds({ enabled: advancedStatsRequested });
+  const [advancedStats, setAdvancedStats] = React.useState<FcDataAdvancedStats | null>(null);
+  const lastComputedRef = React.useRef<{ rows: FcDataRow[]; newestRound: number } | null>(null);
+
+  React.useEffect(() => {
+    if (feed.status !== 'ready') {
+      return;
+    }
+    const last = lastComputedRef.current;
+    if (last && last.rows === rows && last.newestRound === feed.newestRound) {
+      return;
+    }
+    const roundsByNumber = new Map(feed.rounds.map(r => [r.round, r]));
+    setAdvancedStats(computeAdvancedStats(rows, roundsByNumber));
+    lastComputedRef.current = { rows, newestRound: feed.newestRound };
+  }, [feed.status, feed.rounds, feed.newestRound, rows]);
+
+  const handleLoadAdvancedStats = React.useCallback((): void => {
+    setAdvancedStatsRequested(true);
+  }, []);
 
   return (
     <Dialog.Root
@@ -478,9 +689,49 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
                       </Button>
                     </HStack>
 
+                    {!advancedStatsRequested && (
+                      <HStack justify="space-between" flexWrap="wrap" gap={2}>
+                        <Text fontSize="xs" color="fg.muted">
+                          Pirate/arena exposure and bet-shape stats need the full round history
+                          (~13MB, cached).
+                        </Text>
+                        <Button size="xs" variant="outline" onClick={handleLoadAdvancedStats}>
+                          <FaChartBar />
+                          Load Detailed Stats
+                        </Button>
+                      </HStack>
+                    )}
+                    {advancedStatsRequested && feed.status === 'loading' && (
+                      <Text fontSize="xs" color="fg.muted">
+                        Downloading round history (~13MB)...
+                      </Text>
+                    )}
+                    {advancedStatsRequested && feed.status === 'error' && (
+                      <HStack justify="space-between" flexWrap="wrap" gap={2}>
+                        <Text fontSize="xs" color="fg.error">
+                          {feed.error ?? 'Failed to load round history.'}
+                        </Text>
+                        <Button size="xs" variant="outline" onClick={() => feed.refetch()}>
+                          Retry
+                        </Button>
+                      </HStack>
+                    )}
+                    {advancedStatsRequested && feed.status === 'ready' && (
+                      <HStack justify="space-between" flexWrap="wrap" gap={2}>
+                        <Text fontSize="xs" color="fg.muted">
+                          Round history loaded (newest #{feed.newestRound.toLocaleString()}).
+                        </Text>
+                        <Button size="xs" variant="outline" onClick={() => feed.refetch()}>
+                          Refresh round history
+                        </Button>
+                      </HStack>
+                    )}
+
                     <FcDataWarningsSection warnings={state.result.warnings} />
 
                     <FcDataTotalsSection totals={totals} />
+
+                    <FcDataReturnDistributionSection distribution={returnDistribution} />
 
                     <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                       <FcDataCumulativeChart series={cumulativeSeries} />
@@ -492,6 +743,8 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
                     <FcDataMonthlyTable months={months} />
 
                     <FcDataMissedRoundsSection gaps={missedRoundGaps} rowsByRound={rowsByRound} />
+
+                    {advancedStats && <FcDataAdvancedStatsSection stats={advancedStats} />}
                   </>
                 )}
               </Stack>

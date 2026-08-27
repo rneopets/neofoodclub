@@ -4,8 +4,10 @@ import type { FcDataRow } from '../../data/fcDataCsv';
 import { wasmBetsIndicesToHash } from '../../wasmMath';
 import {
   activeBetLineCount,
+  classifyRoundReturn,
   computeCumulativeSeries,
   computeMonthlyStats,
+  computeReturnDistribution,
   computeRoiSeries,
   computeTotals,
   findMissedRoundGaps,
@@ -224,6 +226,59 @@ describe('activeBetLineCount', () => {
 
   it('returns 0 for a URL with no bet hash', () => {
     expect(activeBetLineCount('https://neofood.club/#round=1')).toBe(0);
+  });
+});
+
+describe('classifyRoundReturn', () => {
+  const oneLineUrl = makeBetUrl(1, [[1, 0, 0, 0, 0]]);
+  const twoLineUrl = makeBetUrl(1, [
+    [1, 0, 0, 0, 0],
+    [0, 2, 0, 0, 0],
+  ]);
+
+  it('classifies a round with no units won as bust', () => {
+    expect(classifyRoundReturn(makeRow(1, 0, new Date(2024, 0, 1), oneLineUrl))).toBe('bust');
+  });
+
+  it('classifies under 1x per line as partial', () => {
+    // 1 unit won / 2 active lines = 0.5x.
+    expect(classifyRoundReturn(makeRow(1, 1, new Date(2024, 0, 1), twoLineUrl))).toBe('partial');
+  });
+
+  it('classifies 1x up to 2x per line as profit (inclusive of 1x)', () => {
+    expect(classifyRoundReturn(makeRow(1, 1, new Date(2024, 0, 1), oneLineUrl))).toBe('profit');
+  });
+
+  it('classifies 2x or more per line as double', () => {
+    expect(classifyRoundReturn(makeRow(1, 2, new Date(2024, 0, 1), oneLineUrl))).toBe('double');
+  });
+});
+
+describe('computeReturnDistribution', () => {
+  it('counts rounds into buckets and tracks the total', () => {
+    const oneLineUrl = makeBetUrl(1, [[1, 0, 0, 0, 0]]);
+    const rows = [
+      makeRow(1, 0, new Date(2024, 0, 1), oneLineUrl), // bust
+      makeRow(2, 1, new Date(2024, 0, 2), oneLineUrl), // profit (1x)
+      makeRow(3, 2, new Date(2024, 0, 3), oneLineUrl), // double
+    ];
+    expect(computeReturnDistribution(rows)).toEqual({
+      bust: 1,
+      partial: 0,
+      profit: 1,
+      double: 1,
+      total: 3,
+    });
+  });
+
+  it('returns all-zero counts for empty input', () => {
+    expect(computeReturnDistribution([])).toEqual({
+      bust: 0,
+      partial: 0,
+      profit: 0,
+      double: 0,
+      total: 0,
+    });
   });
 });
 
