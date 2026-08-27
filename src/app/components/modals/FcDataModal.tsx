@@ -166,7 +166,6 @@ function FcDataTotalsSection({ totals }: { totals: FcDataTotals }): React.JSX.El
           value={formatUnits(totals.totalUnitsWon)}
           color="nfc-blue.600"
         />
-        <StatBlock label="Average per round" value={totals.averageUnitsPerRound.toFixed(1)} />
         <StatBlock
           label="ROI"
           value={formatRoi(totals.roi)}
