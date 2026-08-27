@@ -19,14 +19,22 @@ import { useColorMode } from '@/components/ui/color-mode';
 ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, annotationPlugin);
 
 const LINE_COLOR = '#dd6b20';
+const ROLLING_COLOR = '#805ad5';
 
 interface FcDataRoiChartProps {
   series: FcDataRoiPoint[];
+  rollingSeries?: FcDataRoiPoint[];
+  rollingLabel?: string;
 }
 
-export function FcDataRoiChart({ series }: FcDataRoiChartProps): React.JSX.Element {
+export function FcDataRoiChart({
+  series,
+  rollingSeries,
+  rollingLabel = 'Rolling ROI',
+}: FcDataRoiChartProps): React.JSX.Element {
   const { colorMode } = useColorMode();
   const isDarkLikeMode = colorMode !== 'light';
+  const hasRollingSeries = (rollingSeries?.length ?? 0) > 0;
 
   const data = useMemo(
     () => ({
@@ -39,9 +47,22 @@ export function FcDataRoiChart({ series }: FcDataRoiChartProps): React.JSX.Eleme
           pointRadius: 0,
           borderWidth: 2,
         },
+        ...(hasRollingSeries
+          ? [
+              {
+                label: rollingLabel,
+                data: rollingSeries!.map(point => ({ x: point.round, y: point.roi })),
+                borderColor: ROLLING_COLOR,
+                backgroundColor: ROLLING_COLOR,
+                pointRadius: 0,
+                borderWidth: 2,
+                borderDash: [4, 3],
+              },
+            ]
+          : []),
       ],
     }),
-    [series],
+    [series, rollingSeries, hasRollingSeries, rollingLabel],
   );
 
   const gridColor = isDarkLikeMode ? '#6272a4' : undefined;
@@ -53,7 +74,10 @@ export function FcDataRoiChart({ series }: FcDataRoiChartProps): React.JSX.Eleme
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          display: false,
+          display: hasRollingSeries,
+          labels: {
+            color: textColor,
+          },
         },
         annotation: {
           annotations: {
@@ -126,7 +150,7 @@ export function FcDataRoiChart({ series }: FcDataRoiChartProps): React.JSX.Eleme
         },
       },
     }),
-    [gridColor, textColor, isDarkLikeMode],
+    [gridColor, textColor, isDarkLikeMode, hasRollingSeries],
   );
 
   return (

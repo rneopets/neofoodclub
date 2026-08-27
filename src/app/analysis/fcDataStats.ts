@@ -43,24 +43,39 @@ export interface FcDataTotals {
   lastRound: FcDataRow | null;
 }
 
-export interface FcDataMonthStats {
-  /** e.g. "2024-04" - sortable, stable key. */
-  monthKey: string;
-  /** e.g. "Apr 2024". */
-  label: string;
+interface FcDataPeriodStats {
   roundsPlayed: number;
   totalUnitsWon: number;
   averageUnitsPerRound: number;
   winRate: number;
   bestRound: FcDataRow | null;
   /**
-   * totalUnitsWon / total active bet lines that month (not real NP wagered -
-   * there's no bet-amount data in the CSV, just a per-line proxy). 1.0 means
-   * each bet line broke even on average.
+   * totalUnitsWon / total active bet lines in the period (not real NP
+   * wagered - there's no bet-amount data in the CSV, just a per-line proxy).
+   * 1.0 means each bet line broke even on average.
    */
   roi: number;
-  /** Same as `roi`, but accumulated across every month up to and including this one. */
+  /** Same as `roi`, but accumulated across every period up to and including this one. */
   cumulativeRoi: number;
+}
+
+export interface FcDataMonthStats extends FcDataPeriodStats {
+  /** e.g. "2024-04" - sortable, stable key. */
+  monthKey: string;
+  /** e.g. "Apr 2024". */
+  label: string;
+}
+
+export interface FcDataYearStats extends FcDataPeriodStats {
+  /** e.g. "2024" - sortable, stable key, same as `label`. */
+  yearKey: string;
+  label: string;
+}
+
+export interface FcDataMonthHighlight {
+  /** Null when there's fewer than 2 months of history (best/worst would be trivial). */
+  best: FcDataMonthStats | null;
+  worst: FcDataMonthStats | null;
 }
 
 export interface FcDataCumulativePoint {
@@ -369,52 +384,97 @@ export function computeTotals(rows: FcDataRow[]): FcDataTotals {
   };
 }
 
-export function computeMonthlyStats(rows: FcDataRow[]): FcDataMonthStats[] {
-  const byMonth = new Map<string, FcDataRow[]>();
+interface FcDataPeriodBucket {
+  key: string;
+  sampleDate: Date;
+  stats: FcDataPeriodStats;
+}
+
+/** Buckets rows by `format(row.date, periodFormat)` and computes the same per-period stats used for both months and years. */
+function computePeriodStats(rows: FcDataRow[], periodFormat: string): FcDataPeriodBucket[] {
+  const byPeriod = new Map<string, FcDataRow[]>();
 
   for (const row of rows) {
-    const monthKey = format(row.date, 'yyyy-MM');
-    const bucket = byMonth.get(monthKey);
+    const key = format(row.date, periodFormat);
+    const bucket = byPeriod.get(key);
     if (bucket) {
       bucket.push(row);
     } else {
-      byMonth.set(monthKey, [row]);
+      byPeriod.set(key, [row]);
     }
   }
 
   let cumulativeUnitsWon = 0;
   let cumulativeBetLines = 0;
 
-  return Array.from(byMonth.entries())
+  return Array.from(byPeriod.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([monthKey, monthRows]) => {
-      const totalUnitsWon = monthRows.reduce((sum, row) => sum + row.unitsWon, 0);
-      const winningRounds = monthRows.filter(row => row.unitsWon > 0).length;
+    .map(([key, periodRows]) => {
+      const totalUnitsWon = periodRows.reduce((sum, row) => sum + row.unitsWon, 0);
+      const winningRounds = periodRows.filter(row => row.unitsWon > 0).length;
 
-      let bestRound = monthRows[0]!;
-      for (const row of monthRows) {
+      let bestRound = periodRows[0]!;
+      for (const row of periodRows) {
         if (row.unitsWon > bestRound.unitsWon) {
           bestRound = row;
         }
       }
 
-      const totalBetLines = monthRows.reduce((sum, row) => sum + activeBetLineCount(row.url), 0);
+      const totalBetLines = periodRows.reduce((sum, row) => sum + activeBetLineCount(row.url), 0);
 
       cumulativeUnitsWon += totalUnitsWon;
       cumulativeBetLines += totalBetLines;
 
       return {
-        monthKey,
-        label: format(monthRows[0]!.date, 'MMM yyyy'),
-        roundsPlayed: monthRows.length,
-        totalUnitsWon,
-        averageUnitsPerRound: totalUnitsWon / monthRows.length,
-        winRate: winningRounds / monthRows.length,
-        bestRound,
-        roi: totalBetLines > 0 ? totalUnitsWon / totalBetLines : 0,
-        cumulativeRoi: cumulativeBetLines > 0 ? cumulativeUnitsWon / cumulativeBetLines : 0,
+        key,
+        sampleDate: periodRows[0]!.date,
+        stats: {
+          roundsPlayed: periodRows.length,
+          totalUnitsWon,
+          averageUnitsPerRound: totalUnitsWon / periodRows.length,
+          winRate: winningRounds / periodRows.length,
+          bestRound,
+          roi: totalBetLines > 0 ? totalUnitsWon / totalBetLines : 0,
+          cumulativeRoi: cumulativeBetLines > 0 ? cumulativeUnitsWon / cumulativeBetLines : 0,
+        },
       };
     });
+}
+
+export function computeMonthlyStats(rows: FcDataRow[]): FcDataMonthStats[] {
+  return computePeriodStats(rows, 'yyyy-MM').map(({ key, sampleDate, stats }) => ({
+    monthKey: key,
+    label: format(sampleDate, 'MMM yyyy'),
+    ...stats,
+  }));
+}
+
+export function computeYearlyStats(rows: FcDataRow[]): FcDataYearStats[] {
+  return computePeriodStats(rows, 'yyyy').map(({ key, stats }) => ({
+    yearKey: key,
+    label: key,
+    ...stats,
+  }));
+}
+
+/** Null fields when there are fewer than 2 months of history, since best/worst would just be the same trivial month. */
+export function findBestAndWorstMonth(months: FcDataMonthStats[]): FcDataMonthHighlight {
+  if (months.length < 2) {
+    return { best: null, worst: null };
+  }
+
+  let best = months[0]!;
+  let worst = months[0]!;
+  for (const month of months) {
+    if (month.totalUnitsWon > best.totalUnitsWon) {
+      best = month;
+    }
+    if (month.totalUnitsWon < worst.totalUnitsWon) {
+      worst = month;
+    }
+  }
+
+  return { best, worst };
 }
 
 export function computeCumulativeSeries(rows: FcDataRow[]): FcDataCumulativePoint[] {
@@ -439,6 +499,41 @@ export function computeRoiSeries(rows: FcDataRow[]): FcDataRoiPoint[] {
   });
 }
 
+export const ROLLING_ROI_WINDOW = 30;
+
+/**
+ * ROI over just the trailing `windowSize` rounds ending at each point,
+ * rather than the all-time cumulative ROI - shows whether recent form is
+ * trending up or down.
+ */
+export function computeRollingRoiSeries(
+  rows: FcDataRow[],
+  windowSize: number = ROLLING_ROI_WINDOW,
+): FcDataRoiPoint[] {
+  const unitsWonWindow: number[] = [];
+  const betLinesWindow: number[] = [];
+  let windowUnitsWon = 0;
+  let windowBetLines = 0;
+
+  return rows.map(row => {
+    const lines = activeBetLineCount(row.url);
+    unitsWonWindow.push(row.unitsWon);
+    betLinesWindow.push(lines);
+    windowUnitsWon += row.unitsWon;
+    windowBetLines += lines;
+
+    if (unitsWonWindow.length > windowSize) {
+      windowUnitsWon -= unitsWonWindow.shift()!;
+      windowBetLines -= betLinesWindow.shift()!;
+    }
+
+    return {
+      round: row.round,
+      roi: windowBetLines > 0 ? windowUnitsWon / windowBetLines : 0,
+    };
+  });
+}
+
 export function findMissedRoundGaps(rows: FcDataRow[]): FcDataMissedRoundGap[] {
   const gaps: FcDataMissedRoundGap[] = [];
 
@@ -452,4 +547,40 @@ export function findMissedRoundGaps(rows: FcDataRow[]): FcDataMissedRoundGap[] {
   }
 
   return gaps;
+}
+
+/** A short, Discord-friendly plain-text stats blurb, ready to paste back into the server the CSV came from. */
+export function buildShareSummary(totals: FcDataTotals): string {
+  if (totals.roundsRecorded === 0) {
+    return 'No FC Data loaded yet.';
+  }
+
+  const lines: string[] = [
+    `NeoFoodClub stats: ${totals.roundsRecorded.toLocaleString()} rounds tracked`,
+    `Total won: ${Math.round(totals.totalUnitsWon).toLocaleString()} units | Win rate: ${(totals.winRate * 100).toFixed(1)}% | Avg/round: ${totals.averageUnitsPerRound.toFixed(1)}`,
+  ];
+
+  if (totals.bestRound) {
+    lines.push(
+      `Best round: #${totals.bestRound.round} (${Math.round(totals.bestRound.unitsWon).toLocaleString()} units)`,
+    );
+  }
+
+  if (totals.currentStreak) {
+    const { type, count, totalUnitsWon } = totals.currentStreak;
+    const noun = type === 'win' ? 'win' : 'bust';
+    const unitsSuffix =
+      type === 'win' ? ` (${Math.round(totalUnitsWon).toLocaleString()} units)` : '';
+    lines.push(`Current streak: ${count} ${noun}${count === 1 ? '' : 's'}${unitsSuffix}`);
+  }
+
+  if (totals.longestWinStreak) {
+    lines.push(
+      `Longest win streak: ${totals.longestWinStreak.count} (${Math.round(totals.longestWinStreak.totalUnitsWon).toLocaleString()} units)`,
+    );
+  }
+
+  lines.push('via neofood.club FC Data Visualizer');
+
+  return lines.join('\n');
 }

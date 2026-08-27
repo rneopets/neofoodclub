@@ -4,13 +4,17 @@ import type { FcDataRow } from '../../data/fcDataCsv';
 import { wasmBetsIndicesToHash } from '../../wasmMath';
 import {
   activeBetLineCount,
+  buildShareSummary,
   classifyRoundReturn,
   computeBetShapeCounts,
   computeCumulativeSeries,
   computeMonthlyStats,
   computeReturnDistribution,
   computeRoiSeries,
+  computeRollingRoiSeries,
   computeTotals,
+  computeYearlyStats,
+  findBestAndWorstMonth,
   findMissedRoundGaps,
 } from '../fcDataStats';
 
@@ -187,6 +191,59 @@ describe('computeMonthlyStats', () => {
   });
 });
 
+describe('computeYearlyStats', () => {
+  it('buckets rows across years, sorted ascending', () => {
+    const rows = [
+      makeRow(1, 10, new Date(2023, 11, 30)),
+      makeRow(2, 20, new Date(2024, 0, 1)),
+      makeRow(3, 30, new Date(2024, 5, 2)),
+    ];
+    const years = computeYearlyStats(rows);
+
+    expect(years.map(y => y.yearKey)).toEqual(['2023', '2024']);
+    expect(years[0]!.label).toBe('2023');
+    expect(years[1]!.roundsPlayed).toBe(2);
+    expect(years[1]!.totalUnitsWon).toBe(50);
+  });
+
+  it('accumulates cumulativeRoi across years like computeMonthlyStats does across months', () => {
+    const oneLineUrl = makeBetUrl(1, [[1, 0, 0, 0, 0]]);
+    const rows = [
+      makeRow(1, 2, new Date(2023, 0, 1), oneLineUrl), // 2023: 2/1 = 2.0x
+      makeRow(2, 0, new Date(2024, 0, 1), oneLineUrl), // 2024: (2+0)/(1+1) = 1.0x cumulative
+    ];
+    const years = computeYearlyStats(rows);
+
+    expect(years[0]!.roi).toBe(2);
+    expect(years[0]!.cumulativeRoi).toBe(2);
+    expect(years[1]!.roi).toBe(0);
+    expect(years[1]!.cumulativeRoi).toBe(1);
+  });
+});
+
+describe('findBestAndWorstMonth', () => {
+  it('finds the highest and lowest totalUnitsWon months', () => {
+    const rows = [
+      makeRow(1, 5, new Date(2024, 0, 1)),
+      makeRow(2, 100, new Date(2024, 1, 1)),
+      makeRow(3, 20, new Date(2024, 2, 1)),
+    ];
+    const months = computeMonthlyStats(rows);
+    const { best, worst } = findBestAndWorstMonth(months);
+
+    expect(best?.label).toBe('Feb 2024');
+    expect(worst?.label).toBe('Jan 2024');
+  });
+
+  it('returns nulls when there are fewer than 2 months', () => {
+    const rows = [makeRow(1, 5, new Date(2024, 0, 1)), makeRow(2, 10, new Date(2024, 0, 2))];
+    const months = computeMonthlyStats(rows);
+
+    expect(findBestAndWorstMonth(months)).toEqual({ best: null, worst: null });
+    expect(findBestAndWorstMonth([])).toEqual({ best: null, worst: null });
+  });
+});
+
 describe('computeCumulativeSeries', () => {
   it('is monotonically non-decreasing and ends at the total', () => {
     const rows = [
@@ -228,6 +285,37 @@ describe('computeRoiSeries', () => {
 
   it('returns an empty series for empty input', () => {
     expect(computeRoiSeries([])).toEqual([]);
+  });
+});
+
+describe('computeRollingRoiSeries', () => {
+  it('only considers the trailing window, unlike the all-time cumulative roi', () => {
+    const oneLineUrl = makeBetUrl(1, [[1, 0, 0, 0, 0]]);
+    // Window of 2: round 3's rolling roi should drop round 1 out of the average.
+    const rows = [
+      makeRow(1, 10, new Date(2024, 0, 1), oneLineUrl), // 10/1 = 10x
+      makeRow(2, 0, new Date(2024, 0, 2), oneLineUrl), // (10+0)/(1+1) = 5x
+      makeRow(3, 2, new Date(2024, 0, 3), oneLineUrl), // window is now [round2, round3]: (0+2)/(1+1) = 1x
+    ];
+
+    const series = computeRollingRoiSeries(rows, 2);
+
+    expect(series).toEqual([
+      { round: 1, roi: 10 },
+      { round: 2, roi: 5 },
+      { round: 3, roi: 1 },
+    ]);
+  });
+
+  it('defaults to a 30-round window', () => {
+    const oneLineUrl = makeBetUrl(1, [[1, 0, 0, 0, 0]]);
+    const rows = [makeRow(1, 5, new Date(2024, 0, 1), oneLineUrl)];
+
+    expect(computeRollingRoiSeries(rows)).toEqual(computeRollingRoiSeries(rows, 30));
+  });
+
+  it('returns an empty series for empty input', () => {
+    expect(computeRollingRoiSeries([])).toEqual([]);
   });
 });
 
@@ -471,5 +559,32 @@ describe('computeMonthlyStats roi', () => {
     expect(months[0]!.cumulativeRoi).toBe(2);
     expect(months[1]!.roi).toBe(0);
     expect(months[1]!.cumulativeRoi).toBe(1);
+  });
+});
+
+describe('buildShareSummary', () => {
+  it('returns a placeholder for no rows', () => {
+    expect(buildShareSummary(computeTotals([]))).toBe('No FC Data loaded yet.');
+  });
+
+  it('includes rounds, totals, best round, and streaks', () => {
+    const rows = [10, 5, 0, 8].map((unitsWon, i) =>
+      makeRow(i + 1, unitsWon, new Date(2024, 0, i + 1)),
+    );
+    const summary = buildShareSummary(computeTotals(rows));
+
+    expect(summary).toContain('4 rounds tracked');
+    expect(summary).toContain('Total won: 23 units');
+    expect(summary).toContain('Best round: #1 (10 units)');
+    expect(summary).toContain('Current streak: 1 win (8 units)');
+    expect(summary).toContain('Longest win streak: 2 (15 units)');
+  });
+
+  it('omits streak lines that are null (e.g. an all-bust history)', () => {
+    const rows = [0, 0].map((unitsWon, i) => makeRow(i + 1, unitsWon, new Date(2024, 0, i + 1)));
+    const summary = buildShareSummary(computeTotals(rows));
+
+    expect(summary).not.toContain('Longest win streak');
+    expect(summary).toContain('Current streak: 2 busts');
   });
 });

@@ -12,10 +12,22 @@ import {
   Stack,
   Table,
   Text,
+  useClipboard,
 } from '@chakra-ui/react';
 import { format } from 'date-fns';
 import * as React from 'react';
-import { FaChartBar, FaFileCsv } from 'react-icons/fa';
+import {
+  FaCalendar,
+  FaChartBar,
+  FaChartPie,
+  FaCheck,
+  FaClipboardList,
+  FaCopy,
+  FaFileCsv,
+  FaShapes,
+  FaTrophy,
+} from 'react-icons/fa';
+import { FaCalendarDays, FaMagnifyingGlassChart, FaTriangleExclamation } from 'react-icons/fa6';
 import { LuExternalLink } from 'react-icons/lu';
 
 import {
@@ -24,19 +36,26 @@ import {
   type FcDataAdvancedStats,
 } from '../../analysis/fcDataAdvancedStats';
 import {
+  buildShareSummary,
   computeBetShapeCounts,
   computeCumulativeSeries,
   computeMonthlyStats,
   computeReturnDistribution,
   computeRoiSeries,
+  computeRollingRoiSeries,
   computeTotals,
+  computeYearlyStats,
+  findBestAndWorstMonth,
   findMissedRoundGaps,
+  ROLLING_ROI_WINDOW,
   type FcDataBetShapeCounts,
   type FcDataMissedRoundGap,
+  type FcDataMonthHighlight,
   type FcDataMonthStats,
   type FcDataReturnBucket,
   type FcDataReturnDistribution,
   type FcDataTotals,
+  type FcDataYearStats,
 } from '../../analysis/fcDataStats';
 import { parseFcDataCsv, type FcDataParseResult, type FcDataRow } from '../../data/fcDataCsv';
 import { useBacktestPreviousRounds } from '../../hooks/useBacktestPreviousRounds';
@@ -81,18 +100,27 @@ function formatDateRange(start: Date, end: Date): string {
 
 function SectionCard({
   title,
+  icon: IconComponent,
   children,
 }: {
   title: string;
+  icon?: React.ComponentType;
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
     <Card.Root boxShadow="sm">
       <Card.Body p={4}>
         <Stack gap={3}>
-          <Text fontSize="sm" fontWeight="semibold" color="fg.muted" letterSpacing="wide">
-            {title.toUpperCase()}
-          </Text>
+          <HStack gap={2}>
+            {IconComponent && (
+              <Box color="fg.muted" fontSize="sm">
+                <IconComponent />
+              </Box>
+            )}
+            <Text fontSize="sm" fontWeight="semibold" color="fg.muted" letterSpacing="wide">
+              {title.toUpperCase()}
+            </Text>
+          </HStack>
           {children}
         </Stack>
       </Card.Body>
@@ -130,7 +158,7 @@ function StatBlock({
 
 function FcDataTotalsSection({ totals }: { totals: FcDataTotals }): React.JSX.Element {
   return (
-    <SectionCard title="Overview">
+    <SectionCard title="Overview" icon={FaClipboardList}>
       <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
         <StatBlock label="Rounds recorded" value={totals.roundsRecorded.toLocaleString()} />
         <StatBlock
@@ -209,6 +237,105 @@ function FcDataTotalsSection({ totals }: { totals: FcDataTotals }): React.JSX.El
   );
 }
 
+function FcDataMonthHighlightSection({
+  highlight,
+}: {
+  highlight: FcDataMonthHighlight;
+}): React.JSX.Element | null {
+  if (!highlight.best || !highlight.worst) {
+    return null;
+  }
+
+  return (
+    <SectionCard title="Best & Worst Month" icon={FaTrophy}>
+      <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
+        <Box
+          borderRadius="md"
+          p={3}
+          bg="green.subtle"
+          borderWidth="1px"
+          borderColor="green.emphasized"
+        >
+          <Text fontSize="xs" color="fg.muted">
+            Best month
+          </Text>
+          <Text fontSize="xl" fontWeight="bold" color="green.fg">
+            {highlight.best.label}
+          </Text>
+          <Text fontSize="sm" color="fg.muted">
+            {formatUnits(highlight.best.totalUnitsWon)} units ·{' '}
+            {displayPercent(highlight.best.winRate)} win rate
+          </Text>
+        </Box>
+        <Box
+          borderRadius="md"
+          p={3}
+          bg="orange.subtle"
+          borderWidth="1px"
+          borderColor="orange.emphasized"
+        >
+          <Text fontSize="xs" color="fg.muted">
+            Worst month
+          </Text>
+          <Text fontSize="xl" fontWeight="bold" color="orange.fg">
+            {highlight.worst.label}
+          </Text>
+          <Text fontSize="sm" color="fg.muted">
+            {formatUnits(highlight.worst.totalUnitsWon)} units ·{' '}
+            {displayPercent(highlight.worst.winRate)} win rate
+          </Text>
+        </Box>
+      </SimpleGrid>
+    </SectionCard>
+  );
+}
+
+function FcDataYearlyTable({ years }: { years: FcDataYearStats[] }): React.JSX.Element | null {
+  if (years.length < 2) {
+    return null;
+  }
+
+  return (
+    <SectionCard title="Yearly Breakdown" icon={FaCalendar}>
+      <Table.Root size="sm" width="full">
+        <Table.Header>
+          <Table.Row>
+            <Table.ColumnHeader>Year</Table.ColumnHeader>
+            <Table.ColumnHeader textAlign="right">Rounds</Table.ColumnHeader>
+            <Table.ColumnHeader textAlign="right">Total Won</Table.ColumnHeader>
+            <Table.ColumnHeader textAlign="right">Avg/Round</Table.ColumnHeader>
+            <Table.ColumnHeader textAlign="right">Win Rate</Table.ColumnHeader>
+            <Table.ColumnHeader textAlign="right">ROI</Table.ColumnHeader>
+            <Table.ColumnHeader textAlign="right">Best Round</Table.ColumnHeader>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {years.map(year => (
+            <Table.Row key={year.yearKey}>
+              <Table.Cell fontWeight="medium">{year.label}</Table.Cell>
+              <Table.Cell textAlign="right">{year.roundsPlayed.toLocaleString()}</Table.Cell>
+              <Table.Cell textAlign="right">{formatUnits(year.totalUnitsWon)}</Table.Cell>
+              <Table.Cell textAlign="right">{year.averageUnitsPerRound.toFixed(1)}</Table.Cell>
+              <Table.Cell textAlign="right">{displayPercent(year.winRate)}</Table.Cell>
+              <Table.Cell textAlign="right" color={roiColor(year.roi)} fontWeight="medium">
+                {formatRoi(year.roi)}
+              </Table.Cell>
+              <Table.Cell textAlign="right">
+                {year.bestRound && (
+                  <Link href={year.bestRound.url} target="_blank" fontSize="sm">
+                    #{year.bestRound.round} ({formatUnits(year.bestRound.unitsWon)}){' '}
+                    <LuExternalLink />
+                  </Link>
+                )}
+              </Table.Cell>
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table.Root>
+    </SectionCard>
+  );
+}
+
 const RETURN_BUCKET_ORDER: FcDataReturnBucket[] = ['bust', 'partial', 'profit', 'double'];
 
 const RETURN_BUCKET_LABELS: Record<FcDataReturnBucket, string> = {
@@ -235,7 +362,7 @@ function FcDataReturnDistributionSection({
   }
 
   return (
-    <SectionCard title="Return Distribution">
+    <SectionCard title="Return Distribution" icon={FaChartPie}>
       <Box h="20px" borderRadius="md" overflow="hidden" display="flex">
         {RETURN_BUCKET_ORDER.filter(bucket => distribution[bucket] > 0).map(bucket => (
           <Box
@@ -261,7 +388,7 @@ function FcDataReturnDistributionSection({
 
 function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.JSX.Element {
   return (
-    <SectionCard title="Per-Month Breakdown">
+    <SectionCard title="Per-Month Breakdown" icon={FaCalendarDays}>
       <Box maxH="280px" overflowY="auto">
         <Table.Root size="sm" width="full">
           <Table.Header>
@@ -326,7 +453,7 @@ function FcDataMissedRoundsSection({
   }
 
   return (
-    <SectionCard title="Missed Rounds">
+    <SectionCard title="Missed Rounds" icon={FaTriangleExclamation}>
       <Text fontSize="sm" color="fg.muted">
         {gaps.length} gap{gaps.length === 1 ? '' : 's'} where one or more rounds weren&apos;t
         recorded
@@ -432,7 +559,7 @@ function FcDataAdvancedStatsSection({
   const maxArenaRate = Math.max(...stats.arenaUsage.map(a => a.lineParticipationRate), 0.01);
 
   return (
-    <SectionCard title="Advanced Stats (from round history)">
+    <SectionCard title="Advanced Stats (from round history)" icon={FaMagnifyingGlassChart}>
       <Text fontSize="xs" color="fg.muted">
         Decoded from {stats.fingerprint.matchedRounds.toLocaleString()} round
         {stats.fingerprint.matchedRounds === 1 ? '' : 's'} matched against the round history feed
@@ -511,7 +638,7 @@ function FcDataBetShapesSection({
   }
 
   return (
-    <SectionCard title="Bet Shapes">
+    <SectionCard title="Bet Shapes" icon={FaShapes}>
       <FcDataBetShapesChart shapes={shapes} />
       <Text fontSize="xs" color="fg.muted" fontStyle="italic">
         Gambit-shaped: every line is a subset of one fixed 5-pirate combo. Bustproof-shaped: some
@@ -627,11 +754,23 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
 
   const totals = React.useMemo(() => computeTotals(rows), [rows]);
   const months = React.useMemo(() => computeMonthlyStats(rows), [rows]);
+  const years = React.useMemo(() => computeYearlyStats(rows), [rows]);
+  const monthHighlight = React.useMemo(() => findBestAndWorstMonth(months), [months]);
   const cumulativeSeries = React.useMemo(() => computeCumulativeSeries(rows), [rows]);
   const roiSeries = React.useMemo(() => computeRoiSeries(rows), [rows]);
+  const rollingRoiSeries = React.useMemo(() => computeRollingRoiSeries(rows), [rows]);
   const returnDistribution = React.useMemo(() => computeReturnDistribution(rows), [rows]);
   const betShapeCounts = React.useMemo(() => computeBetShapeCounts(rows), [rows]);
   const rowsByRound = React.useMemo(() => new Map(rows.map(row => [row.round, row])), [rows]);
+
+  const shareSummary = React.useMemo(() => buildShareSummary(totals), [totals]);
+  const { copy: copySummary } = useClipboard({ value: shareSummary });
+  const [summaryCopied, setSummaryCopied] = React.useState(false);
+  const handleCopySummary = React.useCallback((): void => {
+    copySummary();
+    setSummaryCopied(true);
+    setTimeout(() => setSummaryCopied(false), 1500);
+  }, [copySummary]);
 
   const [advancedStatsRequested, setAdvancedStatsRequested] = React.useState(false);
   const feed = useBacktestPreviousRounds({ enabled: advancedStatsRequested });
@@ -730,9 +869,20 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
                           : ''}
                         .
                       </Text>
-                      <Button size="xs" variant="outline" onClick={handleLoadAnother}>
-                        Load another file
-                      </Button>
+                      <HStack gap={2}>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          colorPalette={summaryCopied ? 'nfc-green' : undefined}
+                          onClick={handleCopySummary}
+                        >
+                          {summaryCopied ? <FaCheck /> : <FaCopy />}
+                          {summaryCopied ? 'Copied!' : 'Copy Summary'}
+                        </Button>
+                        <Button size="xs" variant="outline" onClick={handleLoadAnother}>
+                          Load another file
+                        </Button>
+                      </HStack>
                     </HStack>
 
                     {!advancedStatsRequested && (
@@ -779,16 +929,24 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
 
                     <FcDataTotalsSection totals={totals} />
 
+                    <FcDataMonthHighlightSection highlight={monthHighlight} />
+
                     <FcDataReturnDistributionSection distribution={returnDistribution} />
 
                     <FcDataBetShapesSection shapes={betShapeCounts} />
 
                     <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                       <FcDataCumulativeChart series={cumulativeSeries} />
-                      <FcDataRoiChart series={roiSeries} />
+                      <FcDataRoiChart
+                        series={roiSeries}
+                        rollingSeries={rollingRoiSeries}
+                        rollingLabel={`${ROLLING_ROI_WINDOW}-round avg`}
+                      />
                     </SimpleGrid>
 
                     <FcDataMonthlyBarChart months={months} />
+
+                    <FcDataYearlyTable years={years} />
 
                     <FcDataMonthlyTable months={months} />
 
