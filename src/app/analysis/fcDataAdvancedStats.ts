@@ -2,7 +2,7 @@ import type { BacktestRound } from '../backtest/types';
 import { ARENA_NAMES, PIRATE_NAMES } from '../constants';
 import type { FcDataRow } from '../data/fcDataCsv';
 
-import { decodeActiveLines } from './fcDataStats';
+import { decodeActiveLines, type FcDataMissedRoundGap } from './fcDataStats';
 
 export interface FcDataPirateExposure {
   pirateId: number;
@@ -30,8 +30,6 @@ export interface FcDataAdvancedFingerprint {
   unmatchedRounds: number;
   averagePiratesPerLine: number;
   averageUniquePiratesPerRound: number;
-  /** Share of matched rounds with exactly 10 active bet lines, 0..1. */
-  tenLineShare: number;
 }
 
 export interface FcDataFavoriteAnchor {
@@ -68,7 +66,6 @@ export function computeAdvancedStats(
   let totalActiveLines = 0;
   let totalPirateLinePicks = 0;
   let uniquePiratesPerRoundSum = 0;
-  let tenLineRounds = 0;
   let matchedRounds = 0;
   let unmatchedRounds = 0;
 
@@ -83,10 +80,6 @@ export function computeAdvancedStats(
     const lines = decodeActiveLines(row.url);
     if (lines.length === 0) {
       continue;
-    }
-
-    if (lines.length === 10) {
-      tenLineRounds += 1;
     }
 
     const pirateLineCounts = new Map<number, number>();
@@ -180,8 +173,49 @@ export function computeAdvancedStats(
       averagePiratesPerLine: totalActiveLines > 0 ? totalPirateLinePicks / totalActiveLines : 0,
       averageUniquePiratesPerRound:
         matchedRounds > 0 ? uniquePiratesPerRoundSum / matchedRounds : 0,
-      tenLineShare: matchedRounds > 0 ? tenLineRounds / matchedRounds : 0,
     },
     favoriteAnchorPirate,
   };
+}
+
+/**
+ * Like `findMissedRoundGaps`, but cross-references the round-history feed so
+ * a gap in round *numbers* (e.g. a maintenance period where NeoFoodClub
+ * simply didn't run those rounds) isn't reported as a round the user forgot
+ * to bet on. Only rounds that actually exist in `roundsByNumber` count
+ * towards a gap.
+ */
+export function findMissedRoundGapsFromFeed(
+  rows: FcDataRow[],
+  roundsByNumber: Map<number, BacktestRound>,
+): FcDataMissedRoundGap[] {
+  if (rows.length < 2) {
+    return [];
+  }
+
+  const csvRounds = new Set(rows.map(row => row.round));
+  const minRound = rows[0]!.round;
+  const maxRound = rows[rows.length - 1]!.round;
+
+  const gaps: FcDataMissedRoundGap[] = [];
+  let lastSeenRound = minRound;
+  let missingCount = 0;
+
+  for (let round = minRound + 1; round <= maxRound; round++) {
+    if (csvRounds.has(round)) {
+      if (missingCount > 0) {
+        gaps.push({ afterRound: lastSeenRound, beforeRound: round, missingCount });
+        missingCount = 0;
+      }
+      lastSeenRound = round;
+      continue;
+    }
+    if (roundsByNumber.has(round)) {
+      missingCount += 1;
+    }
+    // Round doesn't appear in the feed at all - it never happened, so it
+    // doesn't count as a miss and doesn't break up a run of real misses.
+  }
+
+  return gaps;
 }

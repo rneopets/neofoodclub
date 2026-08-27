@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { BacktestRound } from '../../backtest/types';
 import type { FcDataRow } from '../../data/fcDataCsv';
 import { wasmBetsIndicesToHash } from '../../wasmMath';
-import { computeAdvancedStats } from '../fcDataAdvancedStats';
+import { computeAdvancedStats, findMissedRoundGapsFromFeed } from '../fcDataAdvancedStats';
 
 /** 5 arenas x 4 pirates: arena N gets pirate IDs [4N+1 .. 4N+4]. */
 function makeRound(round: number): BacktestRound {
@@ -124,16 +124,13 @@ describe('computeAdvancedStats', () => {
     expect(stats.arenaUsage[2]).toMatchObject({ name: 'Treasure', lineParticipationRate: 0 });
   });
 
-  it('computes fingerprint averages and the 10-line share', () => {
-    // 10 lines, each with exactly one pick so every line is "active".
-    const tenLines = Array.from({ length: 10 }, (_, i) => {
-      const line = [0, 0, 0, 0, 0];
-      line[i % 5] = (i % 4) + 1;
-      return line;
-    });
+  it('computes fingerprint averages across matched rounds', () => {
     const rows = [
       makeRow(1, 10, [[1, 2, 0, 0, 0]]), // 1 line, 2 pirates
-      makeRow(2, 10, tenLines), // 10 active lines
+      makeRow(2, 10, [
+        [3, 0, 0, 0, 0],
+        [3, 4, 0, 0, 0],
+      ]), // 2 lines, 2 pirates
     ];
     const roundsByNumber = new Map([
       [1, makeRound(1)],
@@ -142,7 +139,6 @@ describe('computeAdvancedStats', () => {
     const stats = computeAdvancedStats(rows, roundsByNumber);
 
     expect(stats.fingerprint.matchedRounds).toBe(2);
-    expect(stats.fingerprint.tenLineShare).toBe(0.5); // 1 of 2 rounds had exactly 10 lines
   });
 
   it('returns empty/zeroed results for no rows', () => {
@@ -154,7 +150,52 @@ describe('computeAdvancedStats', () => {
       unmatchedRounds: 0,
       averagePiratesPerLine: 0,
       averageUniquePiratesPerRound: 0,
-      tenLineShare: 0,
     });
+  });
+});
+
+function makeSimpleRow(round: number): FcDataRow {
+  return {
+    date: new Date(2024, 0, round),
+    rawDate: '',
+    round,
+    unitsWon: 0,
+    url: `https://neofood.club/#round=${round}`,
+  };
+}
+
+describe('findMissedRoundGapsFromFeed', () => {
+  it('does not report a gap when the missing rounds never existed in the feed', () => {
+    // Rounds 2-4 are absent from the CSV *and* from the feed (e.g. a maintenance outage).
+    const rows = [makeSimpleRow(1), makeSimpleRow(5)];
+    const roundsByNumber = new Map([
+      [1, makeRound(1)],
+      [5, makeRound(5)],
+    ]);
+
+    expect(findMissedRoundGapsFromFeed(rows, roundsByNumber)).toEqual([]);
+  });
+
+  it('reports a gap only for rounds that exist in the feed but are missing from the CSV', () => {
+    const rows = [makeSimpleRow(1), makeSimpleRow(5)];
+    // Rounds 2 and 3 really happened (in the feed); round 4 never did.
+    const roundsByNumber = new Map([
+      [1, makeRound(1)],
+      [2, makeRound(2)],
+      [3, makeRound(3)],
+      [5, makeRound(5)],
+    ]);
+
+    expect(findMissedRoundGapsFromFeed(rows, roundsByNumber)).toEqual([
+      { afterRound: 1, beforeRound: 5, missingCount: 2 },
+    ]);
+  });
+
+  it('returns no gaps for a single-row input', () => {
+    expect(findMissedRoundGapsFromFeed([makeSimpleRow(1)], new Map())).toEqual([]);
+  });
+
+  it('returns no gaps for empty input', () => {
+    expect(findMissedRoundGapsFromFeed([], new Map())).toEqual([]);
   });
 });

@@ -18,7 +18,11 @@ import * as React from 'react';
 import { FaChartBar, FaFileCsv } from 'react-icons/fa';
 import { LuExternalLink } from 'react-icons/lu';
 
-import { computeAdvancedStats, type FcDataAdvancedStats } from '../../analysis/fcDataAdvancedStats';
+import {
+  computeAdvancedStats,
+  findMissedRoundGapsFromFeed,
+  type FcDataAdvancedStats,
+} from '../../analysis/fcDataAdvancedStats';
 import {
   computeBetShapeCounts,
   computeCumulativeSeries,
@@ -36,6 +40,7 @@ import {
 } from '../../analysis/fcDataStats';
 import { parseFcDataCsv, type FcDataParseResult, type FcDataRow } from '../../data/fcDataCsv';
 import { useBacktestPreviousRounds } from '../../hooks/useBacktestPreviousRounds';
+import { FcDataBetShapesChart } from '../charts/FcDataBetShapesChart';
 import { FcDataCumulativeChart } from '../charts/FcDataCumulativeChart';
 import { FcDataMonthlyBarChart } from '../charts/FcDataMonthlyBarChart';
 import { FcDataRoiChart } from '../charts/FcDataRoiChart';
@@ -293,9 +298,11 @@ function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.J
 function FcDataMissedRoundsSection({
   gaps,
   rowsByRound,
+  isValidated,
 }: {
   gaps: FcDataMissedRoundGap[];
   rowsByRound: Map<number, FcDataRow>;
+  isValidated: boolean;
 }): React.JSX.Element | null {
   if (gaps.length === 0) {
     return null;
@@ -307,6 +314,12 @@ function FcDataMissedRoundsSection({
         {gaps.length} gap{gaps.length === 1 ? '' : 's'} where one or more rounds weren&apos;t
         recorded
       </Text>
+      {!isValidated && (
+        <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+          Based on round numbers only - some of these rounds may never have run. Load Detailed Stats
+          to check against the round history feed.
+        </Text>
+      )}
       <Stack gap={1} maxH="180px" overflowY="auto">
         {gaps.map(gap => {
           const afterUrl = rowsByRound.get(gap.afterRound)?.url;
@@ -421,7 +434,6 @@ function FcDataAdvancedStatsSection({
           label="Avg unique pirates/round"
           value={stats.fingerprint.averageUniquePiratesPerRound.toFixed(1)}
         />
-        <StatBlock label="10-line rounds" value={displayPercent(stats.fingerprint.tenLineShare)} />
         <StatBlock
           label="Favorite anchor"
           value={stats.favoriteAnchorPirate ? stats.favoriteAnchorPirate.name : '-'}
@@ -475,14 +487,6 @@ function FcDataAdvancedStatsSection({
   );
 }
 
-const BET_SHAPE_LABELS: { key: keyof FcDataBetShapeCounts; label: string }[] = [
-  { key: 'gambitShaped', label: 'Gambit-shaped' },
-  { key: 'bustproofShaped', label: 'Bustproof-shaped' },
-  { key: 'crazyShaped', label: 'Crazy-shaped' },
-  { key: 'tenbetShaped', label: 'Tenbet-shaped' },
-  { key: 'other', label: 'Other' },
-];
-
 function FcDataBetShapesSection({
   shapes,
 }: {
@@ -494,11 +498,7 @@ function FcDataBetShapesSection({
 
   return (
     <SectionCard title="Bet Shapes">
-      <Text fontSize="sm" color="fg.muted">
-        {BET_SHAPE_LABELS.map(
-          ({ key, label }) => `${label} ${displayPercent(shapes[key] / shapes.total)}`,
-        ).join(' · ')}
-      </Text>
+      <FcDataBetShapesChart shapes={shapes} />
       <Text fontSize="xs" color="fg.muted" fontStyle="italic">
         Gambit-shaped: every line is a subset of one fixed 5-pirate combo. Bustproof-shaped: some
         arena has all 4 of its pirates covered. Crazy-shaped: every line picks a pirate in all 5
@@ -617,11 +617,24 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
   const roiSeries = React.useMemo(() => computeRoiSeries(rows), [rows]);
   const returnDistribution = React.useMemo(() => computeReturnDistribution(rows), [rows]);
   const betShapeCounts = React.useMemo(() => computeBetShapeCounts(rows), [rows]);
-  const missedRoundGaps = React.useMemo(() => findMissedRoundGaps(rows), [rows]);
   const rowsByRound = React.useMemo(() => new Map(rows.map(row => [row.round, row])), [rows]);
 
   const [advancedStatsRequested, setAdvancedStatsRequested] = React.useState(false);
   const feed = useBacktestPreviousRounds({ enabled: advancedStatsRequested });
+  const feedRoundsByNumber = React.useMemo(
+    () => new Map(feed.rounds.map(r => [r.round, r])),
+    [feed.rounds],
+  );
+  const isFeedReady = feed.status === 'ready' && feedRoundsByNumber.size > 0;
+
+  const missedRoundGaps = React.useMemo(
+    () =>
+      isFeedReady
+        ? findMissedRoundGapsFromFeed(rows, feedRoundsByNumber)
+        : findMissedRoundGaps(rows),
+    [rows, isFeedReady, feedRoundsByNumber],
+  );
+
   const [advancedStats, setAdvancedStats] = React.useState<FcDataAdvancedStats | null>(null);
   const lastComputedRef = React.useRef<{ rows: FcDataRow[]; newestRound: number } | null>(null);
 
@@ -633,10 +646,9 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
     if (last && last.rows === rows && last.newestRound === feed.newestRound) {
       return;
     }
-    const roundsByNumber = new Map(feed.rounds.map(r => [r.round, r]));
-    setAdvancedStats(computeAdvancedStats(rows, roundsByNumber));
+    setAdvancedStats(computeAdvancedStats(rows, feedRoundsByNumber));
     lastComputedRef.current = { rows, newestRound: feed.newestRound };
-  }, [feed.status, feed.rounds, feed.newestRound, rows]);
+  }, [feed.status, feed.newestRound, rows, feedRoundsByNumber]);
 
   const handleLoadAdvancedStats = React.useCallback((): void => {
     setAdvancedStatsRequested(true);
@@ -665,7 +677,8 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
                 <Text fontSize="sm" color="fg.muted">
                   Drop in a fc_data.csv export from NeoBot (the r/Neopets Discord bot's{' '}
                   <Code fontSize="sm">?fcdata</Code> command) to see charts and stats about your
-                  personal NeoFoodClub betting history.
+                  personal NeoFoodClub betting history. Everything is processed locally in your
+                  browser - your file is never uploaded anywhere.
                 </Text>
 
                 <input
@@ -763,7 +776,11 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
 
                     <FcDataMonthlyTable months={months} />
 
-                    <FcDataMissedRoundsSection gaps={missedRoundGaps} rowsByRound={rowsByRound} />
+                    <FcDataMissedRoundsSection
+                      gaps={missedRoundGaps}
+                      rowsByRound={rowsByRound}
+                      isValidated={isFeedReady}
+                    />
 
                     {advancedStats && <FcDataAdvancedStatsSection stats={advancedStats} />}
                   </>
