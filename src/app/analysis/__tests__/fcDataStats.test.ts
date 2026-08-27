@@ -43,6 +43,8 @@ describe('computeTotals', () => {
       totalUnitsWon: 0,
       averageUnitsPerRound: 0,
       winRate: 0,
+      totalActiveBetLines: 0,
+      roi: 0,
       bestRound: null,
       longestWinStreak: null,
       longestLossStreak: null,
@@ -50,6 +52,25 @@ describe('computeTotals', () => {
       firstRound: null,
       lastRound: null,
     });
+  });
+
+  it('computes all-time roi as totalUnitsWon / totalActiveBetLines', () => {
+    const rows = [
+      makeRow(1, 4, new Date(2024, 0, 1), makeBetUrl(1, [[1, 0, 0, 0, 0]])),
+      makeRow(
+        2,
+        0,
+        new Date(2024, 0, 2),
+        makeBetUrl(2, [
+          [1, 0, 0, 0, 0],
+          [0, 2, 0, 0, 0],
+        ]),
+      ),
+    ];
+    const totals = computeTotals(rows);
+
+    expect(totals.totalActiveBetLines).toBe(3);
+    expect(totals.roi).toBe(4 / 3);
   });
 
   it('handles an all-zero (never won) history', () => {
@@ -575,7 +596,8 @@ describe('buildShareSummary', () => {
 
     expect(summary).toContain('4 rounds tracked');
     expect(summary).toContain('Total won: 23 units');
-    expect(summary).toContain('Best round: #1 (10 units)');
+    expect(summary).toContain('ROI:');
+    expect(summary).toContain('Best round: #1 (10 units) - https://neofood.club/#round=1');
     expect(summary).toContain('Current streak: 1 win (8 units)');
     expect(summary).toContain('Longest win streak: 2 (15 units)');
   });
