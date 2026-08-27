@@ -14,11 +14,12 @@ import {
   Text,
 } from '@chakra-ui/react';
 import * as React from 'react';
-import { FaCode } from 'react-icons/fa';
+import { FaCode, FaDownload } from 'react-icons/fa';
 import type { HighlighterGeneric } from 'shiki';
 
 import { defaultRoundData } from '../../constants';
 import { useCurrentRound, useRoundStore } from '../../stores';
+import { downloadBlob } from '../../util/downloadFile';
 import RoundInput from '../inputs/RoundInput';
 
 import { RoundData } from '@/types';
@@ -143,6 +144,25 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
   const [previewLoading, setPreviewLoading] = React.useState(false);
   const [previewError, setPreviewError] = React.useState<string | null>(null);
 
+  const [downloadStatus, setDownloadStatus] = React.useState<'idle' | 'downloading' | 'error'>(
+    'idle',
+  );
+
+  const handleDownloadPreviousJsonl = React.useCallback(async (): Promise<void> => {
+    setDownloadStatus('downloading');
+    try {
+      const response = await fetch('https://cdn.neofood.club/previous.jsonl');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      downloadBlob(await response.blob(), 'previous.jsonl');
+      setDownloadStatus('idle');
+    } catch (error) {
+      console.error('Failed to download previous.jsonl:', error);
+      setDownloadStatus('error');
+    }
+  }, []);
+
   // Reset the preview to the live round each time the modal opens. Runs as a
   // layout effect so the reset is committed before the fetch effect below
   // sees `previewRound` in this same pass - otherwise the fetch effect would
@@ -237,6 +257,28 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
                     hasError={previewError !== null}
                   />
                 </Stack>
+                <HStack justify="space-between" flexWrap="wrap" gap={2}>
+                  <Text fontSize="xs" color="fg.muted">
+                    Download the full previous-rounds history feed (~13MB) used by the backtesting
+                    tools.
+                  </Text>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    onClick={handleDownloadPreviousJsonl}
+                    disabled={downloadStatus === 'downloading'}
+                  >
+                    <FaDownload />
+                    {downloadStatus === 'downloading'
+                      ? 'Downloading...'
+                      : 'Download previous.jsonl'}
+                  </Button>
+                </HStack>
+                {downloadStatus === 'error' && (
+                  <Text fontSize="xs" color="fg.error">
+                    Failed to download previous.jsonl.
+                  </Text>
+                )}
                 <Box minH="300px" opacity={previewLoading ? 0.6 : 1} transition="opacity 0.15s">
                   {previewError ? (
                     <Text fontSize="sm" color="nfc-red.fg">
