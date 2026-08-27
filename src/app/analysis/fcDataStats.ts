@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 
 import type { FcDataRow } from '../data/fcDataCsv';
 import { parseBetUrl } from '../util';
+import { findRoundGaps, type RoundGap } from '../util/roundGaps';
 
 export interface FcDataWinStreak {
   count: number;
@@ -89,11 +90,7 @@ export interface FcDataRoiPoint {
   roi: number;
 }
 
-export interface FcDataMissedRoundGap {
-  afterRound: number;
-  beforeRound: number;
-  missingCount: number;
-}
+export type FcDataMissedRoundGap = RoundGap;
 
 export type FcDataReturnBucket = 'bust' | 'partial' | 'profit' | 'double';
 
@@ -535,18 +532,7 @@ export function computeRollingRoiSeries(
 }
 
 export function findMissedRoundGaps(rows: FcDataRow[]): FcDataMissedRoundGap[] {
-  const gaps: FcDataMissedRoundGap[] = [];
-
-  for (let i = 1; i < rows.length; i++) {
-    const afterRound = rows[i - 1]!.round;
-    const beforeRound = rows[i]!.round;
-    const missingCount = beforeRound - afterRound - 1;
-    if (missingCount > 0) {
-      gaps.push({ afterRound, beforeRound, missingCount });
-    }
-  }
-
-  return gaps;
+  return findRoundGaps(rows.map(row => row.round));
 }
 
 /** A short, Discord-friendly plain-text stats blurb, ready to paste back into the server the CSV came from. */

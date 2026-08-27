@@ -11,7 +11,12 @@ import {
 } from '@chakra-ui/react';
 import * as React from 'react';
 
-import { computeDrift, summarizeDrift, type DriftPoint } from '../../devTiming/drift';
+import {
+  computeDrift,
+  findDriftDataGaps,
+  summarizeDrift,
+  type DriftPoint,
+} from '../../devTiming/drift';
 import { useRoundTiming } from '../../devTiming/useRoundTiming';
 import { RoundEndDriftChart } from '../charts/RoundEndDriftChart';
 
@@ -82,6 +87,7 @@ export function RoundEndDriftModal({
   }, [allPoints, rangePreset, minRoundInput, maxRoundInput]);
 
   const summary = React.useMemo(() => summarizeDrift(visiblePoints), [visiblePoints]);
+  const dataGaps = React.useMemo(() => findDriftDataGaps(visiblePoints), [visiblePoints]);
 
   const statusText = React.useMemo(() => {
     if (timing.status === 'loading') {
@@ -126,7 +132,9 @@ export function RoundEndDriftModal({
                 <Text fontSize="sm" color="fg.muted">
                   Plots how far each round&apos;s actual end time (when winners post) drifted from
                   the expected 2:15 PM Pacific. The shaded band at the bottom is the 0&ndash;2
-                  minute window - ends in that range are just scraper lag, not drift.
+                  minute window - ends in that range are just scraper lag, not drift. Yellow bands
+                  mark round ranges with no end-time data at all in the feed (e.g. a NeoFoodClub
+                  outage), not just rounds excluded by the range filter below.
                 </Text>
 
                 <HStack justify="space-between" flexWrap="wrap" gap={2}>
@@ -203,9 +211,17 @@ export function RoundEndDriftModal({
                             : '\u2014'
                         }
                       />
+                      <SummaryStat
+                        label="Missing rounds"
+                        value={
+                          dataGaps.length > 0
+                            ? `${dataGaps.reduce((sum, gap) => sum + gap.missingCount, 0)} in ${dataGaps.length} gap${dataGaps.length === 1 ? '' : 's'}`
+                            : 'none'
+                        }
+                      />
                     </SimpleGrid>
 
-                    <RoundEndDriftChart points={visiblePoints} />
+                    <RoundEndDriftChart points={visiblePoints} gaps={dataGaps} />
                   </>
                 )}
 
