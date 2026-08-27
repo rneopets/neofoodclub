@@ -896,7 +896,12 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
                           Pirate/arena exposure and bet-shape stats need the full round history
                           (~13MB, cached).
                         </Text>
-                        <Button size="xs" variant="outline" onClick={handleLoadAdvancedStats}>
+                        <Button
+                          size="xs"
+                          variant="solid"
+                          colorPalette="nfc-green"
+                          onClick={handleLoadAdvancedStats}
+                        >
                           <FaChartBar />
                           Load Detailed Stats
                         </Button>
