@@ -401,7 +401,6 @@ function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.J
               <Table.ColumnHeader>Month</Table.ColumnHeader>
               <Table.ColumnHeader textAlign="right">Rounds</Table.ColumnHeader>
               <Table.ColumnHeader textAlign="right">Total Won</Table.ColumnHeader>
-              <Table.ColumnHeader textAlign="right">Avg/Round</Table.ColumnHeader>
               <Table.ColumnHeader textAlign="right">Win Rate</Table.ColumnHeader>
               <Table.ColumnHeader textAlign="right">ROI</Table.ColumnHeader>
               <Table.ColumnHeader textAlign="right">Running ROI</Table.ColumnHeader>
@@ -414,7 +413,6 @@ function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.J
                 <Table.Cell>{month.label}</Table.Cell>
                 <Table.Cell textAlign="right">{month.roundsPlayed.toLocaleString()}</Table.Cell>
                 <Table.Cell textAlign="right">{formatUnits(month.totalUnitsWon)}</Table.Cell>
-                <Table.Cell textAlign="right">{month.averageUnitsPerRound.toFixed(1)}</Table.Cell>
                 <Table.Cell textAlign="right">{displayPercent(month.winRate)}</Table.Cell>
                 <Table.Cell textAlign="right" color={roiColor(month.roi)} fontWeight="medium">
                   {formatRoi(month.roi)}
