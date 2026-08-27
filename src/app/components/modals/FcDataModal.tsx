@@ -170,7 +170,11 @@ function FcDataTotalsSection({ totals }: { totals: FcDataTotals }): React.JSX.El
           label="Current streak"
           value={
             totals.currentStreak
-              ? `${totals.currentStreak.count.toLocaleString()} ${totals.currentStreak.type === 'win' ? 'win' : 'bust'}${totals.currentStreak.count === 1 ? '' : 's'}`
+              ? `${totals.currentStreak.count.toLocaleString()} ${totals.currentStreak.type === 'win' ? 'win' : 'bust'}${totals.currentStreak.count === 1 ? '' : 's'}${
+                  totals.currentStreak.type === 'win'
+                    ? ` (${formatUnits(totals.currentStreak.totalUnitsWon)} units)`
+                    : ''
+                }`
               : '-'
           }
           sub={

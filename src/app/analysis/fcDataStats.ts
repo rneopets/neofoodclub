@@ -19,6 +19,8 @@ export interface FcDataLossStreak {
 export interface FcDataCurrentStreak {
   type: 'win' | 'bust';
   count: number;
+  /** Always 0 for a bust streak. */
+  totalUnitsWon: number;
   startDate: Date;
   endDate: Date;
 }
@@ -306,6 +308,7 @@ function currentStreak(rows: FcDataRow[]): FcDataCurrentStreak | null {
   const type: FcDataCurrentStreak['type'] = last.unitsWon > 0 ? 'win' : 'bust';
 
   let count = 0;
+  let totalUnitsWon = 0;
   let startIndex = rows.length - 1;
   for (let i = rows.length - 1; i >= 0; i--) {
     const isMatch = type === 'win' ? rows[i]!.unitsWon > 0 : rows[i]!.unitsWon === 0;
@@ -313,12 +316,14 @@ function currentStreak(rows: FcDataRow[]): FcDataCurrentStreak | null {
       break;
     }
     count += 1;
+    totalUnitsWon += rows[i]!.unitsWon;
     startIndex = i;
   }
 
   return {
     type,
     count,
+    totalUnitsWon,
     startDate: rows[startIndex]!.date,
     endDate: last.date,
   };

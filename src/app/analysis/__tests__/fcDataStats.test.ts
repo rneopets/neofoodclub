@@ -123,6 +123,7 @@ describe('computeTotals', () => {
     expect(totals.currentStreak).toEqual({
       type: 'win',
       count: 2,
+      totalUnitsWon: 15,
       startDate: new Date(2024, 0, 2),
       endDate: new Date(2024, 0, 3),
     });
@@ -138,6 +139,7 @@ describe('computeTotals', () => {
     expect(totals.currentStreak).toEqual({
       type: 'bust',
       count: 2,
+      totalUnitsWon: 0,
       startDate: new Date(2024, 0, 2),
       endDate: new Date(2024, 0, 3),
     });
@@ -153,6 +155,7 @@ describe('computeTotals', () => {
     expect(totals.currentStreak).toEqual({
       type: 'bust',
       count: 1,
+      totalUnitsWon: 0,
       startDate: new Date(2024, 0, 3),
       endDate: new Date(2024, 0, 3),
     });
