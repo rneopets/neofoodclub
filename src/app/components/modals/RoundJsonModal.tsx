@@ -244,53 +244,58 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
             </Dialog.Header>
             <Dialog.Body>
               <Stack gap={3}>
-                <Card.Root boxShadow="sm">
-                  <Card.Body p={3}>
-                    <Stack gap={2} align="stretch">
-                      <Text fontSize="sm" fontWeight="medium">
-                        Change round
-                      </Text>
-                      <HStack justify="space-between" align="flex-start" flexWrap="wrap" gap={4}>
-                        <Stack gap={1}>
-                          <Text fontSize="xs" color="fg.muted">
-                            Current round on Neopets:{' '}
-                            {currentRoundFromCdn > 0 ? currentRoundFromCdn : '—'}
+                <HStack align="stretch" flexWrap="wrap" gap={3}>
+                  <Card.Root boxShadow="sm" flex="1" minW="200px">
+                    <Card.Body p={3}>
+                      <Stack gap={1}>
+                        <Text fontSize="sm" fontWeight="medium">
+                          Change round
+                        </Text>
+                        <Text fontSize="xs" color="fg.muted">
+                          Current round on Neopets:{' '}
+                          {currentRoundFromCdn > 0 ? currentRoundFromCdn : '—'}
+                        </Text>
+                        <Box maxW="170px">
+                          <RoundInput
+                            selectedRound={previewRound}
+                            referenceRound={currentRoundFromCdn}
+                            onRoundChange={setPreviewRound}
+                            hasError={previewError !== null}
+                          />
+                        </Box>
+                      </Stack>
+                    </Card.Body>
+                  </Card.Root>
+                  <Card.Root boxShadow="sm" flex="1" minW="200px">
+                    <Card.Body p={3}>
+                      <Stack gap={1}>
+                        <Text fontSize="sm" fontWeight="medium">
+                          Download history
+                        </Text>
+                        <Text fontSize="xs" color="fg.muted">
+                          Download the full previous-rounds history feed (~13MB).
+                        </Text>
+                        <Button
+                          size="xs"
+                          variant="solid"
+                          colorPalette="nfc-green"
+                          onClick={handleDownloadPreviousJsonl}
+                          disabled={downloadStatus === 'downloading'}
+                        >
+                          <FaDownload />
+                          {downloadStatus === 'downloading'
+                            ? 'Downloading...'
+                            : 'Download previous.jsonl'}
+                        </Button>
+                        {downloadStatus === 'error' && (
+                          <Text fontSize="xs" color="fg.error">
+                            Failed to download previous.jsonl.
                           </Text>
-                          <Box maxW="170px">
-                            <RoundInput
-                              selectedRound={previewRound}
-                              referenceRound={currentRoundFromCdn}
-                              onRoundChange={setPreviewRound}
-                              hasError={previewError !== null}
-                            />
-                          </Box>
-                        </Stack>
-                        <Stack gap={1} align="flex-end">
-                          <Button
-                            size="xs"
-                            variant="solid"
-                            colorPalette="nfc-green"
-                            onClick={handleDownloadPreviousJsonl}
-                            disabled={downloadStatus === 'downloading'}
-                          >
-                            <FaDownload />
-                            {downloadStatus === 'downloading'
-                              ? 'Downloading...'
-                              : 'Download previous.jsonl'}
-                          </Button>
-                          <Text fontSize="xs" color="fg.muted" textAlign="right">
-                            Download the full previous-rounds history feed (~13MB).
-                          </Text>
-                          {downloadStatus === 'error' && (
-                            <Text fontSize="xs" color="fg.error" textAlign="right">
-                              Failed to download previous.jsonl.
-                            </Text>
-                          )}
-                        </Stack>
-                      </HStack>
-                    </Stack>
-                  </Card.Body>
-                </Card.Root>
+                        )}
+                      </Stack>
+                    </Card.Body>
+                  </Card.Root>
+                </HStack>
                 <Box minH="300px" opacity={previewLoading ? 0.6 : 1} transition="opacity 0.15s">
                   {previewError ? (
                     <Text fontSize="sm" color="nfc-red.fg">
