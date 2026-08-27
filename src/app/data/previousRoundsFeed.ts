@@ -26,6 +26,8 @@ export interface RawPreviousRoundLine {
   winners?: number[] | null;
   /** Food item IDs served in each arena that round, when available. */
   foods?: number[][] | null;
+  /** Odds-change log for the round (empty/absent when odds never moved). */
+  changes?: unknown[] | null;
   /** ISO 8601 timestamp of when this line was recorded, when available. */
   timestamp?: string | null;
 }
