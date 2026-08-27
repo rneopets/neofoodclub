@@ -1,6 +1,20 @@
 import { format } from 'date-fns';
 
 import type { FcDataRow } from '../data/fcDataCsv';
+import { parseBetUrl } from '../util';
+
+export interface FcDataWinStreak {
+  count: number;
+  totalUnitsWon: number;
+  startDate: Date;
+  endDate: Date;
+}
+
+export interface FcDataLossStreak {
+  count: number;
+  startDate: Date;
+  endDate: Date;
+}
 
 export interface FcDataTotals {
   roundsRecorded: number;
@@ -10,8 +24,10 @@ export interface FcDataTotals {
   winRate: number;
   /** Highest unitsWon; first occurrence wins ties. Null when there are no rows. */
   bestRound: FcDataRow | null;
-  longestWinStreak: number;
-  longestLossStreak: number;
+  /** Null when no round ever won anything. */
+  longestWinStreak: FcDataWinStreak | null;
+  /** Null when every round won something. */
+  longestLossStreak: FcDataLossStreak | null;
   firstRound: FcDataRow | null;
   lastRound: FcDataRow | null;
 }
@@ -26,6 +42,14 @@ export interface FcDataMonthStats {
   averageUnitsPerRound: number;
   winRate: number;
   bestRound: FcDataRow | null;
+  /**
+   * totalUnitsWon / total active bet lines that month (not real NP wagered -
+   * there's no bet-amount data in the CSV, just a per-line proxy). 1.0 means
+   * each bet line broke even on average.
+   */
+  roi: number;
+  /** Same as `roi`, but accumulated across every month up to and including this one. */
+  cumulativeRoi: number;
 }
 
 export interface FcDataCumulativePoint {
@@ -39,29 +63,75 @@ export interface FcDataMissedRoundGap {
   missingCount: number;
 }
 
-export interface FcDataDayOfWeekStats {
-  /** 0=Sun..6=Sat, matching Date#getDay(). */
-  dayOfWeek: number;
-  label: string;
-  roundsPlayed: number;
-  totalUnitsWon: number;
-  averageUnitsPerRound: number;
-}
+/** Number of bet lines with at least one non-zero pirate pick, decoded from the round's URL. */
+export function activeBetLineCount(url: string): number {
+  const hashIndex = url.indexOf('#');
+  const fragment = hashIndex === -1 ? url : url.slice(hashIndex + 1);
+  const { bets } = parseBetUrl(fragment);
 
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-function longestRun(rows: FcDataRow[], predicate: (row: FcDataRow) => boolean): number {
-  let longest = 0;
-  let current = 0;
-  for (const row of rows) {
-    if (predicate(row)) {
-      current += 1;
-      longest = Math.max(longest, current);
-    } else {
-      current = 0;
+  let count = 0;
+  for (const pirates of bets.values()) {
+    if (pirates.some(index => index > 0)) {
+      count += 1;
     }
   }
-  return longest;
+  return count;
+}
+
+function longestWinStreak(rows: FcDataRow[]): FcDataWinStreak | null {
+  let best: FcDataWinStreak | null = null;
+  let currentCount = 0;
+  let currentUnitsWon = 0;
+  let currentStartIndex = -1;
+
+  rows.forEach((row, index) => {
+    if (row.unitsWon > 0) {
+      if (currentCount === 0) {
+        currentStartIndex = index;
+      }
+      currentCount += 1;
+      currentUnitsWon += row.unitsWon;
+      if (!best || currentCount > best.count) {
+        best = {
+          count: currentCount,
+          totalUnitsWon: currentUnitsWon,
+          startDate: rows[currentStartIndex]!.date,
+          endDate: row.date,
+        };
+      }
+    } else {
+      currentCount = 0;
+      currentUnitsWon = 0;
+    }
+  });
+
+  return best;
+}
+
+function longestLossStreak(rows: FcDataRow[]): FcDataLossStreak | null {
+  let best: FcDataLossStreak | null = null;
+  let currentCount = 0;
+  let currentStartIndex = -1;
+
+  rows.forEach((row, index) => {
+    if (row.unitsWon === 0) {
+      if (currentCount === 0) {
+        currentStartIndex = index;
+      }
+      currentCount += 1;
+      if (!best || currentCount > best.count) {
+        best = {
+          count: currentCount,
+          startDate: rows[currentStartIndex]!.date,
+          endDate: row.date,
+        };
+      }
+    } else {
+      currentCount = 0;
+    }
+  });
+
+  return best;
 }
 
 export function computeTotals(rows: FcDataRow[]): FcDataTotals {
@@ -72,8 +142,8 @@ export function computeTotals(rows: FcDataRow[]): FcDataTotals {
       averageUnitsPerRound: 0,
       winRate: 0,
       bestRound: null,
-      longestWinStreak: 0,
-      longestLossStreak: 0,
+      longestWinStreak: null,
+      longestLossStreak: null,
       firstRound: null,
       lastRound: null,
     };
@@ -95,8 +165,8 @@ export function computeTotals(rows: FcDataRow[]): FcDataTotals {
     averageUnitsPerRound: totalUnitsWon / rows.length,
     winRate: winningRounds / rows.length,
     bestRound,
-    longestWinStreak: longestRun(rows, row => row.unitsWon > 0),
-    longestLossStreak: longestRun(rows, row => row.unitsWon === 0),
+    longestWinStreak: longestWinStreak(rows),
+    longestLossStreak: longestLossStreak(rows),
     firstRound: rows[0]!,
     lastRound: rows[rows.length - 1]!,
   };
@@ -115,6 +185,9 @@ export function computeMonthlyStats(rows: FcDataRow[]): FcDataMonthStats[] {
     }
   }
 
+  let cumulativeUnitsWon = 0;
+  let cumulativeBetLines = 0;
+
   return Array.from(byMonth.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([monthKey, monthRows]) => {
@@ -128,6 +201,11 @@ export function computeMonthlyStats(rows: FcDataRow[]): FcDataMonthStats[] {
         }
       }
 
+      const totalBetLines = monthRows.reduce((sum, row) => sum + activeBetLineCount(row.url), 0);
+
+      cumulativeUnitsWon += totalUnitsWon;
+      cumulativeBetLines += totalBetLines;
+
       return {
         monthKey,
         label: format(monthRows[0]!.date, 'MMM yyyy'),
@@ -136,6 +214,8 @@ export function computeMonthlyStats(rows: FcDataRow[]): FcDataMonthStats[] {
         averageUnitsPerRound: totalUnitsWon / monthRows.length,
         winRate: winningRounds / monthRows.length,
         bestRound,
+        roi: totalBetLines > 0 ? totalUnitsWon / totalBetLines : 0,
+        cumulativeRoi: cumulativeBetLines > 0 ? cumulativeUnitsWon / cumulativeBetLines : 0,
       };
     });
 }
@@ -161,23 +241,4 @@ export function findMissedRoundGaps(rows: FcDataRow[]): FcDataMissedRoundGap[] {
   }
 
   return gaps;
-}
-
-export function computeDayOfWeekStats(rows: FcDataRow[]): FcDataDayOfWeekStats[] {
-  const buckets: FcDataRow[][] = Array.from({ length: 7 }, () => []);
-
-  for (const row of rows) {
-    buckets[row.date.getDay()]!.push(row);
-  }
-
-  return buckets.map((bucketRows, dayOfWeek) => {
-    const totalUnitsWon = bucketRows.reduce((sum, row) => sum + row.unitsWon, 0);
-    return {
-      dayOfWeek,
-      label: DAY_LABELS[dayOfWeek]!,
-      roundsPlayed: bucketRows.length,
-      totalUnitsWon,
-      averageUnitsPerRound: bucketRows.length > 0 ? totalUnitsWon / bucketRows.length : 0,
-    };
-  });
 }

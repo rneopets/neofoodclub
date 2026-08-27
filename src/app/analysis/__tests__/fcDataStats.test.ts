@@ -1,22 +1,30 @@
 import { describe, expect, it } from 'vitest';
 
 import type { FcDataRow } from '../../data/fcDataCsv';
+import { wasmBetsIndicesToHash } from '../../wasmMath';
 import {
+  activeBetLineCount,
   computeCumulativeSeries,
-  computeDayOfWeekStats,
   computeMonthlyStats,
   computeTotals,
   findMissedRoundGaps,
 } from '../fcDataStats';
 
-function makeRow(round: number, unitsWon: number, date: Date): FcDataRow {
+function makeRow(round: number, unitsWon: number, date: Date, url?: string): FcDataRow {
   return {
     date,
     rawDate: date.toISOString(),
     round,
     unitsWon,
-    url: `https://neofood.club/#round=${round}`,
+    url: url ?? `https://neofood.club/#round=${round}`,
   };
+}
+
+/** Builds a NeoFoodClub bet URL encoding the given bet lines (each a 5-element arena pick array). */
+function makeBetUrl(round: number, lines: number[][]): string {
+  const flat = lines.flat();
+  const hash = wasmBetsIndicesToHash(flat);
+  return `https://neofood.club/#round=${round}&b=${hash}`;
 }
 
 describe('computeTotals', () => {
@@ -28,8 +36,8 @@ describe('computeTotals', () => {
       averageUnitsPerRound: 0,
       winRate: 0,
       bestRound: null,
-      longestWinStreak: 0,
-      longestLossStreak: 0,
+      longestWinStreak: null,
+      longestLossStreak: null,
       firstRound: null,
       lastRound: null,
     });
@@ -44,8 +52,12 @@ describe('computeTotals', () => {
     const totals = computeTotals(rows);
 
     expect(totals.winRate).toBe(0);
-    expect(totals.longestWinStreak).toBe(0);
-    expect(totals.longestLossStreak).toBe(3);
+    expect(totals.longestWinStreak).toBeNull();
+    expect(totals.longestLossStreak).toEqual({
+      count: 3,
+      startDate: new Date(2024, 0, 1),
+      endDate: new Date(2024, 0, 3),
+    });
     expect(totals.bestRound).toBe(rows[0]);
   });
 
@@ -58,8 +70,13 @@ describe('computeTotals', () => {
     const totals = computeTotals(rows);
 
     expect(totals.winRate).toBe(1);
-    expect(totals.longestLossStreak).toBe(0);
-    expect(totals.longestWinStreak).toBe(3);
+    expect(totals.longestLossStreak).toBeNull();
+    expect(totals.longestWinStreak).toEqual({
+      count: 3,
+      totalUnitsWon: 35,
+      startDate: new Date(2024, 0, 1),
+      endDate: new Date(2024, 0, 3),
+    });
   });
 
   it('finds the correct longest streak with alternating results', () => {
@@ -69,8 +86,19 @@ describe('computeTotals', () => {
     );
     const totals = computeTotals(rows);
 
-    expect(totals.longestWinStreak).toBe(3);
-    expect(totals.longestLossStreak).toBe(1);
+    // The longest streak is the run of 3 wins (3, 8, 12), not the earlier run of 2 (10, 5),
+    // spanning rows 4-6 (Jan 4-6).
+    expect(totals.longestWinStreak).toEqual({
+      count: 3,
+      totalUnitsWon: 23,
+      startDate: new Date(2024, 0, 4),
+      endDate: new Date(2024, 0, 6),
+    });
+    expect(totals.longestLossStreak).toEqual({
+      count: 1,
+      startDate: new Date(2024, 0, 3),
+      endDate: new Date(2024, 0, 3),
+    });
   });
 
   it('breaks a tie for bestRound by taking the first occurrence', () => {
@@ -148,29 +176,67 @@ describe('findMissedRoundGaps', () => {
   });
 });
 
-describe('computeDayOfWeekStats', () => {
-  it('always returns 7 entries in Sun-Sat order, even for empty input', () => {
-    const stats = computeDayOfWeekStats([]);
-    expect(stats).toHaveLength(7);
-    expect(stats.map(s => s.label)).toEqual(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
-    expect(stats.every(s => s.roundsPlayed === 0 && s.totalUnitsWon === 0)).toBe(true);
+describe('activeBetLineCount', () => {
+  it('counts only lines with at least one non-zero pirate pick', () => {
+    // Line 1 picks a pirate in arena 0; line 2 picks a pirate in arena 1; both active.
+    const url = makeBetUrl(1, [
+      [1, 0, 0, 0, 0],
+      [0, 2, 0, 0, 0],
+    ]);
+    expect(activeBetLineCount(url)).toBe(2);
   });
 
-  it('buckets rows by day of week', () => {
-    // 2024-01-01 is a Monday.
-    const rows = [
-      makeRow(1, 10, new Date(2024, 0, 1)), // Mon
-      makeRow(2, 5, new Date(2024, 0, 8)), // Mon
-      makeRow(3, 20, new Date(2024, 0, 2)), // Tue
-    ];
-    const stats = computeDayOfWeekStats(rows);
-    const monday = stats.find(s => s.label === 'Mon')!;
-    const tuesday = stats.find(s => s.label === 'Tue')!;
+  it('does not count all-zero lines', () => {
+    const url = makeBetUrl(1, [
+      [1, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0],
+    ]);
+    expect(activeBetLineCount(url)).toBe(1);
+  });
 
-    expect(monday.roundsPlayed).toBe(2);
-    expect(monday.totalUnitsWon).toBe(15);
-    expect(monday.averageUnitsPerRound).toBe(7.5);
-    expect(tuesday.roundsPlayed).toBe(1);
-    expect(tuesday.totalUnitsWon).toBe(20);
+  it('returns 0 for a URL with no bet hash', () => {
+    expect(activeBetLineCount('https://neofood.club/#round=1')).toBe(0);
+  });
+});
+
+describe('computeMonthlyStats roi', () => {
+  it('divides total units won by total active bet lines for the month', () => {
+    const url1 = makeBetUrl(1, [
+      [1, 0, 0, 0, 0],
+      [0, 2, 0, 0, 0],
+    ]); // 2 active lines
+    const url2 = makeBetUrl(2, [[3, 0, 0, 0, 0]]); // 1 active line
+    const rows = [
+      makeRow(1, 6, new Date(2024, 0, 1), url1),
+      makeRow(2, 3, new Date(2024, 0, 2), url2),
+    ];
+    const months = computeMonthlyStats(rows);
+
+    // (6 + 3) units won / (2 + 1) active lines = 3.0x
+    expect(months[0]!.roi).toBe(3);
+  });
+
+  it('is 0 when there are no active bet lines to avoid dividing by zero', () => {
+    const rows = [makeRow(1, 5, new Date(2024, 0, 1), 'https://neofood.club/#round=1')];
+    const months = computeMonthlyStats(rows);
+
+    expect(months[0]!.roi).toBe(0);
+  });
+
+  it('accumulates roi across months in cumulativeRoi', () => {
+    const oneLineUrl = makeBetUrl(1, [[1, 0, 0, 0, 0]]);
+    const rows = [
+      // January: 2 units won / 1 line = 2.0x that month.
+      makeRow(1, 2, new Date(2024, 0, 1), oneLineUrl),
+      // February: 0 units won / 1 line = 0.0x that month, but cumulative
+      // stays (2 + 0) / (1 + 1) = 1.0x.
+      makeRow(2, 0, new Date(2024, 1, 1), oneLineUrl),
+    ];
+    const months = computeMonthlyStats(rows);
+
+    expect(months[0]!.roi).toBe(2);
+    expect(months[0]!.cumulativeRoi).toBe(2);
+    expect(months[1]!.roi).toBe(0);
+    expect(months[1]!.cumulativeRoi).toBe(1);
   });
 });

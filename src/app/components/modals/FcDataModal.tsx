@@ -1,13 +1,13 @@
 import {
   Box,
   Button,
+  Card,
   CloseButton,
   Code,
   Dialog,
   HStack,
   Link,
   Portal,
-  Progress,
   SimpleGrid,
   Stack,
   Table,
@@ -19,11 +19,9 @@ import { FaFileCsv } from 'react-icons/fa';
 
 import {
   computeCumulativeSeries,
-  computeDayOfWeekStats,
   computeMonthlyStats,
   computeTotals,
   findMissedRoundGaps,
-  type FcDataDayOfWeekStats,
   type FcDataMissedRoundGap,
   type FcDataMonthStats,
   type FcDataTotals,
@@ -50,58 +48,137 @@ function displayPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-function StatBlock({ label, value }: { label: string; value: React.ReactNode }): React.JSX.Element {
+function formatRoi(value: number): string {
+  return `${value.toFixed(2)}x`;
+}
+
+function roiColor(value: number): string {
+  return value >= 1 ? 'green.600' : 'orange.500';
+}
+
+function formatDateRange(start: Date, end: Date): string {
+  const startLabel = format(start, 'MMM d, yyyy');
+  if (start.getTime() === end.getTime()) {
+    return startLabel;
+  }
+  return `${startLabel} - ${format(end, 'MMM d, yyyy')}`;
+}
+
+function SectionCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <Card.Root boxShadow="sm">
+      <Card.Body p={4}>
+        <Stack gap={3}>
+          <Text fontSize="sm" fontWeight="semibold" color="fg.muted" letterSpacing="wide">
+            {title.toUpperCase()}
+          </Text>
+          {children}
+        </Stack>
+      </Card.Body>
+    </Card.Root>
+  );
+}
+
+function StatBlock({
+  label,
+  value,
+  sub,
+  color,
+}: {
+  label: string;
+  value: React.ReactNode;
+  sub?: React.ReactNode;
+  color?: string;
+}): React.JSX.Element {
   return (
     <Stack gap={0}>
       <Text fontSize="xs" color="fg.muted">
         {label}
       </Text>
-      <Text fontSize="lg" fontWeight="semibold">
+      <Text fontSize="lg" fontWeight="semibold" color={color}>
         {value}
       </Text>
+      {sub && (
+        <Text fontSize="xs" color="fg.muted">
+          {sub}
+        </Text>
+      )}
     </Stack>
   );
 }
 
 function FcDataTotalsSection({ totals }: { totals: FcDataTotals }): React.JSX.Element {
   return (
-    <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
-      <StatBlock label="Rounds recorded" value={totals.roundsRecorded.toLocaleString()} />
-      <StatBlock label="Total units won" value={formatUnits(totals.totalUnitsWon)} />
-      <StatBlock label="Average per round" value={totals.averageUnitsPerRound.toFixed(1)} />
-      <StatBlock label="Win rate" value={displayPercent(totals.winRate)} />
-      <StatBlock label="Longest win streak" value={totals.longestWinStreak.toLocaleString()} />
-      <StatBlock label="Longest loss streak" value={totals.longestLossStreak.toLocaleString()} />
-      <StatBlock
-        label="Best round"
-        value={
-          totals.bestRound ? (
-            <Link href={totals.bestRound.url} target="_blank" fontSize="lg">
-              #{totals.bestRound.round} ({formatUnits(totals.bestRound.unitsWon)})
-            </Link>
-          ) : (
-            '-'
-          )
-        }
-      />
-      <StatBlock
-        label="Date range"
-        value={
-          totals.firstRound && totals.lastRound
-            ? `${format(totals.firstRound.date, 'MMM d, yyyy')} - ${format(totals.lastRound.date, 'MMM d, yyyy')}`
-            : '-'
-        }
-      />
-    </SimpleGrid>
+    <SectionCard title="Overview">
+      <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
+        <StatBlock label="Rounds recorded" value={totals.roundsRecorded.toLocaleString()} />
+        <StatBlock
+          label="Total units won"
+          value={formatUnits(totals.totalUnitsWon)}
+          color="nfc-blue.600"
+        />
+        <StatBlock label="Average per round" value={totals.averageUnitsPerRound.toFixed(1)} />
+        <StatBlock
+          label="Win rate"
+          value={displayPercent(totals.winRate)}
+          color={totals.winRate >= 0.5 ? 'green.600' : 'orange.500'}
+        />
+        <StatBlock
+          label="Longest win streak"
+          value={
+            totals.longestWinStreak
+              ? `${totals.longestWinStreak.count.toLocaleString()} (${formatUnits(totals.longestWinStreak.totalUnitsWon)} units)`
+              : '-'
+          }
+          sub={
+            totals.longestWinStreak &&
+            formatDateRange(totals.longestWinStreak.startDate, totals.longestWinStreak.endDate)
+          }
+          color="green.600"
+        />
+        <StatBlock
+          label="Longest bust streak"
+          value={totals.longestLossStreak ? totals.longestLossStreak.count.toLocaleString() : '-'}
+          sub={
+            totals.longestLossStreak &&
+            formatDateRange(totals.longestLossStreak.startDate, totals.longestLossStreak.endDate)
+          }
+          color="red.500"
+        />
+        <StatBlock
+          label="Best round"
+          value={
+            totals.bestRound ? (
+              <Link href={totals.bestRound.url} target="_blank" fontSize="lg">
+                #{totals.bestRound.round} ({formatUnits(totals.bestRound.unitsWon)})
+              </Link>
+            ) : (
+              '-'
+            )
+          }
+        />
+        <StatBlock
+          label="Date range"
+          value={
+            totals.firstRound && totals.lastRound
+              ? `${format(totals.firstRound.date, 'MMM d, yyyy')} - ${format(totals.lastRound.date, 'MMM d, yyyy')}`
+              : '-'
+          }
+        />
+      </SimpleGrid>
+    </SectionCard>
   );
 }
 
 function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.JSX.Element {
   return (
-    <Stack gap={2}>
-      <Text fontSize="sm" fontWeight="medium">
-        Per-month breakdown:
-      </Text>
+    <SectionCard title="Per-Month Breakdown">
       <Box maxH="280px" overflowY="auto">
         <Table.Root size="sm" width="full">
           <Table.Header>
@@ -111,6 +188,8 @@ function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.J
               <Table.ColumnHeader textAlign="right">Total Won</Table.ColumnHeader>
               <Table.ColumnHeader textAlign="right">Avg/Round</Table.ColumnHeader>
               <Table.ColumnHeader textAlign="right">Win Rate</Table.ColumnHeader>
+              <Table.ColumnHeader textAlign="right">ROI</Table.ColumnHeader>
+              <Table.ColumnHeader textAlign="right">Running ROI</Table.ColumnHeader>
               <Table.ColumnHeader textAlign="right">Best Round</Table.ColumnHeader>
             </Table.Row>
           </Table.Header>
@@ -122,6 +201,12 @@ function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.J
                 <Table.Cell textAlign="right">{formatUnits(month.totalUnitsWon)}</Table.Cell>
                 <Table.Cell textAlign="right">{month.averageUnitsPerRound.toFixed(1)}</Table.Cell>
                 <Table.Cell textAlign="right">{displayPercent(month.winRate)}</Table.Cell>
+                <Table.Cell textAlign="right" color={roiColor(month.roi)} fontWeight="medium">
+                  {formatRoi(month.roi)}
+                </Table.Cell>
+                <Table.Cell textAlign="right" color={roiColor(month.cumulativeRoi)}>
+                  {formatRoi(month.cumulativeRoi)}
+                </Table.Cell>
                 <Table.Cell textAlign="right">
                   {month.bestRound && (
                     <Link href={month.bestRound.url} target="_blank" fontSize="sm">
@@ -134,49 +219,12 @@ function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.J
           </Table.Body>
         </Table.Root>
       </Box>
-    </Stack>
-  );
-}
-
-function FcDataDayOfWeekSection({ days }: { days: FcDataDayOfWeekStats[] }): React.JSX.Element {
-  const maxAverage = Math.max(...days.map(day => day.averageUnitsPerRound), 1);
-
-  return (
-    <Stack gap={2}>
-      <Text fontSize="sm" fontWeight="medium">
-        By day of week:
+      <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+        ROI is units won per active bet line (not real NP wagered - the CSV has no bet amounts),
+        where 1.00x means breaking even. Running ROI accumulates from the first recorded round
+        through the end of that month.
       </Text>
-      <Table.Root size="sm" width="full">
-        <Table.Header>
-          <Table.Row>
-            <Table.ColumnHeader width="60px">Day</Table.ColumnHeader>
-            <Table.ColumnHeader textAlign="right">Rounds</Table.ColumnHeader>
-            <Table.ColumnHeader textAlign="right">Avg/Round</Table.ColumnHeader>
-            <Table.ColumnHeader width="40%" />
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {days.map(day => (
-            <Table.Row key={day.dayOfWeek}>
-              <Table.Cell>{day.label}</Table.Cell>
-              <Table.Cell textAlign="right">{day.roundsPlayed.toLocaleString()}</Table.Cell>
-              <Table.Cell textAlign="right">{day.averageUnitsPerRound.toFixed(1)}</Table.Cell>
-              <Table.Cell p={2}>
-                <Progress.Root
-                  value={(day.averageUnitsPerRound / maxAverage) * 100}
-                  size="xs"
-                  colorPalette="nfc-blue"
-                >
-                  <Progress.Track>
-                    <Progress.Range />
-                  </Progress.Track>
-                </Progress.Root>
-              </Table.Cell>
-            </Table.Row>
-          ))}
-        </Table.Body>
-      </Table.Root>
-    </Stack>
+    </SectionCard>
   );
 }
 
@@ -192,16 +240,11 @@ function FcDataMissedRoundsSection({
   }
 
   return (
-    <Stack gap={2}>
-      <HStack>
-        <Text fontSize="sm" fontWeight="medium">
-          Missed rounds:
-        </Text>
-        <Text fontSize="sm" color="fg.muted">
-          {gaps.length} gap{gaps.length === 1 ? '' : 's'} where one or more rounds weren&apos;t
-          recorded
-        </Text>
-      </HStack>
+    <SectionCard title="Missed Rounds">
+      <Text fontSize="sm" color="fg.muted">
+        {gaps.length} gap{gaps.length === 1 ? '' : 's'} where one or more rounds weren&apos;t
+        recorded
+      </Text>
       <Stack gap={1} maxH="180px" overflowY="auto">
         {gaps.map(gap => {
           const afterUrl = rowsByRound.get(gap.afterRound)?.url;
@@ -228,7 +271,7 @@ function FcDataMissedRoundsSection({
           );
         })}
       </Stack>
-    </Stack>
+    </SectionCard>
   );
 }
 
@@ -363,7 +406,6 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
   const totals = React.useMemo(() => computeTotals(rows), [rows]);
   const months = React.useMemo(() => computeMonthlyStats(rows), [rows]);
   const cumulativeSeries = React.useMemo(() => computeCumulativeSeries(rows), [rows]);
-  const dayOfWeekStats = React.useMemo(() => computeDayOfWeekStats(rows), [rows]);
   const missedRoundGaps = React.useMemo(() => findMissedRoundGaps(rows), [rows]);
   const rowsByRound = React.useMemo(() => new Map(rows.map(row => [row.round, row])), [rows]);
 
@@ -437,13 +479,12 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
 
                     <FcDataTotalsSection totals={totals} />
 
-                    <FcDataCumulativeChart series={cumulativeSeries} />
-
-                    <FcDataMonthlyBarChart months={months} />
+                    <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
+                      <FcDataCumulativeChart series={cumulativeSeries} />
+                      <FcDataMonthlyBarChart months={months} />
+                    </SimpleGrid>
 
                     <FcDataMonthlyTable months={months} />
-
-                    <FcDataDayOfWeekSection days={dayOfWeekStats} />
 
                     <FcDataMissedRoundsSection gaps={missedRoundGaps} rowsByRound={rowsByRound} />
                   </>
