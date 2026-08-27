@@ -32,6 +32,10 @@ export interface FcDataTotals {
   averageUnitsPerRound: number;
   /** Fraction of rounds with unitsWon > 0, 0..1. */
   winRate: number;
+  /** Sum of active bet lines (see `activeBetLineCount`) across every recorded round. */
+  totalActiveBetLines: number;
+  /** totalUnitsWon / totalActiveBetLines, all-time. 1.0 means breaking even. */
+  roi: number;
   /** Highest unitsWon; first occurrence wins ties. Null when there are no rows. */
   bestRound: FcDataRow | null;
   /** Null when no round ever won anything. */
@@ -348,6 +352,8 @@ export function computeTotals(rows: FcDataRow[]): FcDataTotals {
       totalUnitsWon: 0,
       averageUnitsPerRound: 0,
       winRate: 0,
+      totalActiveBetLines: 0,
+      roi: 0,
       bestRound: null,
       longestWinStreak: null,
       longestLossStreak: null,
@@ -359,6 +365,7 @@ export function computeTotals(rows: FcDataRow[]): FcDataTotals {
 
   const totalUnitsWon = rows.reduce((sum, row) => sum + row.unitsWon, 0);
   const winningRounds = rows.filter(row => row.unitsWon > 0).length;
+  const totalActiveBetLines = rows.reduce((sum, row) => sum + activeBetLineCount(row.url), 0);
 
   let bestRound = rows[0]!;
   for (const row of rows) {
@@ -372,6 +379,8 @@ export function computeTotals(rows: FcDataRow[]): FcDataTotals {
     totalUnitsWon,
     averageUnitsPerRound: totalUnitsWon / rows.length,
     winRate: winningRounds / rows.length,
+    totalActiveBetLines,
+    roi: totalActiveBetLines > 0 ? totalUnitsWon / totalActiveBetLines : 0,
     bestRound,
     longestWinStreak: longestWinStreak(rows),
     longestLossStreak: longestLossStreak(rows),
@@ -543,12 +552,12 @@ export function buildShareSummary(totals: FcDataTotals): string {
 
   const lines: string[] = [
     `NeoFoodClub stats: ${totals.roundsRecorded.toLocaleString()} rounds tracked`,
-    `Total won: ${Math.round(totals.totalUnitsWon).toLocaleString()} units | Win rate: ${(totals.winRate * 100).toFixed(1)}% | Avg/round: ${totals.averageUnitsPerRound.toFixed(1)}`,
+    `Total won: ${Math.round(totals.totalUnitsWon).toLocaleString()} units | Win rate: ${(totals.winRate * 100).toFixed(1)}% | Avg/round: ${totals.averageUnitsPerRound.toFixed(1)} | ROI: ${totals.roi.toFixed(3)}x`,
   ];
 
   if (totals.bestRound) {
     lines.push(
-      `Best round: #${totals.bestRound.round} (${Math.round(totals.bestRound.unitsWon).toLocaleString()} units)`,
+      `Best round: #${totals.bestRound.round} (${Math.round(totals.bestRound.unitsWon).toLocaleString()} units) - ${totals.bestRound.url}`,
     );
   }
 
