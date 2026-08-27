@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Card,
   Dialog,
   Portal,
   CloseButton,
@@ -243,44 +244,49 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
             </Dialog.Header>
             <Dialog.Body>
               <Stack gap={3}>
-                <Stack gap={1} align="stretch">
-                  <Text fontSize="sm" fontWeight="medium">
-                    Change round
-                  </Text>
-                  <Text fontSize="xs" color="fg.muted">
-                    Current round on Neopets: {currentRoundFromCdn > 0 ? currentRoundFromCdn : '—'}
-                  </Text>
-                  <HStack justify="space-between" flexWrap="wrap" gap={2}>
-                    <Box maxW="170px">
-                      <RoundInput
-                        selectedRound={previewRound}
-                        referenceRound={currentRoundFromCdn}
-                        onRoundChange={setPreviewRound}
-                        hasError={previewError !== null}
-                      />
-                    </Box>
-                    <Button
-                      size="xs"
-                      variant="solid"
-                      colorPalette="nfc-green"
-                      onClick={handleDownloadPreviousJsonl}
-                      disabled={downloadStatus === 'downloading'}
-                    >
-                      <FaDownload />
-                      {downloadStatus === 'downloading'
-                        ? 'Downloading...'
-                        : 'Download previous.jsonl'}
-                    </Button>
-                  </HStack>
-                  <Text fontSize="xs" color="fg.muted">
-                    Download the full previous-rounds history feed (~13MB).
-                  </Text>
-                </Stack>
-                {downloadStatus === 'error' && (
-                  <Text fontSize="xs" color="fg.error">
-                    Failed to download previous.jsonl.
-                  </Text>
-                )}
+                <Card.Root boxShadow="sm">
+                  <Card.Body p={3}>
+                    <Stack gap={2} align="stretch">
+                      <Text fontSize="sm" fontWeight="medium">
+                        Change round
+                      </Text>
+                      <Text fontSize="xs" color="fg.muted">
+                        Current round on Neopets:{' '}
+                        {currentRoundFromCdn > 0 ? currentRoundFromCdn : '—'}
+                      </Text>
+                      <HStack justify="space-between" flexWrap="wrap" gap={2}>
+                        <Box maxW="170px">
+                          <RoundInput
+                            selectedRound={previewRound}
+                            referenceRound={currentRoundFromCdn}
+                            onRoundChange={setPreviewRound}
+                            hasError={previewError !== null}
+                          />
+                        </Box>
+                        <Button
+                          size="xs"
+                          variant="solid"
+                          colorPalette="nfc-green"
+                          onClick={handleDownloadPreviousJsonl}
+                          disabled={downloadStatus === 'downloading'}
+                        >
+                          <FaDownload />
+                          {downloadStatus === 'downloading'
+                            ? 'Downloading...'
+                            : 'Download previous.jsonl'}
+                        </Button>
+                      </HStack>
+                      <Text fontSize="xs" color="fg.muted">
+                        Download the full previous-rounds history feed (~13MB).
+                      </Text>
+                      {downloadStatus === 'error' && (
+                        <Text fontSize="xs" color="fg.error">
+                          Failed to download previous.jsonl.
+                        </Text>
+                      )}
+                    </Stack>
+                  </Card.Body>
+                </Card.Root>
                 <Box minH="300px" opacity={previewLoading ? 0.6 : 1} transition="opacity 0.15s">
                   {previewError ? (
                     <Text fontSize="sm" color="nfc-red.fg">
