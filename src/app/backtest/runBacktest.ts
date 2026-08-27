@@ -102,6 +102,23 @@ export function backtestRound(
     }
   }
 
+  return scoreBets(round, bets, betAmount);
+}
+
+/**
+ * Scores a set of bets against a round's actual winners: how much was wagered
+ * and how much came back. Uses the raw `betAmount` per bet rather than the
+ * wasm engine's per-bet amount (which the Rust side pre-caps to whatever it
+ * takes to hit the 1,000,000 payout cap, via fill_bet_amounts in bets.rs -
+ * that's the real-game "don't waste NP" behavior, but this backtest is
+ * exploratory and wants to show what happens if you actually wager the full
+ * amount). The Math.min below still enforces the real payout cap on winnings.
+ */
+export function scoreBets(
+  round: BacktestRound,
+  bets: Bet,
+  betAmount: number,
+): { spent: number; won: number } {
   const winningBetBinary = computePiratesBinary(round.winners);
 
   let spent = 0;
@@ -114,13 +131,6 @@ export function backtestRound(
       continue;
     }
 
-    // Use the raw requested betAmount rather than the wasm engine's
-    // per-bet amount (which the Rust side pre-caps to whatever it takes
-    // to hit the 1,000,000 payout cap, via fill_bet_amounts in bets.rs -
-    // that's the real-game "don't waste NP" behavior, but this backtest
-    // is exploratory and wants to show what happens if you actually
-    // wager the full amount). The Math.min below still enforces the
-    // real payout cap on winnings either way.
     spent += betAmount;
 
     let oddsProduct = 1;
