@@ -1,12 +1,20 @@
 import { Button, Drawer, Portal, Stack, CloseButton, Separator } from '@chakra-ui/react';
 import * as React from 'react';
-import { FaBalanceScale, FaCode, FaCrosshairs, FaStopwatch, FaTable } from 'react-icons/fa';
+import {
+  FaBalanceScale,
+  FaCode,
+  FaCrosshairs,
+  FaFileCsv,
+  FaStopwatch,
+  FaTable,
+} from 'react-icons/fa';
 import { FaMagnifyingGlassChart } from 'react-icons/fa6';
 
 import { useDisclosureState } from '../../hooks/useDisclosureState';
 import { getReactScanEnabled, setReactScanEnabled } from '../../util/reactScan';
 import { AllBetsModal } from '../modals/AllBetsModal';
 import { BacktestComparisonModal } from '../modals/BacktestComparisonModal';
+import { FcDataModal } from '../modals/FcDataModal';
 import { PirateMatchupModal } from '../modals/PirateMatchupModal';
 import { RoundEndDriftModal } from '../modals/RoundEndDriftModal';
 import { RoundJsonModal } from '../modals/RoundJsonModal';
@@ -23,6 +31,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
   const backtestModal = useDisclosureState(false);
   const driftModal = useDisclosureState(false);
   const matchupModal = useDisclosureState(false);
+  const fcDataModal = useDisclosureState(false);
   const [isReactScanEnabled, setIsReactScanEnabled] = React.useState(getReactScanEnabled);
 
   const handleReactScanToggle = React.useCallback((): void => {
@@ -81,6 +90,10 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
                     <FaCrosshairs />
                     Pirate Matchups (Head-to-Head)
                   </Button>
+                  <Button width="full" onClick={fcDataModal.onOpen}>
+                    <FaFileCsv />
+                    Import FC Data (NeoBot CSV)
+                  </Button>
                 </Stack>
               </Drawer.Body>
               <Drawer.Footer>
@@ -98,6 +111,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
       <BacktestComparisonModal isOpen={backtestModal.isOpen} onClose={backtestModal.onClose} />
       <RoundEndDriftModal isOpen={driftModal.isOpen} onClose={driftModal.onClose} />
       <PirateMatchupModal isOpen={matchupModal.isOpen} onClose={matchupModal.onClose} />
+      <FcDataModal isOpen={fcDataModal.isOpen} onClose={fcDataModal.onClose} />
     </>
   );
 };
