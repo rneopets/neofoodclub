@@ -1,5 +1,7 @@
 import { fromZonedTime, toZonedTime } from 'date-fns-tz';
 
+import { findRoundGaps, type RoundGap } from '../util/roundGaps';
+
 import type { RoundTiming } from './roundTiming';
 
 export const PACIFIC_TIMEZONE = 'America/Los_Angeles';
@@ -29,6 +31,9 @@ export interface DriftSummary {
   mostDelayedRound: number | null;
   maxOffsetMinutes: number | null;
 }
+
+/** A run of round numbers with no end-time data at all - e.g. a NeoFoodClub outage. */
+export type DriftDataGap = RoundGap;
 
 /**
  * Builds the expected end-of-round instant (2:15 PM Pacific, DST-aware) for
@@ -117,4 +122,15 @@ export function summarizeDrift(points: DriftPoint[]): DriftSummary {
     mostDelayedRound,
     maxOffsetMinutes,
   };
+}
+
+/**
+ * Finds round-number ranges within `points` that have no end-time data at
+ * all, assuming `points` is sorted ascending by round (as `computeDrift`
+ * produces). A gap here means the feed itself has nothing for those rounds -
+ * most commonly because NeoFoodClub didn't run them (a maintenance outage),
+ * not that this chart's round-range filter excluded them.
+ */
+export function findDriftDataGaps(points: DriftPoint[]): DriftDataGap[] {
+  return findRoundGaps(points.map(point => point.round));
 }

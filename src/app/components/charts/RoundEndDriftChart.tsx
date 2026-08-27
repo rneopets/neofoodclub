@@ -16,6 +16,7 @@ import { downsampleForChart } from '../../backtest/runBacktest';
 import {
   SCRAPER_LAG_TOLERANCE_MINUTES,
   classifyDrift,
+  type DriftDataGap,
   type DriftPoint,
   type DriftStatus,
 } from '../../devTiming/drift';
@@ -27,6 +28,8 @@ ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend, annota
 const LINE_COLOR = '#3182ce';
 const LATE_DRIFT_FILL = 'rgba(221, 107, 32, 0.08)';
 const SCRAPER_LAG_FILL = 'rgba(49, 130, 206, 0.10)';
+const MISSING_DATA_FILL = 'rgba(236, 201, 75, 0.25)';
+const MISSING_DATA_BORDER = 'rgba(214, 158, 46, 0.6)';
 
 function formatOffset(value: number): string {
   if (value === 0) {
@@ -49,9 +52,13 @@ function statusLabel(status: DriftStatus): string {
 
 interface RoundEndDriftChartProps {
   points: DriftPoint[];
+  gaps?: DriftDataGap[];
 }
 
-export function RoundEndDriftChart({ points }: RoundEndDriftChartProps): React.JSX.Element {
+export function RoundEndDriftChart({
+  points,
+  gaps = [],
+}: RoundEndDriftChartProps): React.JSX.Element {
   const { colorMode } = useColorMode();
   const isDarkLikeMode = colorMode !== 'light';
 
@@ -79,6 +86,34 @@ export function RoundEndDriftChart({ points }: RoundEndDriftChartProps): React.J
 
   const gridColor = isDarkLikeMode ? '#6272a4' : undefined;
   const textColor = isDarkLikeMode ? '#ffffff' : undefined;
+  const missingDataLabelColor = isDarkLikeMode ? '#f6e05e' : '#975a16';
+
+  const gapAnnotations = useMemo(
+    () =>
+      Object.fromEntries(
+        gaps.map((gap, index) => [
+          `missingDataGap${index}`,
+          {
+            type: 'box' as const,
+            xMin: gap.afterRound,
+            xMax: gap.beforeRound,
+            backgroundColor: MISSING_DATA_FILL,
+            borderColor: MISSING_DATA_BORDER,
+            borderWidth: 1,
+            borderDash: [4, 4],
+            label: {
+              display: true,
+              content: 'No data',
+              position: { x: 'center' as const, y: 'start' as const },
+              backgroundColor: 'transparent',
+              color: missingDataLabelColor,
+              font: { size: 10 },
+            },
+          },
+        ]),
+      ),
+    [gaps, missingDataLabelColor],
+  );
 
   const options = useMemo(
     () => ({
@@ -93,6 +128,7 @@ export function RoundEndDriftChart({ points }: RoundEndDriftChartProps): React.J
         },
         annotation: {
           annotations: {
+            ...gapAnnotations,
             onTimeLine: {
               type: 'line' as const,
               yMin: 0,
@@ -166,7 +202,7 @@ export function RoundEndDriftChart({ points }: RoundEndDriftChartProps): React.J
         },
       },
     }),
-    [gridColor, textColor, isDarkLikeMode],
+    [gridColor, textColor, isDarkLikeMode, gapAnnotations],
   );
 
   return (

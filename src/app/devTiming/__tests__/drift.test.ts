@@ -6,6 +6,7 @@ import {
   computeDrift,
   computeOffsetMinutes,
   expectedEndUtcFor,
+  findDriftDataGaps,
   summarizeDrift,
 } from '../drift';
 
@@ -112,5 +113,29 @@ describe('summarizeDrift', () => {
     const summary = summarizeDrift(points);
     expect(summary.mostDelayedRound).toBeNull();
     expect(summary.maxOffsetMinutes).toBeNull();
+  });
+});
+
+describe('findDriftDataGaps', () => {
+  it('detects a run of round numbers with no end-time data', () => {
+    const points = computeDrift([
+      { round: 1, timestamp: '2026-08-15T21:15:30Z' },
+      { round: 5, timestamp: '2026-08-19T21:15:30Z' },
+    ]);
+
+    expect(findDriftDataGaps(points)).toEqual([{ afterRound: 1, beforeRound: 5, missingCount: 3 }]);
+  });
+
+  it('returns no gaps for consecutive rounds', () => {
+    const points = computeDrift([
+      { round: 1, timestamp: '2026-08-15T21:15:30Z' },
+      { round: 2, timestamp: '2026-08-16T21:15:30Z' },
+    ]);
+
+    expect(findDriftDataGaps(points)).toEqual([]);
+  });
+
+  it('returns no gaps for empty input', () => {
+    expect(findDriftDataGaps([])).toEqual([]);
   });
 });
