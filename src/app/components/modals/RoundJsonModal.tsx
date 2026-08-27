@@ -250,32 +250,32 @@ export const RoundJsonModal: React.FC<RoundJsonModalProps> = ({ isOpen, onClose 
                   <Text fontSize="xs" color="fg.muted">
                     Current round on Neopets: {currentRoundFromCdn > 0 ? currentRoundFromCdn : '—'}
                   </Text>
-                  <Box maxW="170px">
-                    <RoundInput
-                      selectedRound={previewRound}
-                      referenceRound={currentRoundFromCdn}
-                      onRoundChange={setPreviewRound}
-                      hasError={previewError !== null}
-                    />
-                  </Box>
-                </Stack>
-                <HStack justify="space-between" flexWrap="wrap" gap={2}>
+                  <HStack justify="space-between" flexWrap="wrap" gap={2}>
+                    <Box maxW="170px">
+                      <RoundInput
+                        selectedRound={previewRound}
+                        referenceRound={currentRoundFromCdn}
+                        onRoundChange={setPreviewRound}
+                        hasError={previewError !== null}
+                      />
+                    </Box>
+                    <Button
+                      size="xs"
+                      variant="solid"
+                      colorPalette="nfc-green"
+                      onClick={handleDownloadPreviousJsonl}
+                      disabled={downloadStatus === 'downloading'}
+                    >
+                      <FaDownload />
+                      {downloadStatus === 'downloading'
+                        ? 'Downloading...'
+                        : 'Download previous.jsonl'}
+                    </Button>
+                  </HStack>
                   <Text fontSize="xs" color="fg.muted">
                     Download the full previous-rounds history feed (~13MB).
                   </Text>
-                  <Button
-                    size="xs"
-                    variant="solid"
-                    colorPalette="nfc-green"
-                    onClick={handleDownloadPreviousJsonl}
-                    disabled={downloadStatus === 'downloading'}
-                  >
-                    <FaDownload />
-                    {downloadStatus === 'downloading'
-                      ? 'Downloading...'
-                      : 'Download previous.jsonl'}
-                  </Button>
-                </HStack>
+                </Stack>
                 {downloadStatus === 'error' && (
                   <Text fontSize="xs" color="fg.error">
                     Failed to download previous.jsonl.
