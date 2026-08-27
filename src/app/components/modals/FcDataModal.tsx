@@ -460,10 +460,7 @@ function FcDataAdvancedStatsSection({
             ))}
           </Stack>
           <Text fontSize="xs" color="fg.muted" fontStyle="italic">
-            Share of matched rounds where the pirate appeared in at least one active bet line.
-            &quot;Net when included&quot; isn&apos;t shown per-pirate since a round&apos;s total
-            units won can&apos;t be split between co-occurring pirates without knowing which line
-            actually won.
+            Percent of rounds where you had that pirate in at least one bet line.
           </Text>
         </Stack>
       )}
