@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   CloseButton,
+  Code,
   Dialog,
   HStack,
   Link,
@@ -387,8 +388,9 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
             <Dialog.Body display="flex" flexDirection="column" overflowY="auto">
               <Stack gap={4}>
                 <Text fontSize="sm" color="fg.muted">
-                  Drop in a fc_data.csv export from NeoBot (the r/Neopets Discord bot) to see charts
-                  and stats about your personal NeoFoodClub betting history.
+                  Drop in a fc_data.csv export from NeoBot (the r/Neopets Discord bot's{' '}
+                  <Code fontSize="sm">?fcdata</Code> command) to see charts and stats about your
+                  personal NeoFoodClub betting history.
                 </Text>
 
                 <input
