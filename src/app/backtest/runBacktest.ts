@@ -1,28 +1,84 @@
+import type { Bet } from '../../types/bets';
 import { computePiratesBinary } from '../maths';
-import { rebuildEngine, wasmMakeMaxTerBets } from '../wasmEngine';
+import { deriveDefaultGambitBinary, deriveDefaultTenbetBinary } from '../perf/wasmEnginePerf';
+import {
+  rebuildEngine,
+  wasmMakeBustproofBets,
+  wasmMakeCrazyBets,
+  wasmMakeGambitBets,
+  wasmMakeMaxTerBets,
+  wasmMakeTenbetBets,
+  wasmMakeWinningGambitBets,
+} from '../wasmEngine';
 
 import type {
   AmountSweepPoint,
   BacktestRound,
+  BacktestStrategy,
   BacktestSummary,
   ModelBacktestResult,
 } from './types';
 
+/** Default bet-amount presets offered by the backtest UI. */
+export const AMOUNT_PRESETS = [1000, 5000, 10000, 25000, 50000];
+
+/**
+ * Backtests a single round with the given strategy and model, returning null
+ * when the strategy is not applicable to this round (e.g. bustproof on a
+ * round with no positive arenas, or winningGambit before winners are set).
+ */
 export function backtestRound(
   round: BacktestRound,
   useLogit: boolean,
   betAmount: number,
   betCount: number,
-  useEr: boolean,
-): { spent: number; won: number } {
-  // useEr selects a different bet-selection strategy in the wasm engine:
-  // passing a bet amount ranks bets by Net Expected at that (odds-capped)
-  // amount ("max-TER"); passing null instead switches the engine to rank by
-  // raw, amount-independent Expected Ratio ("general ER" - see is_general()
-  // in bets_factory.rs). Scoring below always uses the real betAmount
-  // regardless of which strategy selected the bets.
-  rebuildEngine(JSON.stringify(round), useEr ? null : betAmount, useLogit);
-  const { bets } = wasmMakeMaxTerBets(betCount);
+  strategy: BacktestStrategy,
+): { spent: number; won: number } | null {
+  // The engine's bet-amount argument selects a different ranking for the
+  // max-TER generator: passing a bet amount ranks bets by Net Expected at
+  // that (odds-capped) amount ("max-TER"); passing null instead switches the
+  // engine to rank by raw, amount-independent Expected Ratio ("general ER" -
+  // see is_general() in bets_factory.rs). For every other strategy the
+  // argument is ignored by those generators. Scoring below always uses the
+  // real betAmount regardless of which strategy selected the bets.
+  const engineBetAmount = strategy === 'generalEr' ? null : betAmount;
+  rebuildEngine(JSON.stringify(round), engineBetAmount, useLogit);
+
+  let bets: Bet;
+  switch (strategy) {
+    case 'maxTer':
+      ({ bets } = wasmMakeMaxTerBets(betCount));
+      break;
+    case 'generalEr':
+      ({ bets } = wasmMakeMaxTerBets(betCount));
+      break;
+    case 'gambit':
+      ({ bets } = wasmMakeGambitBets(deriveDefaultGambitBinary(), betCount));
+      break;
+    case 'bustproof': {
+      const result = wasmMakeBustproofBets(betCount);
+      if (result === null) {
+        return null; // no positive arenas - nothing to bet
+      }
+      bets = result.bets;
+      break;
+    }
+    case 'tenbet':
+      ({ bets } = wasmMakeTenbetBets(deriveDefaultTenbetBinary(), betCount));
+      break;
+    case 'crazy':
+      ({ bets } = wasmMakeCrazyBets(betCount));
+      break;
+    case 'winningGambit': {
+      const result = wasmMakeWinningGambitBets(betCount);
+      if (result === null) {
+        return null; // no winners yet - hindsight strategy not applicable
+      }
+      bets = result.bets;
+      break;
+    }
+  }
+
   const winningBetBinary = computePiratesBinary(round.winners);
 
   let spent = 0;
@@ -63,6 +119,7 @@ export function backtestRound(
 export interface RunBacktestOptions {
   betAmount: number;
   betCount: number;
+  strategy: BacktestStrategy;
   chunkSize?: number;
   onProgress?: (done: number, total: number) => void;
   signal?: AbortSignal;
@@ -73,14 +130,29 @@ interface Accumulator {
   totalWon: number;
   roundsPlayed: number;
   roundsWon: number;
+  roundsSkipped: number;
   cumulativeNet: number[];
 }
 
 function createAccumulator(): Accumulator {
-  return { totalSpent: 0, totalWon: 0, roundsPlayed: 0, roundsWon: 0, cumulativeNet: [] };
+  return {
+    totalSpent: 0,
+    totalWon: 0,
+    roundsPlayed: 0,
+    roundsWon: 0,
+    roundsSkipped: 0,
+    cumulativeNet: [],
+  };
 }
 
-function accumulate(acc: Accumulator, result: { spent: number; won: number }): void {
+function accumulate(acc: Accumulator, result: { spent: number; won: number } | null): void {
+  if (result === null) {
+    // Strategy not applicable to this round - it neither spent nor won, and
+    // contributes no point to the cumulative curve (the chart stays flat).
+    acc.roundsSkipped += 1;
+    return;
+  }
+
   acc.totalSpent += result.spent;
   acc.totalWon += result.won;
   acc.roundsPlayed += 1;
@@ -99,6 +171,7 @@ function finalizeAccumulator(acc: Accumulator): ModelBacktestResult {
     roi: acc.totalSpent > 0 ? netProfit / acc.totalSpent : 0,
     roundsPlayed: acc.roundsPlayed,
     roundsWon: acc.roundsWon,
+    roundsSkipped: acc.roundsSkipped,
     cumulativeNet: acc.cumulativeNet,
   };
 }
@@ -111,19 +184,15 @@ export async function runFullBacktest(
 
   const legacyAcc = createAccumulator();
   const logitAcc = createAccumulator();
-  const legacyGeneralErAcc = createAccumulator();
-  const logitGeneralErAcc = createAccumulator();
   const roundNumbers: number[] = [];
 
   for (let i = 0; i < rounds.length; i++) {
     const round = rounds[i]!;
-    accumulate(legacyAcc, backtestRound(round, false, opts.betAmount, opts.betCount, false));
-    accumulate(logitAcc, backtestRound(round, true, opts.betAmount, opts.betCount, false));
     accumulate(
-      legacyGeneralErAcc,
-      backtestRound(round, false, opts.betAmount, opts.betCount, true),
+      legacyAcc,
+      backtestRound(round, false, opts.betAmount, opts.betCount, opts.strategy),
     );
-    accumulate(logitGeneralErAcc, backtestRound(round, true, opts.betAmount, opts.betCount, true));
+    accumulate(logitAcc, backtestRound(round, true, opts.betAmount, opts.betCount, opts.strategy));
 
     roundNumbers.push(round.round);
 
@@ -140,14 +209,13 @@ export async function runFullBacktest(
     rounds: roundNumbers,
     legacy: finalizeAccumulator(legacyAcc),
     logit: finalizeAccumulator(logitAcc),
-    legacyGeneralEr: finalizeAccumulator(legacyGeneralErAcc),
-    logitGeneralEr: finalizeAccumulator(logitGeneralErAcc),
   };
 }
 
 export interface RunAmountSweepOptions {
   amounts: number[];
   betCount: number;
+  strategy: BacktestStrategy;
   onProgress?: (doneRounds: number, totalRounds: number) => void;
   onStepComplete?: (point: AmountSweepPoint) => void;
   signal?: AbortSignal;
@@ -167,6 +235,7 @@ export async function runBacktestAmountSweep(
     const summary = await runFullBacktest(rounds, {
       betAmount: amount,
       betCount: opts.betCount,
+      strategy: opts.strategy,
       ...(opts.signal ? { signal: opts.signal } : {}),
       onProgress: done => {
         opts.onProgress?.(completedRounds + done, totalRounds);
@@ -177,8 +246,6 @@ export async function runBacktestAmountSweep(
       amount,
       legacy: summary.legacy,
       logit: summary.logit,
-      legacyGeneralEr: summary.legacyGeneralEr,
-      logitGeneralEr: summary.logitGeneralEr,
     };
     points.push(point);
     opts.onStepComplete?.(point);

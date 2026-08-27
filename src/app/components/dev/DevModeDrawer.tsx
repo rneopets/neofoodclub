@@ -84,7 +84,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
                   </Button>
                   <Button width="full" onClick={backtestModal.onOpen}>
                     <FaBalanceScale />
-                    Compare Max-TER Models
+                    Compare Bet Strategies
                   </Button>
                   <Button width="full" onClick={perfModal.onOpen}>
                     <FaGauge />
