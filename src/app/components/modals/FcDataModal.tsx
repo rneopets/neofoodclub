@@ -436,7 +436,7 @@ function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.J
         </Table.Root>
       </Box>
       <Text fontSize="xs" color="fg.muted" fontStyle="italic">
-        ROI is units won per active bet line (not real NP wagered - the CSV has no bet amounts),
+        ROI is units won per active bet line (not real NP wagered; the CSV has no bet amounts),
         where 1.000x means breaking even. Running ROI accumulates from the first recorded round
         through the end of that month.
       </Text>
@@ -465,7 +465,7 @@ function FcDataMissedRoundsSection({
       </Text>
       {!isValidated && (
         <Text fontSize="xs" color="fg.muted" fontStyle="italic">
-          Based on round numbers only - some of these rounds may never have run. Load Detailed Stats
+          Based on round numbers only; some of these rounds may never have run. Load Detailed Stats
           to check against the round history feed.
         </Text>
       )}
@@ -836,7 +836,7 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
                   Drop in a fc_data.csv export from NeoBot (the r/Neopets Discord bot's{' '}
                   <Code fontSize="sm">?fcdata</Code> command) to see charts and stats about your
                   personal NeoFoodClub betting history. Everything is processed locally in your
-                  browser - your file is never uploaded anywhere.
+                  browser; your file is never uploaded anywhere.
                 </Text>
 
                 <input
@@ -896,7 +896,12 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
                           Pirate/arena exposure and bet-shape stats need the full round history
                           (~13MB, cached).
                         </Text>
-                        <Button size="xs" variant="outline" onClick={handleLoadAdvancedStats}>
+                        <Button
+                          size="xs"
+                          variant="solid"
+                          colorPalette="nfc-green"
+                          onClick={handleLoadAdvancedStats}
+                        >
                           <FaChartBar />
                           Load Detailed Stats
                         </Button>
