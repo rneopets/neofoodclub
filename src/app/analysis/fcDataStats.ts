@@ -76,17 +76,120 @@ export type FcDataReturnDistribution = Record<FcDataReturnBucket, number> & { to
 
 /** Number of bet lines with at least one non-zero pirate pick, decoded from the round's URL. */
 export function activeBetLineCount(url: string): number {
+  return decodeActiveLines(url).length;
+}
+
+/** One entry per active bet line: 5 positions (1-4, or 0 for "no pick"), one per arena. */
+export function decodeActiveLines(url: string): number[][] {
   const hashIndex = url.indexOf('#');
   const fragment = hashIndex === -1 ? url : url.slice(hashIndex + 1);
   const { bets } = parseBetUrl(fragment);
 
-  let count = 0;
-  for (const pirates of bets.values()) {
-    if (pirates.some(index => index > 0)) {
-      count += 1;
+  const lines: number[][] = [];
+  for (const positions of bets.values()) {
+    if (positions.some(position => position > 0)) {
+      lines.push(positions);
     }
   }
-  return count;
+  return lines;
+}
+
+export type FcDataBetShapeBucket = 'gambit' | 'bustproof' | 'crazy' | 'tenbet' | 'other';
+
+export interface FcDataBetShapeCounts {
+  /** Every active line's picks are a subset of one fixed 5-pirate combo (see `classifyBetShape`). */
+  gambitShaped: number;
+  /** Some arena has all 4 of its pirates covered across the lines. */
+  bustproofShaped: number;
+  /** Every line picks a pirate in all 5 arenas (no arena skipped). */
+  crazyShaped: number;
+  /** One (arena, pirate) pair is held fixed across every active line. */
+  tenbetShaped: number;
+  other: number;
+  total: number;
+}
+
+/**
+ * Classifies a round's decoded bet lines by structure, checked in order:
+ * - `gambit`: every arena has at most one distinct nonzero position across
+ *   all lines (every line is a subset of one fixed 5-pirate combo).
+ * - `bustproof`: some arena has all 4 of its pirates covered across the
+ *   lines (matches `make_bustproof_bets` in the neofoodclub engine, which
+ *   fully covers one or more "positive" arenas so that arena can't bust).
+ * - `crazy`: every line picks a pirate in all 5 arenas, no arena skipped
+ *   (matches `make_crazy_bets`'s "randomly-selected, full-arena bets").
+ * - `tenbet`: some arena holds one fixed nonzero position across every
+ *   line (one "anchor" pirate present in every line), while other arenas vary.
+ * - `other`: none of the above, or too few lines to tell (single-line bets).
+ */
+function classifyBetShape(lines: number[][]): FcDataBetShapeBucket {
+  if (lines.length <= 1) {
+    return 'other';
+  }
+
+  const positionsByArena = Array.from(
+    { length: 5 },
+    (_unused, arena) =>
+      new Set(lines.map(line => line[arena]).filter((p): p is number => !!p && p > 0)),
+  );
+
+  if (positionsByArena.every(positions => positions.size <= 1)) {
+    return 'gambit';
+  }
+
+  if (positionsByArena.some(positions => positions.size === 4)) {
+    return 'bustproof';
+  }
+
+  if (lines.every(line => line.every(position => position > 0))) {
+    return 'crazy';
+  }
+
+  for (let arena = 0; arena < 5; arena++) {
+    const first = lines[0]![arena]!;
+    if (first > 0 && lines.every(line => line[arena] === first)) {
+      return 'tenbet';
+    }
+  }
+
+  return 'other';
+}
+
+const BET_SHAPE_KEYS: Record<FcDataBetShapeBucket, keyof FcDataBetShapeCounts> = {
+  gambit: 'gambitShaped',
+  bustproof: 'bustproofShaped',
+  crazy: 'crazyShaped',
+  tenbet: 'tenbetShaped',
+  other: 'other',
+};
+
+/**
+ * Buckets each row's bet by structural shape, decoded purely from its bet
+ * hash - no round-history data needed (unlike pirate/arena identity, this
+ * doesn't depend on knowing which real pirate each position maps to).
+ */
+export function computeBetShapeCounts(rows: FcDataRow[]): FcDataBetShapeCounts {
+  const counts: FcDataBetShapeCounts = {
+    gambitShaped: 0,
+    bustproofShaped: 0,
+    crazyShaped: 0,
+    tenbetShaped: 0,
+    other: 0,
+    total: 0,
+  };
+
+  for (const row of rows) {
+    const lines = decodeActiveLines(row.url);
+    if (lines.length === 0) {
+      continue;
+    }
+
+    const shape = classifyBetShape(lines);
+    counts[BET_SHAPE_KEYS[shape]] += 1;
+    counts.total += 1;
+  }
+
+  return counts;
 }
 
 /**

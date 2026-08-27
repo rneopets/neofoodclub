@@ -58,53 +58,6 @@ describe('computeAdvancedStats', () => {
     expect(stats.pirateExposure.find(p => p.pirateId === 1)?.name).toBe('Dan');
   });
 
-  it('classifies a gambit-shaped bet: every arena has at most one distinct position across lines', () => {
-    const rows = [
-      makeRow(1, 10, [
-        [1, 2, 0, 0, 0],
-        [1, 2, 3, 0, 0],
-      ]),
-    ];
-    const roundsByNumber = new Map([[1, makeRound(1)]]);
-    const stats = computeAdvancedStats(rows, roundsByNumber);
-
-    expect(stats.betShapes).toEqual({ gambitShaped: 1, tenbetShaped: 0, other: 0, total: 1 });
-  });
-
-  it('classifies a tenbet-shaped bet: one arena position fixed, others vary', () => {
-    const rows = [
-      makeRow(1, 10, [
-        [1, 2, 0, 0, 0],
-        [1, 3, 0, 0, 0],
-      ]),
-    ];
-    const roundsByNumber = new Map([[1, makeRound(1)]]);
-    const stats = computeAdvancedStats(rows, roundsByNumber);
-
-    expect(stats.betShapes).toEqual({ gambitShaped: 0, tenbetShaped: 1, other: 0, total: 1 });
-  });
-
-  it('classifies as other when no arena is shared and it is not a gambit subset', () => {
-    const rows = [
-      makeRow(1, 10, [
-        [1, 0, 0, 0, 0],
-        [2, 0, 0, 0, 0],
-      ]),
-    ];
-    const roundsByNumber = new Map([[1, makeRound(1)]]);
-    const stats = computeAdvancedStats(rows, roundsByNumber);
-
-    expect(stats.betShapes).toEqual({ gambitShaped: 0, tenbetShaped: 0, other: 1, total: 1 });
-  });
-
-  it('classifies single-line bets as other, not gambit', () => {
-    const rows = [makeRow(1, 10, [[1, 0, 0, 0, 0]])];
-    const roundsByNumber = new Map([[1, makeRound(1)]]);
-    const stats = computeAdvancedStats(rows, roundsByNumber);
-
-    expect(stats.betShapes).toEqual({ gambitShaped: 0, tenbetShaped: 0, other: 1, total: 1 });
-  });
-
   it('tracks pirate participation rate, average lines when included, and co-occurring units won', () => {
     const rows = [
       makeRow(1, 10, [[1, 0, 0, 0, 0]]), // pirate 1 in 1 line

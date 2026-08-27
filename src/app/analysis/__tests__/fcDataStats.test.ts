@@ -5,6 +5,7 @@ import { wasmBetsIndicesToHash } from '../../wasmMath';
 import {
   activeBetLineCount,
   classifyRoundReturn,
+  computeBetShapeCounts,
   computeCumulativeSeries,
   computeMonthlyStats,
   computeReturnDistribution,
@@ -226,6 +227,106 @@ describe('activeBetLineCount', () => {
 
   it('returns 0 for a URL with no bet hash', () => {
     expect(activeBetLineCount('https://neofood.club/#round=1')).toBe(0);
+  });
+});
+
+describe('computeBetShapeCounts', () => {
+  it('classifies a gambit-shaped bet: every arena has at most one distinct position across lines', () => {
+    const url = makeBetUrl(1, [
+      [1, 2, 0, 0, 0],
+      [1, 2, 3, 0, 0],
+    ]);
+    const rows = [makeRow(1, 10, new Date(2024, 0, 1), url)];
+    expect(computeBetShapeCounts(rows)).toEqual({
+      gambitShaped: 1,
+      bustproofShaped: 0,
+      crazyShaped: 0,
+      tenbetShaped: 0,
+      other: 0,
+      total: 1,
+    });
+  });
+
+  it('classifies a bustproof-shaped bet: one arena has all 4 pirates covered', () => {
+    const url = makeBetUrl(1, [
+      [1, 0, 0, 0, 0],
+      [2, 0, 0, 0, 0],
+      [3, 0, 0, 0, 0],
+      [4, 0, 0, 0, 0],
+    ]);
+    const rows = [makeRow(1, 10, new Date(2024, 0, 1), url)];
+    expect(computeBetShapeCounts(rows)).toEqual({
+      gambitShaped: 0,
+      bustproofShaped: 1,
+      crazyShaped: 0,
+      tenbetShaped: 0,
+      other: 0,
+      total: 1,
+    });
+  });
+
+  it('classifies a crazy-shaped bet: every line picks a pirate in all 5 arenas', () => {
+    const url = makeBetUrl(1, [
+      [1, 1, 1, 1, 1],
+      [2, 2, 2, 2, 2],
+    ]);
+    const rows = [makeRow(1, 10, new Date(2024, 0, 1), url)];
+    expect(computeBetShapeCounts(rows)).toEqual({
+      gambitShaped: 0,
+      bustproofShaped: 0,
+      crazyShaped: 1,
+      tenbetShaped: 0,
+      other: 0,
+      total: 1,
+    });
+  });
+
+  it('classifies a tenbet-shaped bet: one arena position fixed, others vary', () => {
+    const url = makeBetUrl(1, [
+      [1, 2, 0, 0, 0],
+      [1, 3, 0, 0, 0],
+    ]);
+    const rows = [makeRow(1, 10, new Date(2024, 0, 1), url)];
+    expect(computeBetShapeCounts(rows)).toEqual({
+      gambitShaped: 0,
+      bustproofShaped: 0,
+      crazyShaped: 0,
+      tenbetShaped: 1,
+      other: 0,
+      total: 1,
+    });
+  });
+
+  it('classifies as other when no arena is shared and it is not a gambit subset', () => {
+    const url = makeBetUrl(1, [
+      [1, 0, 0, 0, 0],
+      [2, 0, 0, 0, 0],
+    ]);
+    const rows = [makeRow(1, 10, new Date(2024, 0, 1), url)];
+    expect(computeBetShapeCounts(rows)).toEqual({
+      gambitShaped: 0,
+      bustproofShaped: 0,
+      crazyShaped: 0,
+      tenbetShaped: 0,
+      other: 1,
+      total: 1,
+    });
+  });
+
+  it('classifies single-line bets as other, not gambit', () => {
+    const rows = [makeRow(1, 10, new Date(2024, 0, 1), makeBetUrl(1, [[1, 0, 0, 0, 0]]))];
+    expect(computeBetShapeCounts(rows).other).toBe(1);
+  });
+
+  it('skips rows with no active bet lines and returns zeroed counts for empty input', () => {
+    expect(computeBetShapeCounts([])).toEqual({
+      gambitShaped: 0,
+      bustproofShaped: 0,
+      crazyShaped: 0,
+      tenbetShaped: 0,
+      other: 0,
+      total: 0,
+    });
   });
 });
 

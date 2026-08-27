@@ -20,12 +20,14 @@ import { LuExternalLink } from 'react-icons/lu';
 
 import { computeAdvancedStats, type FcDataAdvancedStats } from '../../analysis/fcDataAdvancedStats';
 import {
+  computeBetShapeCounts,
   computeCumulativeSeries,
   computeMonthlyStats,
   computeReturnDistribution,
   computeRoiSeries,
   computeTotals,
   findMissedRoundGaps,
+  type FcDataBetShapeCounts,
   type FcDataMissedRoundGap,
   type FcDataMonthStats,
   type FcDataReturnBucket,
@@ -361,7 +363,6 @@ function FcDataWarningsSection({
 }
 
 const EXPOSURE_BAR_COLOR = '#3182ce';
-const MAX_EXPOSURE_ROWS = 10;
 
 function PirateExposureBar({
   name,
@@ -396,10 +397,9 @@ function FcDataAdvancedStatsSection({
     return null;
   }
 
-  const topPirates = stats.pirateExposure.slice(0, MAX_EXPOSURE_ROWS);
-  const maxRate = Math.max(...topPirates.map(p => p.roundParticipationRate), 0.01);
+  const allPirates = stats.pirateExposure;
+  const maxRate = Math.max(...allPirates.map(p => p.roundParticipationRate), 0.01);
   const maxArenaRate = Math.max(...stats.arenaUsage.map(a => a.lineParticipationRate), 0.01);
-  const shapeTotal = stats.betShapes.total;
 
   return (
     <SectionCard title="Advanced Stats (from round history)">
@@ -432,13 +432,13 @@ function FcDataAdvancedStatsSection({
         />
       </SimpleGrid>
 
-      {topPirates.length > 0 && (
+      {allPirates.length > 0 && (
         <Stack gap={2}>
           <Text fontSize="sm" fontWeight="medium">
             Most bet pirates:
           </Text>
           <Stack gap={1}>
-            {topPirates.map(pirate => (
+            {allPirates.map(pirate => (
               <PirateExposureBar
                 key={pirate.pirateId}
                 name={pirate.name}
@@ -471,24 +471,39 @@ function FcDataAdvancedStatsSection({
           ))}
         </Stack>
       </Stack>
+    </SectionCard>
+  );
+}
 
-      {shapeTotal > 0 && (
-        <Stack gap={2}>
-          <Text fontSize="sm" fontWeight="medium">
-            Bet shapes:
-          </Text>
-          <Text fontSize="sm" color="fg.muted">
-            Gambit-shaped {displayPercent(stats.betShapes.gambitShaped / shapeTotal)} ·
-            Tenbet-shaped {displayPercent(stats.betShapes.tenbetShaped / shapeTotal)} · Other{' '}
-            {displayPercent(stats.betShapes.other / shapeTotal)}
-          </Text>
-          <Text fontSize="xs" color="fg.muted" fontStyle="italic">
-            Gambit-shaped: every line is a subset of one fixed 5-pirate combo. Tenbet-shaped: one
-            pirate is held fixed across every line while the rest vary. Structural guesses only -
-            not based on which NeoBot command generated the bet.
-          </Text>
-        </Stack>
-      )}
+const BET_SHAPE_LABELS: { key: keyof FcDataBetShapeCounts; label: string }[] = [
+  { key: 'gambitShaped', label: 'Gambit-shaped' },
+  { key: 'bustproofShaped', label: 'Bustproof-shaped' },
+  { key: 'crazyShaped', label: 'Crazy-shaped' },
+  { key: 'tenbetShaped', label: 'Tenbet-shaped' },
+  { key: 'other', label: 'Other' },
+];
+
+function FcDataBetShapesSection({
+  shapes,
+}: {
+  shapes: FcDataBetShapeCounts;
+}): React.JSX.Element | null {
+  if (shapes.total === 0) {
+    return null;
+  }
+
+  return (
+    <SectionCard title="Bet Shapes">
+      <Text fontSize="sm" color="fg.muted">
+        {BET_SHAPE_LABELS.map(
+          ({ key, label }) => `${label} ${displayPercent(shapes[key] / shapes.total)}`,
+        ).join(' · ')}
+      </Text>
+      <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+        Gambit-shaped: every line is a subset of one fixed 5-pirate combo. Bustproof-shaped: some
+        arena has all 4 of its pirates covered. Crazy-shaped: every line picks a pirate in all 5
+        arenas. Tenbet-shaped: one pirate is held fixed across every line while the rest vary.
+      </Text>
     </SectionCard>
   );
 }
@@ -601,6 +616,7 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
   const cumulativeSeries = React.useMemo(() => computeCumulativeSeries(rows), [rows]);
   const roiSeries = React.useMemo(() => computeRoiSeries(rows), [rows]);
   const returnDistribution = React.useMemo(() => computeReturnDistribution(rows), [rows]);
+  const betShapeCounts = React.useMemo(() => computeBetShapeCounts(rows), [rows]);
   const missedRoundGaps = React.useMemo(() => findMissedRoundGaps(rows), [rows]);
   const rowsByRound = React.useMemo(() => new Map(rows.map(row => [row.round, row])), [rows]);
 
@@ -735,6 +751,8 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
                     <FcDataTotalsSection totals={totals} />
 
                     <FcDataReturnDistributionSection distribution={returnDistribution} />
+
+                    <FcDataBetShapesSection shapes={betShapeCounts} />
 
                     <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                       <FcDataCumulativeChart series={cumulativeSeries} />
