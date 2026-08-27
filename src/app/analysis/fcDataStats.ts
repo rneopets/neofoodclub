@@ -57,6 +57,12 @@ export interface FcDataCumulativePoint {
   cumulative: number;
 }
 
+export interface FcDataRoiPoint {
+  round: number;
+  /** Cumulative units won / cumulative active bet lines through this round. */
+  roi: number;
+}
+
 export interface FcDataMissedRoundGap {
   afterRound: number;
   beforeRound: number;
@@ -225,6 +231,20 @@ export function computeCumulativeSeries(rows: FcDataRow[]): FcDataCumulativePoin
   return rows.map(row => {
     cumulative += row.unitsWon;
     return { round: row.round, cumulative };
+  });
+}
+
+export function computeRoiSeries(rows: FcDataRow[]): FcDataRoiPoint[] {
+  let cumulativeUnitsWon = 0;
+  let cumulativeBetLines = 0;
+
+  return rows.map(row => {
+    cumulativeUnitsWon += row.unitsWon;
+    cumulativeBetLines += activeBetLineCount(row.url);
+    return {
+      round: row.round,
+      roi: cumulativeBetLines > 0 ? cumulativeUnitsWon / cumulativeBetLines : 0,
+    };
   });
 }
 

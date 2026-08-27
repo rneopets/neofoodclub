@@ -20,6 +20,7 @@ import { FaFileCsv } from 'react-icons/fa';
 import {
   computeCumulativeSeries,
   computeMonthlyStats,
+  computeRoiSeries,
   computeTotals,
   findMissedRoundGaps,
   type FcDataMissedRoundGap,
@@ -29,6 +30,7 @@ import {
 import { parseFcDataCsv, type FcDataParseResult, type FcDataRow } from '../../data/fcDataCsv';
 import { FcDataCumulativeChart } from '../charts/FcDataCumulativeChart';
 import { FcDataMonthlyBarChart } from '../charts/FcDataMonthlyBarChart';
+import { FcDataRoiChart } from '../charts/FcDataRoiChart';
 
 interface FcDataModalProps {
   isOpen: boolean;
@@ -406,6 +408,7 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
   const totals = React.useMemo(() => computeTotals(rows), [rows]);
   const months = React.useMemo(() => computeMonthlyStats(rows), [rows]);
   const cumulativeSeries = React.useMemo(() => computeCumulativeSeries(rows), [rows]);
+  const roiSeries = React.useMemo(() => computeRoiSeries(rows), [rows]);
   const missedRoundGaps = React.useMemo(() => findMissedRoundGaps(rows), [rows]);
   const rowsByRound = React.useMemo(() => new Map(rows.map(row => [row.round, row])), [rows]);
 
@@ -481,8 +484,10 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
 
                     <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                       <FcDataCumulativeChart series={cumulativeSeries} />
-                      <FcDataMonthlyBarChart months={months} />
+                      <FcDataRoiChart series={roiSeries} />
                     </SimpleGrid>
+
+                    <FcDataMonthlyBarChart months={months} />
 
                     <FcDataMonthlyTable months={months} />
 

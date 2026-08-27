@@ -6,6 +6,7 @@ import {
   activeBetLineCount,
   computeCumulativeSeries,
   computeMonthlyStats,
+  computeRoiSeries,
   computeTotals,
   findMissedRoundGaps,
 } from '../fcDataStats';
@@ -148,6 +149,33 @@ describe('computeCumulativeSeries', () => {
       expect(series[i]!.cumulative).toBeGreaterThanOrEqual(series[i - 1]!.cumulative);
     }
     expect(series[series.length - 1]!.cumulative).toBe(20);
+  });
+});
+
+describe('computeRoiSeries', () => {
+  it('tracks running cumulative roi per round', () => {
+    const oneLineUrl = makeBetUrl(1, [[1, 0, 0, 0, 0]]);
+    const rows = [
+      makeRow(1, 2, new Date(2024, 0, 1), oneLineUrl), // 2/1 = 2.0x
+      makeRow(2, 0, new Date(2024, 0, 2), oneLineUrl), // (2+0)/(1+1) = 1.0x
+      makeRow(3, 4, new Date(2024, 0, 3), oneLineUrl), // (2+0+4)/(1+1+1) = 2.0x
+    ];
+    const series = computeRoiSeries(rows);
+
+    expect(series).toEqual([
+      { round: 1, roi: 2 },
+      { round: 2, roi: 1 },
+      { round: 3, roi: 2 },
+    ]);
+  });
+
+  it('is 0 for rounds with no active bet lines yet, avoiding division by zero', () => {
+    const rows = [makeRow(1, 5, new Date(2024, 0, 1), 'https://neofood.club/#round=1')];
+    expect(computeRoiSeries(rows)).toEqual([{ round: 1, roi: 0 }]);
+  });
+
+  it('returns an empty series for empty input', () => {
+    expect(computeRoiSeries([])).toEqual([]);
   });
 });
 
