@@ -16,6 +16,13 @@ export interface FcDataLossStreak {
   endDate: Date;
 }
 
+export interface FcDataCurrentStreak {
+  type: 'win' | 'bust';
+  count: number;
+  startDate: Date;
+  endDate: Date;
+}
+
 export interface FcDataTotals {
   roundsRecorded: number;
   totalUnitsWon: number;
@@ -28,6 +35,8 @@ export interface FcDataTotals {
   longestWinStreak: FcDataWinStreak | null;
   /** Null when every round won something. */
   longestLossStreak: FcDataLossStreak | null;
+  /** The still-ongoing streak ending at the most recent recorded round. Null when there are no rows. */
+  currentStreak: FcDataCurrentStreak | null;
   firstRound: FcDataRow | null;
   lastRound: FcDataRow | null;
 }
@@ -287,6 +296,34 @@ function longestLossStreak(rows: FcDataRow[]): FcDataLossStreak | null {
   return best;
 }
 
+/** The still-ongoing streak ending at the most recent row (assumes rows are round-ascending). */
+function currentStreak(rows: FcDataRow[]): FcDataCurrentStreak | null {
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const last = rows[rows.length - 1]!;
+  const type: FcDataCurrentStreak['type'] = last.unitsWon > 0 ? 'win' : 'bust';
+
+  let count = 0;
+  let startIndex = rows.length - 1;
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const isMatch = type === 'win' ? rows[i]!.unitsWon > 0 : rows[i]!.unitsWon === 0;
+    if (!isMatch) {
+      break;
+    }
+    count += 1;
+    startIndex = i;
+  }
+
+  return {
+    type,
+    count,
+    startDate: rows[startIndex]!.date,
+    endDate: last.date,
+  };
+}
+
 export function computeTotals(rows: FcDataRow[]): FcDataTotals {
   if (rows.length === 0) {
     return {
@@ -297,6 +334,7 @@ export function computeTotals(rows: FcDataRow[]): FcDataTotals {
       bestRound: null,
       longestWinStreak: null,
       longestLossStreak: null,
+      currentStreak: null,
       firstRound: null,
       lastRound: null,
     };
@@ -320,6 +358,7 @@ export function computeTotals(rows: FcDataRow[]): FcDataTotals {
     bestRound,
     longestWinStreak: longestWinStreak(rows),
     longestLossStreak: longestLossStreak(rows),
+    currentStreak: currentStreak(rows),
     firstRound: rows[0]!,
     lastRound: rows[rows.length - 1]!,
   };

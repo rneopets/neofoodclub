@@ -167,6 +167,19 @@ function FcDataTotalsSection({ totals }: { totals: FcDataTotals }): React.JSX.El
           color="red.500"
         />
         <StatBlock
+          label="Current streak"
+          value={
+            totals.currentStreak
+              ? `${totals.currentStreak.count.toLocaleString()} ${totals.currentStreak.type === 'win' ? 'win' : 'bust'}${totals.currentStreak.count === 1 ? '' : 's'}`
+              : '-'
+          }
+          sub={
+            totals.currentStreak &&
+            formatDateRange(totals.currentStreak.startDate, totals.currentStreak.endDate)
+          }
+          color={totals.currentStreak?.type === 'win' ? 'green.600' : 'red.500'}
+        />
+        <StatBlock
           label="Best round"
           value={
             totals.bestRound ? (
@@ -435,11 +448,11 @@ function FcDataAdvancedStatsSection({
           value={stats.fingerprint.averageUniquePiratesPerRound.toFixed(1)}
         />
         <StatBlock
-          label="Favorite anchor"
+          label="Favorite anchor pirate"
           value={stats.favoriteAnchorPirate ? stats.favoriteAnchorPirate.name : '-'}
           sub={
             stats.favoriteAnchorPirate &&
-            `anchor in ${displayPercent(stats.favoriteAnchorPirate.share)} of rounds`
+            `in every line, ${displayPercent(stats.favoriteAnchorPirate.share)} of rounds`
           }
         />
       </SimpleGrid>
@@ -756,6 +769,8 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
                       </HStack>
                     )}
 
+                    {advancedStats && <FcDataAdvancedStatsSection stats={advancedStats} />}
+
                     <FcDataWarningsSection warnings={state.result.warnings} />
 
                     <FcDataTotalsSection totals={totals} />
@@ -778,8 +793,6 @@ export function FcDataModal({ isOpen, onClose }: FcDataModalProps): React.JSX.El
                       rowsByRound={rowsByRound}
                       isValidated={isFeedReady}
                     />
-
-                    {advancedStats && <FcDataAdvancedStatsSection stats={advancedStats} />}
                   </>
                 )}
               </Stack>

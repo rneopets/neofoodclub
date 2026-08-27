@@ -42,6 +42,7 @@ describe('computeTotals', () => {
       bestRound: null,
       longestWinStreak: null,
       longestLossStreak: null,
+      currentStreak: null,
       firstRound: null,
       lastRound: null,
     });
@@ -110,6 +111,51 @@ describe('computeTotals', () => {
     const totals = computeTotals(rows);
 
     expect(totals.bestRound).toBe(rows[0]);
+  });
+
+  it('reports an ongoing win streak when the most recent round won', () => {
+    // L, W, W (still winning as of the last row)
+    const rows = [0, 5, 10].map((unitsWon, i) =>
+      makeRow(i + 1, unitsWon, new Date(2024, 0, i + 1)),
+    );
+    const totals = computeTotals(rows);
+
+    expect(totals.currentStreak).toEqual({
+      type: 'win',
+      count: 2,
+      startDate: new Date(2024, 0, 2),
+      endDate: new Date(2024, 0, 3),
+    });
+  });
+
+  it('reports an ongoing bust streak when the most recent round busted', () => {
+    // W, L, L (still busting as of the last row)
+    const rows = [10, 0, 0].map((unitsWon, i) =>
+      makeRow(i + 1, unitsWon, new Date(2024, 0, i + 1)),
+    );
+    const totals = computeTotals(rows);
+
+    expect(totals.currentStreak).toEqual({
+      type: 'bust',
+      count: 2,
+      startDate: new Date(2024, 0, 2),
+      endDate: new Date(2024, 0, 3),
+    });
+  });
+
+  it('reports a current streak of 1 when the last round flips the trend', () => {
+    // W, W, L
+    const rows = [10, 5, 0].map((unitsWon, i) =>
+      makeRow(i + 1, unitsWon, new Date(2024, 0, i + 1)),
+    );
+    const totals = computeTotals(rows);
+
+    expect(totals.currentStreak).toEqual({
+      type: 'bust',
+      count: 1,
+      startDate: new Date(2024, 0, 3),
+      endDate: new Date(2024, 0, 3),
+    });
   });
 });
 
