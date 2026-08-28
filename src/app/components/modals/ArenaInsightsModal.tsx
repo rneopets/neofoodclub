@@ -3,7 +3,6 @@ import {
   CloseButton,
   Dialog,
   HStack,
-  Link,
   Portal,
   Progress,
   Stack,
@@ -13,78 +12,22 @@ import {
 import * as React from 'react';
 
 import {
-  findMostChangesRound,
-  findThirteenRounds,
+  computeArenaPositionWinRates,
   positiveArenaDistribution,
-  type AnomalyRound,
-} from '../../analysis/oddsAnomalies';
-import {
-  useOddsAnomalyRounds,
-  type UseOddsAnomalyRoundsResult,
-} from '../../hooks/useOddsAnomalyRounds';
+} from '../../analysis/arenaInsights';
+import type { BacktestRound } from '../../backtest/types';
+import { useBacktestPreviousRounds } from '../../hooks/useBacktestPreviousRounds';
 
-interface OddsAnomaliesModalProps {
+interface ArenaInsightsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-function roundLink(roundNumber: number): string {
-  return `https://neofood.club/#round=${roundNumber}`;
+function displayPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
 }
 
-function ThirteensSection({ rounds }: { rounds: AnomalyRound[] }): React.JSX.Element | null {
-  const thirteenRounds = React.useMemo(() => findThirteenRounds(rounds), [rounds]);
-
-  if (thirteenRounds.length === 0) {
-    return null;
-  }
-
-  return (
-    <Stack gap={2}>
-      <HStack>
-        <Text fontSize="sm" fontWeight="medium">
-          Thirteens:
-        </Text>
-        <Text fontSize="sm" color="fg.muted">
-          {thirteenRounds.length} round{thirteenRounds.length === 1 ? '' : 's'} where all five
-          arenas had a 13:1 opening or closing price
-        </Text>
-      </HStack>
-      <HStack gap={2} flexWrap="wrap" align="start" maxH="180px" overflowY="auto">
-        {thirteenRounds.map(roundNumber => (
-          <Link key={roundNumber} href={roundLink(roundNumber)} target="_blank" fontSize="sm">
-            #{roundNumber}
-          </Link>
-        ))}
-      </HStack>
-    </Stack>
-  );
-}
-
-function MostChangesSection({ rounds }: { rounds: AnomalyRound[] }): React.JSX.Element | null {
-  const mostChanges = React.useMemo(() => findMostChangesRound(rounds), [rounds]);
-
-  if (mostChanges === null) {
-    return null;
-  }
-
-  return (
-    <HStack>
-      <Text fontSize="sm" fontWeight="medium">
-        Most changes:
-      </Text>
-      <Text fontSize="sm" color="fg.muted">
-        round{' '}
-        <Link href={roundLink(mostChanges.round)} target="_blank" fontSize="sm">
-          #{mostChanges.round}
-        </Link>{' '}
-        with {mostChanges.changeCount} odds change{mostChanges.changeCount === 1 ? '' : 's'}
-      </Text>
-    </HStack>
-  );
-}
-
-function PositiveArenasSection({ rounds }: { rounds: AnomalyRound[] }): React.JSX.Element | null {
+function PositiveArenasSection({ rounds }: { rounds: BacktestRound[] }): React.JSX.Element | null {
   const distribution = React.useMemo(() => positiveArenaDistribution(rounds), [rounds]);
 
   if (distribution.totalRounds === 0) {
@@ -121,7 +64,7 @@ function PositiveArenasSection({ rounds }: { rounds: AnomalyRound[] }): React.JS
               <Table.Cell>{row.label}</Table.Cell>
               <Table.Cell textAlign="right">{row.count.toLocaleString()}</Table.Cell>
               <Table.Cell textAlign="right">
-                {((row.count / distribution.totalRounds) * 100).toFixed(1)}%
+                {displayPercent(row.count / distribution.totalRounds)}
               </Table.Cell>
               <Table.Cell p={2}>
                 <Progress.Root
@@ -147,23 +90,77 @@ function PositiveArenasSection({ rounds }: { rounds: AnomalyRound[] }): React.JS
   );
 }
 
-export const OddsAnomaliesModal: React.FC<OddsAnomaliesModalProps> = ({ isOpen, onClose }) => {
-  const feed: UseOddsAnomalyRoundsResult = useOddsAnomalyRounds({ enabled: isOpen });
+function ArenaPositionWinRateSection({
+  rounds,
+}: {
+  rounds: BacktestRound[];
+}): React.JSX.Element | null {
+  const { arenas, overall } = React.useMemo(() => computeArenaPositionWinRates(rounds), [rounds]);
+
+  if (overall.totalRounds === 0) {
+    return null;
+  }
+
+  const allRows = [...arenas, overall];
+
+  return (
+    <Stack gap={2}>
+      <Text fontSize="sm" fontWeight="medium">
+        Win rate by arena position:
+      </Text>
+      <Table.Root size="sm" width="full">
+        <Table.Header>
+          <Table.Row>
+            <Table.ColumnHeader>Arena</Table.ColumnHeader>
+            <Table.ColumnHeader textAlign="right">Position 1</Table.ColumnHeader>
+            <Table.ColumnHeader textAlign="right">Position 2</Table.ColumnHeader>
+            <Table.ColumnHeader textAlign="right">Position 3</Table.ColumnHeader>
+            <Table.ColumnHeader textAlign="right">Position 4</Table.ColumnHeader>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {allRows.map(row => (
+            <Table.Row
+              key={row.arenaIndex}
+              fontWeight={row.arenaIndex === -1 ? 'medium' : undefined}
+            >
+              <Table.Cell>{row.arenaName}</Table.Cell>
+              {row.positionCounts.map((count, i) => (
+                <Table.Cell key={`position-${i + 1}`} textAlign="right">
+                  {displayPercent(count / row.totalRounds)}
+                </Table.Cell>
+              ))}
+            </Table.Row>
+          ))}
+        </Table.Body>
+      </Table.Root>
+      <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+        Share of rounds each arena&apos;s winner came from position 1-4 (the pirate&apos;s 1-indexed
+        slot within the arena). &quot;Overall&quot; aggregates across all five arenas.
+      </Text>
+    </Stack>
+  );
+}
+
+export const ArenaInsightsModal: React.FC<ArenaInsightsModalProps> = ({ isOpen, onClose }) => {
+  const { status, rounds, newestRound, error, refetch } = useBacktestPreviousRounds({
+    enabled: isOpen,
+  });
 
   const statusText = React.useMemo(() => {
-    if (feed.status === 'loading') {
+    if (status === 'loading') {
       return 'Downloading previous.jsonl (~13MB)...';
     }
-    if (feed.status === 'error') {
-      return feed.error ?? 'Failed to load round history.';
+    if (status === 'error') {
+      return error ?? 'Failed to load round history.';
     }
-    if (feed.status === 'ready') {
-      return `${feed.rounds.length} rounds loaded.`;
+    if (status === 'ready') {
+      return `${rounds.length} completed rounds loaded (newest #${newestRound}).`;
     }
     return '';
-  }, [feed]);
+  }, [status, error, rounds.length, newestRound]);
 
-  const hasResults = feed.status === 'ready' && feed.rounds.length > 0;
+  const hasResults = status === 'ready' && rounds.length > 0;
 
   return (
     <Dialog.Root
@@ -178,7 +175,7 @@ export const OddsAnomaliesModal: React.FC<OddsAnomaliesModalProps> = ({ isOpen, 
         <Dialog.Positioner>
           <Dialog.Content>
             <Dialog.Header>
-              <Dialog.Title>Odds Anomalies</Dialog.Title>
+              <Dialog.Title>Arena Insights</Dialog.Title>
               <Dialog.CloseTrigger asChild>
                 <CloseButton size="sm" />
               </Dialog.CloseTrigger>
@@ -186,9 +183,9 @@ export const OddsAnomaliesModal: React.FC<OddsAnomaliesModalProps> = ({ isOpen, 
             <Dialog.Body display="flex" flexDirection="column" overflowY="auto">
               <Stack gap={4}>
                 <Text fontSize="sm" color="fg.muted">
-                  Scans every completed round on the CDN feed for unusual odds behavior: rounds
-                  where the book capped all five arenas at 13:1, the round with the most odds
-                  changes, and how often arenas are positive.
+                  Structural stats about the game itself, computed across every completed round on
+                  the CDN feed: how often arenas are positive, and how often each position within an
+                  arena wins it.
                 </Text>
 
                 <HStack justify="space-between" flexWrap="wrap" gap={2}>
@@ -198,8 +195,8 @@ export const OddsAnomaliesModal: React.FC<OddsAnomaliesModalProps> = ({ isOpen, 
                   <Button
                     size="xs"
                     variant="outline"
-                    onClick={() => feed.refetch()}
-                    disabled={feed.status === 'loading'}
+                    onClick={() => refetch()}
+                    disabled={status === 'loading'}
                   >
                     Refresh
                   </Button>
@@ -207,15 +204,14 @@ export const OddsAnomaliesModal: React.FC<OddsAnomaliesModalProps> = ({ isOpen, 
 
                 {hasResults && (
                   <>
-                    <ThirteensSection rounds={feed.rounds} />
-                    <MostChangesSection rounds={feed.rounds} />
-                    <PositiveArenasSection rounds={feed.rounds} />
+                    <PositiveArenasSection rounds={rounds} />
+                    <ArenaPositionWinRateSection rounds={rounds} />
                   </>
                 )}
 
-                {feed.status === 'ready' && feed.rounds.length === 0 && (
+                {status === 'ready' && rounds.length === 0 && (
                   <Text fontSize="sm" color="fg.muted">
-                    No rounds loaded.
+                    No completed rounds loaded.
                   </Text>
                 )}
               </Stack>
