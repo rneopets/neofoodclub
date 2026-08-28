@@ -7,13 +7,12 @@ on:
   workflow_run:
     workflows: ['CI', 'Playwright Tests']
     types: [ completed ]
+    branches: [ main ]
 
 jobs:
   deploy:
     name: Deploy to Cloudflare Pages
-    if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.ref == 'refs/heads/main'
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -21,6 +20,7 @@ jobs:
 
     steps:
     - name: Check that all required workflows passed for this push
+      id: check
       uses: actions/github-script@v9
       with:
         script: |
@@ -32,6 +32,7 @@ jobs:
             head_sha: run.head_sha,
           });
           const required = ['CI', 'Playwright Tests'];
+          let ciRunId;
           for (const name of required) {
             const match = runs.data.workflow_runs.find(r => r.name === name);
             if (!match || match.conclusion !== 'success') {
@@ -39,7 +40,11 @@ jobs:
               core.setFailed(`Workflow "${name}" for ${run.head_sha} did not pass (${state}). Skipping deploy.`);
               return;
             }
+            if (name === 'CI') {
+              ciRunId = match.id;
+            }
           }
+          core.setOutput('ci_run_id', ciRunId);
 
     - name: Checkout
       uses: actions/checkout@v7
@@ -51,7 +56,7 @@ jobs:
       with:
         name: build-output
         path: build/
-        run-id: ${{ github.event.workflow_run.id }}
+        run-id: ${{ steps.check.outputs.ci_run_id }}
 
     - name: Deploy to Cloudflare Pages
       uses: cloudflare/wrangler-action@v4
