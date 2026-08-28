@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Checkbox,
   Dialog,
@@ -253,12 +254,14 @@ export const WasmEnginePerfModal: React.FC<WasmEnginePerfModalProps> = ({ isOpen
                   <Text fontSize="sm" fontWeight="medium">
                     Change round
                   </Text>
-                  <RoundInput
-                    selectedRound={previewRound}
-                    referenceRound={currentRoundFromCdn}
-                    onRoundChange={setPreviewRound}
-                    hasError={previewError !== null}
-                  />
+                  <Box maxW="170px">
+                    <RoundInput
+                      selectedRound={previewRound}
+                      referenceRound={currentRoundFromCdn}
+                      onRoundChange={setPreviewRound}
+                      hasError={previewError !== null}
+                    />
+                  </Box>
                 </Stack>
 
                 {previewError && (
