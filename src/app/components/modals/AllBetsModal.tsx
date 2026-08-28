@@ -15,16 +15,26 @@ import {
 import * as React from 'react';
 import { List } from 'react-window';
 
-import { ARENA_NAMES, PIRATE_NAMES, BET_AMOUNT_MIN, BET_AMOUNT_MAX } from '../../constants';
+import {
+  ARENA_NAMES,
+  PIRATE_NAMES,
+  BET_AMOUNT_MIN,
+  BET_AMOUNT_MAX,
+  defaultRoundData,
+} from '../../constants';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
-import { useIsRoundOver } from '../../hooks/useIsRoundOver';
-import { useProbabilities } from '../../hooks/useProbabilities';
-import { computeBinaryToPirates } from '../../maths';
-import { useRoundStore } from '../../stores';
-import { calculateBetMaps, getMaxBet } from '../../util';
+import {
+  computeBinaryToPirates,
+  computeLegacyProbabilities,
+  computeLogitProbabilities,
+} from '../../maths';
+import { useCurrentRound, useRoundStore } from '../../stores';
+import { calculateBetMaps, getMaxBet, getOdds } from '../../util';
+import RoundInput from '../inputs/RoundInput';
 
 import { NumberInputRoot, NumberInputField } from '@/components/ui/number-input';
+import { RoundData, RoundState } from '@/types';
 
 interface AllBet {
   binary: number;
@@ -163,14 +173,16 @@ const Row = React.memo(
           <Text width="80px" textAlign="right" flexShrink={0}>
             {bet.maxBet.toLocaleString()}
           </Text>
-          <Code
-            fontSize="2xs"
-            width={showBinaryAsHex ? '80px' : '130px'}
-            textAlign="center"
+          <Box
+            width={showBinaryAsHex ? '80px' : '150px'}
             flexShrink={0}
+            display="flex"
+            justifyContent="center"
           >
-            {binaryDisplay}
-          </Code>
+            <Code fontSize="2xs" whiteSpace="nowrap">
+              {binaryDisplay}
+            </Code>
+          </Box>
         </HStack>
       </Box>
     );
@@ -183,7 +195,74 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
   const roundData = useRoundStore(state => state.roundData);
   const globalUseLogitModel = useRoundStore(state => state.useLogitModel);
   const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
+  const currentRoundFromCdn = useCurrentRound();
+  const customOdds = useRoundStore(state => state.customOdds);
+  const bigBrain = useRoundStore(state => state.bigBrain);
+  const customOddsMode = useRoundStore(state => state.customOddsMode);
   const getPirateBgColor = useGetPirateBgColor();
+
+  // The round being previewed in this modal - independent of the globally
+  // selected round, so typing here never touches the rest of the page
+  // (same pattern as RoundJsonModal/WasmEnginePerfModal).
+  const [previewRound, setPreviewRound] = React.useState(0);
+  const [previewData, setPreviewData] = React.useState<RoundData | null>(null);
+  const [previewLoading, setPreviewLoading] = React.useState(false);
+  const [previewError, setPreviewError] = React.useState<string | null>(null);
+
+  // Reset the preview to the live round each time the modal opens. Runs as a
+  // layout effect so the reset is committed before the fetch effect below
+  // sees `previewRound` in this same pass.
+  React.useLayoutEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    setPreviewRound(currentSelectedRound);
+    setPreviewData(null);
+    setPreviewError(null);
+  }, [isOpen, currentSelectedRound]);
+
+  // Fetch the previewed round's JSON directly - bypassing the round store
+  // entirely - whenever it differs from the round already loaded globally.
+  React.useEffect(() => {
+    if (!isOpen || previewRound === 0 || previewRound === roundData.round) {
+      setPreviewLoading(false);
+      setPreviewError(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    setPreviewLoading(true);
+    setPreviewError(null);
+
+    fetch(`https://cdn.neofood.club/rounds/${previewRound}.json`, {
+      signal: controller.signal,
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json() as Promise<RoundData>;
+      })
+      .then(data => {
+        setPreviewData(data);
+        setPreviewLoading(false);
+      })
+      .catch(error => {
+        if (controller.signal.aborted) {
+          return;
+        }
+        console.error(`Failed to fetch round ${previewRound}:`, error);
+        setPreviewError(`Failed to fetch round ${previewRound}`);
+        setPreviewLoading(false);
+      });
+
+    return (): void => controller.abort();
+  }, [isOpen, previewRound, roundData.round]);
+
+  const isPreviewingLoadedRound = previewRound === roundData.round;
+  const displayedRoundData: RoundData = isPreviewingLoadedRound
+    ? roundData
+    : (previewData ?? defaultRoundData);
 
   // Get user's max bet setting
   const userMaxBet = getMaxBet(currentSelectedRound);
@@ -204,11 +283,49 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
   const [blockedPirates, setBlockedPirates] = React.useState<Set<string>>(() => new Set());
   const [isPending, startTransition] = React.useTransition();
 
-  // Check if round is over
-  const isRoundOver = useIsRoundOver();
+  // Check if the previewed round is over
+  const isRoundOver = React.useMemo(
+    () => !!(displayedRoundData.winners && displayedRoundData.winners.some(w => w > 0)),
+    [displayedRoundData.winners],
+  );
+
+  // The bigBrain custom-odds override only makes sense for the live round -
+  // it's hand-edited for whatever round the rest of the app is showing, so it
+  // doesn't apply when previewing a different (unrelated) round here.
+  const effectiveOdds = React.useMemo(() => {
+    if (!isPreviewingLoadedRound) {
+      return displayedRoundData.currentOdds;
+    }
+    const partialRoundState: Partial<RoundState> = {
+      roundData: displayedRoundData,
+      customOdds,
+      advanced: {
+        bigBrain,
+        customOddsMode,
+        oddsTimeline: false,
+        faDetails: false,
+        useLogitModel: false,
+      },
+    };
+    return getOdds(partialRoundState);
+  }, [isPreviewingLoadedRound, displayedRoundData, customOdds, bigBrain, customOddsMode]);
+
+  const effectiveRoundData = React.useMemo(() => {
+    if (!effectiveOdds.length || effectiveOdds === displayedRoundData.currentOdds) {
+      return displayedRoundData;
+    }
+    return { ...displayedRoundData, currentOdds: effectiveOdds };
+  }, [displayedRoundData, effectiveOdds]);
 
   // Compute both probability types independently
-  const { legacyProbabilities, logitProbabilities } = useProbabilities();
+  const legacyProbabilities = React.useMemo(
+    () => computeLegacyProbabilities(effectiveRoundData).used,
+    [effectiveRoundData],
+  );
+  const logitProbabilities = React.useMemo(
+    () => computeLogitProbabilities(effectiveRoundData).used,
+    [effectiveRoundData],
+  );
 
   // Choose which probabilities to use based on toggle
   const usedProbabilities = useExperimentalLogit ? logitProbabilities : legacyProbabilities;
@@ -227,7 +344,12 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
 
   // Calculate all possible bets using the pre-computed bet calculations
   const allBets = React.useMemo(() => {
-    if (!roundData || !roundData.pirates || roundData.pirates.length === 0 || !usedProbabilities) {
+    if (
+      !effectiveRoundData ||
+      !effectiveRoundData.pirates ||
+      effectiveRoundData.pirates.length === 0 ||
+      !usedProbabilities
+    ) {
       return [];
     }
 
@@ -241,7 +363,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
         [0, 1, 2, 3, 4],
         [0, 1, 2, 3, 4],
       ],
-      roundData.currentOdds,
+      effectiveRoundData.currentOdds,
       usedProbabilities,
       debouncedMaxBet,
       { includePirateCombos: false },
@@ -300,7 +422,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
           return (b.er - a.er) * sortMultiplier;
       }
     });
-  }, [roundData, usedProbabilities, debouncedMaxBet, sortField, reverseSort]);
+  }, [effectiveRoundData, usedProbabilities, debouncedMaxBet, sortField, reverseSort]);
 
   const pirateFilteredBets = React.useMemo(() => {
     if (blockedPirates.size === 0) {
@@ -319,7 +441,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
 
   // Filter bets to only show winning bets if enabled
   const filteredBets = React.useMemo(() => {
-    if (!showOnlyWinningBets || !isRoundOver || !roundData.winners) {
+    if (!showOnlyWinningBets || !isRoundOver || !displayedRoundData.winners) {
       return pirateFilteredBets;
     }
 
@@ -327,7 +449,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
     return pirateFilteredBets.filter(bet => {
       for (let arenaIdx = 0; arenaIdx < 5; arenaIdx++) {
         const selectedPirate = bet.pirates[arenaIdx];
-        const winner = roundData.winners?.[arenaIdx];
+        const winner = displayedRoundData.winners?.[arenaIdx];
 
         // If a pirate is selected in this arena (not 0), it must match the winner
         if (selectedPirate && selectedPirate > 0 && selectedPirate !== winner) {
@@ -336,18 +458,24 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
       }
       return true;
     });
-  }, [pirateFilteredBets, showOnlyWinningBets, isRoundOver, roundData.winners]);
+  }, [pirateFilteredBets, showOnlyWinningBets, isRoundOver, displayedRoundData.winners]);
 
   // Item data for react-window
   const itemData = React.useMemo<RowData>(
     () => ({
       allBets: filteredBets,
-      piratesByArena: roundData.pirates,
-      openingOdds: roundData.openingOdds,
+      piratesByArena: displayedRoundData.pirates,
+      openingOdds: displayedRoundData.openingOdds,
       getPirateBgColor,
       showBinaryAsHex,
     }),
-    [filteredBets, roundData.pirates, roundData.openingOdds, getPirateBgColor, showBinaryAsHex],
+    [
+      filteredBets,
+      displayedRoundData.pirates,
+      displayedRoundData.openingOdds,
+      getPirateBgColor,
+      showBinaryAsHex,
+    ],
   );
 
   return (
@@ -381,132 +509,45 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                   Note: Settings changed here will not affect your saved settings.
                 </Text>
 
-                <Stack gap={3} flexShrink={0}>
-                  {/* Max Bet Input */}
-                  <HStack>
-                    <Text fontSize="sm" fontWeight="medium" width="70px">
-                      Max Bet:
-                    </Text>
-                    <NumberInputRoot
-                      value={maxBetInput}
-                      min={BET_AMOUNT_MIN}
-                      max={BET_AMOUNT_MAX}
-                      clampValueOnBlur
-                      allowMouseWheel
-                      onValueChange={(details: { value: string }) => setMaxBetInput(details.value)}
-                      width="120px"
-                      size="sm"
-                    >
-                      <NumberInputField
-                        name="all-bets-max-bet"
-                        data-testid="all-bets-max-bet-input"
-                      />
-                    </NumberInputRoot>
-                  </HStack>
-
-                  {/* Sort Controls */}
-                  <HStack gap={4}>
-                    <Text fontSize="sm" fontWeight="medium" width="70px">
-                      Sort by:
-                    </Text>
-                    <RadioGroup.Root
-                      value={sortField}
-                      size="sm"
-                      onValueChange={(details: { value: string | null }) => {
-                        if (details.value === null) {
-                          return;
-                        }
-
-                        startTransition(() => {
-                          setSortField(details.value as SortField);
-                        });
-                      }}
-                    >
-                      <HStack gap={3}>
-                        <RadioGroup.Item value="er" cursor="pointer">
-                          <RadioGroup.ItemHiddenInput />
-                          <RadioGroup.ItemIndicator cursor="pointer" />
-                          <RadioGroup.ItemText>ER</RadioGroup.ItemText>
-                        </RadioGroup.Item>
-                        <RadioGroup.Item value="ne" cursor="pointer">
-                          <RadioGroup.ItemHiddenInput />
-                          <RadioGroup.ItemIndicator cursor="pointer" />
-                          <RadioGroup.ItemText>NE</RadioGroup.ItemText>
-                        </RadioGroup.Item>
-                        <RadioGroup.Item value="odds" cursor="pointer">
-                          <RadioGroup.ItemHiddenInput />
-                          <RadioGroup.ItemIndicator cursor="pointer" />
-                          <RadioGroup.ItemText>Odds</RadioGroup.ItemText>
-                        </RadioGroup.Item>
-                        <RadioGroup.Item value="maxBet" cursor="pointer">
-                          <RadioGroup.ItemHiddenInput />
-                          <RadioGroup.ItemIndicator cursor="pointer" />
-                          <RadioGroup.ItemText>MaxBet</RadioGroup.ItemText>
-                        </RadioGroup.Item>
-                      </HStack>
-                    </RadioGroup.Root>
-                    <Checkbox.Root
-                      checked={reverseSort}
-                      onCheckedChange={() => {
-                        startTransition(() => {
-                          setReverseSort(!reverseSort);
-                        });
-                      }}
-                    >
-                      <Checkbox.HiddenInput />
-                      <Checkbox.Control />
-                      <Checkbox.Label>Reverse</Checkbox.Label>
-                    </Checkbox.Root>
-                  </HStack>
-
-                  {/* Filter Options */}
-                  <HStack gap={4}>
-                    <Text fontSize="sm" fontWeight="medium" width="70px">
-                      Options:
-                    </Text>
-                    <HStack gap={4}>
-                      <Checkbox.Root
-                        checked={useExperimentalLogit}
-                        onCheckedChange={() => {
-                          startTransition(() => {
-                            setUseExperimentalLogit(!useExperimentalLogit);
-                          });
-                        }}
-                      >
-                        <Checkbox.HiddenInput />
-                        <Checkbox.Control />
-                        <Checkbox.Label>Experimental Logit</Checkbox.Label>
-                      </Checkbox.Root>
-
-                      <Checkbox.Root
-                        checked={showBinaryAsHex}
-                        onCheckedChange={() => setShowBinaryAsHex(!showBinaryAsHex)}
-                      >
-                        <Checkbox.HiddenInput />
-                        <Checkbox.Control />
-                        <Checkbox.Label>Show Binary as Hex</Checkbox.Label>
-                      </Checkbox.Root>
-
-                      {isRoundOver && (
-                        <Checkbox.Root
-                          checked={showOnlyWinningBets}
-                          onCheckedChange={() => {
-                            startTransition(() => {
-                              setShowOnlyWinningBets(!showOnlyWinningBets);
-                            });
-                          }}
-                        >
-                          <Checkbox.HiddenInput />
-                          <Checkbox.Control />
-                          <Checkbox.Label>Show Only Winning Bets</Checkbox.Label>
-                        </Checkbox.Root>
+                <HStack align="stretch" flexWrap="wrap" gap={3}>
+                  <Box
+                    flex="1"
+                    minW="200px"
+                    pt={3}
+                    pb={3}
+                    px={3}
+                    borderWidth="1px"
+                    borderRadius="md"
+                    borderColor="border.muted"
+                    bg="bg.subtle"
+                  >
+                    <Stack gap={1}>
+                      <Text fontSize="sm" fontWeight="medium">
+                        Change round
+                      </Text>
+                      <Text fontSize="xs" color="fg.muted">
+                        Current round on Neopets:{' '}
+                        {currentRoundFromCdn > 0 ? currentRoundFromCdn : 'N/A'}
+                      </Text>
+                      <Box maxW="170px">
+                        <RoundInput
+                          selectedRound={previewRound}
+                          referenceRound={currentRoundFromCdn}
+                          onRoundChange={setPreviewRound}
+                          hasError={previewError !== null}
+                        />
+                      </Box>
+                      {previewError && (
+                        <Text fontSize="xs" color="nfc-red.fg">
+                          {previewError}
+                        </Text>
                       )}
-                    </HStack>
-                  </HStack>
+                    </Stack>
+                  </Box>
 
                   <Box
-                    flexShrink={0}
-                    mt={2}
+                    flex="1"
+                    minW="200px"
                     pt={3}
                     pb={3}
                     px={3}
@@ -516,158 +557,293 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                     bg="bg.subtle"
                   >
                     <Stack gap={3}>
-                      <Stack gap={1}>
-                        <HStack justify="space-between" align="flex-start" flexWrap="wrap" gap={2}>
-                          <Text fontSize="sm" fontWeight="semibold">
-                            Pirate exclusions
-                          </Text>
-                          {blockedPirates.size > 0 && (
-                            <Button
-                              size="xs"
-                              variant="ghost"
-                              onClick={() => {
-                                startTransition(() => setBlockedPirates(new Set()));
+                      {/* Max Bet Input */}
+                      <HStack>
+                        <Text fontSize="sm" fontWeight="medium" width="70px">
+                          Max Bet:
+                        </Text>
+                        <NumberInputRoot
+                          value={maxBetInput}
+                          min={BET_AMOUNT_MIN}
+                          max={BET_AMOUNT_MAX}
+                          clampValueOnBlur
+                          allowMouseWheel
+                          onValueChange={(details: { value: string }) =>
+                            setMaxBetInput(details.value)
+                          }
+                          width="120px"
+                          size="sm"
+                        >
+                          <NumberInputField
+                            name="all-bets-max-bet"
+                            data-testid="all-bets-max-bet-input"
+                          />
+                        </NumberInputRoot>
+                      </HStack>
+
+                      {/* Sort Controls */}
+                      <HStack gap={4} flexWrap="wrap">
+                        <Text fontSize="sm" fontWeight="medium" width="70px">
+                          Sort by:
+                        </Text>
+                        <RadioGroup.Root
+                          value={sortField}
+                          size="sm"
+                          onValueChange={(details: { value: string | null }) => {
+                            if (details.value === null) {
+                              return;
+                            }
+
+                            startTransition(() => {
+                              setSortField(details.value as SortField);
+                            });
+                          }}
+                        >
+                          <HStack gap={3}>
+                            <RadioGroup.Item value="er" cursor="pointer">
+                              <RadioGroup.ItemHiddenInput />
+                              <RadioGroup.ItemIndicator cursor="pointer" />
+                              <RadioGroup.ItemText>ER</RadioGroup.ItemText>
+                            </RadioGroup.Item>
+                            <RadioGroup.Item value="ne" cursor="pointer">
+                              <RadioGroup.ItemHiddenInput />
+                              <RadioGroup.ItemIndicator cursor="pointer" />
+                              <RadioGroup.ItemText>NE</RadioGroup.ItemText>
+                            </RadioGroup.Item>
+                            <RadioGroup.Item value="odds" cursor="pointer">
+                              <RadioGroup.ItemHiddenInput />
+                              <RadioGroup.ItemIndicator cursor="pointer" />
+                              <RadioGroup.ItemText>Odds</RadioGroup.ItemText>
+                            </RadioGroup.Item>
+                            <RadioGroup.Item value="maxBet" cursor="pointer">
+                              <RadioGroup.ItemHiddenInput />
+                              <RadioGroup.ItemIndicator cursor="pointer" />
+                              <RadioGroup.ItemText>MaxBet</RadioGroup.ItemText>
+                            </RadioGroup.Item>
+                          </HStack>
+                        </RadioGroup.Root>
+                        <Checkbox.Root
+                          checked={reverseSort}
+                          onCheckedChange={() => {
+                            startTransition(() => {
+                              setReverseSort(!reverseSort);
+                            });
+                          }}
+                        >
+                          <Checkbox.HiddenInput />
+                          <Checkbox.Control />
+                          <Checkbox.Label>Reverse</Checkbox.Label>
+                        </Checkbox.Root>
+                      </HStack>
+
+                      {/* Filter Options */}
+                      <Stack gap={2}>
+                        <Text fontSize="sm" fontWeight="medium">
+                          Options:
+                        </Text>
+                        <HStack gap={4} flexWrap="wrap">
+                          <Checkbox.Root
+                            checked={useExperimentalLogit}
+                            onCheckedChange={() => {
+                              startTransition(() => {
+                                setUseExperimentalLogit(!useExperimentalLogit);
+                              });
+                            }}
+                          >
+                            <Checkbox.HiddenInput />
+                            <Checkbox.Control />
+                            <Checkbox.Label>Experimental Logit</Checkbox.Label>
+                          </Checkbox.Root>
+
+                          <Checkbox.Root
+                            checked={showBinaryAsHex}
+                            onCheckedChange={() => setShowBinaryAsHex(!showBinaryAsHex)}
+                          >
+                            <Checkbox.HiddenInput />
+                            <Checkbox.Control />
+                            <Checkbox.Label>Show Binary as Hex</Checkbox.Label>
+                          </Checkbox.Root>
+
+                          {isRoundOver && (
+                            <Checkbox.Root
+                              checked={showOnlyWinningBets}
+                              onCheckedChange={() => {
+                                startTransition(() => {
+                                  setShowOnlyWinningBets(!showOnlyWinningBets);
+                                });
                               }}
                             >
-                              Allow all pirates
-                            </Button>
+                              <Checkbox.HiddenInput />
+                              <Checkbox.Control />
+                              <Checkbox.Label>Show Only Winning Bets</Checkbox.Label>
+                            </Checkbox.Root>
                           )}
                         </HStack>
-                        <Text fontSize="xs" color="fg.muted" lineHeight="short">
-                          Bets that include a checked pirate are hidden. Nothing is excluded by
-                          default.
-                        </Text>
                       </Stack>
-                      <Box overflowX="auto" pb={1} width="fit-content" maxWidth="100%">
-                        <Box
-                          display="grid"
-                          gridTemplateColumns="repeat(5, 8rem)"
-                          gap={1.5}
-                          alignItems="end"
-                          px={1}
-                          pb={2}
-                          borderBottomWidth="1px"
-                          borderColor="border.muted"
-                        >
-                          {ARENA_NAMES.map(arenaName => (
-                            <Text
-                              key={arenaName}
-                              fontSize="xs"
-                              fontWeight="medium"
-                              color="fg.muted"
-                              textAlign="center"
-                              lineHeight="short"
-                            >
-                              {arenaName}
-                            </Text>
-                          ))}
-                        </Box>
-                        <Box as="ul" listStyleType="none" margin={0} padding={0} fontSize="xs">
-                          {[1, 2, 3, 4].map(pirateIdx => (
-                            <Box
-                              as="li"
-                              key={pirateIdx}
-                              display="grid"
-                              gridTemplateColumns="repeat(5, 8rem)"
-                              gap={1.5}
-                              alignItems="start"
-                              py={1.5}
-                              px={1}
-                              borderBottomWidth="1px"
-                              borderColor="border.muted"
-                              _last={{ borderBottomWidth: '0' }}
-                            >
-                              {ARENA_NAMES.map((arenaName, arenaIdx) => {
-                                const key = `${arenaIdx}-${pirateIdx}`;
-                                const name =
-                                  pirateNameForSlot(roundData.pirates, arenaIdx, pirateIdx) ||
-                                  `P${pirateIdx}`;
-                                const color = pirateColorForOpeningOdds(
-                                  roundData.openingOdds,
-                                  arenaIdx,
-                                  pirateIdx,
-                                  getPirateBgColor,
-                                );
-                                const curOdds = roundData.currentOdds?.[arenaIdx]?.[pirateIdx];
-                                const blockLabel = `Block ${name} (${arenaName})`;
-                                return (
-                                  <Checkbox.Root
-                                    key={key}
-                                    checked={blockedPirates.has(key)}
-                                    display="flex"
-                                    flexDirection="row"
-                                    alignItems="center"
-                                    gap={1}
-                                    minWidth={0}
-                                    title={blockLabel}
-                                    onCheckedChange={() => {
-                                      startTransition(() => {
-                                        setBlockedPirates(prev => {
-                                          const next = new Set(prev);
-                                          if (next.has(key)) {
-                                            next.delete(key);
-                                          } else {
-                                            next.add(key);
-                                          }
-                                          return next;
-                                        });
-                                      });
-                                    }}
-                                    aria-label={blockLabel}
-                                  >
-                                    <Checkbox.HiddenInput />
-                                    <Checkbox.Control flexShrink={0} />
-                                    <Checkbox.Label
-                                      flex={1}
-                                      minWidth={0}
-                                      marginInlineStart={0}
-                                      cursor="pointer"
-                                      userSelect="none"
-                                    >
-                                      <Badge
-                                        fontSize="2xs"
-                                        variant="subtle"
-                                        maxWidth="100%"
-                                        px={1}
-                                        py={0.5}
-                                        lineHeight="short"
-                                        {...(color
-                                          ? { colorPalette: color }
-                                          : { colorPalette: 'gray' })}
-                                      >
-                                        <HStack gap={0.5} maxW="100%" minW={0} lineHeight="short">
-                                          <Text
-                                            as="span"
-                                            truncate
-                                            display="block"
-                                            flex={1}
-                                            minW={0}
-                                          >
-                                            {name}
-                                          </Text>
-                                          {curOdds !== undefined && curOdds > 0 ? (
-                                            <Text
-                                              as="span"
-                                              color="fg"
-                                              flexShrink={0}
-                                              whiteSpace="nowrap"
-                                            >
-                                              - {curOdds}:1
-                                            </Text>
-                                          ) : null}
-                                        </HStack>
-                                      </Badge>
-                                    </Checkbox.Label>
-                                  </Checkbox.Root>
-                                );
-                              })}
-                            </Box>
-                          ))}
-                        </Box>
-                      </Box>
                     </Stack>
                   </Box>
-                </Stack>
+                </HStack>
+
+                <Box
+                  flexShrink={0}
+                  pt={3}
+                  pb={3}
+                  px={3}
+                  borderWidth="1px"
+                  borderRadius="md"
+                  borderColor="border.muted"
+                  bg="bg.subtle"
+                >
+                  <Stack gap={3}>
+                    <Stack gap={1}>
+                      <HStack justify="space-between" align="flex-start" flexWrap="wrap" gap={2}>
+                        <Text fontSize="sm" fontWeight="semibold">
+                          Pirate exclusions
+                        </Text>
+                        {blockedPirates.size > 0 && (
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            onClick={() => {
+                              startTransition(() => setBlockedPirates(new Set()));
+                            }}
+                          >
+                            Allow all pirates
+                          </Button>
+                        )}
+                      </HStack>
+                      <Text fontSize="xs" color="fg.muted" lineHeight="short">
+                        Bets that include a checked pirate are hidden. Nothing is excluded by
+                        default.
+                      </Text>
+                    </Stack>
+                    <Box overflowX="auto" pb={1} width="fit-content" maxWidth="100%">
+                      <Box
+                        display="grid"
+                        gridTemplateColumns="repeat(5, 8rem)"
+                        gap={1.5}
+                        alignItems="end"
+                        px={1}
+                        pb={2}
+                        borderBottomWidth="1px"
+                        borderColor="border.muted"
+                      >
+                        {ARENA_NAMES.map(arenaName => (
+                          <Text
+                            key={arenaName}
+                            fontSize="xs"
+                            fontWeight="medium"
+                            color="fg.muted"
+                            textAlign="center"
+                            lineHeight="short"
+                          >
+                            {arenaName}
+                          </Text>
+                        ))}
+                      </Box>
+                      <Box as="ul" listStyleType="none" margin={0} padding={0} fontSize="xs">
+                        {[1, 2, 3, 4].map(pirateIdx => (
+                          <Box
+                            as="li"
+                            key={pirateIdx}
+                            display="grid"
+                            gridTemplateColumns="repeat(5, 8rem)"
+                            gap={1.5}
+                            alignItems="start"
+                            py={1.5}
+                            px={1}
+                            borderBottomWidth="1px"
+                            borderColor="border.muted"
+                            _last={{ borderBottomWidth: '0' }}
+                          >
+                            {ARENA_NAMES.map((arenaName, arenaIdx) => {
+                              const key = `${arenaIdx}-${pirateIdx}`;
+                              const name =
+                                pirateNameForSlot(
+                                  displayedRoundData.pirates,
+                                  arenaIdx,
+                                  pirateIdx,
+                                ) || `P${pirateIdx}`;
+                              const color = pirateColorForOpeningOdds(
+                                displayedRoundData.openingOdds,
+                                arenaIdx,
+                                pirateIdx,
+                                getPirateBgColor,
+                              );
+                              const curOdds =
+                                effectiveRoundData.currentOdds?.[arenaIdx]?.[pirateIdx];
+                              const blockLabel = `Block ${name} (${arenaName})`;
+                              return (
+                                <Checkbox.Root
+                                  key={key}
+                                  checked={blockedPirates.has(key)}
+                                  display="flex"
+                                  flexDirection="row"
+                                  alignItems="center"
+                                  gap={1}
+                                  minWidth={0}
+                                  title={blockLabel}
+                                  onCheckedChange={() => {
+                                    startTransition(() => {
+                                      setBlockedPirates(prev => {
+                                        const next = new Set(prev);
+                                        if (next.has(key)) {
+                                          next.delete(key);
+                                        } else {
+                                          next.add(key);
+                                        }
+                                        return next;
+                                      });
+                                    });
+                                  }}
+                                  aria-label={blockLabel}
+                                >
+                                  <Checkbox.HiddenInput />
+                                  <Checkbox.Control flexShrink={0} />
+                                  <Checkbox.Label
+                                    flex={1}
+                                    minWidth={0}
+                                    marginInlineStart={0}
+                                    cursor="pointer"
+                                    userSelect="none"
+                                  >
+                                    <Badge
+                                      fontSize="2xs"
+                                      variant="subtle"
+                                      maxWidth="100%"
+                                      px={1}
+                                      py={0.5}
+                                      lineHeight="short"
+                                      {...(color
+                                        ? { colorPalette: color }
+                                        : { colorPalette: 'gray' })}
+                                    >
+                                      <HStack gap={0.5} maxW="100%" minW={0} lineHeight="short">
+                                        <Text as="span" truncate display="block" flex={1} minW={0}>
+                                          {name}
+                                        </Text>
+                                        {curOdds !== undefined && curOdds > 0 ? (
+                                          <Text
+                                            as="span"
+                                            color="fg"
+                                            flexShrink={0}
+                                            whiteSpace="nowrap"
+                                          >
+                                            - {curOdds}:1
+                                          </Text>
+                                        ) : null}
+                                      </HStack>
+                                    </Badge>
+                                  </Checkbox.Label>
+                                </Checkbox.Root>
+                              );
+                            })}
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+                  </Stack>
+                </Box>
 
                 <Box
                   flex={1}
@@ -719,7 +895,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                           MaxBet
                         </Text>
                         <Text
-                          width={showBinaryAsHex ? '80px' : '130px'}
+                          width={showBinaryAsHex ? '80px' : '150px'}
                           textAlign="center"
                           flexShrink={0}
                         >
@@ -733,7 +909,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                       flex={1}
                       minHeight={0}
                       minWidth="fit-content"
-                      opacity={isPending ? 0.5 : 1}
+                      opacity={isPending || previewLoading ? 0.5 : 1}
                       transition="opacity 0.2s"
                     >
                       <List<RowData>
