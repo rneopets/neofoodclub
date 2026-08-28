@@ -33,7 +33,7 @@ interface WasmEnginePerfModalProps {
   onClose: () => void;
 }
 
-const ITERATION_OPTIONS = [10, 50, 100, 500, 1000, 5000, 10000] as const;
+const ITERATION_OPTIONS = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000] as const;
 const DEFAULT_ITERATIONS = 10;
 const DEFAULT_BET_AMOUNT = 10000;
 
