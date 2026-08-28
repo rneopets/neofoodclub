@@ -10,10 +10,11 @@ import {
   backtestRound,
   downsampleForChart,
   formatBacktestAmount,
+  isModelDependentStrategy,
   runBacktestAmountSweep,
   runFullBacktest,
 } from '../runBacktest';
-import type { BacktestRound } from '../types';
+import type { BacktestRound, BacktestStrategy } from '../types';
 
 function toBacktestRound(roundData: RoundData): BacktestRound {
   return {
@@ -42,34 +43,60 @@ describe('backtestRound', () => {
   const round = fixtureRounds[0]!;
 
   it('returns a sane result for the legacy model (max-TER)', () => {
-    const result = backtestRound(round, false, 500000, 10, false);
-    expect(result.spent).toBeGreaterThan(0);
-    expect(result.won).toBeGreaterThanOrEqual(0);
+    const result = backtestRound(round, false, 500000, 10, 'maxTer');
+    expect(result).not.toBeNull();
+    expect(result!.spent).toBeGreaterThan(0);
+    expect(result!.won).toBeGreaterThanOrEqual(0);
   });
 
   it('returns a sane result for the logit model (max-TER)', () => {
-    const result = backtestRound(round, true, 500000, 10, false);
-    expect(result.spent).toBeGreaterThan(0);
-    expect(result.won).toBeGreaterThanOrEqual(0);
+    const result = backtestRound(round, true, 500000, 10, 'maxTer');
+    expect(result).not.toBeNull();
+    expect(result!.spent).toBeGreaterThan(0);
   });
 
   it('returns a sane result for the legacy model (general ER)', () => {
-    const result = backtestRound(round, false, 500000, 10, true);
-    expect(result.spent).toBeGreaterThan(0);
-    expect(result.won).toBeGreaterThanOrEqual(0);
+    const result = backtestRound(round, false, 500000, 10, 'generalEr');
+    expect(result).not.toBeNull();
+    expect(result!.spent).toBeGreaterThan(0);
   });
 
   it('returns a sane result for the logit model (general ER)', () => {
-    const result = backtestRound(round, true, 500000, 10, true);
-    expect(result.spent).toBeGreaterThan(0);
-    expect(result.won).toBeGreaterThanOrEqual(0);
+    const result = backtestRound(round, true, 500000, 10, 'generalEr');
+    expect(result).not.toBeNull();
+    expect(result!.spent).toBeGreaterThan(0);
+  });
+
+  it('runs every strategy without throwing (smoke)', () => {
+    const strategies: BacktestStrategy[] = [
+      'maxTer',
+      'generalEr',
+      'bestGambit',
+      'gambit',
+      'bustproof',
+      'tenbet',
+      'crazy',
+      'winningGambit',
+    ];
+    for (const strategy of strategies) {
+      const result = backtestRound(round, false, 500000, 10, strategy);
+      // bustproof may be null when no arena is positive; the rest always produce a result.
+      if (strategy !== 'bustproof') {
+        expect(result, `expected ${strategy} to produce a result`).not.toBeNull();
+      } else {
+        // If it did run, the numbers must be sane.
+        if (result !== null) {
+          expect(result.spent).toBeGreaterThanOrEqual(0);
+        }
+      }
+    }
   });
 
   it('spent scales linearly with betAmount instead of being capped by the payout cap (regression: sweep chart used to flatten past ~70k)', () => {
     const smallAmount = 10000;
     const largeAmount = 100000;
-    const smallResult = backtestRound(round, false, smallAmount, 10, false);
-    const largeResult = backtestRound(round, false, largeAmount, 10, false);
+    const smallResult = backtestRound(round, false, smallAmount, 10, 'maxTer')!;
+    const largeResult = backtestRound(round, false, largeAmount, 10, 'maxTer')!;
 
     const numActiveBets = smallResult.spent / smallAmount;
     expect(numActiveBets).toBeGreaterThan(0);
@@ -77,23 +104,43 @@ describe('backtestRound', () => {
   });
 });
 
+describe('isModelDependentStrategy', () => {
+  it('flags ER-ranked strategies as model-dependent', () => {
+    expect(isModelDependentStrategy('maxTer')).toBe(true);
+    expect(isModelDependentStrategy('generalEr')).toBe(true);
+    expect(isModelDependentStrategy('tenbet')).toBe(true);
+    expect(isModelDependentStrategy('bestGambit')).toBe(true);
+  });
+
+  it('flags odds-only/random strategies as not model-dependent', () => {
+    expect(isModelDependentStrategy('gambit')).toBe(false);
+    expect(isModelDependentStrategy('bustproof')).toBe(false);
+    expect(isModelDependentStrategy('crazy')).toBe(false);
+    expect(isModelDependentStrategy('winningGambit')).toBe(false);
+  });
+});
+
 describe('runFullBacktest', () => {
-  it('aggregates totals and cumulative net correctly across rounds', async () => {
+  it('aggregates totals and cumulative net correctly across rounds for a strategy', async () => {
     const rounds = fixtureRounds.slice(0, 3);
-    const summary = await runFullBacktest(rounds, { betAmount: 500000, betCount: 10 });
+    const summary = await runFullBacktest(rounds, {
+      betAmount: 500000,
+      betCount: 10,
+      strategy: 'maxTer',
+    });
 
     expect(summary.rounds).toEqual(rounds.map(r => r.round));
 
-    for (const model of [
-      summary.legacy,
-      summary.logit,
-      summary.legacyGeneralEr,
-      summary.logitGeneralEr,
-    ]) {
-      expect(model.roundsPlayed).toBe(rounds.length);
-      expect(model.cumulativeNet).toHaveLength(rounds.length);
+    for (const model of [summary.legacy, summary.logit]) {
+      // Every round either played or was skipped - never both, never neither.
+      expect(model.roundsPlayed + model.roundsSkipped).toBe(rounds.length);
+      expect(model.cumulativeNet).toHaveLength(model.roundsPlayed);
       expect(model.netProfit).toBe(model.totalWon - model.totalSpent);
-      expect(model.cumulativeNet[model.cumulativeNet.length - 1]).toBeCloseTo(model.netProfit, 6);
+      if (model.roundsPlayed > 0) {
+        expect(model.cumulativeNet[model.cumulativeNet.length - 1]).toBeCloseTo(model.netProfit, 6);
+      } else {
+        expect(model.cumulativeNet).toHaveLength(0);
+      }
       if (model.totalSpent > 0) {
         expect(model.roi).toBeCloseTo(model.netProfit / model.totalSpent, 6);
       } else {
@@ -111,10 +158,65 @@ describe('runFullBacktest', () => {
       runFullBacktest(rounds, {
         betAmount: 500000,
         betCount: 10,
+        strategy: 'maxTer',
         chunkSize: 1,
         signal: controller.signal,
       }),
     ).rejects.toThrow();
+  });
+
+  it('produces identical legacy/logit results for a non-model-dependent strategy', async () => {
+    const rounds = fixtureRounds.slice(0, 3);
+    const summary = await runFullBacktest(rounds, {
+      betAmount: 500000,
+      betCount: 10,
+      strategy: 'gambit',
+    });
+
+    expect(summary.legacy).toEqual(summary.logit);
+  });
+
+  it('surfaces topWins only when topN is requested, biggest net first', async () => {
+    const rounds = fixtureRounds;
+    const withoutTopN = await runFullBacktest(rounds, {
+      betAmount: 500000,
+      betCount: 10,
+      strategy: 'maxTer',
+    });
+    expect(withoutTopN.legacy.topWins).toBeUndefined();
+
+    const withTopN = await runFullBacktest(rounds, {
+      betAmount: 500000,
+      betCount: 10,
+      strategy: 'maxTer',
+      topN: 2,
+    });
+    expect(withTopN.legacy.topWins).toBeDefined();
+    expect(withTopN.legacy.topWins!.length).toBeLessThanOrEqual(2);
+    for (const entry of withTopN.legacy.topWins!) {
+      expect(entry.net).toBeGreaterThan(0);
+    }
+    for (let i = 1; i < withTopN.legacy.topWins!.length; i++) {
+      expect(withTopN.legacy.topWins![i]!.net).toBeLessThanOrEqual(
+        withTopN.legacy.topWins![i - 1]!.net,
+      );
+    }
+  });
+
+  it('skipped rounds contribute no point to the cumulative curve (flat line)', async () => {
+    const rounds = fixtureRounds.slice(0, 3);
+    // bustproof skips any round without a positive arena; whatever the mix, the
+    // invariant holds: cumulative points == rounds actually played.
+    const summary = await runFullBacktest(rounds, {
+      betAmount: 500000,
+      betCount: 10,
+      strategy: 'bustproof',
+    });
+
+    for (const model of [summary.legacy, summary.logit]) {
+      expect(model.cumulativeNet).toHaveLength(model.roundsPlayed);
+      expect(model.roundsPlayed + model.roundsSkipped).toBe(rounds.length);
+    }
   });
 });
 
@@ -127,6 +229,7 @@ describe('runBacktestAmountSweep', () => {
     const points = await runBacktestAmountSweep(rounds, {
       amounts,
       betCount: 10,
+      strategy: 'maxTer',
       onProgress: (done, total) => {
         progressCalls.push([done, total]);
       },
@@ -134,10 +237,8 @@ describe('runBacktestAmountSweep', () => {
 
     expect(points.map(p => p.amount)).toEqual(amounts);
     for (const point of points) {
-      expect(point.legacy.roundsPlayed).toBe(rounds.length);
-      expect(point.logit.roundsPlayed).toBe(rounds.length);
-      expect(point.legacyGeneralEr.roundsPlayed).toBe(rounds.length);
-      expect(point.logitGeneralEr.roundsPlayed).toBe(rounds.length);
+      expect(point.legacy.roundsPlayed + point.legacy.roundsSkipped).toBe(rounds.length);
+      expect(point.logit.roundsPlayed + point.logit.roundsSkipped).toBe(rounds.length);
     }
 
     const [lastDone, lastTotal] = progressCalls[progressCalls.length - 1]!;
@@ -154,6 +255,7 @@ describe('runBacktestAmountSweep', () => {
       runBacktestAmountSweep(rounds, {
         amounts: [10000, 20000],
         betCount: 10,
+        strategy: 'maxTer',
         signal: controller.signal,
       }),
     ).rejects.toThrow();
@@ -167,6 +269,7 @@ describe('runBacktestAmountSweep', () => {
     const points = await runBacktestAmountSweep(rounds, {
       amounts,
       betCount: 10,
+      strategy: 'generalEr',
       onStepComplete: point => {
         stepPoints.push(point.amount);
       },

@@ -4,12 +4,14 @@ import {
   Card,
   CloseButton,
   Code,
+  createListCollection,
   Dialog,
   HStack,
   Input,
   Portal,
   Progress,
   SegmentGroup,
+  Select,
   SimpleGrid,
   Stack,
   Tabs,
@@ -19,18 +21,25 @@ import * as React from 'react';
 import { FaBalanceScale } from 'react-icons/fa';
 
 import {
+  AMOUNT_PRESETS,
   formatBacktestAmount,
+  isModelDependentStrategy,
   runBacktestAmountSweep,
   runFullBacktest,
 } from '../../backtest/runBacktest';
-import type { AmountSweepPoint, BacktestSummary, ModelBacktestResult } from '../../backtest/types';
+import { STRATEGY_LABELS, STRATEGY_ORDER } from '../../backtest/strategyLabels';
+import type {
+  AmountSweepPoint,
+  BacktestStrategy,
+  BacktestSummary,
+  ModelBacktestResult,
+} from '../../backtest/types';
 import { useBacktestPreviousRounds } from '../../hooks/useBacktestPreviousRounds';
 import { BacktestAmountSweepChart } from '../charts/BacktestAmountSweepChart';
 import { BacktestComparisonChart } from '../charts/BacktestComparisonChart';
 
 const BET_COUNT = 10;
 const DEFAULT_BET_AMOUNT = 10000;
-const AMOUNT_PRESETS = [1000, 5000, 10000, 25000, 50000];
 const STEP_OPTIONS = [1000, 2000, 3000, 4000, 5000];
 const DEFAULT_STEP = 5000;
 const MAX_SWEEP_AMOUNT_CEILING = 500000;
@@ -87,6 +96,7 @@ interface RunState {
   total: number;
   result: BacktestSummary | null;
   betAmount: number | null;
+  strategy: BacktestStrategy | null;
   error: string | null;
 }
 
@@ -96,6 +106,7 @@ const INITIAL_RUN_STATE: RunState = {
   total: 0,
   result: null,
   betAmount: null,
+  strategy: null,
   error: null,
 };
 
@@ -104,6 +115,7 @@ interface SweepState {
   done: number;
   total: number;
   result: AmountSweepPoint[] | null;
+  strategy: BacktestStrategy | null;
   error: string | null;
 }
 
@@ -112,6 +124,7 @@ const INITIAL_SWEEP_STATE: SweepState = {
   done: 0,
   total: 0,
   result: null,
+  strategy: null,
   error: null,
 };
 
@@ -201,6 +214,14 @@ function ModelSummaryCard({
               {displayPercent(winRate)} ({result.roundsWon}/{result.roundsPlayed})
             </Text>
           </HStack>
+          {result.roundsSkipped > 0 && (
+            <HStack justify="space-between">
+              <Text fontSize="sm" color="fg.muted">
+                Skipped Rounds
+              </Text>
+              <Text fontSize="sm">{result.roundsSkipped}</Text>
+            </HStack>
+          )}
         </Stack>
       </Card.Body>
     </Card.Root>
@@ -216,8 +237,17 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
   });
 
   const [betAmountInput, setBetAmountInput] = React.useState(String(DEFAULT_BET_AMOUNT));
+  const [strategy, setStrategy] = React.useState<BacktestStrategy>('maxTer');
   const [runState, setRunState] = React.useState<RunState>(INITIAL_RUN_STATE);
   const abortControllerRef = React.useRef<AbortController | null>(null);
+
+  const strategyCollection = React.useMemo(
+    () =>
+      createListCollection({
+        items: STRATEGY_ORDER.map(key => ({ label: STRATEGY_LABELS[key].name, value: key })),
+      }),
+    [],
+  );
 
   const betAmount = React.useMemo(() => {
     const value = Number(betAmountInput);
@@ -244,12 +274,14 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
       total: rounds.length,
       result: null,
       betAmount,
+      strategy,
       error: null,
     });
 
     void runFullBacktest(rounds, {
       betAmount,
       betCount: BET_COUNT,
+      strategy,
       signal: controller.signal,
       onProgress: (done, total) => {
         setRunState(prev => ({ ...prev, done, total }));
@@ -265,7 +297,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
         }
         setRunState(prev => ({ ...prev, running: false, error: String(err) }));
       });
-  }, [rounds, betAmount]);
+  }, [rounds, betAmount, strategy]);
 
   const handleCancel = React.useCallback((): void => {
     abortControllerRef.current?.abort();
@@ -293,11 +325,19 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
     sweepAbortControllerRef.current = controller;
 
     const totalRounds = sweepAmounts.length * rounds.length;
-    setSweepState({ running: true, done: 0, total: totalRounds, result: null, error: null });
+    setSweepState({
+      running: true,
+      done: 0,
+      total: totalRounds,
+      result: null,
+      strategy,
+      error: null,
+    });
 
     void runBacktestAmountSweep(rounds, {
       amounts: sweepAmounts,
       betCount: BET_COUNT,
+      strategy,
       signal: controller.signal,
       onProgress: (done, total) => {
         setSweepState(prev => ({ ...prev, done, total }));
@@ -319,10 +359,21 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
         }
         setSweepState(prev => ({ ...prev, running: false, error: String(err) }));
       });
-  }, [rounds, sweepAmounts]);
+  }, [rounds, sweepAmounts, strategy]);
 
   const handleCancelSweep = React.useCallback((): void => {
     sweepAbortControllerRef.current?.abort();
+  }, []);
+
+  // Changing the strategy invalidates any previous results (they were run with
+  // a different bet generator), so both tabs reset. Declared after the sweep's
+  // abort ref so it can cancel an in-flight sweep too.
+  const handleStrategyChange = React.useCallback((next: BacktestStrategy): void => {
+    abortControllerRef.current?.abort();
+    sweepAbortControllerRef.current?.abort();
+    setStrategy(next);
+    setRunState(INITIAL_RUN_STATE);
+    setSweepState(INITIAL_SWEEP_STATE);
   }, []);
 
   const cacheStatusText = React.useMemo(() => {
@@ -354,7 +405,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
         <Dialog.Positioner>
           <Dialog.Content>
             <Dialog.Header>
-              <Dialog.Title>Compare Max-TER Models</Dialog.Title>
+              <Dialog.Title>Compare Bet Strategies</Dialog.Title>
               <Dialog.CloseTrigger asChild>
                 <CloseButton size="sm" />
               </Dialog.CloseTrigger>
@@ -362,9 +413,50 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
             <Dialog.Body display="flex" flexDirection="column" overflowY="auto">
               <Stack gap={4}>
                 <Text fontSize="sm" color="fg.muted">
-                  Backtests max-TER bets across every completed historical round, once with the
-                  legacy model and once with the experimental logit model.
+                  Backtests a chosen bet strategy across every completed historical round, once with
+                  the legacy model and once with the experimental logit model.
                 </Text>
+
+                <Stack gap={1}>
+                  <Text fontSize="sm" fontWeight="medium">
+                    Bet Strategy:
+                  </Text>
+                  <Select.Root
+                    collection={strategyCollection}
+                    size="sm"
+                    value={[strategy]}
+                    minW="260px"
+                    disabled={runState.running || sweepState.running}
+                    onValueChange={(details: { value: string[] }) => {
+                      const next = details.value[0] as BacktestStrategy | undefined;
+                      if (next !== undefined) {
+                        handleStrategyChange(next);
+                      }
+                    }}
+                  >
+                    <Select.HiddenSelect />
+                    <Select.Control layerStyle="fill.subtle">
+                      <Select.Trigger>
+                        <Select.ValueText />
+                      </Select.Trigger>
+                      <Select.IndicatorGroup>
+                        <Select.Indicator />
+                      </Select.IndicatorGroup>
+                    </Select.Control>
+                    <Select.Positioner>
+                      <Select.Content>
+                        {strategyCollection.items.map(item => (
+                          <Select.Item item={item} key={item.value}>
+                            <Select.ItemText>{item.label}</Select.ItemText>
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Positioner>
+                  </Select.Root>
+                  <Text fontSize="xs" color="fg.muted">
+                    {STRATEGY_LABELS[strategy].blurb}
+                  </Text>
+                </Stack>
 
                 <HStack justify="space-between" flexWrap="wrap" gap={2}>
                   <Text fontSize="sm" color="fg.muted">
@@ -389,11 +481,20 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                   <Tabs.Content value="single">
                     <Stack gap={4}>
                       <Text fontSize="xs" color="fg.muted" fontStyle="italic">
-                        Max-TER bets are ranked by Net Expected at your chosen bet amount - the same
-                        selection the app&apos;s &quot;Generate&quot; button uses. General ER bets
-                        are ranked by raw Expected Ratio, independent of amount, so the two
-                        strategies can select genuinely different bets, not just score the same bets
-                        differently.
+                        {isModelDependentStrategy(strategy) ? (
+                          <>
+                            Both models use the same {STRATEGY_LABELS[strategy].name} selection -
+                            only the underlying probabilities differ. The bet amount below is what
+                            each bet wagers; Max-TER and General ER also use it to rank which bets
+                            they pick.
+                          </>
+                        ) : (
+                          <>
+                            {STRATEGY_LABELS[strategy].name}&apos;s bet selection doesn&apos;t
+                            consult the probability model, so legacy and logit produce identical
+                            results here - shown for layout consistency with the other strategies.
+                          </>
+                        )}
                       </Text>
                       <Stack gap={2}>
                         <HStack>
@@ -468,54 +569,36 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                         </Text>
                       )}
 
-                      {runState.result && (
+                      {runState.result && runState.strategy !== null && (
                         <Stack gap={4}>
                           <Text fontSize="sm" color="fg.muted">
-                            Results for bet amount:{' '}
+                            Results for {STRATEGY_LABELS[runState.strategy].name} at bet amount:{' '}
                             <Code fontSize="sm">
                               {formatBacktestAmount(runState.betAmount ?? betAmount)}
                             </Code>
                           </Text>
                           <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                             <ModelSummaryCard
-                              title="Legacy (Max-TER)"
+                              title="Legacy model"
                               result={runState.result.legacy}
                               isWinner={
+                                isModelDependentStrategy(runState.strategy) &&
                                 runState.result.legacy.netProfit >= runState.result.logit.netProfit
                               }
                             />
                             <ModelSummaryCard
-                              title="Logit (Max-TER)"
+                              title="Logit model"
                               result={runState.result.logit}
                               isWinner={
+                                isModelDependentStrategy(runState.strategy) &&
                                 runState.result.logit.netProfit > runState.result.legacy.netProfit
-                              }
-                            />
-                            <ModelSummaryCard
-                              title="Legacy (General ER)"
-                              result={runState.result.legacyGeneralEr}
-                              isWinner={
-                                runState.result.legacyGeneralEr.netProfit >=
-                                runState.result.logitGeneralEr.netProfit
-                              }
-                            />
-                            <ModelSummaryCard
-                              title="Logit (General ER)"
-                              result={runState.result.logitGeneralEr}
-                              isWinner={
-                                runState.result.logitGeneralEr.netProfit >
-                                runState.result.legacyGeneralEr.netProfit
                               }
                             />
                           </SimpleGrid>
                           <BacktestComparisonChart
                             rounds={runState.result.rounds}
-                            legacyMaxTerCumulative={runState.result.legacy.cumulativeNet}
-                            logitMaxTerCumulative={runState.result.logit.cumulativeNet}
-                            legacyGeneralErCumulative={
-                              runState.result.legacyGeneralEr.cumulativeNet
-                            }
-                            logitGeneralErCumulative={runState.result.logitGeneralEr.cumulativeNet}
+                            legacyCumulative={runState.result.legacy.cumulativeNet}
+                            logitCumulative={runState.result.logit.cumulativeNet}
                           />
                         </Stack>
                       )}
@@ -525,8 +608,9 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                   <Tabs.Content value="sweep">
                     <Stack gap={3}>
                       <Text fontSize="xs" color="fg.muted">
-                        Runs the full backtest once per bet-amount step from the chosen increment up
-                        to {formatBacktestAmount(sweepMaxAmount)}, and plots ROI vs. bet amount.
+                        Runs the full {STRATEGY_LABELS[strategy].name} backtest once per bet-amount
+                        step from the chosen increment up to {formatBacktestAmount(sweepMaxAmount)},
+                        and plots ROI vs. bet amount.
                       </Text>
                       <Text fontSize="xs" color="fg.muted" fontStyle="italic">
                         This can take a while - more steps means more full backtests to run, so

@@ -20,17 +20,14 @@ ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend);
 
 const LEGACY_COLOR = '#3182ce';
 const LOGIT_COLOR = '#dd6b20';
-const GENERAL_ER_DASH = [6, 4];
 
 interface BacktestAmountSweepChartProps {
   points: AmountSweepPoint[];
 }
 
 const MODEL_FOR_LABEL: Record<string, (point: AmountSweepPoint) => ModelBacktestResult> = {
-  'Legacy (Max-TER)': point => point.legacy,
-  'Legacy (General ER)': point => point.legacyGeneralEr,
-  'Logit (Max-TER)': point => point.logit,
-  'Logit (General ER)': point => point.logitGeneralEr,
+  'Legacy model': point => point.legacy,
+  'Logit model': point => point.logit,
 };
 
 function modelForDataset(point: AmountSweepPoint, datasetLabel: string): ModelBacktestResult {
@@ -48,7 +45,7 @@ export function BacktestAmountSweepChart({
     () => ({
       datasets: [
         {
-          label: 'Legacy (Max-TER)',
+          label: 'Legacy model',
           data: points.map(p => ({ x: p.amount, y: p.legacy.roi * 100 })),
           borderColor: LEGACY_COLOR,
           backgroundColor: LEGACY_COLOR,
@@ -56,30 +53,12 @@ export function BacktestAmountSweepChart({
           borderWidth: 2,
         },
         {
-          label: 'Legacy (General ER)',
-          data: points.map(p => ({ x: p.amount, y: p.legacyGeneralEr.roi * 100 })),
-          borderColor: LEGACY_COLOR,
-          backgroundColor: LEGACY_COLOR,
-          pointRadius: 3,
-          borderWidth: 2,
-          borderDash: GENERAL_ER_DASH,
-        },
-        {
-          label: 'Logit (Max-TER)',
+          label: 'Logit model',
           data: points.map(p => ({ x: p.amount, y: p.logit.roi * 100 })),
           borderColor: LOGIT_COLOR,
           backgroundColor: LOGIT_COLOR,
           pointRadius: 3,
           borderWidth: 2,
-        },
-        {
-          label: 'Logit (General ER)',
-          data: points.map(p => ({ x: p.amount, y: p.logitGeneralEr.roi * 100 })),
-          borderColor: LOGIT_COLOR,
-          backgroundColor: LOGIT_COLOR,
-          pointRadius: 3,
-          borderWidth: 2,
-          borderDash: GENERAL_ER_DASH,
         },
       ],
     }),

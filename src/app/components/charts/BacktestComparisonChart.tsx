@@ -19,83 +19,52 @@ ChartJS.register(LinearScale, PointElement, LineElement, Tooltip, Legend);
 
 const LEGACY_COLOR = '#3182ce';
 const LOGIT_COLOR = '#dd6b20';
-const GENERAL_ER_DASH = [6, 4];
 
 interface BacktestComparisonChartProps {
   rounds: number[];
-  legacyMaxTerCumulative: number[];
-  legacyGeneralErCumulative: number[];
-  logitMaxTerCumulative: number[];
-  logitGeneralErCumulative: number[];
+  legacyCumulative: number[];
+  logitCumulative: number[];
 }
 
 export function BacktestComparisonChart({
   rounds,
-  legacyMaxTerCumulative,
-  legacyGeneralErCumulative,
-  logitMaxTerCumulative,
-  logitGeneralErCumulative,
+  legacyCumulative,
+  logitCumulative,
 }: BacktestComparisonChartProps): React.JSX.Element {
   const { colorMode } = useColorMode();
   const isDarkLikeMode = colorMode !== 'light';
 
-  const legacyMaxTerPoints = useMemo(
-    () => downsampleForChart(legacyMaxTerCumulative, rounds),
-    [legacyMaxTerCumulative, rounds],
+  const legacyPoints = useMemo(
+    () => downsampleForChart(legacyCumulative, rounds),
+    [legacyCumulative, rounds],
   );
-  const legacyGeneralErPoints = useMemo(
-    () => downsampleForChart(legacyGeneralErCumulative, rounds),
-    [legacyGeneralErCumulative, rounds],
-  );
-  const logitMaxTerPoints = useMemo(
-    () => downsampleForChart(logitMaxTerCumulative, rounds),
-    [logitMaxTerCumulative, rounds],
-  );
-  const logitGeneralErPoints = useMemo(
-    () => downsampleForChart(logitGeneralErCumulative, rounds),
-    [logitGeneralErCumulative, rounds],
+  const logitPoints = useMemo(
+    () => downsampleForChart(logitCumulative, rounds),
+    [logitCumulative, rounds],
   );
 
   const data = useMemo(
     () => ({
       datasets: [
         {
-          label: 'Legacy (Max-TER)',
-          data: legacyMaxTerPoints,
+          label: 'Legacy model',
+          data: legacyPoints,
           borderColor: LEGACY_COLOR,
           backgroundColor: LEGACY_COLOR,
           pointRadius: 0,
           borderWidth: 2,
         },
         {
-          label: 'Legacy (General ER)',
-          data: legacyGeneralErPoints,
-          borderColor: LEGACY_COLOR,
-          backgroundColor: LEGACY_COLOR,
-          pointRadius: 0,
-          borderWidth: 2,
-          borderDash: GENERAL_ER_DASH,
-        },
-        {
-          label: 'Logit (Max-TER)',
-          data: logitMaxTerPoints,
+          label: 'Logit model',
+          data: logitPoints,
           borderColor: LOGIT_COLOR,
           backgroundColor: LOGIT_COLOR,
           pointRadius: 0,
           borderWidth: 2,
-        },
-        {
-          label: 'Logit (General ER)',
-          data: logitGeneralErPoints,
-          borderColor: LOGIT_COLOR,
-          backgroundColor: LOGIT_COLOR,
-          pointRadius: 0,
-          borderWidth: 2,
-          borderDash: GENERAL_ER_DASH,
         },
       ],
     }),
-    [legacyMaxTerPoints, legacyGeneralErPoints, logitMaxTerPoints, logitGeneralErPoints],
+    [legacyPoints, logitPoints],
   );
 
   const gridColor = isDarkLikeMode ? '#6272a4' : undefined;
