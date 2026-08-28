@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   CloseButton,
   Dialog,
@@ -17,6 +18,8 @@ import {
 } from '../../analysis/arenaInsights';
 import type { BacktestRound } from '../../backtest/types';
 import { useBacktestPreviousRounds } from '../../hooks/useBacktestPreviousRounds';
+
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface ArenaInsightsModalProps {
   isOpen: boolean;
@@ -90,6 +93,72 @@ function PositiveArenasSection({ rounds }: { rounds: BacktestRound[] }): React.J
   );
 }
 
+const POSITION_COLOR_PALETTES = ['nfc-cyan', 'nfc-green', 'nfc-orange', 'nfc-purple'] as const;
+
+function ArenaPositionBarRow({
+  row,
+}: {
+  row: ReturnType<typeof computeArenaPositionWinRates>['overall'];
+}): React.JSX.Element {
+  const isOverall = row.arenaIndex === -1;
+
+  return (
+    <HStack gap={3} align="center">
+      <Text
+        fontSize="sm"
+        fontWeight={isOverall ? 'semibold' : undefined}
+        width="90px"
+        flexShrink={0}
+      >
+        {row.arenaName}
+      </Text>
+      <Box
+        flex="1"
+        display="flex"
+        overflow="hidden"
+        borderRadius="md"
+        border="1px solid"
+        borderColor="border"
+        minH="7"
+      >
+        {row.positionCounts.map((count, i) => {
+          const share = count / row.totalRounds;
+          const percent = share * 100;
+
+          if (percent <= 0) {
+            return null;
+          }
+
+          return (
+            <Tooltip
+              key={`position-${i + 1}`}
+              content={`Position ${i + 1}: ${displayPercent(share)}`}
+              showArrow
+              placement="top"
+            >
+              <Box
+                width={`${percent}%`}
+                layerStyle="fill.muted"
+                colorPalette={POSITION_COLOR_PALETTES[i]}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                fontSize="xs"
+                fontWeight="semibold"
+                whiteSpace="nowrap"
+                overflow="hidden"
+                minH="7"
+              >
+                {percent > 8 ? displayPercent(share) : ' '}
+              </Box>
+            </Tooltip>
+          );
+        })}
+      </Box>
+    </HStack>
+  );
+}
+
 function ArenaPositionWinRateSection({
   rounds,
 }: {
@@ -108,32 +177,21 @@ function ArenaPositionWinRateSection({
       <Text fontSize="sm" fontWeight="medium">
         Win rate by arena position:
       </Text>
-      <Table.Root size="sm" width="full">
-        <Table.Header>
-          <Table.Row>
-            <Table.ColumnHeader>Arena</Table.ColumnHeader>
-            <Table.ColumnHeader textAlign="right">Position 1</Table.ColumnHeader>
-            <Table.ColumnHeader textAlign="right">Position 2</Table.ColumnHeader>
-            <Table.ColumnHeader textAlign="right">Position 3</Table.ColumnHeader>
-            <Table.ColumnHeader textAlign="right">Position 4</Table.ColumnHeader>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {allRows.map(row => (
-            <Table.Row
-              key={row.arenaIndex}
-              fontWeight={row.arenaIndex === -1 ? 'medium' : undefined}
-            >
-              <Table.Cell>{row.arenaName}</Table.Cell>
-              {row.positionCounts.map((count, i) => (
-                <Table.Cell key={`position-${i + 1}`} textAlign="right">
-                  {displayPercent(count / row.totalRounds)}
-                </Table.Cell>
-              ))}
-            </Table.Row>
-          ))}
-        </Table.Body>
-      </Table.Root>
+      <HStack gap={4} flexWrap="wrap">
+        {POSITION_COLOR_PALETTES.map((palette, i) => (
+          <HStack key={palette} gap={1}>
+            <Box w="3" h="3" borderRadius="sm" layerStyle="fill.muted" colorPalette={palette} />
+            <Text fontSize="xs" color="fg.muted">
+              Position {i + 1}
+            </Text>
+          </HStack>
+        ))}
+      </HStack>
+      <Stack gap={2}>
+        {allRows.map(row => (
+          <ArenaPositionBarRow key={row.arenaIndex} row={row} />
+        ))}
+      </Stack>
       <Text fontSize="xs" color="fg.muted" fontStyle="italic">
         Share of rounds each arena&apos;s winner came from position 1-4 (the pirate&apos;s 1-indexed
         slot within the arena). &quot;Overall&quot; aggregates across all five arenas.
