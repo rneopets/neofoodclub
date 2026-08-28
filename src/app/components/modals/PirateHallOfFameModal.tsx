@@ -134,12 +134,7 @@ export const PirateHallOfFameModal: React.FC<PirateHallOfFameModalProps> = ({
                       {rows.map(({ key, entry }) => (
                         <Table.Row key={key}>
                           <Table.Cell>
-                            <HStack gap={2}>
-                              <Text fontWeight="medium">{entry.name}</Text>
-                              <Text fontSize="xs" color="fg.muted">
-                                #{entry.pirateId}
-                              </Text>
-                            </HStack>
+                            <Text fontWeight="medium">{entry.name}</Text>
                           </Table.Cell>
                           <Table.Cell textAlign="right">
                             {displayPercent(entry.winPercent)}
