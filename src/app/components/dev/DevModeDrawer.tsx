@@ -1,4 +1,4 @@
-import { Button, Drawer, Portal, Stack, CloseButton, Separator } from '@chakra-ui/react';
+import { Button, Drawer, Portal, Stack, CloseButton, Separator, Text } from '@chakra-ui/react';
 import * as React from 'react';
 import {
   FaBalanceScale,
@@ -80,46 +80,100 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
                     onChange={handleReactScanToggle}
                   />
                   <Separator />
-                  <Button width="full" onClick={jsonModal.onOpen}>
-                    <FaCode />
-                    View Round JSON
-                  </Button>
-                  <Button width="full" onClick={allBetsModal.onOpen}>
-                    <FaTable />
-                    View All Possible Bets
-                  </Button>
-                  <Button width="full" onClick={backtestModal.onOpen}>
-                    <FaBalanceScale />
-                    Compare Bet Strategies
-                  </Button>
-                  <Button width="full" onClick={betSimulatorModal.onOpen}>
-                    <FaTrophy />
-                    Bet Simulator
-                  </Button>
-                  <Button width="full" onClick={pirateHallOfFameModal.onOpen}>
-                    <FaUsers />
-                    Pirate Hall of Fame
-                  </Button>
-                  <Button width="full" onClick={perfModal.onOpen}>
-                    <FaGauge />
-                    Wasm Engine Perf
-                  </Button>
-                  <Button width="full" onClick={insightsModal.onOpen}>
-                    <FaChartPie />
-                    Arena Insights
-                  </Button>
-                  <Button width="full" onClick={driftModal.onOpen}>
-                    <FaStopwatch />
-                    Round End-Time Drift
-                  </Button>
-                  <Button width="full" onClick={matchupModal.onOpen}>
-                    <FaCrosshairs />
-                    Pirate Matchups (Head-to-Head)
-                  </Button>
-                  <Button width="full" onClick={fcDataModal.onOpen}>
-                    <FaFileCsv />
-                    FC Data Visualizer (NeoBot CSV)
-                  </Button>
+
+                  <Text
+                    fontSize="xs"
+                    fontWeight="semibold"
+                    color="fg.muted"
+                    textTransform="uppercase"
+                    letterSpacing="wide"
+                  >
+                    Round Data
+                  </Text>
+                  <Stack gap={2}>
+                    <Button width="full" onClick={jsonModal.onOpen}>
+                      <FaCode />
+                      View Round JSON
+                    </Button>
+                    <Button width="full" onClick={allBetsModal.onOpen}>
+                      <FaTable />
+                      View All Possible Bets
+                    </Button>
+                    <Button width="full" onClick={driftModal.onOpen}>
+                      <FaStopwatch />
+                      Round End-Time Drift
+                    </Button>
+                  </Stack>
+
+                  <Separator />
+
+                  <Text
+                    fontSize="xs"
+                    fontWeight="semibold"
+                    color="fg.muted"
+                    textTransform="uppercase"
+                    letterSpacing="wide"
+                  >
+                    Strategy & Simulation
+                  </Text>
+                  <Stack gap={2}>
+                    <Button width="full" onClick={backtestModal.onOpen}>
+                      <FaBalanceScale />
+                      Compare Bet Strategies
+                    </Button>
+                    <Button width="full" onClick={betSimulatorModal.onOpen}>
+                      <FaTrophy />
+                      Bet Simulator
+                    </Button>
+                  </Stack>
+
+                  <Separator />
+
+                  <Text
+                    fontSize="xs"
+                    fontWeight="semibold"
+                    color="fg.muted"
+                    textTransform="uppercase"
+                    letterSpacing="wide"
+                  >
+                    Pirate & Arena Stats
+                  </Text>
+                  <Stack gap={2}>
+                    <Button width="full" onClick={pirateHallOfFameModal.onOpen}>
+                      <FaUsers />
+                      Pirate Hall of Fame
+                    </Button>
+                    <Button width="full" onClick={matchupModal.onOpen}>
+                      <FaCrosshairs />
+                      Pirate Matchups (Head-to-Head)
+                    </Button>
+                    <Button width="full" onClick={insightsModal.onOpen}>
+                      <FaChartPie />
+                      Arena Insights
+                    </Button>
+                  </Stack>
+
+                  <Separator />
+
+                  <Text
+                    fontSize="xs"
+                    fontWeight="semibold"
+                    color="fg.muted"
+                    textTransform="uppercase"
+                    letterSpacing="wide"
+                  >
+                    Tools
+                  </Text>
+                  <Stack gap={2}>
+                    <Button width="full" onClick={fcDataModal.onOpen}>
+                      <FaFileCsv />
+                      FC Data Visualizer (NeoBot CSV)
+                    </Button>
+                    <Button width="full" onClick={perfModal.onOpen}>
+                      <FaGauge />
+                      Wasm Engine Perf
+                    </Button>
+                  </Stack>
                 </Stack>
               </Drawer.Body>
               <Drawer.Footer>
