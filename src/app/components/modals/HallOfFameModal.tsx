@@ -4,13 +4,14 @@ import {
   Card,
   CloseButton,
   Code,
+  createListCollection,
   Dialog,
   HStack,
   Input,
   Link,
   Portal,
   Progress,
-  SimpleGrid,
+  Select,
   Stack,
   Table,
   Text,
@@ -19,12 +20,18 @@ import * as React from 'react';
 import { FaTrophy } from 'react-icons/fa';
 
 import {
-  runBestGambitHallOfFame,
-  type BestGambitHallOfFameEntry,
-  type BestGambitHallOfFameModelResult,
-  type BestGambitHallOfFameSummary,
-} from '../../backtest/bestGambitHallOfFame';
-import { AMOUNT_PRESETS, formatBacktestAmount } from '../../backtest/runBacktest';
+  AMOUNT_PRESETS,
+  formatBacktestAmount,
+  isModelDependentStrategy,
+  runFullBacktest,
+} from '../../backtest/runBacktest';
+import { STRATEGY_LABELS, STRATEGY_ORDER } from '../../backtest/strategyLabels';
+import type {
+  BacktestRoundEntry,
+  BacktestStrategy,
+  BacktestSummary,
+  ModelBacktestResult,
+} from '../../backtest/types';
 import { useBacktestPreviousRounds } from '../../hooks/useBacktestPreviousRounds';
 import { BacktestComparisonChart } from '../charts/BacktestComparisonChart';
 
@@ -44,8 +51,9 @@ interface HallOfFameState {
   running: boolean;
   done: number;
   total: number;
-  result: BestGambitHallOfFameSummary | null;
+  result: BacktestSummary | null;
   betAmount: number | null;
+  strategy: BacktestStrategy | null;
   error: string | null;
 }
 
@@ -55,6 +63,7 @@ const INITIAL_STATE: HallOfFameState = {
   total: 0,
   result: null,
   betAmount: null,
+  strategy: null,
   error: null,
 };
 
@@ -64,7 +73,7 @@ function ModelCard({
   isWinner,
 }: {
   title: string;
-  result: BestGambitHallOfFameModelResult;
+  result: ModelBacktestResult;
   isWinner: boolean;
 }): React.JSX.Element {
   const winRate = result.roundsPlayed > 0 ? result.roundsWon / result.roundsPlayed : 0;
@@ -119,17 +128,11 @@ function ModelCard({
   );
 }
 
-function TopPayoutsTable({
-  title,
-  entries,
-}: {
-  title: string;
-  entries: BestGambitHallOfFameEntry[];
-}): React.JSX.Element {
+function TopWinsTable({ entries }: { entries: BacktestRoundEntry[] }): React.JSX.Element {
   return (
     <Stack gap={1}>
       <Text fontSize="sm" fontWeight="medium">
-        {title}
+        Biggest wins
       </Text>
       <Table.Root size="sm" width="full">
         <Table.Header>
@@ -150,13 +153,34 @@ function TopPayoutsTable({
                 </Link>
               </Table.Cell>
               <Table.Cell textAlign="right">{formatBacktestAmount(entry.won)}</Table.Cell>
-              <Table.Cell textAlign="right" color={entry.net >= 0 ? 'nfc-green.fg' : 'nfc-red.fg'}>
+              <Table.Cell textAlign="right" color="nfc-green.fg">
                 {formatBacktestAmount(entry.net)}
               </Table.Cell>
             </Table.Row>
           ))}
         </Table.Body>
       </Table.Root>
+    </Stack>
+  );
+}
+
+function ModelPayouts({
+  title,
+  result,
+}: {
+  title: string;
+  result: ModelBacktestResult;
+}): React.JSX.Element | null {
+  if (!result.topWins || result.topWins.length === 0) {
+    return null;
+  }
+
+  return (
+    <Stack gap={2}>
+      <Text fontSize="sm" fontWeight="medium">
+        {title} - biggest single-round wins
+      </Text>
+      <TopWinsTable entries={result.topWins} />
     </Stack>
   );
 }
@@ -170,8 +194,17 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
   });
 
   const [betAmountInput, setBetAmountInput] = React.useState(String(DEFAULT_BET_AMOUNT));
+  const [strategy, setStrategy] = React.useState<BacktestStrategy>('bestGambit');
   const [state, setState] = React.useState<HallOfFameState>(INITIAL_STATE);
   const abortControllerRef = React.useRef<AbortController | null>(null);
+
+  const strategyCollection = React.useMemo(
+    () =>
+      createListCollection({
+        items: STRATEGY_ORDER.map(key => ({ label: STRATEGY_LABELS[key].name, value: key })),
+      }),
+    [],
+  );
 
   const betAmount = React.useMemo(() => {
     const value = Number(betAmountInput);
@@ -181,6 +214,12 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
   const handleBetAmountInputChange = React.useCallback((newValue: string): void => {
     abortControllerRef.current?.abort();
     setBetAmountInput(newValue);
+    setState(INITIAL_STATE);
+  }, []);
+
+  const handleStrategyChange = React.useCallback((next: BacktestStrategy): void => {
+    abortControllerRef.current?.abort();
+    setStrategy(next);
     setState(INITIAL_STATE);
   }, []);
 
@@ -198,12 +237,14 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
       total: rounds.length,
       result: null,
       betAmount,
+      strategy,
       error: null,
     });
 
-    void runBestGambitHallOfFame(rounds, {
+    void runFullBacktest(rounds, {
       betAmount,
       betCount: BET_COUNT,
+      strategy,
       topN: TOP_N,
       signal: controller.signal,
       onProgress: (done, total) => {
@@ -220,7 +261,7 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
         }
         setState(prev => ({ ...prev, running: false, error: String(err) }));
       });
-  }, [rounds, betAmount]);
+  }, [rounds, betAmount, strategy]);
 
   const handleCancel = React.useCallback((): void => {
     abortControllerRef.current?.abort();
@@ -265,11 +306,51 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
             <Dialog.Body display="flex" flexDirection="column" overflowY="auto">
               <Stack gap={4}>
                 <Text fontSize="sm" color="fg.muted">
-                  Backtests the best-gambit strategy - the highest-expected-value full-arena bet and
-                  its supporting gambit set - across every completed historical round, once with the
-                  legacy model and once with the logit model. Surfaces the biggest single-round wins
-                  and losses, the hall of fame.
+                  Backtests a chosen bet strategy across every completed historical round, once with
+                  the legacy model and once with the logit model, and surfaces the biggest
+                  single-round wins.
                 </Text>
+
+                <Stack gap={1}>
+                  <Text fontSize="sm" fontWeight="medium">
+                    Bet Strategy:
+                  </Text>
+                  <Select.Root
+                    collection={strategyCollection}
+                    size="sm"
+                    value={[strategy]}
+                    minW="260px"
+                    disabled={state.running}
+                    onValueChange={(details: { value: string[] }) => {
+                      const next = details.value[0] as BacktestStrategy | undefined;
+                      if (next !== undefined) {
+                        handleStrategyChange(next);
+                      }
+                    }}
+                  >
+                    <Select.HiddenSelect />
+                    <Select.Control layerStyle="fill.subtle">
+                      <Select.Trigger>
+                        <Select.ValueText />
+                      </Select.Trigger>
+                      <Select.IndicatorGroup>
+                        <Select.Indicator />
+                      </Select.IndicatorGroup>
+                    </Select.Control>
+                    <Select.Positioner>
+                      <Select.Content>
+                        {strategyCollection.items.map(item => (
+                          <Select.Item item={item} key={item.value}>
+                            <Select.ItemText>{item.label}</Select.ItemText>
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Positioner>
+                  </Select.Root>
+                  <Text fontSize="xs" color="fg.muted">
+                    {STRATEGY_LABELS[strategy].blurb}
+                  </Text>
+                </Stack>
 
                 <HStack justify="space-between" flexWrap="wrap" gap={2}>
                   <Text fontSize="sm" color="fg.muted">
@@ -348,10 +429,10 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
                   </Text>
                 )}
 
-                {state.result && (
+                {state.result && state.strategy !== null && (
                   <Stack gap={4}>
                     <Text fontSize="sm" color="fg.muted">
-                      Best-gambit results at bet amount:{' '}
+                      {STRATEGY_LABELS[state.strategy].name} results at bet amount:{' '}
                       <Code fontSize="sm">
                         {formatBacktestAmount(state.betAmount ?? betAmount)}
                       </Code>
@@ -361,14 +442,27 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
                       <ModelCard
                         title="Legacy model"
                         result={state.result.legacy}
-                        isWinner={state.result.legacy.netProfit >= state.result.logit.netProfit}
+                        isWinner={
+                          isModelDependentStrategy(state.strategy) &&
+                          state.result.legacy.netProfit >= state.result.logit.netProfit
+                        }
                       />
                       <ModelCard
                         title="Logit model"
                         result={state.result.logit}
-                        isWinner={state.result.logit.netProfit > state.result.legacy.netProfit}
+                        isWinner={
+                          isModelDependentStrategy(state.strategy) &&
+                          state.result.logit.netProfit > state.result.legacy.netProfit
+                        }
                       />
                     </HStack>
+
+                    {!isModelDependentStrategy(state.strategy) && (
+                      <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+                        {STRATEGY_LABELS[state.strategy].name}&apos;s bet selection doesn&apos;t
+                        consult the probability model, so legacy and logit are identical here.
+                      </Text>
+                    )}
 
                     <BacktestComparisonChart
                       rounds={state.result.rounds}
@@ -395,30 +489,3 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
     </Dialog.Root>
   );
 };
-
-function ModelPayouts({
-  title,
-  result,
-}: {
-  title: string;
-  result: BestGambitHallOfFameModelResult;
-}): React.JSX.Element | null {
-  const hasWins = result.topWins.length > 0;
-  const hasLosses = result.topLosses.length > 0;
-
-  if (!hasWins && !hasLosses) {
-    return null;
-  }
-
-  return (
-    <Stack gap={2}>
-      <Text fontSize="sm" fontWeight="medium">
-        {title} - biggest single-round results
-      </Text>
-      <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-        {hasWins && <TopPayoutsTable title="Biggest wins" entries={result.topWins} />}
-        {hasLosses && <TopPayoutsTable title="Biggest losses" entries={result.topLosses} />}
-      </SimpleGrid>
-    </Stack>
-  );
-}
