@@ -1,0 +1,61 @@
+name: Deploy to Cloudflare Pages
+
+# Deploys main to Cloudflare Pages only after the CI and Playwright Tests
+# workflows have both succeeded for the same push. workflow_run can't be
+# triggered by pull_request events, so this is a main-only deploy.
+on:
+  workflow_run:
+    workflows: ['CI', 'Playwright Tests']
+    types: [ completed ]
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare Pages
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+    - name: Check that all required workflows passed for this push
+      uses: actions/github-script@v9
+      with:
+        script: |
+          const run = context.payload.workflow_run;
+          const runs = await github.rest.actions.listWorkflowRunsForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            branch: 'main',
+            head_sha: run.head_sha,
+          });
+          const required = ['CI', 'Playwright Tests'];
+          for (const name of required) {
+            const match = runs.data.workflow_runs.find(r => r.name === name);
+            if (!match || match.conclusion !== 'success') {
+              const state = match ? `concluded ${match.conclusion}` : 'not found';
+              core.setFailed(`Workflow "${name}" for ${run.head_sha} did not pass (${state}). Skipping deploy.`);
+              return;
+            }
+          }
+
+    - name: Checkout
+      uses: actions/checkout@v7
+      with:
+        ref: ${{ github.event.workflow_run.head_sha }}
+
+    - name: Download Build Output
+      uses: actions/download-artifact@v8
+      with:
+        name: build-output
+        path: build/
+        run-id: ${{ github.event.workflow_run.id }}
+
+    - name: Deploy to Cloudflare Pages
+      uses: cloudflare/wrangler-action@v4
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        command: pages deploy build --project-name=foodclub
