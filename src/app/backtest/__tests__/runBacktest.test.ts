@@ -10,6 +10,7 @@ import {
   backtestRound,
   downsampleForChart,
   formatBacktestAmount,
+  isModelDependentStrategy,
   runBacktestAmountSweep,
   runFullBacktest,
 } from '../runBacktest';
@@ -70,6 +71,7 @@ describe('backtestRound', () => {
     const strategies: BacktestStrategy[] = [
       'maxTer',
       'generalEr',
+      'bestGambit',
       'gambit',
       'bustproof',
       'tenbet',
@@ -99,6 +101,22 @@ describe('backtestRound', () => {
     const numActiveBets = smallResult.spent / smallAmount;
     expect(numActiveBets).toBeGreaterThan(0);
     expect(largeResult.spent).toBe(largeAmount * numActiveBets);
+  });
+});
+
+describe('isModelDependentStrategy', () => {
+  it('flags ER-ranked strategies as model-dependent', () => {
+    expect(isModelDependentStrategy('maxTer')).toBe(true);
+    expect(isModelDependentStrategy('generalEr')).toBe(true);
+    expect(isModelDependentStrategy('tenbet')).toBe(true);
+    expect(isModelDependentStrategy('bestGambit')).toBe(true);
+  });
+
+  it('flags odds-only/random strategies as not model-dependent', () => {
+    expect(isModelDependentStrategy('gambit')).toBe(false);
+    expect(isModelDependentStrategy('bustproof')).toBe(false);
+    expect(isModelDependentStrategy('crazy')).toBe(false);
+    expect(isModelDependentStrategy('winningGambit')).toBe(false);
   });
 });
 
@@ -145,6 +163,44 @@ describe('runFullBacktest', () => {
         signal: controller.signal,
       }),
     ).rejects.toThrow();
+  });
+
+  it('produces identical legacy/logit results for a non-model-dependent strategy', async () => {
+    const rounds = fixtureRounds.slice(0, 3);
+    const summary = await runFullBacktest(rounds, {
+      betAmount: 500000,
+      betCount: 10,
+      strategy: 'gambit',
+    });
+
+    expect(summary.legacy).toEqual(summary.logit);
+  });
+
+  it('surfaces topWins only when topN is requested, biggest net first', async () => {
+    const rounds = fixtureRounds;
+    const withoutTopN = await runFullBacktest(rounds, {
+      betAmount: 500000,
+      betCount: 10,
+      strategy: 'maxTer',
+    });
+    expect(withoutTopN.legacy.topWins).toBeUndefined();
+
+    const withTopN = await runFullBacktest(rounds, {
+      betAmount: 500000,
+      betCount: 10,
+      strategy: 'maxTer',
+      topN: 2,
+    });
+    expect(withTopN.legacy.topWins).toBeDefined();
+    expect(withTopN.legacy.topWins!.length).toBeLessThanOrEqual(2);
+    for (const entry of withTopN.legacy.topWins!) {
+      expect(entry.net).toBeGreaterThan(0);
+    }
+    for (let i = 1; i < withTopN.legacy.topWins!.length; i++) {
+      expect(withTopN.legacy.topWins![i]!.net).toBeLessThanOrEqual(
+        withTopN.legacy.topWins![i - 1]!.net,
+      );
+    }
   });
 
   it('skipped rounds contribute no point to the cumulative curve (flat line)', async () => {

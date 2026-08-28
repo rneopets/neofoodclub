@@ -23,9 +23,11 @@ import { FaBalanceScale } from 'react-icons/fa';
 import {
   AMOUNT_PRESETS,
   formatBacktestAmount,
+  isModelDependentStrategy,
   runBacktestAmountSweep,
   runFullBacktest,
 } from '../../backtest/runBacktest';
+import { STRATEGY_LABELS, STRATEGY_ORDER } from '../../backtest/strategyLabels';
 import type {
   AmountSweepPoint,
   BacktestStrategy,
@@ -57,49 +59,6 @@ function computeRealMaxBet(): number {
   const daysSinceLaunch = Math.floor((Date.now() - NEO_LAUNCH_DATE) / (24 * 60 * 60 * 1000));
   return daysSinceLaunch * 2 + 50;
 }
-
-// Human-readable name + one-line description for each backtestable strategy,
-// shown in the picker and on the result cards. Order here is the display order.
-const STRATEGY_LABELS: Record<BacktestStrategy, { name: string; blurb: string }> = {
-  maxTer: {
-    name: 'Max-TER',
-    blurb: "Net Expected ranked at your bet amount - what the app's Generate button uses.",
-  },
-  generalEr: {
-    name: 'General ER',
-    blurb: 'Raw Expected Ratio, independent of bet amount - a different ranking than Max-TER.',
-  },
-  gambit: {
-    name: 'Gambit (default)',
-    blurb: 'Best bets containing the default pirate-1-everywhere selection.',
-  },
-  bustproof: {
-    name: 'Bustproof',
-    blurb: 'Guaranteed-profit sets on positive arenas; rounds with none are skipped.',
-  },
-  tenbet: {
-    name: 'Ten-bet (default)',
-    blurb: 'Up to 10 bets from the default first-three-arenas selection.',
-  },
-  crazy: {
-    name: 'Crazy',
-    blurb: 'Random full-arena bets - a baseline for how bad luck can be.',
-  },
-  winningGambit: {
-    name: 'Winning Gambit (oracle)',
-    blurb: 'Bets the actual winners - a hindsight upper bound, not a real strategy.',
-  },
-};
-
-const STRATEGY_ORDER: BacktestStrategy[] = [
-  'maxTer',
-  'generalEr',
-  'gambit',
-  'bustproof',
-  'tenbet',
-  'crazy',
-  'winningGambit',
-];
 
 const SEGMENT_GROUP_CSS = {
   bg: 'bg.subtle',
@@ -522,9 +481,20 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                   <Tabs.Content value="single">
                     <Stack gap={4}>
                       <Text fontSize="xs" color="fg.muted" fontStyle="italic">
-                        Both models use the same {STRATEGY_LABELS[strategy].name} selection - only
-                        the underlying probabilities differ. The bet amount below is what each bet
-                        wagers; Max-TER and General ER also use it to rank which bets they pick.
+                        {isModelDependentStrategy(strategy) ? (
+                          <>
+                            Both models use the same {STRATEGY_LABELS[strategy].name} selection -
+                            only the underlying probabilities differ. The bet amount below is what
+                            each bet wagers; Max-TER and General ER also use it to rank which bets
+                            they pick.
+                          </>
+                        ) : (
+                          <>
+                            {STRATEGY_LABELS[strategy].name}&apos;s bet selection doesn&apos;t
+                            consult the probability model, so legacy and logit produce identical
+                            results here - shown for layout consistency with the other strategies.
+                          </>
+                        )}
                       </Text>
                       <Stack gap={2}>
                         <HStack>
@@ -612,6 +582,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                               title="Legacy model"
                               result={runState.result.legacy}
                               isWinner={
+                                isModelDependentStrategy(runState.strategy) &&
                                 runState.result.legacy.netProfit >= runState.result.logit.netProfit
                               }
                             />
@@ -619,6 +590,7 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                               title="Logit model"
                               result={runState.result.logit}
                               isWinner={
+                                isModelDependentStrategy(runState.strategy) &&
                                 runState.result.logit.netProfit > runState.result.legacy.netProfit
                               }
                             />
