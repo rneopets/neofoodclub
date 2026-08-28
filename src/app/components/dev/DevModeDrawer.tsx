@@ -16,8 +16,8 @@ import { getReactScanEnabled, setReactScanEnabled } from '../../util/reactScan';
 import { AllBetsModal } from '../modals/AllBetsModal';
 import { ArenaInsightsModal } from '../modals/ArenaInsightsModal';
 import { BacktestComparisonModal } from '../modals/BacktestComparisonModal';
+import { BetSimulatorModal } from '../modals/BetSimulatorModal';
 import { FcDataModal } from '../modals/FcDataModal';
-import { HallOfFameModal } from '../modals/HallOfFameModal';
 import { PirateMatchupModal } from '../modals/PirateMatchupModal';
 import { RoundEndDriftModal } from '../modals/RoundEndDriftModal';
 import { RoundJsonModal } from '../modals/RoundJsonModal';
@@ -33,7 +33,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
   const jsonModal = useDisclosureState(false);
   const allBetsModal = useDisclosureState(false);
   const backtestModal = useDisclosureState(false);
-  const hallOfFameModal = useDisclosureState(false);
+  const betSimulatorModal = useDisclosureState(false);
   const perfModal = useDisclosureState(false);
   const insightsModal = useDisclosureState(false);
   const driftModal = useDisclosureState(false);
@@ -89,9 +89,9 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
                     <FaBalanceScale />
                     Compare Bet Strategies
                   </Button>
-                  <Button width="full" onClick={hallOfFameModal.onOpen}>
+                  <Button width="full" onClick={betSimulatorModal.onOpen}>
                     <FaTrophy />
-                    Bet Hall of Fame
+                    Bet Simulator
                   </Button>
                   <Button width="full" onClick={perfModal.onOpen}>
                     <FaGauge />
@@ -128,7 +128,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
       <RoundJsonModal isOpen={jsonModal.isOpen} onClose={jsonModal.onClose} />
       <AllBetsModal isOpen={allBetsModal.isOpen} onClose={allBetsModal.onClose} />
       <BacktestComparisonModal isOpen={backtestModal.isOpen} onClose={backtestModal.onClose} />
-      <HallOfFameModal isOpen={hallOfFameModal.isOpen} onClose={hallOfFameModal.onClose} />
+      <BetSimulatorModal isOpen={betSimulatorModal.isOpen} onClose={betSimulatorModal.onClose} />
       <RoundEndDriftModal isOpen={driftModal.isOpen} onClose={driftModal.onClose} />
       <PirateMatchupModal isOpen={matchupModal.isOpen} onClose={matchupModal.onClose} />
       <FcDataModal isOpen={fcDataModal.isOpen} onClose={fcDataModal.onClose} />

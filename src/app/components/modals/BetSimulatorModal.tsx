@@ -47,7 +47,7 @@ function displayPercent(value: number): string {
   return `${(value * 100).toFixed(2)}%`;
 }
 
-interface HallOfFameState {
+interface BetSimulatorState {
   running: boolean;
   done: number;
   total: number;
@@ -57,7 +57,7 @@ interface HallOfFameState {
   error: string | null;
 }
 
-const INITIAL_STATE: HallOfFameState = {
+const INITIAL_STATE: BetSimulatorState = {
   running: false,
   done: 0,
   total: 0,
@@ -185,7 +185,7 @@ function ModelPayouts({
   );
 }
 
-export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
+export const BetSimulatorModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
   isOpen,
   onClose,
 }) => {
@@ -195,7 +195,7 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
 
   const [betAmountInput, setBetAmountInput] = React.useState(String(DEFAULT_BET_AMOUNT));
   const [strategy, setStrategy] = React.useState<BacktestStrategy>('bestGambit');
-  const [state, setState] = React.useState<HallOfFameState>(INITIAL_STATE);
+  const [state, setState] = React.useState<BetSimulatorState>(INITIAL_STATE);
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
   const strategyCollection = React.useMemo(
@@ -297,7 +297,7 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
             <Dialog.Header>
               <HStack>
                 <FaTrophy />
-                <Text fontWeight="semibold">Bet Hall of Fame</Text>
+                <Text fontWeight="semibold">Bet Simulator</Text>
               </HStack>
               <Dialog.CloseTrigger asChild>
                 <CloseButton size="sm" />
@@ -401,7 +401,7 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
                     disabled={status !== 'ready' || state.running || rounds.length === 0}
                   >
                     <FaTrophy />
-                    Run Hall of Fame
+                    Run Bet Simulator
                   </Button>
                   {state.running && (
                     <Button variant="outline" onClick={handleCancel}>
