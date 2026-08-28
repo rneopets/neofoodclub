@@ -17,6 +17,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+      actions: read
 
     steps:
     - name: Check that all required workflows passed for this push
