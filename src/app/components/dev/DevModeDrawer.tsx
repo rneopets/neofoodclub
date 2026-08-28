@@ -8,11 +8,12 @@ import {
   FaStopwatch,
   FaTable,
 } from 'react-icons/fa';
-import { FaGauge, FaMagnifyingGlassChart } from 'react-icons/fa6';
+import { FaChartPie, FaGauge, FaMagnifyingGlassChart } from 'react-icons/fa6';
 
 import { useDisclosureState } from '../../hooks/useDisclosureState';
 import { getReactScanEnabled, setReactScanEnabled } from '../../util/reactScan';
 import { AllBetsModal } from '../modals/AllBetsModal';
+import { ArenaInsightsModal } from '../modals/ArenaInsightsModal';
 import { BacktestComparisonModal } from '../modals/BacktestComparisonModal';
 import { FcDataModal } from '../modals/FcDataModal';
 import { PirateMatchupModal } from '../modals/PirateMatchupModal';
@@ -31,6 +32,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
   const allBetsModal = useDisclosureState(false);
   const backtestModal = useDisclosureState(false);
   const perfModal = useDisclosureState(false);
+  const insightsModal = useDisclosureState(false);
   const driftModal = useDisclosureState(false);
   const matchupModal = useDisclosureState(false);
   const fcDataModal = useDisclosureState(false);
@@ -88,6 +90,10 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
                     <FaGauge />
                     Wasm Engine Perf
                   </Button>
+                  <Button width="full" onClick={insightsModal.onOpen}>
+                    <FaChartPie />
+                    Arena Insights
+                  </Button>
                   <Button width="full" onClick={driftModal.onOpen}>
                     <FaStopwatch />
                     Round End-Time Drift
@@ -119,6 +125,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
       <PirateMatchupModal isOpen={matchupModal.isOpen} onClose={matchupModal.onClose} />
       <FcDataModal isOpen={fcDataModal.isOpen} onClose={fcDataModal.onClose} />
       <WasmEnginePerfModal isOpen={perfModal.isOpen} onClose={perfModal.onClose} />
+      <ArenaInsightsModal isOpen={insightsModal.isOpen} onClose={insightsModal.onClose} />
     </>
   );
 };
