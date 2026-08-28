@@ -36,23 +36,34 @@ jobs:
           let ciRunId;
           for (const name of required) {
             const match = runs.data.workflow_runs.find(r => r.name === name);
-            if (!match || match.conclusion !== 'success') {
-              const state = match ? `concluded ${match.conclusion}` : 'not found';
-              core.setFailed(`Workflow "${name}" for ${run.head_sha} did not pass (${state}). Skipping deploy.`);
+            if (!match || match.conclusion === null) {
+              // The other required workflow hasn't finished yet. This is expected:
+              // both CI and Playwright Tests trigger this workflow_run independently,
+              // so whichever finishes first will race ahead of the other. Skip quietly
+              // rather than failing; the workflow that finishes last will retrigger us.
+              core.notice(`Workflow "${name}" for ${run.head_sha} hasn't concluded yet. Skipping this run; the later workflow completion will retrigger deploy.`);
+              core.setOutput('ready', 'false');
+              return;
+            }
+            if (match.conclusion !== 'success') {
+              core.setFailed(`Workflow "${name}" for ${run.head_sha} did not pass (concluded ${match.conclusion}). Skipping deploy.`);
               return;
             }
             if (name === 'CI') {
               ciRunId = match.id;
             }
           }
+          core.setOutput('ready', 'true');
           core.setOutput('ci_run_id', ciRunId);
 
     - name: Checkout
+      if: steps.check.outputs.ready == 'true'
       uses: actions/checkout@v7
       with:
         ref: ${{ github.event.workflow_run.head_sha }}
 
     - name: Download Build Output
+      if: steps.check.outputs.ready == 'true'
       uses: actions/download-artifact@v8
       with:
         name: build-output
@@ -61,13 +72,15 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Bun
+      if: steps.check.outputs.ready == 'true'
       uses: oven-sh/setup-bun@v2
       with:
         bun-version: '1.4.0'
 
     - name: Deploy to Cloudflare Pages
+      if: steps.check.outputs.ready == 'true'
       uses: cloudflare/wrangler-action@v4
       with:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        command: pages deploy build --project-name=neofoodclub
+        command: pages deploy build --project-name=neofoodclub --commit-dirty=true
