@@ -60,6 +60,11 @@ jobs:
         run-id: ${{ steps.check.outputs.ci_run_id }}
         github-token: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: '1.4.0'
+
     - name: Deploy to Cloudflare Pages
       uses: cloudflare/wrangler-action@v4
       with:
