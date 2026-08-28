@@ -175,7 +175,7 @@ const Row = React.memo(
           </Text>
           <Code
             fontSize="2xs"
-            width={showBinaryAsHex ? '80px' : '130px'}
+            width={showBinaryAsHex ? '80px' : '140px'}
             textAlign="center"
             flexShrink={0}
           >
@@ -893,7 +893,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                           MaxBet
                         </Text>
                         <Text
-                          width={showBinaryAsHex ? '80px' : '130px'}
+                          width={showBinaryAsHex ? '80px' : '140px'}
                           textAlign="center"
                           flexShrink={0}
                         >
