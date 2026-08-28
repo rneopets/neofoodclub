@@ -176,7 +176,7 @@ function ModelPayouts({
   }
 
   return (
-    <Stack gap={2}>
+    <Stack gap={2} flex="1" minW="280px">
       <Text fontSize="sm" fontWeight="medium">
         {title} - biggest single-round wins
       </Text>
@@ -470,10 +470,10 @@ export const HallOfFameModal: React.FC<{ isOpen: boolean; onClose: () => void }>
                       logitCumulative={state.result.logit.cumulativeNet}
                     />
 
-                    <Stack gap={3}>
+                    <HStack gap={3} align="start" flexWrap="wrap">
                       <ModelPayouts title="Legacy model" result={state.result.legacy} />
                       <ModelPayouts title="Logit model" result={state.result.logit} />
-                    </Stack>
+                    </HStack>
                   </Stack>
                 )}
               </Stack>
