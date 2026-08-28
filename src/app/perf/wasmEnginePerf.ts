@@ -40,29 +40,54 @@ export interface RunEnginePerfOptions {
   signal?: AbortSignal;
 }
 
+/** Each timed sample batches at least this many calls together (rather than
+ *  timing one call at a time) so its duration comfortably clears
+ *  performance.now()'s clamped resolution - a single bet-generation call is
+ *  fast enough that per-call timing quantizes straight to 0 in most browsers,
+ *  no matter how many iterations are run. */
+const MIN_BATCH_SIZE = 10;
+
+/** Caps the number of distinct timed samples, so a large iteration count
+ *  grows the batch size (for a steadier per-call reading) instead of just
+ *  adding more still-quantized samples. */
+const MAX_SAMPLES = 10;
+
 /**
- * Times `fn` over `iterations` invocations, reporting min/max/avg in ms.
- * Uses performance.now() (sub-millisecond resolution) rather than Date.now().
+ * Times `fn` over `iterations` invocations, reporting min/max/avg ms per call.
+ * Calls are grouped into batches of at least `MIN_BATCH_SIZE`; each batch's
+ * elapsed time is divided by its call count to get a per-call reading, which
+ * is far less prone to the timer-resolution quantization that per-call timing
+ * hits.
  */
 export function timeOperation(fn: () => void, iterations: number): PerfTiming {
+  const samples = Math.max(1, Math.min(MAX_SAMPLES, Math.floor(iterations / MIN_BATCH_SIZE)));
+  const batchSize = Math.floor(iterations / samples);
+  const remainder = iterations - batchSize * samples;
+
   let minMs = Number.POSITIVE_INFINITY;
   let maxMs = 0;
   let totalMs = 0;
+  let totalCalls = 0;
 
-  for (let i = 0; i < iterations; i++) {
+  for (let s = 0; s < samples; s++) {
+    const callsInSample = batchSize + (s < remainder ? 1 : 0);
     const start = window.performance.now();
-    fn();
-    const elapsed = window.performance.now() - start;
-    if (elapsed < minMs) {
-      minMs = elapsed;
+    for (let i = 0; i < callsInSample; i++) {
+      fn();
     }
-    if (elapsed > maxMs) {
-      maxMs = elapsed;
+    const elapsed = window.performance.now() - start;
+    const perCallMs = elapsed / callsInSample;
+    if (perCallMs < minMs) {
+      minMs = perCallMs;
+    }
+    if (perCallMs > maxMs) {
+      maxMs = perCallMs;
     }
     totalMs += elapsed;
+    totalCalls += callsInSample;
   }
 
-  return { minMs, maxMs, avgMs: totalMs / iterations };
+  return { minMs, maxMs, avgMs: totalMs / totalCalls };
 }
 
 /**
