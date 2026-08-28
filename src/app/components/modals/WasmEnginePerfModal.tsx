@@ -37,6 +37,31 @@ const ITERATION_OPTIONS = [10, 50, 100, 500, 1000, 5000, 10000] as const;
 const DEFAULT_ITERATIONS = 10;
 const DEFAULT_BET_AMOUNT = 10000;
 
+const SEGMENT_GROUP_CSS = {
+  bg: 'bg.subtle',
+  borderWidth: '1px',
+  borderColor: 'border',
+  '& [data-state=unchecked]': {
+    color: 'fg.muted',
+  },
+  '& [data-state=checked]': {
+    color: 'fg',
+    fontWeight: 'semibold',
+  },
+  _dark: {
+    borderColor: 'border.emphasized',
+    '& [data-state=unchecked]': {
+      color: 'fg.subtle',
+    },
+  },
+  '& [data-part=indicator]': {
+    borderWidth: '1px',
+    borderColor: 'border',
+    bg: { base: 'bg', _dark: 'bg.emphasized' },
+    shadow: 'sm',
+  },
+} as const;
+
 interface RunState {
   running: boolean;
   done: number;
@@ -285,6 +310,7 @@ export const WasmEnginePerfModal: React.FC<WasmEnginePerfModalProps> = ({ isOpen
                         setIterations(Number(details.value));
                       }}
                       disabled={runState.running}
+                      css={SEGMENT_GROUP_CSS}
                     >
                       <SegmentGroup.Indicator />
                       {ITERATION_OPTIONS.map(option => (
