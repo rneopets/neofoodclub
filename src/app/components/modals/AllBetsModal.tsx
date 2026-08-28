@@ -173,14 +173,16 @@ const Row = React.memo(
           <Text width="80px" textAlign="right" flexShrink={0}>
             {bet.maxBet.toLocaleString()}
           </Text>
-          <Code
-            fontSize="2xs"
-            width={showBinaryAsHex ? '80px' : '140px'}
-            textAlign="center"
+          <Box
+            width={showBinaryAsHex ? '80px' : '150px'}
             flexShrink={0}
+            display="flex"
+            justifyContent="center"
           >
-            {binaryDisplay}
-          </Code>
+            <Code fontSize="2xs" whiteSpace="nowrap">
+              {binaryDisplay}
+            </Code>
+          </Box>
         </HStack>
       </Box>
     );
@@ -893,7 +895,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
                           MaxBet
                         </Text>
                         <Text
-                          width={showBinaryAsHex ? '80px' : '140px'}
+                          width={showBinaryAsHex ? '80px' : '150px'}
                           textAlign="center"
                           flexShrink={0}
                         >
