@@ -58,6 +58,7 @@ jobs:
         name: build-output
         path: build/
         run-id: ${{ steps.check.outputs.ci_run_id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Deploy to Cloudflare Pages
       uses: cloudflare/wrangler-action@v4
