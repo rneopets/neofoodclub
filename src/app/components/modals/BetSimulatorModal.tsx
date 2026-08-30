@@ -438,42 +438,45 @@ export const BetSimulatorModal: React.FC<{ isOpen: boolean; onClose: () => void 
                       </Code>
                     </Text>
 
-                    <HStack gap={3} flexWrap="wrap">
-                      <ModelCard
-                        title="Legacy model"
-                        result={state.result.legacy}
-                        isWinner={
-                          isModelDependentStrategy(state.strategy) &&
-                          state.result.legacy.netProfit >= state.result.logit.netProfit
-                        }
-                      />
-                      <ModelCard
-                        title="Logit model"
-                        result={state.result.logit}
-                        isWinner={
-                          isModelDependentStrategy(state.strategy) &&
-                          state.result.logit.netProfit > state.result.legacy.netProfit
-                        }
-                      />
-                    </HStack>
-
-                    {!isModelDependentStrategy(state.strategy) && (
-                      <Text fontSize="xs" color="fg.muted" fontStyle="italic">
-                        {STRATEGY_LABELS[state.strategy].name}&apos;s bet selection doesn&apos;t
-                        consult the probability model, so legacy and logit are identical here.
-                      </Text>
+                    {isModelDependentStrategy(state.strategy) ? (
+                      <HStack gap={3} flexWrap="wrap">
+                        <ModelCard
+                          title="Legacy model"
+                          result={state.result.legacy}
+                          isWinner={state.result.legacy.netProfit >= state.result.logit.netProfit}
+                        />
+                        <ModelCard
+                          title="Logit model"
+                          result={state.result.logit}
+                          isWinner={state.result.logit.netProfit > state.result.legacy.netProfit}
+                        />
+                      </HStack>
+                    ) : (
+                      <>
+                        <ModelCard title="Result" result={state.result.legacy} isWinner={false} />
+                        <Text fontSize="xs" color="fg.muted" fontStyle="italic">
+                          {STRATEGY_LABELS[state.strategy].name}&apos;s bet selection doesn&apos;t
+                          consult the probability model, so the legacy/logit choice doesn&apos;t
+                          apply here.
+                        </Text>
+                      </>
                     )}
 
                     <BacktestComparisonChart
                       rounds={state.result.rounds}
                       legacyCumulative={state.result.legacy.cumulativeNet}
                       logitCumulative={state.result.logit.cumulativeNet}
+                      showBothModels={isModelDependentStrategy(state.strategy)}
                     />
 
-                    <HStack gap={3} align="start" flexWrap="wrap">
-                      <ModelPayouts title="Legacy model" result={state.result.legacy} />
-                      <ModelPayouts title="Logit model" result={state.result.logit} />
-                    </HStack>
+                    {isModelDependentStrategy(state.strategy) ? (
+                      <HStack gap={3} align="start" flexWrap="wrap">
+                        <ModelPayouts title="Legacy model" result={state.result.legacy} />
+                        <ModelPayouts title="Logit model" result={state.result.logit} />
+                      </HStack>
+                    ) : (
+                      <ModelPayouts title="Result" result={state.result.legacy} />
+                    )}
                   </Stack>
                 )}
               </Stack>

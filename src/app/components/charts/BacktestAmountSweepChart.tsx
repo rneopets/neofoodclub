@@ -23,11 +23,14 @@ const LOGIT_COLOR = '#dd6b20';
 
 interface BacktestAmountSweepChartProps {
   points: AmountSweepPoint[];
+  /** When false, renders a single "Result" series (legacy and logit are identical) instead of both models. Defaults to true. */
+  showBothModels?: boolean;
 }
 
 const MODEL_FOR_LABEL: Record<string, (point: AmountSweepPoint) => ModelBacktestResult> = {
   'Legacy model': point => point.legacy,
   'Logit model': point => point.logit,
+  Result: point => point.legacy,
 };
 
 function modelForDataset(point: AmountSweepPoint, datasetLabel: string): ModelBacktestResult {
@@ -37,32 +40,44 @@ function modelForDataset(point: AmountSweepPoint, datasetLabel: string): ModelBa
 
 export function BacktestAmountSweepChart({
   points,
+  showBothModels = true,
 }: BacktestAmountSweepChartProps): React.JSX.Element {
   const { colorMode } = useColorMode();
   const isDarkLikeMode = colorMode !== 'light';
 
   const data = useMemo(
     () => ({
-      datasets: [
-        {
-          label: 'Legacy model',
-          data: points.map(p => ({ x: p.amount, y: p.legacy.roi * 100 })),
-          borderColor: LEGACY_COLOR,
-          backgroundColor: LEGACY_COLOR,
-          pointRadius: 3,
-          borderWidth: 2,
-        },
-        {
-          label: 'Logit model',
-          data: points.map(p => ({ x: p.amount, y: p.logit.roi * 100 })),
-          borderColor: LOGIT_COLOR,
-          backgroundColor: LOGIT_COLOR,
-          pointRadius: 3,
-          borderWidth: 2,
-        },
-      ],
+      datasets: showBothModels
+        ? [
+            {
+              label: 'Legacy model',
+              data: points.map(p => ({ x: p.amount, y: p.legacy.roi * 100 })),
+              borderColor: LEGACY_COLOR,
+              backgroundColor: LEGACY_COLOR,
+              pointRadius: 3,
+              borderWidth: 2,
+            },
+            {
+              label: 'Logit model',
+              data: points.map(p => ({ x: p.amount, y: p.logit.roi * 100 })),
+              borderColor: LOGIT_COLOR,
+              backgroundColor: LOGIT_COLOR,
+              pointRadius: 3,
+              borderWidth: 2,
+            },
+          ]
+        : [
+            {
+              label: 'Result',
+              data: points.map(p => ({ x: p.amount, y: p.legacy.roi * 100 })),
+              borderColor: LEGACY_COLOR,
+              backgroundColor: LEGACY_COLOR,
+              pointRadius: 3,
+              borderWidth: 2,
+            },
+          ],
     }),
-    [points],
+    [showBothModels, points],
   );
 
   const gridColor = isDarkLikeMode ? '#6272a4' : undefined;

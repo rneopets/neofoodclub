@@ -24,12 +24,15 @@ interface BacktestComparisonChartProps {
   rounds: number[];
   legacyCumulative: number[];
   logitCumulative: number[];
+  /** When false, renders a single "Result" line (legacy and logit are identical) instead of both models. Defaults to true. */
+  showBothModels?: boolean;
 }
 
 export function BacktestComparisonChart({
   rounds,
   legacyCumulative,
   logitCumulative,
+  showBothModels = true,
 }: BacktestComparisonChartProps): React.JSX.Element {
   const { colorMode } = useColorMode();
   const isDarkLikeMode = colorMode !== 'light';
@@ -45,26 +48,37 @@ export function BacktestComparisonChart({
 
   const data = useMemo(
     () => ({
-      datasets: [
-        {
-          label: 'Legacy model',
-          data: legacyPoints,
-          borderColor: LEGACY_COLOR,
-          backgroundColor: LEGACY_COLOR,
-          pointRadius: 0,
-          borderWidth: 2,
-        },
-        {
-          label: 'Logit model',
-          data: logitPoints,
-          borderColor: LOGIT_COLOR,
-          backgroundColor: LOGIT_COLOR,
-          pointRadius: 0,
-          borderWidth: 2,
-        },
-      ],
+      datasets: showBothModels
+        ? [
+            {
+              label: 'Legacy model',
+              data: legacyPoints,
+              borderColor: LEGACY_COLOR,
+              backgroundColor: LEGACY_COLOR,
+              pointRadius: 0,
+              borderWidth: 2,
+            },
+            {
+              label: 'Logit model',
+              data: logitPoints,
+              borderColor: LOGIT_COLOR,
+              backgroundColor: LOGIT_COLOR,
+              pointRadius: 0,
+              borderWidth: 2,
+            },
+          ]
+        : [
+            {
+              label: 'Result',
+              data: legacyPoints,
+              borderColor: LEGACY_COLOR,
+              backgroundColor: LEGACY_COLOR,
+              pointRadius: 0,
+              borderWidth: 2,
+            },
+          ],
     }),
-    [legacyPoints, logitPoints],
+    [showBothModels, legacyPoints, logitPoints],
   );
 
   const gridColor = isDarkLikeMode ? '#6272a4' : undefined;

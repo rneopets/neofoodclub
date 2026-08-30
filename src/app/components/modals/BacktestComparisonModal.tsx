@@ -491,8 +491,8 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                         ) : (
                           <>
                             {STRATEGY_LABELS[strategy].name}&apos;s bet selection doesn&apos;t
-                            consult the probability model, so legacy and logit produce identical
-                            results here - shown for layout consistency with the other strategies.
+                            consult the probability model, so the legacy/logit choice doesn&apos;t
+                            apply here.
                           </>
                         )}
                       </Text>
@@ -577,28 +577,36 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                               {formatBacktestAmount(runState.betAmount ?? betAmount)}
                             </Code>
                           </Text>
-                          <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
+                          {isModelDependentStrategy(runState.strategy) ? (
+                            <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
+                              <ModelSummaryCard
+                                title="Legacy model"
+                                result={runState.result.legacy}
+                                isWinner={
+                                  runState.result.legacy.netProfit >=
+                                  runState.result.logit.netProfit
+                                }
+                              />
+                              <ModelSummaryCard
+                                title="Logit model"
+                                result={runState.result.logit}
+                                isWinner={
+                                  runState.result.logit.netProfit > runState.result.legacy.netProfit
+                                }
+                              />
+                            </SimpleGrid>
+                          ) : (
                             <ModelSummaryCard
-                              title="Legacy model"
+                              title="Result"
                               result={runState.result.legacy}
-                              isWinner={
-                                isModelDependentStrategy(runState.strategy) &&
-                                runState.result.legacy.netProfit >= runState.result.logit.netProfit
-                              }
+                              isWinner={false}
                             />
-                            <ModelSummaryCard
-                              title="Logit model"
-                              result={runState.result.logit}
-                              isWinner={
-                                isModelDependentStrategy(runState.strategy) &&
-                                runState.result.logit.netProfit > runState.result.legacy.netProfit
-                              }
-                            />
-                          </SimpleGrid>
+                          )}
                           <BacktestComparisonChart
                             rounds={runState.result.rounds}
                             legacyCumulative={runState.result.legacy.cumulativeNet}
                             logitCumulative={runState.result.logit.cumulativeNet}
+                            showBothModels={isModelDependentStrategy(runState.strategy)}
                           />
                         </Stack>
                       )}
@@ -721,7 +729,12 @@ export const BacktestComparisonModal: React.FC<BacktestComparisonModalProps> = (
                         </Text>
                       )}
 
-                      {sweepState.result && <BacktestAmountSweepChart points={sweepState.result} />}
+                      {sweepState.result && (
+                        <BacktestAmountSweepChart
+                          points={sweepState.result}
+                          showBothModels={isModelDependentStrategy(strategy)}
+                        />
+                      )}
                     </Stack>
                   </Tabs.Content>
                 </Tabs.Root>
