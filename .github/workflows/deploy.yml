@@ -75,7 +75,7 @@ jobs:
       if: steps.check.outputs.ready == 'true'
       uses: oven-sh/setup-bun@v2
       with:
-        bun-version: '1.4.0'
+        bun-version: '1.4.1'
 
     - name: Deploy to Cloudflare Pages
       if: steps.check.outputs.ready == 'true'
