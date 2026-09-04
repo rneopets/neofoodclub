@@ -1,8 +1,14 @@
-import '@testing-library/jest-dom';
+import * as jestDomMatchers from '@testing-library/jest-dom/matchers';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { afterEach, expect, vi } from 'vitest';
 
 import { initWasmMath } from '../app/wasmMath';
+
+// @testing-library/jest-dom's own `/vitest` entrypoint declares `Assertion<T = any>`, which
+// doesn't match vitest 5's `Assertion<R = void, T = unknown>` (jest-dom hasn't published a
+// vitest-5-compatible release yet). Extend vitest's own `expect` directly instead; the
+// `Assertion` augmentation lives in ./jest-dom-vitest.d.ts.
+expect.extend(jestDomMatchers);
 
 // Load the wasm math core before any test runs (mirrors src/index.jsx).
 await initWasmMath();

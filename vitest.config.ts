@@ -7,7 +7,20 @@ import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths(), wasm(), topLevelAwait()],
+  plugins: [
+    react(),
+    tsconfigPaths(),
+    wasm(),
+    topLevelAwait(),
+    // vite-plugin-wasm detects Vitest by looking for a plugin literally named "vitest" to
+    // decide whether to inline wasm as a base64 data URI (needed because Vitest runs code
+    // in SSR/Node, where a plain "/path/to.wasm" URL can't be fetch()'d). Vitest 5 renamed
+    // all of its internal plugins to "vitest:*", so that detection silently breaks and wasm
+    // loading fails with "Failed to parse URL from /wasm/pkg/...wasm". Register a no-op
+    // plugin under the exact name it looks for until vite-plugin-wasm ships a real fix
+    // (https://github.com/Menci/vite-plugin-wasm - checks `plugin.name === 'vitest'`).
+    { name: 'vitest' },
+  ],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
