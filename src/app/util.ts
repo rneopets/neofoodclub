@@ -301,6 +301,10 @@ export function getUseWebDomain(): boolean {
   return getBooleanCookie('useWebDomain');
 }
 
+export function getStickyPlaceBetButtons(): boolean {
+  return getBooleanCookie('stickyPlaceBetButtons', true);
+}
+
 export function getMaxBetLocked(): boolean {
   return getBooleanCookie('maxBetLocked');
 }

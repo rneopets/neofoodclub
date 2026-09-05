@@ -12,6 +12,7 @@ import {
   parseBetUrl,
   getTableMode,
   getUseWebDomain,
+  getStickyPlaceBetButtons,
   getUseLogitModel,
   anyBetsExist,
   getBigBrainMode,
@@ -98,6 +99,7 @@ interface RoundStore {
   betSetPosition: BetSetPosition;
   viewMode: boolean;
   useWebDomain: boolean;
+  stickyPlaceBetButtons: boolean;
   bigBrain: boolean;
   faDetails: boolean;
   customOddsMode: boolean;
@@ -125,6 +127,7 @@ interface RoundStore {
   setBetSetPosition: (position: BetSetPosition) => void;
   setViewMode: (viewMode: boolean) => void;
   setUseWebDomain: (useWebDomain: boolean) => void;
+  setStickyPlaceBetButtons: (stickyPlaceBetButtons: boolean) => void;
   toggleBigBrain: () => void;
   toggleFaDetails: () => void;
   toggleOddsTimeline: () => void;
@@ -164,6 +167,7 @@ export const useRoundStore = create<RoundStore>()(
     betSetPosition: getBetSetPosition(),
     viewMode: false,
     useWebDomain: getUseWebDomain(),
+    stickyPlaceBetButtons: getStickyPlaceBetButtons(),
     bigBrain: getBigBrainMode(),
     faDetails: getFaDetailsMode(),
     customOddsMode: getCustomOddsMode(),
@@ -313,6 +317,8 @@ export const useRoundStore = create<RoundStore>()(
     setBetSetPosition: (position: BetSetPosition): void => set({ betSetPosition: position }),
     setViewMode: (viewMode: boolean): void => set({ viewMode }),
     setUseWebDomain: (useWebDomain: boolean): void => set({ useWebDomain }),
+    setStickyPlaceBetButtons: (stickyPlaceBetButtons: boolean): void =>
+      set({ stickyPlaceBetButtons }),
 
     setMaxBet: (maxBet: number): void => {
       set({ maxBet });

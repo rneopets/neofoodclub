@@ -125,6 +125,8 @@ export const useTableMode = (): string => useRoundStore(state => state.tableMode
 export const useBetSetPosition = (): BetSetPosition => useRoundStore(state => state.betSetPosition);
 export const useViewMode = (): boolean => useRoundStore(state => state.viewMode);
 export const useUseWebDomain = (): boolean => useRoundStore(state => state.useWebDomain);
+export const useStickyPlaceBetButtons = (): boolean =>
+  useRoundStore(state => state.stickyPlaceBetButtons);
 export const useBigBrain = (): boolean => useRoundStore(state => state.bigBrain);
 export const useFaDetails = (): boolean =>
   useRoundStore(state => state.faDetails && state.bigBrain);
@@ -149,6 +151,8 @@ export const useSetViewMode = (): ((viewMode: boolean) => void) =>
   useRoundStore(state => state.setViewMode);
 export const useSetUseWebDomain = (): ((useWebDomain: boolean) => void) =>
   useRoundStore(state => state.setUseWebDomain);
+export const useSetStickyPlaceBetButtons = (): ((stickyPlaceBetButtons: boolean) => void) =>
+  useRoundStore(state => state.setStickyPlaceBetButtons);
 export const useToggleBigBrain = (): (() => void) => useRoundStore(state => state.toggleBigBrain);
 export const useToggleFaDetails = (): (() => void) => useRoundStore(state => state.toggleFaDetails);
 export const useToggleOddsTimeline = (): (() => void) =>
