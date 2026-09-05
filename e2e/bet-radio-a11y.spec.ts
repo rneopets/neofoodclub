@@ -101,4 +101,23 @@ test.describe('Bet radio accessibility', () => {
       await expect(button).toHaveText('None');
     }
   });
+
+  test('"None" is enabled while the arena has bets, disabled once they are cleared', async ({
+    page,
+  }) => {
+    const clearButtons = page.locator('[data-testid^="arena-clear-button"]');
+
+    // After generating, every arena has a chosen pirate -> all enabled.
+    for (const button of await clearButtons.all()) {
+      await expect(button).toBeEnabled();
+    }
+
+    // Clear the current bet set (single generated set -> button reads "Clear").
+    await page.locator('[data-testid="clear-delete-button"]').first().click();
+
+    // No bet has a chosen pirate in any arena -> all disabled.
+    for (const button of await clearButtons.all()) {
+      await expect(button).toBeDisabled();
+    }
+  });
 });
