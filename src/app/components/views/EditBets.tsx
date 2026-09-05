@@ -43,6 +43,7 @@ import ColorModeToggle from '../TableSettings/ColorModeToggle';
 import CopyDomainToggle from '../TableSettings/CopyDomainToggle';
 import Extras from '../TableSettings/Extras';
 import LogitModelToggle from '../TableSettings/LogitModelToggle';
+import StickyPlaceBetButtonsToggle from '../TableSettings/StickyPlaceBetButtonsToggle';
 import TableModes from '../TableSettings/TableModes';
 
 import BetSetsPanel from './BetSetsPanel';
@@ -357,6 +358,8 @@ export default React.memo(function EditBets(): React.ReactElement {
                     <LogitModelToggle />
 
                     <CopyDomainToggle />
+
+                    <StickyPlaceBetButtonsToggle />
 
                     <Extras />
 

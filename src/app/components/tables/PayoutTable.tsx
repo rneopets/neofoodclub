@@ -35,6 +35,7 @@ import {
   useCustomOddsMode,
   useRoundStore,
   useBetProbabilities,
+  useStickyPlaceBetButtons,
 } from '../../stores';
 import { displayAsPercent, displayAsPercentSmart, getMaxSmartPercentDecimals } from '../../util';
 import BetAmountInput from '../bets/BetAmountInput';
@@ -181,6 +182,7 @@ const PayoutTableRow = React.memo(
     const winningBetBinary = useWinningBetBinary();
     const currentBet = useCurrentBet();
     const amountOfBets = useBetCount();
+    const stickyPlaceBetButtons = useStickyPlaceBetButtons();
 
     const betAmount = useSpecificBetAmount(betIndex + 1);
     const currentBetLine = useBetLineSpecific(betIndex + 1);
@@ -379,7 +381,7 @@ const PayoutTableRow = React.memo(
             />
           );
         })}
-        <Td {...stickySubmitColumnProps}>
+        <Td {...(stickyPlaceBetButtons ? stickySubmitColumnProps : {})}>
           <PlaceThisBetButton bet={currentBetLine} betNum={betIndex + 1} />
         </Td>
       </Table.Row>
@@ -394,6 +396,7 @@ const PayoutTable = React.memo((): React.ReactElement => {
 
   const calculated = useCalculationsStatus();
   const winningBetBinary = useWinningBetBinary();
+  const stickyPlaceBetButtons = useStickyPlaceBetButtons();
 
   // Use individual hooks instead of object selector to avoid infinite loops
   const totalBetAmounts = useTotalBetAmounts();
@@ -501,7 +504,9 @@ const PayoutTable = React.memo((): React.ReactElement => {
           <Table.ColumnHeader minW="5rem">Treasure</Table.ColumnHeader>
           <Table.ColumnHeader minW="5rem">Hidden</Table.ColumnHeader>
           <Table.ColumnHeader minW="5rem">Harpoon</Table.ColumnHeader>
-          <Table.ColumnHeader {...stickySubmitHeaderProps}>Submit</Table.ColumnHeader>
+          <Table.ColumnHeader {...(stickyPlaceBetButtons ? stickySubmitHeaderProps : {})}>
+            Submit
+          </Table.ColumnHeader>
         </Table.Row>
       </Table.Header>
 
@@ -553,7 +558,7 @@ const PayoutTable = React.memo((): React.ReactElement => {
               <Table.ColumnHeader />
               <Table.ColumnHeader />
               <Table.ColumnHeader />
-              <Table.ColumnHeader {...stickySubmitColumnProps} />
+              <Table.ColumnHeader {...(stickyPlaceBetButtons ? stickySubmitColumnProps : {})} />
             </Table.Row>
           </Table.Body>
         </>
