@@ -32,6 +32,7 @@ const BetRadio = React.memo(
         onKeyDown={e => handleRadioKeyDown(e, handleChange)}
         role="radio"
         aria-checked={isSelected}
+        aria-label={`Bet ${betIndex}`}
         display="inline-flex"
         alignItems="center"
         justifyContent="center"
@@ -71,6 +72,7 @@ export const ClearRadio = React.memo(
         onKeyDown={e => handleRadioKeyDown(e, handleChange)}
         role="radio"
         aria-checked={isClearSelected}
+        aria-label={`Bet ${betIndex}: no pirate`}
         display="inline-flex"
         alignItems="center"
         justifyContent="center"
