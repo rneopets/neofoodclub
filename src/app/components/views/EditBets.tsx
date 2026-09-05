@@ -1,5 +1,4 @@
 import {
-  Badge,
   Box,
   Button,
   useDisclosure,
@@ -339,9 +338,6 @@ export default React.memo(function EditBets(): React.ReactElement {
                   <Text fontSize="sm" fontWeight="semibold">
                     Settings
                   </Text>
-                  <Badge colorPalette="cyan" variant="subtle" size="sm" rounded="full">
-                    New
-                  </Badge>
                 </HStack>
                 <Accordion.ItemIndicator />
               </Accordion.ItemTrigger>
