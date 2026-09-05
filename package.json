@@ -2,7 +2,7 @@
   "name": "foodclub",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "bun@1.4.1",
+  "packageManager": "bun@1.4.2",
   "homepage": "/",
   "dependencies": {
     "@chakra-ui/react": "3.37.0",
