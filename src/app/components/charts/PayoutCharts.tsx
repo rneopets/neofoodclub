@@ -363,7 +363,7 @@ const PayoutCharts: React.FC = React.memo(() => {
                     persistKey={`${persistPrefix}-probability`}
                   />
                 }
-                content={displayAsPercentSmart(dataObj.probability)}
+                content={displayAsPercent(dataObj.probability)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
