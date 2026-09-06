@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 
 interface SettingsRowProps {
   icon: React.ElementType;
-  label: string;
+  label: ReactNode;
   colorPalette: string;
   isChecked: boolean;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;

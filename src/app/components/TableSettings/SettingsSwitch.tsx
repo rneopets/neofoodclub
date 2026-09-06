@@ -1,10 +1,10 @@
-import React, { ChangeEvent, MouseEvent } from 'react';
+import React, { ChangeEvent, MouseEvent, ReactNode } from 'react';
 
 import SettingsRow from './SettingsRow';
 
 interface SwitchBoxProps {
   icon: React.ElementType;
-  label: string;
+  label: ReactNode;
   colorPalette: string;
   checked: boolean;
   onChange: (e: ChangeEvent<HTMLInputElement> | MouseEvent<HTMLDivElement>) => void;
