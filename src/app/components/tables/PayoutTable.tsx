@@ -37,7 +37,7 @@ import {
   useBetProbabilities,
   useStickyPlaceBetButtons,
 } from '../../stores';
-import { displayAsPercent, displayAsPercentSmart, getMaxSmartPercentDecimals } from '../../util';
+import { displayAsPercent, getMaxSmartPercentDecimals } from '../../util';
 import BetAmountInput from '../bets/BetAmountInput';
 import PlaceThisBetButton from '../bets/PlaceThisBetButton';
 import AnimatedNumber from '../ui/AnimatedNumber';
@@ -206,7 +206,7 @@ const PayoutTableRow = React.memo(
             format={v => displayAsPercent(v, probabilityDecimals)}
           />
         ),
-        label: displayAsPercentSmart(probabilities),
+        label: displayAsPercent(probabilities),
       }),
       [probabilities, probabilityDecimals],
     );
