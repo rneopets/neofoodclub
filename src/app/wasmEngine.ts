@@ -35,6 +35,11 @@ function requireEngine(): NfcEngine {
   return engine;
 }
 
+/** Whether `rebuildEngine()` has been called at least once this session. */
+export function hasEngine(): boolean {
+  return engine !== null;
+}
+
 /** Applies (or clears, when passed `null`) a custom-odds override. */
 export function applyCustomOdds(oddsGrid: number[][] | null): void {
   const e = requireEngine();

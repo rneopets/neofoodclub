@@ -30,6 +30,7 @@ import {
   setEngineBetAmount,
   applyCustomOdds,
   applyCustomProbabilities,
+  hasEngine,
 } from '../wasmEngine';
 
 import { useBetStore } from './betStore';
@@ -46,13 +47,6 @@ let showToast:
 
 export const setToastFunction = (toastFn: typeof showToast): void => {
   showToast = toastFn;
-};
-
-const isAbortError = (error: unknown): boolean => {
-  if (!error || typeof error !== 'object') {
-    return false;
-  }
-  return 'name' in error && (error as { name?: unknown }).name === 'AbortError';
 };
 
 // maxBet uses BET_AMOUNT_DEFAULT (-1000) as its own "unset" sentinel - unlike
@@ -275,11 +269,15 @@ export const useRoundStore = create<RoundStore>()(
       // The engine itself gets rebuilt once new round data arrives (see
       // updateRoundData) - just make sure any override from the previous
       // round doesn't linger on the (about-to-be-replaced) engine instance.
-      try {
-        applyCustomOdds(null);
-        applyCustomProbabilities(null);
-      } catch (error) {
-        console.error('Failed to clear wasm engine overrides:', error);
+      // No-op if no engine has been built yet (e.g. the very first round
+      // selection on initial load).
+      if (hasEngine()) {
+        try {
+          applyCustomOdds(null);
+          applyCustomProbabilities(null);
+        } catch (error) {
+          console.error('Failed to clear wasm engine overrides:', error);
+        }
       }
 
       if (round > 0) {
@@ -527,10 +525,14 @@ export const useRoundStore = create<RoundStore>()(
 
         return false;
       } catch (error) {
-        // If we were aborted (superseded/timeout/navigation), treat as expected and don't log.
-        if (isAbortError(error)) {
+        // If this fetch's own controller was aborted (superseded/timeout/navigation),
+        // treat as expected and don't log. AbortController.abort(reason) can reject
+        // the fetch with the raw `reason` value (e.g. a plain string) rather than an
+        // AbortError, so checking the controller's signal is more reliable than
+        // inspecting the shape of `error`.
+        if (controller?.signal.aborted) {
           const abortState = get();
-          if (controller && abortState.fetchAbortController === controller) {
+          if (abortState.fetchAbortController === controller) {
             set({ isLoading: false, fetchAbortController: null });
           }
           return false;
