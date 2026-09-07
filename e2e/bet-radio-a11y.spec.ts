@@ -120,4 +120,74 @@ test.describe('Bet radio accessibility', () => {
       await expect(button).toBeDisabled();
     }
   });
+
+  test('arrow keys move focus between bets and pirates without changing the selection', async ({
+    page,
+  }) => {
+    // Each arena radiogroup is a <tbody>: row 0 = the clear radios, rows 1..4
+    // = one pirate each. Every row holds one radio per bet (a column). So a
+    // cell is addressed by its <tr> index and the radio's position in that row.
+    // Target a specific arena by name: other role="radiogroup" elements exist
+    // elsewhere in the app (e.g. Chakra settings radio groups), so .first()
+    // would grab a decoy with no rows.
+    const firstArena = page.getByRole('radiogroup', { name: 'Shipwreck' });
+
+    // The focused radio's grid position {row, col}, or null if focus isn't on a
+    // radio inside the first arena. Mirrors getRadioGrid() in BetRadio.tsx.
+    const activeCell = (): Promise<{ row: number; col: number } | null> =>
+      page.evaluate(() => {
+        const el = document.activeElement as HTMLElement | null;
+        if (!el || !el.matches('[role="radio"]')) {
+          return null;
+        }
+        const group = el.closest('[role="radiogroup"]');
+        if (!group) {
+          return null;
+        }
+        const rows: HTMLElement[][] = [];
+        for (const tr of Array.from(group.querySelectorAll('tr'))) {
+          const radios = Array.from(tr.querySelectorAll<HTMLElement>('[role="radio"]'));
+          if (radios.length > 0) {
+            rows.push(radios);
+          }
+        }
+        const row = rows.findIndex(r => r.includes(el));
+        if (row === -1) {
+          return null;
+        }
+        return { row, col: rows[row]?.indexOf(el) ?? -1 };
+      });
+
+    // Snapshot which radios are checked so we can prove arrows only move focus.
+    const checkedLabels = (): Promise<(string | null)[]> =>
+      page.$$eval('[role="radio"][aria-checked="true"]', els =>
+        els.map(el => el.getAttribute('aria-label')),
+      );
+
+    const before = await checkedLabels();
+    expect(before.length).toBeGreaterThan(0);
+
+    // Start on the first pirate row (row 1), "Bet 1" (col 0).
+    await firstArena.locator('tr').nth(1).locator('[role="radio"]').nth(0).focus();
+    await expect.poll(activeCell).toEqual({ row: 1, col: 0 });
+
+    // ArrowRight -> next bet, same pirate.
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(activeCell).toEqual({ row: 1, col: 1 });
+
+    // ArrowDown -> same bet, next pirate row.
+    await page.keyboard.press('ArrowDown');
+    await expect.poll(activeCell).toEqual({ row: 2, col: 1 });
+
+    // ArrowUp -> back to the previous pirate row.
+    await page.keyboard.press('ArrowUp');
+    await expect.poll(activeCell).toEqual({ row: 1, col: 1 });
+
+    // ArrowLeft -> previous bet, same pirate.
+    await page.keyboard.press('ArrowLeft');
+    await expect.poll(activeCell).toEqual({ row: 1, col: 0 });
+
+    // Focus moved around the grid, but the selection is untouched.
+    expect(await checkedLabels()).toEqual(before);
+  });
 });

@@ -9,10 +9,84 @@ interface BetRadioProps {
   pirateIndex: number;
 }
 
+// The bet radios form a grid inside each arena's radiogroup (the <tbody>): one
+// column per bet, and the rows are the "clear" row plus each pirate row. To
+// move focus with arrow keys we derive a radio's position from the DOM table
+// structure (radios grouped by their <tr>), so we don't have to stamp data
+// attributes onto the components (Chakra's Box doesn't forward arbitrary
+// data-* props to the DOM).
+function getRadioGrid(
+  el: HTMLElement,
+): { rows: HTMLElement[][]; rowIdx: number; colIdx: number } | null {
+  const group = el.closest('[role="radiogroup"]');
+  if (!group) {
+    return null;
+  }
+
+  const rows: HTMLElement[][] = [];
+  for (const tr of Array.from(group.querySelectorAll('tr'))) {
+    const radios = Array.from(tr.querySelectorAll<HTMLElement>('[role="radio"]'));
+    if (radios.length > 0) {
+      rows.push(radios);
+    }
+  }
+
+  const rowIdx = rows.findIndex(row => row.includes(el));
+  if (rowIdx === -1) {
+    return null;
+  }
+
+  const colIdx = rows[rowIdx]?.indexOf(el) ?? -1;
+  if (colIdx === -1) {
+    return null;
+  }
+
+  return { rows, rowIdx, colIdx };
+}
+
+function focusSiblingRadio(el: HTMLElement, dRow: number, dCol: number): void {
+  const grid = getRadioGrid(el);
+  if (!grid) {
+    return;
+  }
+
+  const targetRow = grid.rows[grid.rowIdx + dRow];
+  if (!targetRow) {
+    return;
+  }
+
+  targetRow[grid.colIdx + dCol]?.focus();
+}
+
 function handleRadioKeyDown(e: React.KeyboardEvent, onActivate: () => void): void {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    onActivate();
+  const el = e.currentTarget as HTMLElement;
+
+  switch (e.key) {
+    case 'Enter':
+    case ' ':
+      e.preventDefault();
+      onActivate();
+      return;
+    // Arrow keys move focus only (they do NOT change the selection, so a bet
+    // can't be accidentally corrupted while navigating). Enter/Space select.
+    case 'ArrowLeft':
+      e.preventDefault();
+      focusSiblingRadio(el, 0, -1);
+      return;
+    case 'ArrowRight':
+      e.preventDefault();
+      focusSiblingRadio(el, 0, 1);
+      return;
+    case 'ArrowUp':
+      e.preventDefault();
+      focusSiblingRadio(el, -1, 0);
+      return;
+    case 'ArrowDown':
+      e.preventDefault();
+      focusSiblingRadio(el, 1, 0);
+      break;
+    default:
+      break;
   }
 }
 
