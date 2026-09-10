@@ -8,7 +8,7 @@ interface SegmentedSettingsOption<T extends string> {
 
 interface SegmentedSettingsRowProps<T extends string> {
   icon: ElementType;
-  label: ReactNode;
+  label: string;
   value: T;
   options: SegmentedSettingsOption<T>[];
   onChange: (value: T) => void;
