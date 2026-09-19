@@ -163,16 +163,39 @@ const ClearButtonCell = React.memo(
     arenaId: number;
     handleBetLineChange: (a: number, v: number) => void;
   }) => {
-    const betCount = useBetCount();
     const handleClearRow = useCallback(() => {
       handleBetLineChange(arenaId, 0);
     }, [handleBetLineChange, arenaId]);
 
+    // Disabled when no bet in the current set has chosen a pirate for this
+    // arena - clearing an already-empty selection is a no-op. Same condition
+    // as the per-pirate "Swap pirate" button below (arenaHasAnyChosen).
+    const arenaHasAnyChosen = useBetStore(state => {
+      const bets = state.allBets.get(state.currentBet);
+      if (!bets) {
+        return false;
+      }
+      for (const betLine of bets.values()) {
+        if ((betLine?.[arenaId] ?? 0) > 0) {
+          return true;
+        }
+      }
+      return false;
+    });
+
     return (
       <Td backgroundColor="bg.subtle">
-        <Button size="2xs" variant="subtle" onClick={handleClearRow}>
-          {betCount}-Bet
-        </Button>
+        <Tooltip content={`Clear all bets in ${ARENA_NAMES[arenaId]}`} openDelay={600}>
+          <Button
+            size="2xs"
+            variant="subtle"
+            onClick={handleClearRow}
+            disabled={!arenaHasAnyChosen}
+            data-testid={`arena-clear-button-${arenaId}`}
+          >
+            None
+          </Button>
+        </Tooltip>
       </Td>
     );
   },
@@ -997,7 +1020,10 @@ const ArenaTableBody = React.memo(
 
     return (
       <>
-        <Table.Body key={`arena-${arenaId}`}>
+        {/* role="radiogroup" groups this arena's bet radios for assistive tech:
+            they're spread across the header (clear) row and every pirate row,
+            so the group has to span the whole body. */}
+        <Table.Body key={`arena-${arenaId}`} role="radiogroup" aria-label={ARENA_NAMES[arenaId]}>
           {headerRow}
           {pirateRows}
         </Table.Body>
