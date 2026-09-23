@@ -1,4 +1,3 @@
-import { Badge, HStack, Text } from '@chakra-ui/react';
 import { memo, useMemo, useCallback } from 'react';
 import { FaThumbtack } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
@@ -19,17 +18,12 @@ const StickyPlaceBetButtonsToggle = memo(() => {
     setStickyPlaceBetButtons(newValue);
   }, [stickyPlaceBetButtons, cookies, setStickyPlaceBetButtons]);
 
+  const tooltipLabel = 'Sticky Place Bet Buttons';
+
   return (
     <SettingsSwitch
       icon={FaThumbtack}
-      label={
-        <HStack gap={2}>
-          <Text>Sticky Place Bet Buttons</Text>
-          <Badge colorPalette="cyan" variant="subtle" size="sm" rounded="full">
-            New
-          </Badge>
-        </HStack>
-      }
+      label={tooltipLabel}
       colorPalette="nfc-blue"
       checked={stickyPlaceBetButtons ?? false}
       onChange={persistStickyPlaceBetButtonsPreference}
