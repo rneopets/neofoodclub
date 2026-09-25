@@ -94,7 +94,7 @@
     "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.6.0",
     "vite-tsconfig-paths": "^6.0.0",
-    "vitest": "5.0.1",
+    "vitest": "5.0.2",
     "workbox-core": "^7.0.0",
     "workbox-expiration": "^7.0.0",
     "workbox-precaching": "^7.0.0",
