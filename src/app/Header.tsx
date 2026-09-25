@@ -150,22 +150,32 @@ const CurrentRoundProgress = React.memo((): React.ReactElement | null => {
   return (
     <>
       {roundPercentOver === 100 ? (
-        <ProgressCircle.Root value={null}>
-          <ProgressCircle.Circle css={{ '--thickness': '3px' }}>
-            <ProgressCircle.Track />
-            <ProgressCircle.Range strokeLinecap="round" />
-          </ProgressCircle.Circle>
-        </ProgressCircle.Root>
+        <Tooltip
+          content="Round progress: how far into the current round's 24-hour window we are"
+          placement="top"
+        >
+          <ProgressCircle.Root value={null}>
+            <ProgressCircle.Circle css={{ '--thickness': '3px' }}>
+              <ProgressCircle.Track />
+              <ProgressCircle.Range strokeLinecap="round" />
+            </ProgressCircle.Circle>
+          </ProgressCircle.Root>
+        </Tooltip>
       ) : (
-        <ProgressCircle.Root value={roundPercentOver}>
-          <ProgressCircle.Circle css={{ '--thickness': '3px' }}>
-            <ProgressCircle.Track />
-            <ProgressCircle.Range strokeLinecap="round" />
-          </ProgressCircle.Circle>
-          <AbsoluteCenter>
-            <ProgressCircle.ValueText />
-          </AbsoluteCenter>
-        </ProgressCircle.Root>
+        <Tooltip
+          content="Round progress: how far into the current round's 24-hour window we are"
+          placement="top"
+        >
+          <ProgressCircle.Root value={roundPercentOver}>
+            <ProgressCircle.Circle css={{ '--thickness': '3px' }}>
+              <ProgressCircle.Track />
+              <ProgressCircle.Range strokeLinecap="round" />
+            </ProgressCircle.Circle>
+            <AbsoluteCenter>
+              <ProgressCircle.ValueText />
+            </AbsoluteCenter>
+          </ProgressCircle.Root>
+        </Tooltip>
       )}
     </>
   );
