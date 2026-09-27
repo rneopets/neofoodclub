@@ -32,7 +32,15 @@ const Row = React.memo(
 
     return (
       <Box style={style} borderBottomWidth="1px">
-        <HStack px={2} gap={1} fontSize="xs" flexWrap="nowrap" height="100%" align="center">
+        <HStack
+          px={2}
+          gap={1}
+          fontSize="xs"
+          flexWrap="nowrap"
+          minWidth="fit-content"
+          height="100%"
+          align="center"
+        >
           <Text width={LABEL_WIDTH} textAlign="right" flexShrink={0} fontWeight="medium">
             #{row.round}
           </Text>
@@ -68,6 +76,9 @@ export const PirateFoodAdjustmentsModal: React.FC<PirateFoodAdjustmentsModalProp
     enabled: isOpen,
   });
 
+  const listWrapperRef = React.useRef<HTMLDivElement>(null);
+  const headerScrollRef = React.useRef<HTMLDivElement>(null);
+
   const history = React.useMemo(
     () => (status === 'ready' ? computeFoodAdjustmentHistory(rounds) : { pirates: [], rows: [] }),
     [status, rounds],
@@ -90,6 +101,26 @@ export const PirateFoodAdjustmentsModal: React.FC<PirateFoodAdjustmentsModalProp
     }
     return '';
   }, [status, error, history.rows.length, newestRound]);
+
+  // The virtualized list's own container is what actually scrolls
+  // horizontally (react-window forces overflow-x on once overflow-y is set),
+  // so the frozen header/summary rows above it are kept in sync by mirroring
+  // its scrollLeft rather than sharing a single scroll container. Queried via
+  // a plain DOM ref (not react-window's own listRef) because its imperative
+  // handle's `element` is populated a render late, via internal state.
+  React.useEffect(() => {
+    const listElement = listWrapperRef.current?.querySelector<HTMLDivElement>('[role="list"]');
+    const header = headerScrollRef.current;
+    if (!listElement || !header) {
+      return undefined;
+    }
+
+    const handleScroll = (): void => {
+      header.scrollLeft = listElement.scrollLeft;
+    };
+    listElement.addEventListener('scroll', handleScroll);
+    return (): void => listElement.removeEventListener('scroll', handleScroll);
+  }, [status, history.rows.length]);
 
   return (
     <Dialog.Root
@@ -135,15 +166,16 @@ export const PirateFoodAdjustmentsModal: React.FC<PirateFoodAdjustmentsModalProp
                 </HStack>
 
                 {status === 'ready' && history.rows.length > 0 && (
-                  <Box flex={1} minHeight={0} display="flex" flexDirection="column">
-                    <Box
-                      overflowX="auto"
-                      flex={1}
-                      minHeight={0}
-                      display="flex"
-                      flexDirection="column"
-                    >
-                      <Box borderBottomWidth="2px" fontWeight="bold" bg="bg.muted" flexShrink={0}>
+                  <Box
+                    flex={1}
+                    minHeight={0}
+                    display="flex"
+                    flexDirection="column"
+                    borderWidth="1px"
+                    rounded="md"
+                  >
+                    <Box ref={headerScrollRef} overflow="hidden" flexShrink={0}>
+                      <Box borderBottomWidth="2px" fontWeight="bold" bg="bg.muted">
                         <HStack
                           px={2}
                           py={2}
@@ -170,7 +202,7 @@ export const PirateFoodAdjustmentsModal: React.FC<PirateFoodAdjustmentsModalProp
                         </HStack>
                       </Box>
 
-                      <Box borderBottomWidth="1px" fontSize="xs" flexShrink={0}>
+                      <Box borderBottomWidth="1px" fontSize="xs">
                         <HStack px={2} py={1} gap={1} flexWrap="nowrap" minWidth="fit-content">
                           <Text width={LABEL_WIDTH} flexShrink={0} fontWeight="semibold">
                             Win %
@@ -202,20 +234,20 @@ export const PirateFoodAdjustmentsModal: React.FC<PirateFoodAdjustmentsModalProp
                           ))}
                         </HStack>
                       </Box>
+                    </Box>
 
-                      <Box flex={1} minHeight={0} minWidth="fit-content">
-                        <List<RowData>
-                          defaultHeight={420}
-                          rowCount={history.rows.length}
-                          rowHeight={28}
-                          rowComponent={
-                            Row as (
-                              props: { index: number; style: React.CSSProperties } & RowData,
-                            ) => React.ReactElement | null
-                          }
-                          rowProps={rowProps}
-                        />
-                      </Box>
+                    <Box ref={listWrapperRef} flex={1} minHeight={0}>
+                      <List<RowData>
+                        defaultHeight={420}
+                        rowCount={history.rows.length}
+                        rowHeight={28}
+                        rowComponent={
+                          Row as (
+                            props: { index: number; style: React.CSSProperties } & RowData,
+                          ) => React.ReactElement | null
+                        }
+                        rowProps={rowProps}
+                      />
                     </Box>
                   </Box>
                 )}
