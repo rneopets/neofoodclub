@@ -29,6 +29,7 @@ export async function fetchPreviousRounds(
       currentOdds: parsed.currentOdds,
       winners: parsed.winners,
       ...(parsed.foods ? { foods: parsed.foods } : {}),
+      ...(parsed.timestamp ? { timestamp: parsed.timestamp } : {}),
     });
   }
 

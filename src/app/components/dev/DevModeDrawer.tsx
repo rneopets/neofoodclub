@@ -9,6 +9,7 @@ import {
   FaTable,
   FaTrophy,
   FaUsers,
+  FaUtensils,
 } from 'react-icons/fa';
 import { FaChartPie, FaGauge, FaMagnifyingGlassChart } from 'react-icons/fa6';
 
@@ -19,6 +20,7 @@ import { ArenaInsightsModal } from '../modals/ArenaInsightsModal';
 import { BacktestComparisonModal } from '../modals/BacktestComparisonModal';
 import { BetSimulatorModal } from '../modals/BetSimulatorModal';
 import { FcDataModal } from '../modals/FcDataModal';
+import { PirateFoodAdjustmentsModal } from '../modals/PirateFoodAdjustmentsModal';
 import { PirateHallOfFameModal } from '../modals/PirateHallOfFameModal';
 import { PirateMatchupModal } from '../modals/PirateMatchupModal';
 import { RoundEndDriftModal } from '../modals/RoundEndDriftModal';
@@ -37,6 +39,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
   const backtestModal = useDisclosureState(false);
   const betSimulatorModal = useDisclosureState(false);
   const pirateHallOfFameModal = useDisclosureState(false);
+  const foodAdjustmentsModal = useDisclosureState(false);
   const perfModal = useDisclosureState(false);
   const insightsModal = useDisclosureState(false);
   const driftModal = useDisclosureState(false);
@@ -143,6 +146,10 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
                       <FaUsers />
                       Pirate Hall of Fame
                     </Button>
+                    <Button width="full" onClick={foodAdjustmentsModal.onOpen}>
+                      <FaUtensils />
+                      Pirate Streaks (Food Adjustments)
+                    </Button>
                     <Button width="full" onClick={matchupModal.onOpen}>
                       <FaCrosshairs />
                       Pirate Matchups (Head-to-Head)
@@ -193,6 +200,10 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
       <PirateHallOfFameModal
         isOpen={pirateHallOfFameModal.isOpen}
         onClose={pirateHallOfFameModal.onClose}
+      />
+      <PirateFoodAdjustmentsModal
+        isOpen={foodAdjustmentsModal.isOpen}
+        onClose={foodAdjustmentsModal.onClose}
       />
       <RoundEndDriftModal isOpen={driftModal.isOpen} onClose={driftModal.onClose} />
       <PirateMatchupModal isOpen={matchupModal.isOpen} onClose={matchupModal.onClose} />

@@ -5,6 +5,8 @@ export interface BacktestRound {
   currentOdds: number[][];
   winners: number[];
   foods?: number[][];
+  /** ISO 8601 timestamp of when this round's result was recorded, when available. */
+  timestamp?: string;
 }
 
 /**
