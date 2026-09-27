@@ -175,7 +175,12 @@ export const PirateFoodAdjustmentsModal: React.FC<PirateFoodAdjustmentsModalProp
                     rounded="md"
                   >
                     <Box ref={headerScrollRef} overflow="hidden" flexShrink={0}>
-                      <Box borderBottomWidth="2px" fontWeight="bold" bg="bg.muted">
+                      <Box
+                        borderBottomWidth="2px"
+                        fontWeight="bold"
+                        bg="bg.muted"
+                        minWidth="fit-content"
+                      >
                         <HStack
                           px={2}
                           py={2}
@@ -202,7 +207,7 @@ export const PirateFoodAdjustmentsModal: React.FC<PirateFoodAdjustmentsModalProp
                         </HStack>
                       </Box>
 
-                      <Box borderBottomWidth="1px" fontSize="xs">
+                      <Box borderBottomWidth="1px" fontSize="xs" minWidth="fit-content">
                         <HStack px={2} py={1} gap={1} flexWrap="nowrap" minWidth="fit-content">
                           <Text width={LABEL_WIDTH} flexShrink={0} fontWeight="semibold">
                             Win %
