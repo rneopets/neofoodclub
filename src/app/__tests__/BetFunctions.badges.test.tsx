@@ -7,6 +7,8 @@ import BetFunctions from '../BetFunctions';
 import { BET_AMOUNT_DEFAULT } from '../constants';
 import { useBetStore } from '../stores/betStore';
 import { useRoundStore } from '../stores/roundStore';
+import { makeEmptyBets, makeEmptyBetAmounts } from '../util';
+import { DUPLICATE_BET_COLOR_PALETTE } from '../utils/duplicateBetColors';
 
 // The round store reads cookies at module init (getMaxBet), so keep that from
 // touching the real document.cookie in jsdom. Everything else - bet/round stores,
@@ -196,5 +198,98 @@ describe('BetBadges (AnimatedNumber)', () => {
 
     // Same wrapped-span guarantee for the results badges.
     assertNumberBadgesWrapTheirSpan(container!);
+  });
+
+  describe('duplicate set badge', () => {
+    const setupSets = (sets: Array<{ bets: Bet; amounts: BetAmount }>): void => {
+      const allBets = new Map<number, Bet>();
+      const allBetAmounts = new Map<number, BetAmount>();
+      sets.forEach(({ bets, amounts }, index) => {
+        allBets.set(index, bets);
+        allBetAmounts.set(index, amounts);
+      });
+
+      useBetStore.setState({
+        currentBet: 0,
+        allBets,
+        allBetAmounts,
+        allNames: new Map(sets.map((_, index) => [index, `Set ${index + 1}`])),
+      });
+    };
+
+    it('shows a duplicate set badge with the group circle on every card sharing an identity', () => {
+      // Same bets, different order and amounts - same bet identity.
+      setupSets([
+        {
+          bets: new Map([
+            [1, [1, 0, 0, 0, 0]],
+            [2, [2, 0, 0, 0, 0]],
+          ]),
+          amounts: new Map([
+            [1, 50],
+            [2, 75],
+          ]),
+        },
+        {
+          bets: new Map([
+            [1, [2, 0, 0, 0, 0]],
+            [2, [1, 0, 0, 0, 0]],
+          ]),
+          amounts: new Map([[1, 100]]),
+        },
+      ]);
+
+      const { container } = render(<BetFunctions />);
+
+      // Both cards get the badge. (The badge's direct text includes the ⚠️
+      // emoji, so match on a substring.)
+      const badges = screen.getAllByText(/Duplicate set/);
+      expect(badges).toHaveLength(2);
+
+      // Chakra v3 puts palette colors in CSS custom properties (emotion-hashed class
+      // names, so nothing to match on className) - read them off the computed style.
+      const paletteVar = (el: HTMLElement, token: string): string =>
+        window.getComputedStyle(el).getPropertyValue(`--chakra-colors-color-palette-${token}`);
+
+      // The circle shows the group number (first duplicate group = 1) and uses
+      // the first palette color, matching the in-set duplicate-bet circles.
+      const expectedColor = DUPLICATE_BET_COLOR_PALETTE[0];
+      for (const badge of badges) {
+        const outer = badge as HTMLElement;
+
+        // The badge is orange (warning), not red - duplicate sets don't invalidate.
+        expect(paletteVar(outer, 'fg')).toBe('var(--chakra-colors-nfc-orange-fg)');
+
+        const circle = outer.querySelector('.chakra-badge') as HTMLElement;
+        expect(circle).not.toBeNull();
+        expect(circle.textContent).toBe('1');
+        expect(paletteVar(circle, 'solid')).toBe(`var(--chakra-colors-${expectedColor}-solid)`);
+      }
+
+      expect(container.textContent).toContain('Duplicate set');
+    });
+
+    it('shows no duplicate set badge when all sets are unique', () => {
+      setupSets([
+        { bets: new Map([[1, [1, 0, 0, 0, 0]]]), amounts: new Map([[1, 50]]) },
+        { bets: new Map([[1, [2, 0, 0, 0, 0]]]), amounts: new Map([[1, 50]]) },
+      ]);
+
+      const { container } = render(<BetFunctions />);
+
+      expect(screen.queryByText(/Duplicate set/)).not.toBeInTheDocument();
+      expect(container.textContent).not.toContain('Duplicate set');
+    });
+
+    it('shows no duplicate set badge for empty sets', () => {
+      setupSets([
+        { bets: new Map(), amounts: new Map() },
+        { bets: makeEmptyBets(5), amounts: makeEmptyBetAmounts(5) },
+      ]);
+
+      render(<BetFunctions />);
+
+      expect(screen.queryByText(/Duplicate set/)).not.toBeInTheDocument();
+    });
   });
 });
