@@ -1,3 +1,5 @@
+import { addYears } from 'date-fns';
+import Cookies from 'universal-cookie';
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { shallow } from 'zustand/shallow';
@@ -22,6 +24,8 @@ import {
   anyBetAmountsExist,
   makeBetURL,
   getMaxBet,
+  getMaxBetLocked,
+  calculateBaseMaxBet,
   type BetSetPosition,
   type BetGenerationMaxBetMode,
 } from '../util';
@@ -100,6 +104,7 @@ interface RoundStore {
   oddsTimeline: boolean;
   useLogitModel: boolean;
   maxBet: number;
+  isMaxBetLocked: boolean;
   betGenerationMaxBetMode: BetGenerationMaxBetMode;
 
   // Calculations
@@ -128,6 +133,8 @@ interface RoundStore {
   toggleCustomOddsMode: () => void;
   toggleUseLogitModel: () => void;
   setMaxBet: (maxBet: number) => void;
+  lockMaxBet: () => void;
+  unlockMaxBet: () => void;
   setBetGenerationMaxBetMode: (mode: BetGenerationMaxBetMode) => void;
 
   // Calculations
@@ -168,6 +175,7 @@ export const useRoundStore = create<RoundStore>()(
     oddsTimeline: getOddsTimelineMode(),
     useLogitModel: getUseLogitModel(),
     maxBet: getMaxBet(0),
+    isMaxBetLocked: getMaxBetLocked(),
     betGenerationMaxBetMode: getBetGenerationMaxBetMode(),
 
     // Calculations
@@ -319,6 +327,16 @@ export const useRoundStore = create<RoundStore>()(
       set({ stickyPlaceBetButtons }),
 
     setMaxBet: (maxBet: number): void => {
+      const { isMaxBetLocked, currentSelectedRound } = get();
+      const cookies = new Cookies();
+      if (isMaxBetLocked) {
+        cookies.set('lockedMaxBet', maxBet, { expires: addYears(new Date(), 100) });
+      } else {
+        cookies.set('baseMaxBet', calculateBaseMaxBet(maxBet, currentSelectedRound), {
+          expires: addYears(new Date(), 100),
+        });
+      }
+
       set({ maxBet });
       if (get().roundData !== defaultRoundData) {
         try {
@@ -327,6 +345,34 @@ export const useRoundStore = create<RoundStore>()(
           console.error('Failed to update wasm engine bet amount:', error);
         }
       }
+    },
+
+    lockMaxBet: (): void => {
+      const { isMaxBetLocked, maxBet } = get();
+      if (isMaxBetLocked) {
+        return;
+      }
+      const cookies = new Cookies();
+      if (maxBet > 0) {
+        cookies.set('lockedMaxBet', maxBet, { expires: addYears(new Date(), 100) });
+      }
+      cookies.set('maxBetLocked', true);
+      set({ isMaxBetLocked: true });
+    },
+
+    unlockMaxBet: (): void => {
+      const { isMaxBetLocked, maxBet, currentSelectedRound } = get();
+      if (!isMaxBetLocked) {
+        return;
+      }
+      const cookies = new Cookies();
+      if (maxBet > 0) {
+        cookies.set('baseMaxBet', calculateBaseMaxBet(maxBet, currentSelectedRound), {
+          expires: addYears(new Date(), 100),
+        });
+      }
+      cookies.set('maxBetLocked', false);
+      set({ isMaxBetLocked: false });
     },
 
     setBetGenerationMaxBetMode: (mode: BetGenerationMaxBetMode): void =>
