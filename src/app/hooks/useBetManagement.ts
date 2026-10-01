@@ -4,8 +4,8 @@ import { Bet, BetAmount } from '../../types/bets';
 import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MIN } from '../constants';
 import { computePiratesBinary } from '../maths';
 import {
-  useAllBetsForURLData,
-  useAllBetAmountsForURLData,
+  useAllBets,
+  useAllBetAmounts,
   useRoundData,
   useSelectedRound,
   useCurrentBet,
@@ -106,8 +106,8 @@ export function useBetManagement(): {
   const setAllBetAmounts = useBetStore(state => state.setAllBetAmounts);
 
   // Get the full data structures
-  const allBets = useAllBetsForURLData();
-  const allBetAmounts = useAllBetAmountsForURLData();
+  const allBets = useAllBets();
+  const allBetAmounts = useAllBetAmounts();
 
   const currentBets = useMemo(
     () => allBets.get(currentBetIndex) ?? new Map(),

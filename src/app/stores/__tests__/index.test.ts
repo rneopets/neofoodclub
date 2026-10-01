@@ -154,7 +154,6 @@ describe('stores/index hook smoke suite', () => {
       ['useTotalWinningPayoff', Hooks.useTotalWinningPayoff],
       ['useTotalEnabledBets', Hooks.useTotalEnabledBets],
       ['useWinningBetBinary', Hooks.useWinningBetBinary],
-      ['useWinnersBinary', Hooks.useWinnersBinary],
     ])('%s returns a number', (_name, hook) => {
       const { result } = renderHook(() => hook());
       expect(result.current).toBeDefined();
@@ -178,31 +177,7 @@ describe('stores/index hook smoke suite', () => {
       ['useLegacyProbabilityMax(0,0)', (): number => Hooks.useLegacyProbabilityMax(0, 0)],
       ['useLegacyProbabilityStd(0,0)', (): number => Hooks.useLegacyProbabilityStd(0, 0)],
       ['usePirateFA(0,0)', (): number => Hooks.usePirateFA(0, 0)],
-      ['useSpecificBetAmount(1)', (): number => Hooks.useSpecificBetAmount(1)],
-      ['useSpecificBetOdds(1)', (): number => Hooks.useSpecificBetOdds(1)],
-      ['useSpecificBetPayoff(1)', (): number => Hooks.useSpecificBetPayoff(1)],
-      ['useSpecificBetProbability(1)', (): number => Hooks.useSpecificBetProbability(1)],
-      ['useSpecificBetBinary(1)', (): number => Hooks.useSpecificBetBinary(1)],
-      ['useSpecificBetExpectedRatio(1)', (): number => Hooks.useSpecificBetExpectedRatio(1)],
-      ['useSpecificBetNetExpected(1)', (): number => Hooks.useSpecificBetNetExpected(1)],
-      ['useSpecificBetMaxBet(1)', (): number => Hooks.useSpecificBetMaxBet(1)],
-      ['useStableUsedProbability(0,0)', (): number => Hooks.useStableUsedProbability(0, 0)],
-      ['useStableLogitProbability(0,0)', (): number => Hooks.useStableLogitProbability(0, 0)],
-      [
-        'useStableLegacyProbabilityMin(0,0)',
-        (): number => Hooks.useStableLegacyProbabilityMin(0, 0),
-      ],
-      [
-        'useStableLegacyProbabilityMax(0,0)',
-        (): number => Hooks.useStableLegacyProbabilityMax(0, 0),
-      ],
-      [
-        'useStableLegacyProbabilityStd(0,0)',
-        (): number => Hooks.useStableLegacyProbabilityStd(0, 0),
-      ],
-      ['useStablePirateFA(0,0)', (): number => Hooks.useStablePirateFA(0, 0)],
-      ['useOptimizedBetAmount(1)', (): number => Hooks.useOptimizedBetAmount(1)],
-      ['useCurrentBetForURL', (): number => Hooks.useCurrentBetForURL()],
+      ['useCurrentBet', (): number => Hooks.useCurrentBet()],
     ])('%s returns a number', (_name, hook) => {
       const { result } = renderHook(() => hook());
       expect(result.current).toBeDefined();
@@ -218,7 +193,6 @@ describe('stores/index hook smoke suite', () => {
       ['useCurrentOddsValue(0,0)', (): number | undefined => Hooks.useCurrentOddsValue(0, 0)],
       ['useCustomOddsValue(0,0)', (): number | undefined => Hooks.useCustomOddsValue(0, 0)],
       ['useCustomProbsValue(0,0)', (): number | undefined => Hooks.useCustomProbsValue(0, 0)],
-      ['usePirateId(0,0)', (): number | undefined => Hooks.usePirateId(0, 0)],
     ])('%s returns a number or undefined', (_name, hook) => {
       const { result } = renderHook(() => hook());
       expect(['number', 'undefined']).toContain(typeof result.current);
@@ -240,7 +214,6 @@ describe('stores/index hook smoke suite', () => {
       ['useLogitModelSetting', Hooks.useLogitModelSetting],
       ['useIsCalculated', Hooks.useIsCalculated],
       ['useHasRoundData', Hooks.useHasRoundData],
-      ['useCalculationsStatus', Hooks.useCalculationsStatus],
     ])('%s returns a boolean', (_name, hook) => {
       const { result } = renderHook(() => hook());
       expect(typeof result.current).toBe('boolean');
@@ -267,7 +240,6 @@ describe('stores/index hook smoke suite', () => {
     it.each<[string, () => string | undefined]>([
       ['useTimestamp', Hooks.useTimestamp],
       ['useLastChange', Hooks.useLastChange],
-      ['useTimestampValue', Hooks.useTimestampValue],
     ])('%s returns a string or undefined', (_name, hook) => {
       const { result } = renderHook(() => hook());
       expect(['string', 'undefined']).toContain(typeof result.current);
@@ -282,7 +254,6 @@ describe('stores/index hook smoke suite', () => {
       ['useCurrentOdds', Hooks.useCurrentOdds],
       ['useArenaRatios', Hooks.useArenaRatios],
       ['useUsedProbabilities', Hooks.useUsedProbabilities],
-      ['useRoundPirates', Hooks.useRoundPirates],
       ['useRoundOpeningOdds', Hooks.useRoundOpeningOdds],
       ['useRoundCurrentOdds', Hooks.useRoundCurrentOdds],
     ])('%s returns an array', (_name, hook) => {
@@ -293,7 +264,6 @@ describe('stores/index hook smoke suite', () => {
     it.each<[string, () => unknown]>([
       ['useChanges', Hooks.useChanges],
       ['useWinners', Hooks.useWinners],
-      ['useRoundWinners', Hooks.useRoundWinners],
       ['useCustomOdds', Hooks.useCustomOdds],
       ['useCustomProbs', Hooks.useCustomProbs],
     ])('%s returns an array, null, or undefined', (_name, hook) => {
@@ -307,7 +277,6 @@ describe('stores/index hook smoke suite', () => {
   describe('parameterized array-or-undefined-returning hooks', () => {
     it.each<[string, () => unknown]>([
       ['useBetLine(1)', (): unknown => Hooks.useBetLine(1)],
-      ['useBetLineSpecific(1)', (): unknown => Hooks.useBetLineSpecific(1)],
       ['usePiratesForArena(0)', (): unknown => Hooks.usePiratesForArena(0)],
       ['useFoodsForArena(0)', (): unknown => Hooks.useFoodsForArena(0)],
     ])('%s returns an array or undefined', (_name, hook) => {
@@ -331,8 +300,6 @@ describe('stores/index hook smoke suite', () => {
       ['useBetNetExpected', Hooks.useBetNetExpected],
       ['useBetMaxBets', Hooks.useBetMaxBets],
       ['usePirateFAs', Hooks.usePirateFAs],
-      ['useAllBetsForURLData', Hooks.useAllBetsForURLData],
-      ['useAllBetAmountsForURLData', Hooks.useAllBetAmountsForURLData],
     ])('%s returns a Map', (_name, hook) => {
       const { result } = renderHook(() => hook());
       expect(result.current instanceof Map).toBe(true);
@@ -391,9 +358,6 @@ describe('stores/index hook smoke suite', () => {
       ['useSetCustomOdds', Hooks.useSetCustomOdds],
       ['useSetCustomProbs', Hooks.useSetCustomProbs],
       ['useInitializeRoundData', Hooks.useInitializeRoundData],
-      ['useUpdateSinglePirate', Hooks.useUpdateSinglePirate],
-      ['useUpdateSingleBetAmount', Hooks.useUpdateSingleBetAmount],
-      ['useBatchUpdateBetAmounts', Hooks.useBatchUpdateBetAmounts],
     ])('%s returns a function', (_name, hook) => {
       const { result } = renderHook(() => hook());
       expect(typeof result.current).toBe('function');

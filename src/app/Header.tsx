@@ -32,7 +32,7 @@ import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
 import {
   useRoundStore,
-  useTimestampValue,
+  useTimestamp,
   useLastChange,
   useMaxBet,
   useSetMaxBet,
@@ -91,7 +91,7 @@ const GoToCurrentRoundButton: React.FC<GoToCurrentRoundButtonProps> = React.memo
 
 const PreviousRoundInfo: React.FC = React.memo(() => {
   const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
-  const timestamp = useTimestampValue();
+  const timestamp = useTimestamp();
 
   const formattedDate = useMemo(() => {
     if (!timestamp) {
@@ -190,7 +190,7 @@ const CurrentRoundProgress = React.memo((): React.ReactElement | null => {
 
 const CurrentRoundInfo: React.FC = React.memo(() => {
   const roundData = useRoundStore(state => state.roundData);
-  const timestamp = useTimestampValue();
+  const timestamp = useTimestamp();
   const lastChange = useLastChange();
 
   const timestampDate = useMemo(() => (timestamp ? new Date(timestamp) : new Date()), [timestamp]);
@@ -260,7 +260,7 @@ interface RoundInfoProps {
 
 const RoundInfo: React.FC<RoundInfoProps> = React.memo(({ display = 'block' }: RoundInfoProps) => {
   const winners = useRoundStore(state => state.roundData.winners);
-  const timestamp = useTimestampValue();
+  const timestamp = useTimestamp();
   const error = useErrorState();
   const isLoading = useRoundStore(state => state.isLoading);
   const isInitializing = useRoundStore(state => state.isInitializing);
@@ -501,7 +501,7 @@ const HeaderContent: React.FC = () => {
   const [isGlowing, setIsGlowing] = useState<boolean>(false);
   const prevTimestampRef = useRef<string | undefined>(undefined);
   const hasWinners = useIsRoundOver();
-  const timestamp = useTimestampValue();
+  const timestamp = useTimestamp();
   const error = useErrorState();
   const roundData = useRoundStore(state => state.roundData);
   const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);

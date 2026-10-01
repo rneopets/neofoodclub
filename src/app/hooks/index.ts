@@ -11,7 +11,6 @@ export { useIsMobile } from './useIsMobile';
 export { useIsRoundOver } from './useIsRoundOver';
 export { useIsStillSettling } from './useIsStillSettling';
 export { useOtherTabHasBets } from './useOtherTabHasBets';
-export { useProbabilities } from './useProbabilities';
 export { useRoundProgress } from './useRoundProgress';
 export { useScrollPosition } from './useScrollPosition';
 export { useSelectOnFocus } from './useSelectOnFocus';

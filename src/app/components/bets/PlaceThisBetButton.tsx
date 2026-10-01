@@ -4,13 +4,7 @@ import { FaExternalLinkAlt } from 'react-icons/fa';
 
 import { useIsRoundOver } from '../../hooks/useIsRoundOver';
 import { computePiratesBinary } from '../../maths';
-import {
-  useBetOdds,
-  useBetPayoffs,
-  useSpecificBetAmount,
-  useRoundPirates,
-  useBetBinaries,
-} from '../../stores';
+import { useBetOdds, useBetPayoffs, useBetAmount, usePirates, useBetBinaries } from '../../stores';
 import { generateBetLinkUrl, openBetLinkInNewTab } from '../../utils/betUtils';
 import {
   computeDuplicateBetGroupColors,
@@ -53,7 +47,7 @@ interface ActivePlaceBetButtonProps {
   betNum: number;
   betOdds: ReturnType<typeof useBetOdds>;
   betPayoffs: ReturnType<typeof useBetPayoffs>;
-  pirates: ReturnType<typeof useRoundPirates>;
+  pirates: ReturnType<typeof usePirates>;
 }
 
 const ActivePlaceBetButton = React.memo(
@@ -102,12 +96,12 @@ ActivePlaceBetButton.displayName = 'ActivePlaceBetButton';
 const PlaceThisBetButton = React.memo(
   (props: PlaceThisBetButtonProps): React.ReactElement => {
     const { bet, betNum } = props;
-    const pirates = useRoundPirates();
+    const pirates = usePirates();
 
     const betOdds = useBetOdds();
     const betPayoffs = useBetPayoffs();
 
-    const betAmount = useSpecificBetAmount(betNum);
+    const betAmount = useBetAmount(betNum);
     const betBinariesMap = useBetBinaries();
     const duplicateColors = useMemo(
       () => computeDuplicateBetGroupColors(betBinariesMap),

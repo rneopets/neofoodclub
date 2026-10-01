@@ -34,16 +34,16 @@ import {
   useLogitModelSetting,
   useFoodsForArena,
   useBetCount,
-  usePirateId,
+  usePirateForArena,
   useOpeningOddsValue,
   useCurrentOddsValue,
   useWinningBetBinary,
-  useStableUsedProbability,
-  useStableLogitProbability,
-  useStableLegacyProbabilityMin,
-  useStableLegacyProbabilityMax,
-  useStableLegacyProbabilityStd,
-  useStablePirateFA,
+  useUsedProbabilityValue,
+  useLogitProbabilityValue,
+  useLegacyProbabilityMin,
+  useLegacyProbabilityMax,
+  useLegacyProbabilityStd,
+  usePirateFA,
   useCustomOddsMode,
   useCustomOddsValue,
   useFaDetails,
@@ -409,7 +409,7 @@ const PirateRow = React.memo(
     handleBetLineChange: (a: number, v: number) => void;
   }) => {
     const isMobile = useIsMobile();
-    const pirateId = usePirateId(arenaId, pirateIndex);
+    const pirateId = usePirateForArena(arenaId, pirateIndex);
     const openingOdds = useOpeningOddsValue(arenaId, pirateIndex);
     const currentOdds = useCurrentOddsValue(arenaId, pirateIndex);
     const useLogitModel = useLogitModelSetting();
@@ -426,12 +426,12 @@ const PirateRow = React.memo(
     const winColorKey = pirateWon ? 'nfc-green' : undefined;
     const winBg = useBackgroundColorTween(winColorKey);
     const betCount = useBetCount();
-    const prob = useStableUsedProbability(arenaId, pirateIndex + 1);
-    const logitProb = useStableLogitProbability(arenaId, pirateIndex + 1);
-    const legacyProbMin = useStableLegacyProbabilityMin(arenaId, pirateIndex + 1);
-    const legacyProbMax = useStableLegacyProbabilityMax(arenaId, pirateIndex + 1);
-    const legacyProbStd = useStableLegacyProbabilityStd(arenaId, pirateIndex + 1);
-    const pirateFA = useStablePirateFA(arenaId, pirateIndex);
+    const prob = useUsedProbabilityValue(arenaId, pirateIndex + 1);
+    const logitProb = useLogitProbabilityValue(arenaId, pirateIndex + 1);
+    const legacyProbMin = useLegacyProbabilityMin(arenaId, pirateIndex + 1);
+    const legacyProbMax = useLegacyProbabilityMax(arenaId, pirateIndex + 1);
+    const legacyProbStd = useLegacyProbabilityStd(arenaId, pirateIndex + 1);
+    const pirateFA = usePirateFA(arenaId, pirateIndex);
     const customOddsMode = useCustomOddsMode();
     const customOddsValue = useCustomOddsValue(arenaId, pirateIndex + 1);
     const getPirateBgColor = useGetPirateBgColor();

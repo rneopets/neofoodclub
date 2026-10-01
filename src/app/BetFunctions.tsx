@@ -65,7 +65,7 @@ import {
   useBetStore,
   useRoundData,
   useUseWebDomain,
-  useCalculationsStatus,
+  useIsCalculated,
   useArenaRatios,
   useBigBrain,
   useWinningBetBinary,
@@ -78,7 +78,7 @@ import {
   useDeleteBetSet,
   useHasAnyBets,
   useHasAnyBetsAnywhere,
-  useRoundPirates,
+  usePirates,
   useOptimizedBetsForIndex,
   useOptimizedBetAmountsForIndex,
 } from './stores';
@@ -181,7 +181,7 @@ const BuildSetMenu = React.memo(
       attached: true,
     },
   ): React.ReactElement => {
-    const hasRoundData = useRoundPirates()?.[0]?.[0] !== undefined;
+    const hasRoundData = usePirates()?.[0]?.[0] !== undefined;
 
     const [open, setOpen] = useState(false);
     const [mode, setMode] = React.useState(''); // currently can only be "Ten-bet" or "Gambit"
@@ -1317,12 +1317,12 @@ const BetBadges = React.memo(
   (props: { index: number; [key: string]: unknown }): React.ReactElement => {
     const { index, ...rest } = props;
     const currentSelectedRound = useSelectedRound();
-    const roundDataPirates = useRoundPirates();
+    const roundDataPirates = usePirates();
     const isRoundOver = useIsRoundOver();
 
     const usedProbabilities = useUsedProbabilities();
     const odds = useRoundStore(state => state.roundData.currentOdds || []);
-    const calculated = useCalculationsStatus();
+    const calculated = useIsCalculated();
     const winningBetBinary = useWinningBetBinary();
 
     const bets = useOptimizedBetsForIndex(index);

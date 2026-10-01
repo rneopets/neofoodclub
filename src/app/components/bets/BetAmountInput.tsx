@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX, BET_AMOUNT_MIN } from '../../constants';
 import { useSelectOnFocus } from '../../hooks/useSelectOnFocus';
-import { useOptimizedBetAmount, useUpdateSingleBetAmount } from '../../stores';
+import { useBetAmount, useUpdateBetAmount } from '../../stores';
 
 import {
   NumberInputRoot,
@@ -25,8 +25,8 @@ const BetAmountInput = React.memo(
     const { betIndex, invalid, errorColor, ...rest } = props;
 
     // Use optimized hook that only subscribes to this specific bet amount
-    const betAmount = useOptimizedBetAmount(betIndex);
-    const updateSingleBetAmount = useUpdateSingleBetAmount();
+    const betAmount = useBetAmount(betIndex);
+    const updateSingleBetAmount = useUpdateBetAmount();
 
     const [tempValue, setTempValue] = useState(() => betAmount.toString());
     const [isEditing, setIsEditing] = useState(false);
