@@ -190,10 +190,9 @@ test.describe('NeoFoodClub Bet Generation', () => {
     const maxBetValue = await maxBetInput.inputValue();
     expect(maxBetValue).toBe('2000');
 
-    // The BetAmountsButtons component reads cookies directly via getMaxBet()
-    // Since it's memoized, it won't automatically re-render when cookies change.
-    // We need to trigger a re-render by changing something the component depends on.
-    // The component depends on currentBetAmountsSize, so interacting with bet amounts will trigger a re-render.
+    // BetAmountsButtons reads the max bet from the store via useMaxBet(), so it
+    // should already reflect the value set above. The interactions below are a
+    // belt-and-braces nudge that also keep the test stable on slower browsers.
 
     // Wait for round data to be loaded (table should be visible)
     await page.waitForSelector('table', { timeout: 20000 });
@@ -212,7 +211,7 @@ test.describe('NeoFoodClub Bet Generation', () => {
       await page.waitForTimeout(500);
     }
 
-    // Trigger a re-render by interacting with bet amounts (changes currentBetAmountsSize)
+    // Nudge the bet amounts so the buttons re-evaluate (changes currentBetAmountsSize)
     const incrementButton = page.locator('[data-testid="increment-bet-amounts-button"]');
     if (await incrementButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       await incrementButton.click();
@@ -232,9 +231,8 @@ test.describe('NeoFoodClub Bet Generation', () => {
       }
     }
 
-    // Wait for button to be enabled (component should have re-rendered and read updated cookie)
+    // Wait for button to be enabled (it depends on the store's max bet)
     // Use a longer timeout for mobile browsers and when running with other tests
-    // The component reads cookies directly, so we need to ensure it has re-rendered
     try {
       await expect(uncappedButton).toBeEnabled({ timeout: 20000 });
     } catch {
