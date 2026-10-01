@@ -1281,7 +1281,7 @@ const BetCard = React.memo(
                 },
               }
             : {})}
-          {...(layout === 'wrap' ? { minW: '260px' } : { width: 'full' })}
+          {...(layout === 'wrap' ? { minW: '260px', maxW: '340px' } : { width: 'full' })}
         >
           <VStack align="stretch" w="full" minW={layout === 'wrap' ? '200px' : 0} gap={2}>
             <Editable.Root
@@ -1498,7 +1498,14 @@ const BetBadges = React.memo(
           });
 
           result.push(
-            <Badge key="gambit" colorPalette="nfc-blue" variant="surface">
+            <Badge
+              key="gambit"
+              colorPalette="nfc-blue"
+              variant="surface"
+              whiteSpace="normal"
+              textAlign="center"
+              maxW="full"
+            >
               Gambit: {names.join(' x ')}
             </Badge>,
           );
@@ -1523,7 +1530,14 @@ const BetBadges = React.memo(
           });
 
           result.push(
-            <Badge key="tenbet" colorPalette="nfc-purple" variant="surface">
+            <Badge
+              key="tenbet"
+              colorPalette="nfc-purple"
+              variant="surface"
+              whiteSpace="normal"
+              textAlign="center"
+              maxW="full"
+            >
               Tenbet: {names.join(' x ')}
             </Badge>,
           );
