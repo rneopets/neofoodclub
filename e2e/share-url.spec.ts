@@ -28,6 +28,9 @@ test.describe('Share URL round trip', () => {
     page,
     browser,
   }) => {
+    // Two app loads (wasm + data mock) plus a reload; Firefox on CI exceeds the 60s default
+    test.setTimeout(180000);
+
     // --- Sharer: build a set with amounts ---
     await setupLocalDataMock(page, ROUND);
     await page.goto(`/#round=${ROUND}`);
