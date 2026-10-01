@@ -1,110 +1,136 @@
-import { test, expect } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
 
-import { setupLocalDataMock } from './test-helpers/local-data-mock';
+import { test, expect, Locator, Page } from '@playwright/test';
+
+import { setupLocalDataMock, getReliableRound } from './test-helpers/local-data-mock';
+
+const ROUND = getReliableRound();
+
+const ARENA_NAMES = ['Shipwreck', 'Lagoon', 'Treasure', 'Hidden', 'Harpoon'];
+
+interface FixtureRound {
+  round: number;
+  openingOdds: number[][];
+  currentOdds: number[][];
+}
+
+// Read the same fixture the network mock serves, so expectations can't drift from it
+const fixture: FixtureRound = fs
+  .readFileSync(path.join(process.cwd(), 'e2e', 'fixtures', 'rounds.jsonl'), 'utf8')
+  .trim()
+  .split('\n')
+  .map(line => JSON.parse(line) as FixtureRound)
+  .find(r => r.round === ROUND)!;
+
+async function waitForTable(page: Page): Promise<void> {
+  await page.waitForSelector('#root', { timeout: 30000 });
+  await page.waitForSelector('table', { timeout: 20000 });
+}
+
+// First bet column's radio on the first pirate row (Tailhook, arena 0 in the fixture).
+// Avoids the per-arena "clear" radio, which selects no pirate.
+function pickTailhookBet1(page: Page): Locator {
+  return page.locator('table tbody tr', { hasText: 'Tailhook' }).locator('[role="radio"]').first();
+}
+
+function hashParams(page: Page): URLSearchParams {
+  return new URLSearchParams(new URL(page.url()).hash.slice(1));
+}
 
 test.describe('NeoFoodClub Betting Functionality', () => {
   test.beforeEach(async ({ page }) => {
-    // Set up local data mocking before navigation
-    await setupLocalDataMock(page);
-
-    await page.goto('/');
-    // Be very patient with the app loading
+    await setupLocalDataMock(page, ROUND);
+    await page.goto(`/#round=${ROUND}`);
     try {
-      await page.waitForSelector('#root', { timeout: 30000 });
+      await waitForTable(page);
     } catch {
       test.skip(true, 'App failed to load');
     }
   });
 
-  test('should have a round input field', async ({ page }) => {
-    // Look for the specific round input using its data-testid
-    const roundInput = page.locator('[data-testid="round-input-field"]');
-    await expect(roundInput).toBeVisible({ timeout: 20000 });
+  test('loads the round from the URL hash', async ({ page }) => {
+    await expect(page.locator('[data-testid="round-input-field"]')).toHaveValue(String(ROUND), {
+      timeout: 20000,
+    });
+    expect(hashParams(page).get('round')).toBe(String(ROUND));
+    // No bets yet, so no bet data in the URL
+    expect(hashParams(page).get('b')).toBeNull();
   });
 
-  test('should display betting interface', async ({ page }) => {
-    // Check for basic betting elements with flexible selectors
-    const hasButtons = (await page.locator('button').count()) > 0;
-    const hasInputs = (await page.locator('input').count()) > 0;
-    const hasTable = (await page.locator('table').count()) > 0;
+  test('shows every arena and the fixture opening/current odds', async ({ page }) => {
+    const tableText = await page.locator('table').first().innerText();
 
-    // Should have at least some interactive elements
-    expect(hasButtons || hasInputs || hasTable).toBe(true);
-  });
-
-  test('should allow basic input interaction', async ({ page }) => {
-    // Try to interact with the round input specifically
-    const roundInput = page.locator('[data-testid="round-input-field"]');
-
-    try {
-      if ((await roundInput.isVisible({ timeout: 5000 })) && (await roundInput.isEnabled())) {
-        await roundInput.click({ timeout: 5000 });
-        // Just verify we can interact with it
-        await expect(roundInput).toBeFocused();
-      }
-    } catch {
-      // Input interaction failed, that's okay
+    for (const name of ARENA_NAMES) {
+      expect(tableText).toContain(name);
     }
 
-    // Always verify page is still functional
-    await expect(page.locator('#root')).toBeVisible();
-  });
-
-  test('should handle button clicks gracefully', async ({ page }) => {
-    // Find buttons and try to click one safely
-    const buttons = page.locator('button');
-    const buttonCount = await buttons.count();
-
-    if (buttonCount > 0) {
-      try {
-        // Try to click the first visible, enabled button
-        for (let i = 0; i < Math.min(buttonCount, 3); i++) {
-          const button = buttons.nth(i);
-          if ((await button.isVisible({ timeout: 2000 })) && (await button.isEnabled())) {
-            await button.click({ timeout: 5000 });
-            await page.waitForTimeout(500);
-            break;
-          }
-        }
-      } catch {
-        // Button interaction failed, that's okay
+    // Each pirate row renders "<opening>:1" followed by "<current>:1"
+    for (let arena = 0; arena < 5; arena++) {
+      for (let pirate = 1; pirate <= 4; pirate++) {
+        const open = fixture.openingOdds[arena]![pirate]!;
+        const curr = fixture.currentOdds[arena]![pirate]!;
+        expect(tableText, `arena ${arena} pirate ${pirate}`).toMatch(
+          new RegExp(`\\b${open}:1\\s+${curr}:1\\b`),
+        );
       }
     }
-
-    // Verify page is still functional after any interactions
-    await expect(page.locator('#root')).toBeVisible();
   });
 
-  test('should have external links', async ({ page }) => {
-    // Look for any external links
-    const externalLinks = page.locator(
-      'a[href*="neopets.com"], a[href*="github.com"], a[target="_blank"]',
-    );
-    const linkCount = await externalLinks.count();
-
-    expect(linkCount).toBeGreaterThan(0);
+  test('has 10 bet columns plus a clear control', async ({ page }) => {
+    const headerText = await page.locator('table thead').first().innerText();
+    for (let bet = 1; bet <= 10; bet++) {
+      expect(headerText).toContain(`Bet ${bet}`);
+    }
+    expect(headerText).toContain('Clear');
   });
 
-  test('should be accessible', async ({ page }) => {
-    // Basic accessibility checks
-    const hasAriaLabels = (await page.locator('[aria-label]').count()) > 0;
-    const hasHeadings = (await page.locator('h1, h2, h3, h4, h5, h6').count()) > 0;
-    const hasButtons = (await page.locator('button').count()) > 0;
+  test('picking a pirate writes the bet to the URL and clear removes it', async ({ page }) => {
+    const firstRadio = pickTailhookBet1(page);
+    await firstRadio.click({ force: true });
 
-    // Should have some accessible elements
-    expect(hasAriaLabels || hasHeadings || hasButtons).toBe(true);
+    await page.waitForFunction(() => window.location.hash.includes('&b='), { timeout: 10000 });
+    const params = hashParams(page);
+    expect(params.get('round')).toBe(String(ROUND));
+    expect(params.get('b')).toBeTruthy();
+
+    await page.locator('[data-testid="clear-delete-button"]').click();
+    await page.waitForFunction(() => !window.location.hash.includes('&b='), { timeout: 10000 });
+    expect(hashParams(page).get('b')).toBeNull();
+    expect(hashParams(page).get('round')).toBe(String(ROUND));
   });
 
-  test('should persist through page reload', async ({ page }) => {
-    // Just test that the page can be reloaded
+  test('a bet in the URL survives a page reload', async ({ page }) => {
+    await pickTailhookBet1(page).click({ force: true });
+    await page.waitForFunction(() => window.location.hash.includes('&b='), { timeout: 10000 });
+    const betParam = hashParams(page).get('b');
+    expect(betParam).toBeTruthy();
+
     await page.reload();
+    await page.waitForSelector('#root', { timeout: 30000 });
 
-    try {
-      await page.waitForSelector('#root', { timeout: 30000 });
-    } catch {
-      test.skip(true, 'App failed to load after reload');
-    }
+    await expect(page.locator('[data-testid="round-input-field"]')).toHaveValue(String(ROUND), {
+      timeout: 20000,
+    });
+    expect(hashParams(page).get('round')).toBe(String(ROUND));
+    expect(hashParams(page).get('b')).toBe(betParam);
+  });
 
-    await expect(page.locator('#root')).toBeVisible();
+  test('round stepper changes the round and URL', async ({ page }) => {
+    await page.locator('[data-testid="round-input-decrement"]').click();
+
+    await expect(page.locator('[data-testid="round-input-field"]')).toHaveValue(String(ROUND - 1), {
+      timeout: 20000,
+    });
+    await page.waitForFunction(
+      expected => window.location.hash.includes(`round=${expected}`),
+      ROUND - 1,
+      { timeout: 10000 },
+    );
+  });
+
+  test('links out to neopets/github', async ({ page }) => {
+    const externalLinks = page.locator('a[href*="neopets.com"], a[href*="github.com"]');
+    expect(await externalLinks.count()).toBeGreaterThan(0);
   });
 });
