@@ -8,11 +8,14 @@ import { useBetStore } from '../betStore';
 import { useRoundStore } from '../roundStore';
 
 // Mock universal-cookie before any store imports
+const cookieJar = vi.hoisted(() => new Map<string, unknown>());
 vi.mock('universal-cookie', () => ({
   default: vi.fn().mockImplementation(function () {
     return {
-      get: vi.fn().mockReturnValue(undefined),
-      set: vi.fn(),
+      get: (key: string): unknown => cookieJar.get(key),
+      set: (key: string, value: unknown): void => {
+        cookieJar.set(key, value);
+      },
     };
   }),
 }));
@@ -209,6 +212,68 @@ describe('roundStore', () => {
     it('setMaxBet', () => {
       useRoundStore.getState().setMaxBet(12345);
       expect(useRoundStore.getState().maxBet).toBe(12345);
+    });
+  });
+
+  describe('max bet persistence', () => {
+    const originalFetchRoundData = useRoundStore.getState().fetchRoundData;
+
+    afterEach(() => {
+      useRoundStore.setState({ fetchRoundData: originalFetchRoundData });
+    });
+
+    beforeEach(() => {
+      cookieJar.clear();
+      useRoundStore.setState({ maxBet: BET_AMOUNT_DEFAULT, isMaxBetLocked: false });
+      useRoundStore.setState({ currentSelectedRound: 100 });
+    });
+
+    it('setMaxBet (unlocked) writes the round-adjusted baseMaxBet cookie', () => {
+      useRoundStore.getState().setMaxBet(5000);
+      expect(useRoundStore.getState().maxBet).toBe(5000);
+      expect(cookieJar.get('baseMaxBet')).toBe(5000 - 2 * 100);
+      expect(cookieJar.has('lockedMaxBet')).toBe(false);
+    });
+
+    it('setMaxBet (locked) writes the lockedMaxBet cookie', () => {
+      useRoundStore.setState({ isMaxBetLocked: true });
+      useRoundStore.getState().setMaxBet(7000);
+      expect(useRoundStore.getState().maxBet).toBe(7000);
+      expect(cookieJar.get('lockedMaxBet')).toBe(7000);
+      expect(cookieJar.has('baseMaxBet')).toBe(false);
+    });
+
+    it('lock/unlock round-trip preserves the value and flips isMaxBetLocked', () => {
+      useRoundStore.getState().setMaxBet(5000);
+
+      useRoundStore.getState().lockMaxBet();
+      expect(useRoundStore.getState().isMaxBetLocked).toBe(true);
+      expect(cookieJar.get('lockedMaxBet')).toBe(5000);
+      expect(cookieJar.get('maxBetLocked')).toBe(true);
+      expect(useRoundStore.getState().maxBet).toBe(5000);
+
+      useRoundStore.getState().unlockMaxBet();
+      expect(useRoundStore.getState().isMaxBetLocked).toBe(false);
+      expect(cookieJar.get('baseMaxBet')).toBe(5000 - 2 * 100);
+      expect(cookieJar.get('maxBetLocked')).toBe(false);
+      expect(useRoundStore.getState().maxBet).toBe(5000);
+    });
+
+    it('updateSelectedRound re-derives maxBet from cookies (2*round scaling)', () => {
+      useRoundStore.getState().setMaxBet(5000);
+      useRoundStore.setState({ fetchRoundData: vi.fn().mockResolvedValue(true) });
+      useRoundStore.getState().updateSelectedRound(110);
+      expect(useRoundStore.getState().maxBet).toBe(5000 + 2 * 10);
+      useRoundStore.getState().stopPolling();
+    });
+
+    it('updateSelectedRound keeps a locked maxBet constant across rounds', () => {
+      useRoundStore.getState().setMaxBet(5000);
+      useRoundStore.getState().lockMaxBet();
+      useRoundStore.setState({ fetchRoundData: vi.fn().mockResolvedValue(true) });
+      useRoundStore.getState().updateSelectedRound(110);
+      expect(useRoundStore.getState().maxBet).toBe(5000);
+      useRoundStore.getState().stopPolling();
     });
   });
 

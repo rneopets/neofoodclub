@@ -17,10 +17,9 @@ import {
   Group,
   NumberInputControl,
 } from '@chakra-ui/react';
-import { addYears, differenceInMilliseconds } from 'date-fns';
+import { differenceInMilliseconds } from 'date-fns';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { FaRotate, FaClockRotateLeft, FaPlay } from 'react-icons/fa6';
-import Cookies from 'universal-cookie';
 
 import MaxBetLockToggle from './components/bets/MaxBetLockToggle';
 import DateFormatter from './components/format/DateFormatter';
@@ -31,8 +30,16 @@ import { useIsMobile } from './hooks/useIsMobile';
 import { useIsRoundOver } from './hooks/useIsRoundOver';
 import { useRoundProgress } from './hooks/useRoundProgress';
 import NeopointIcon from './images/np-icon.svg';
-import { useRoundStore, useTimestampValue, useLastChange, useSetMaxBet } from './stores';
-import { calculateBaseMaxBet, getMaxBet, getMaxBetLocked } from './util';
+import {
+  useRoundStore,
+  useTimestampValue,
+  useLastChange,
+  useMaxBet,
+  useSetMaxBet,
+  useIsMaxBetLocked,
+  useLockMaxBet,
+  useUnlockMaxBet,
+} from './stores';
 
 import {
   NumberInputField,
@@ -274,30 +281,21 @@ const RoundInfo: React.FC<RoundInfoProps> = React.memo(({ display = 'block' }: R
 });
 
 const MaxBetInput: React.FC = () => {
-  const currentSelectedRound = useRoundStore(state => state.currentSelectedRound);
+  const maxBet = useMaxBet();
+  const isLocked = useIsMaxBetLocked();
   const setMaxBet = useSetMaxBet();
+  const lockMaxBet = useLockMaxBet();
+  const unlockMaxBet = useUnlockMaxBet();
   const isMobile = useIsMobile();
-  const [tempValue, setTempValue] = useState<string>(() =>
-    getMaxBet(currentSelectedRound).toString(),
-  );
+  const [tempValue, setTempValue] = useState<string>(() => maxBet.toString());
 
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
-  const [isLocked, setIsLocked] = useState<boolean>(() => getMaxBetLocked());
   const [isNumberInputFocused, setIsNumberInputFocused] = useState<boolean>(false);
 
-  // Update temp value when round changes only
+  // Keep the input in sync with the store (round changes, external updates)
   useEffect(() => {
-    const cookieValue = getMaxBet(currentSelectedRound);
-    setTempValue(cookieValue.toString());
-    setMaxBet(cookieValue);
-  }, [currentSelectedRound, setMaxBet]);
-
-  useEffect(() => {
-    const currentLockState = getMaxBetLocked();
-    if (currentLockState !== isLocked) {
-      setIsLocked(currentLockState);
-    }
-  }, [currentSelectedRound, isLocked]);
+    setTempValue(maxBet.toString());
+  }, [maxBet]);
 
   const handleChange = useCallback((details: NumberInputValueChangeDetails): void => {
     setTempValue(details.value);
@@ -309,90 +307,36 @@ const MaxBetInput: React.FC = () => {
       numValue = BET_AMOUNT_DEFAULT;
     }
 
-    const currentMaxBet = getMaxBet(currentSelectedRound);
-
     // Always update tempValue to the processed value
-    const processedValue = numValue.toString();
-    setTempValue(processedValue);
+    setTempValue(numValue.toString());
 
-    if (numValue !== currentMaxBet) {
-      const cookies = new Cookies();
-      const currentIsLocked = getMaxBetLocked();
-
-      if (currentIsLocked) {
-        cookies.set('lockedMaxBet', numValue, {
-          expires: addYears(new Date(), 100),
-        });
-      } else {
-        const baseMaxBet = calculateBaseMaxBet(numValue, currentSelectedRound);
-        cookies.set('baseMaxBet', baseMaxBet, {
-          expires: addYears(new Date(), 100),
-        });
-      }
-
+    if (numValue !== maxBet) {
       setMaxBet(numValue);
 
       setIsAnimating(true);
       setTimeout(() => setIsAnimating(false), 600);
     }
-  }, [tempValue, currentSelectedRound, setMaxBet]);
-
-  const handleLockClick = useCallback((): void => {
-    if (isLocked) {
-      return;
-    }
-
-    const cookies = new Cookies();
-    const currentMaxBet = getMaxBet(currentSelectedRound);
-
-    if (currentMaxBet > 0) {
-      cookies.set('lockedMaxBet', currentMaxBet, {
-        expires: addYears(new Date(), 100),
-      });
-    }
-
-    cookies.set('maxBetLocked', true);
-    setIsLocked(true);
-  }, [isLocked, currentSelectedRound]);
-
-  const handleUnlockClick = useCallback((): void => {
-    if (!isLocked) {
-      return;
-    }
-
-    const cookies = new Cookies();
-    const currentMaxBet = getMaxBet(currentSelectedRound);
-
-    if (currentMaxBet > 0) {
-      const baseMaxBet = calculateBaseMaxBet(currentMaxBet, currentSelectedRound);
-      cookies.set('baseMaxBet', baseMaxBet, {
-        expires: addYears(new Date(), 100),
-      });
-    }
-
-    cookies.set('maxBetLocked', false);
-    setIsLocked(false);
-  }, [isLocked, currentSelectedRound]);
-
-  const handleFocus = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>): void => {
-      if (isLocked) {
-        handleUnlockClick();
-      }
-      e.target.select();
-    },
-    [isLocked, handleUnlockClick],
-  );
+  }, [tempValue, maxBet, setMaxBet]);
 
   const handleLockToggle = useCallback(
     (newLocked: boolean): void => {
       if (newLocked) {
-        handleLockClick();
+        lockMaxBet();
       } else {
-        handleUnlockClick();
+        unlockMaxBet();
       }
     },
-    [handleLockClick, handleUnlockClick],
+    [lockMaxBet, unlockMaxBet],
+  );
+
+  const handleFocus = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>): void => {
+      if (isLocked) {
+        unlockMaxBet();
+      }
+      e.target.select();
+    },
+    [isLocked, unlockMaxBet],
   );
 
   return (

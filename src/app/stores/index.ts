@@ -164,6 +164,9 @@ export const useToggleUseLogitModel = (): (() => void) =>
 export const useMaxBet = (): number => useRoundStore(state => state.maxBet);
 export const useSetMaxBet = (): ((maxBet: number) => void) =>
   useRoundStore(state => state.setMaxBet);
+export const useIsMaxBetLocked = (): boolean => useRoundStore(state => state.isMaxBetLocked);
+export const useLockMaxBet = (): (() => void) => useRoundStore(state => state.lockMaxBet);
+export const useUnlockMaxBet = (): (() => void) => useRoundStore(state => state.unlockMaxBet);
 export const useBetGenerationMaxBetMode = (): BetGenerationMaxBetMode =>
   useRoundStore(state => state.betGenerationMaxBetMode);
 export const useSetBetGenerationMaxBetMode = (): ((mode: BetGenerationMaxBetMode) => void) =>

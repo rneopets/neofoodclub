@@ -29,8 +29,8 @@ import {
   computeLegacyProbabilities,
   computeLogitProbabilities,
 } from '../../maths';
-import { useCurrentRound, useRoundStore } from '../../stores';
-import { calculateBetMaps, getMaxBet, getOdds } from '../../util';
+import { useCurrentRound, useMaxBet, useRoundStore } from '../../stores';
+import { calculateBetMaps, getOdds } from '../../util';
 import RoundInput from '../inputs/RoundInput';
 
 import { NumberInputRoot, NumberInputField } from '@/components/ui/number-input';
@@ -265,7 +265,7 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
     : (previewData ?? defaultRoundData);
 
   // Get user's max bet setting
-  const userMaxBet = getMaxBet(currentSelectedRound);
+  const userMaxBet = useMaxBet();
   const initialMaxBet = userMaxBet > 0 ? userMaxBet.toString() : '10000';
 
   const [maxBetInput, setMaxBetInput] = React.useState(initialMaxBet);
@@ -337,10 +337,9 @@ export const AllBetsModal: React.FC<AllBetsModalProps> = React.memo(({ isOpen, o
     }
 
     setUseExperimentalLogit(globalUseLogitModel);
-    const currentMaxBet = getMaxBet(currentSelectedRound);
-    const maxBetValue = currentMaxBet > 0 ? currentMaxBet.toString() : '10000';
+    const maxBetValue = userMaxBet > 0 ? userMaxBet.toString() : '10000';
     setMaxBetInput(maxBetValue);
-  }, [currentSelectedRound, globalUseLogitModel, isOpen]);
+  }, [userMaxBet, globalUseLogitModel, isOpen]);
 
   // Calculate all possible bets using the pre-computed bet calculations
   const allBets = React.useMemo(() => {
