@@ -5,15 +5,15 @@ import { ARENA_NAMES, PIRATE_NAMES, FULL_PIRATE_NAMES } from '../../constants';
 import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
 import { computePirateBinary, makeEmpty } from '../../maths';
 import {
-  useUpdateSinglePirate,
+  useUpdatePirate,
   useArenaRatios,
-  useRoundPirates,
+  usePirates,
   useRoundOpeningOdds,
   useRoundCurrentOdds,
   useBetCount,
   useBetBinaries,
-  useBetLineSpecific,
-  useSpecificBetBinary,
+  useBetLine,
+  useBetBinaryValue,
   useIsCalculated,
   useWinningBetBinary,
   useBigBrain,
@@ -71,8 +71,8 @@ const DropDownTableRow = React.memo(
     rowHandlers: ((e: React.ChangeEvent<HTMLSelectElement>) => void)[];
     duplicateColors: Map<number, string>;
   }) => {
-    const currentBetLine = useBetLineSpecific(betNum + 1);
-    const thisBetBinary = useSpecificBetBinary(betNum + 1);
+    const currentBetLine = useBetLine(betNum + 1);
+    const thisBetBinary = useBetBinaryValue(betNum + 1);
     const loaded = useIsCalculated();
     const duplicateColor = duplicateColors.get(thisBetBinary);
 
@@ -230,7 +230,7 @@ const ArenaCell = React.memo(
     arenaId: number;
     createTimelineClickHandler: (arena: number, pirateIndex: number) => () => void;
   }) => {
-    const roundPirates = useRoundPirates();
+    const roundPirates = usePirates();
     const pirates = roundPirates?.[arenaId] ?? makeEmpty(4);
     const hasPirates = pirates && pirates.some(pirateId => pirateId > 0);
 
@@ -313,7 +313,7 @@ const DropDownTable = React.memo(
 
     const amountOfBets = useBetCount();
     const betBinariesMap = useBetBinaries();
-    const updateSinglePirate = useUpdateSinglePirate();
+    const updateSinglePirate = useUpdatePirate();
 
     const duplicateColors = useMemo(
       () => computeDuplicateBetGroupColors(betBinariesMap),

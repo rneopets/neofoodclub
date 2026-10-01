@@ -8,7 +8,7 @@ import {
   useRoundStore,
   useRoundData,
   useBetStore,
-  useBatchUpdateBetAmounts,
+  useUpdateBetAmounts,
   useSelectedRound,
   useMaxBet,
 } from '../../stores';
@@ -22,7 +22,7 @@ interface BetAmountsButtonsProps {
 
 const BetAmountsButtons = React.memo((props: BetAmountsButtonsProps): React.ReactElement => {
   const { ...rest } = props;
-  const batchUpdateBetAmounts = useBatchUpdateBetAmounts();
+  const batchUpdateBetAmounts = useUpdateBetAmounts();
 
   const currentBetAmountsSize = useBetStore(
     state => state.allBetAmounts.get(state.currentBet)?.size ?? 0,

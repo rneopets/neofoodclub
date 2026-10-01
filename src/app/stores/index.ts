@@ -327,39 +327,12 @@ export const usePirateFA = (arenaId: number, pirateIndex: number): number =>
     return faArr ? faArr.reduce((acc, curr) => acc + curr, 0) : 0;
   });
 
-// Legacy aliases for backwards compatibility (will update components to use new names)
-export const useCalculationsStatus = useIsCalculated;
+// Hooks that read slices of round data directly
 export const useHasRoundData = (): boolean => useRoundStore(state => state.roundData !== null);
-export const useWinnersBinary = useRoundWinnersBinary;
-export const useRoundWinners = useWinners;
-export const useBetLineSpecific = useBetLine;
-export const useSpecificBetAmount = useBetAmount;
-export const useSpecificBetOdds = useBetOddsValue;
-export const useSpecificBetPayoff = useBetPayoffValue;
-export const useSpecificBetProbability = useBetProbabilityValue;
-export const useSpecificBetBinary = useBetBinaryValue;
-export const useSpecificBetExpectedRatio = useBetExpectedRatioValue;
-export const useSpecificBetNetExpected = useBetNetExpectedValue;
-export const useSpecificBetMaxBet = useBetMaxBetValue;
-export const usePirateId = usePirateForArena;
 export const usePiratesForArena = (arenaId: number): number[] | undefined =>
   useRoundStore(state => state.roundData.pirates?.[arenaId]);
 export const useFoodsForArena = (arenaId: number): number[] | undefined =>
   useRoundStore(state => state.roundData.foods?.[arenaId]);
-export const useTimestampValue = useTimestamp;
-export const useUpdateSinglePirate = useUpdatePirate;
-export const useUpdateSingleBetAmount = useUpdateBetAmount;
-export const useBatchUpdateBetAmounts = useUpdateBetAmounts;
-export const useStableUsedProbability = useUsedProbabilityValue;
-export const useStableLogitProbability = useLogitProbabilityValue;
-export const useStableLegacyProbabilityMin = useLegacyProbabilityMin;
-export const useStableLegacyProbabilityMax = useLegacyProbabilityMax;
-export const useStableLegacyProbabilityStd = useLegacyProbabilityStd;
-export const useStablePirateFA = usePirateFA;
-export const useOptimizedBetAmount = useBetAmount;
-export const useAllBetsForURLData = useAllBets;
-export const useAllBetAmountsForURLData = useAllBetAmounts;
-export const useCurrentBetForURL = useCurrentBet;
 
 // For components that need whole bet sets
 export const useOptimizedBetsForIndex = (index: number): Bet =>
@@ -368,8 +341,7 @@ export const useOptimizedBetsForIndex = (index: number): Bet =>
 export const useOptimizedBetAmountsForIndex = (index: number): BetAmount =>
   useBetStore(state => state.allBetAmounts.get(index) ?? new Map());
 
-// Pirate selection helpers (aliases for backwards compatibility)
-export const useRoundPirates = usePirates;
+// Pirate selection helpers
 export const useRoundOpeningOdds = (): number[][] =>
   useRoundStore(state => state.roundData.openingOdds);
 export const useRoundCurrentOdds = (): number[][] =>

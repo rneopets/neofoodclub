@@ -9,7 +9,7 @@ import {
   useOddsTimeline,
   useLogitModelSetting,
   useChanges,
-  useUpdateSinglePirate,
+  useUpdatePirate,
   useBigBrain,
   useCustomOddsMode,
 } from '../../stores';
@@ -34,7 +34,7 @@ const NormalTable = React.memo((props: NormalTableProps): React.ReactElement => 
   const faDetails = useFaDetails();
   const customOddsMode = useCustomOddsMode();
   const betCount = useBetCount();
-  const updateSinglePirate = useUpdateSinglePirate();
+  const updateSinglePirate = useUpdatePirate();
   const { openTimelineDrawer } = timelineHandlers;
 
   const amountOfChanges = changes?.length ?? 0;

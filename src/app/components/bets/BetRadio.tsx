@@ -1,7 +1,7 @@
 import { Box, Radiomark } from '@chakra-ui/react';
 import React, { useCallback } from 'react';
 
-import { useIsPirateSelected, useUpdateSinglePirate } from '../../stores';
+import { useIsPirateSelected, useUpdatePirate } from '../../stores';
 
 interface BetRadioProps {
   betIndex: number;
@@ -19,7 +19,7 @@ function handleRadioKeyDown(e: React.KeyboardEvent, onActivate: () => void): voi
 const BetRadio = React.memo(
   ({ betIndex, arenaIndex, pirateIndex }: BetRadioProps): React.ReactElement => {
     const isSelected = useIsPirateSelected(betIndex, arenaIndex, pirateIndex);
-    const updateSinglePirate = useUpdateSinglePirate();
+    const updateSinglePirate = useUpdatePirate();
 
     const handleChange = useCallback(() => {
       updateSinglePirate(betIndex, arenaIndex, pirateIndex);
@@ -58,7 +58,7 @@ BetRadio.displayName = 'BetRadio';
 export const ClearRadio = React.memo(
   ({ betIndex, arenaIndex }: { betIndex: number; arenaIndex: number }): React.ReactElement => {
     const isClearSelected = useIsPirateSelected(betIndex, arenaIndex, 0);
-    const updateSinglePirate = useUpdateSinglePirate();
+    const updateSinglePirate = useUpdatePirate();
 
     const handleChange = useCallback(() => {
       updateSinglePirate(betIndex, arenaIndex, 0);

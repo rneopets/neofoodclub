@@ -7,9 +7,9 @@ import { useGetPirateBgColor } from '../../hooks/useGetPirateBgColor';
 import { computePirateBinary } from '../../maths';
 import {
   useCurrentBet,
-  useSpecificBetAmount,
-  useBetLineSpecific,
-  useCalculationsStatus,
+  useBetAmount,
+  useBetLine,
+  useIsCalculated,
   useWinningBetBinary,
   useTotalBetAmounts,
   useTotalBetExpectedRatios,
@@ -18,15 +18,15 @@ import {
   useTotalWinningPayoff,
   useTotalEnabledBets,
   useBetCount,
-  useSpecificBetOdds,
-  useSpecificBetPayoff,
-  useSpecificBetProbability,
-  useSpecificBetBinary,
-  useSpecificBetExpectedRatio,
-  useSpecificBetNetExpected,
-  useSpecificBetMaxBet,
+  useBetOddsValue,
+  useBetPayoffValue,
+  useBetProbabilityValue,
+  useBetBinaryValue,
+  useBetExpectedRatioValue,
+  useBetNetExpectedValue,
+  useBetMaxBetValue,
   useHasRoundData,
-  usePirateId,
+  usePirateForArena,
   useOpeningOdds,
   useViewMode,
   useSwapBets,
@@ -76,7 +76,7 @@ const stickySubmitHeaderProps = {
 const PirateNameCell = React.memo(
   ({ arenaIndex, pirateIndex }: { arenaIndex: number; pirateIndex: number }) => {
     const getPirateBgColor = useGetPirateBgColor();
-    const pirateId = usePirateId(arenaIndex, pirateIndex - 1);
+    const pirateId = usePirateForArena(arenaIndex, pirateIndex - 1);
     const pirateName = pirateId ? (PIRATE_NAMES.get(pirateId) ?? '') : '';
     const openingOdds = useOpeningOdds();
     const winningBetBinary = useWinningBetBinary();
@@ -184,16 +184,16 @@ const PayoutTableRow = React.memo(
     const amountOfBets = useBetCount();
     const stickyPlaceBetButtons = useStickyPlaceBetButtons();
 
-    const betAmount = useSpecificBetAmount(betIndex + 1);
-    const currentBetLine = useBetLineSpecific(betIndex + 1);
+    const betAmount = useBetAmount(betIndex + 1);
+    const currentBetLine = useBetLine(betIndex + 1);
 
-    const odds = useSpecificBetOdds(betIndex + 1);
-    const payoffs = useSpecificBetPayoff(betIndex + 1);
-    const probabilities = useSpecificBetProbability(betIndex + 1);
-    const betBinary = useSpecificBetBinary(betIndex + 1);
-    const expectedRatios = useSpecificBetExpectedRatio(betIndex + 1);
-    const netExpected = useSpecificBetNetExpected(betIndex + 1);
-    const maxBets = useSpecificBetMaxBet(betIndex + 1);
+    const odds = useBetOddsValue(betIndex + 1);
+    const payoffs = useBetPayoffValue(betIndex + 1);
+    const probabilities = useBetProbabilityValue(betIndex + 1);
+    const betBinary = useBetBinaryValue(betIndex + 1);
+    const expectedRatios = useBetExpectedRatioValue(betIndex + 1);
+    const netExpected = useBetNetExpectedValue(betIndex + 1);
+    const maxBets = useBetMaxBetValue(betIndex + 1);
 
     const er = expectedRatios;
     const ne = netExpected;
@@ -394,7 +394,7 @@ PayoutTableRow.displayName = 'PayoutTableRow';
 const PayoutTable = React.memo((): React.ReactElement => {
   const hasRoundData = useHasRoundData();
 
-  const calculated = useCalculationsStatus();
+  const calculated = useIsCalculated();
   const winningBetBinary = useWinningBetBinary();
   const stickyPlaceBetButtons = useStickyPlaceBetButtons();
 

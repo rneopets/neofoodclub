@@ -61,7 +61,7 @@ vi.mock('../stores', () => ({
     winners: [1],
   }),
   useUseWebDomain: (): boolean => true,
-  useCalculationsStatus: (): string => 'done',
+  useIsCalculated: (): string => 'done',
   useArenaRatios: (): number[] => [1, 1, 1, 1, 1],
   useBigBrain: (): boolean => false,
   useWinningBetBinary: (): number => 1,
@@ -73,7 +73,7 @@ vi.mock('../stores', () => ({
   useDeleteBetSet: (): typeof noop => noop,
   useHasAnyBets: (): boolean => false,
   useHasAnyBetsAnywhere: (): boolean => false,
-  useRoundPirates: (): number[][] => [[1]],
+  usePirates: (): number[][] => [[1]],
   useOptimizedBetsForIndex: (): Map<number, number> => new Map(),
   useOptimizedBetAmountsForIndex: (): Map<number, number> => new Map(),
 }));
