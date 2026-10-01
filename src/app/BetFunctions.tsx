@@ -71,6 +71,7 @@ import {
   useWinningBetBinary,
   useUsedProbabilities,
   useBetSetCount,
+  useAllBets,
   useAllBetSetNames,
   useCurrentBet,
   useSetCurrentBet,
@@ -94,6 +95,8 @@ import {
   anyBetAmountsExist,
   escapeHtmlText,
 } from './util';
+import { DUPLICATE_BET_COLOR_PALETTE } from './utils/duplicateBetColors';
+import { computeBetSetIdentity, computeDuplicateSetGroupColors } from './utils/duplicateSetColors';
 
 import { Tooltip } from '@/components/ui/tooltip';
 
@@ -1324,6 +1327,7 @@ const BetBadges = React.memo(
 
     const bets = useOptimizedBetsForIndex(index);
     const betAmounts = useOptimizedBetAmountsForIndex(index);
+    const allBets = useAllBets();
 
     const betValues = useMemo(
       () => makeBetValues(bets, betAmounts, odds, usedProbabilities),
@@ -1357,6 +1361,20 @@ const BetBadges = React.memo(
     }, [betBinaries]);
 
     const { betCount, hasDuplicateBets } = betInfo;
+
+    // Bet identity (see Bets::identity in neofoodclub.rs): two sets with the
+    // same bets, in any order and with any amounts, share an identity. Sets that
+    // do are flagged here; the group color matches the in-set duplicate-bet
+    // circles so a circle number always means the same color.
+    const duplicateSetColor = useMemo(() => {
+      const identity = computeBetSetIdentity(bets);
+      if (identity === null) {
+        return undefined;
+      }
+
+      const groupColors = computeDuplicateSetGroupColors(allBets);
+      return groupColors.get(identity);
+    }, [bets, allBets]);
 
     const totalTer = useMemo(() => {
       if (!calculated || betCount === 0 || hasDuplicateBets) {
@@ -1397,6 +1415,36 @@ const BetBadges = React.memo(
         );
       }
 
+      if (duplicateSetColor) {
+        // duplicate set: another card has the same bets (any order, any amounts)
+        const duplicateSetGroupNumber =
+          DUPLICATE_BET_COLOR_PALETTE.indexOf(
+            duplicateSetColor as (typeof DUPLICATE_BET_COLOR_PALETTE)[number],
+          ) + 1;
+
+        result.push(
+          <Badge key="duplicate-set" colorPalette="nfc-orange" variant="surface">
+            ⚠️ Duplicate set
+            <Badge
+              colorPalette={duplicateSetColor}
+              variant="solid"
+              ml={1}
+              borderRadius="full"
+              minW="16px"
+              h="16px"
+              display="inline-flex"
+              alignItems="center"
+              justifyContent="center"
+              px={1}
+              fontSize="xs"
+              border="2px solid white"
+            >
+              {duplicateSetGroupNumber}
+            </Badge>
+          </Badge>,
+        );
+      }
+
       const invalidBetAmounts = Array.from(betOdds.entries()).filter(
         ([betIndex, oddsTest]: [number, number]) => {
           const betAmount = betAmounts.get(betIndex) ?? BET_AMOUNT_DEFAULT;
@@ -1422,7 +1470,7 @@ const BetBadges = React.memo(
       }
 
       return result;
-    }, [hasDuplicateBets, betOdds, betAmounts, betCount, calculated]);
+    }, [hasDuplicateBets, duplicateSetColor, betOdds, betAmounts, betCount, calculated]);
 
     // Strategy badges - only recalculate when bet structure or round data changes
     const strategyBadges: React.ReactElement[] = useMemo(() => {
