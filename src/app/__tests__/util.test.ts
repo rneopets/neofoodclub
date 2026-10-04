@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { RoundData, RoundState } from '../../types';
 import { Bet, BetAmount } from '../../types/bets';
-import { BET_AMOUNT_DEFAULT, BET_AMOUNT_MAX } from '../constants';
+import { BET_AMOUNT_DEFAULT, BET_AMOUNT_HASH_MAX, BET_AMOUNT_MAX } from '../constants';
 import { computePiratesBinary } from '../maths';
 import {
   calculateRoundData,
@@ -491,6 +491,43 @@ describe('Utility Functions', () => {
       const bets: Bet = new Map([[1, [0, 0, 0, 0, 0]]]);
       const result = makeBetURL(8500, bets);
       expect(result).toBe('/#round=8500');
+    });
+
+    describe('amounts above the hash maximum', () => {
+      const bets: Bet = new Map([
+        [1, [1, 2, 0, 0, 0]],
+        [2, [0, 0, 3, 0, 0]],
+      ]);
+
+      it('includes amounts at exactly the hash maximum', () => {
+        const betAmounts: BetAmount = new Map([
+          [1, BET_AMOUNT_HASH_MAX],
+          [2, 1000],
+        ]);
+        expect(makeBetURL(8500, bets, betAmounts, true)).toContain('&a=');
+      });
+
+      it.each([BET_AMOUNT_HASH_MAX + 1, 80_000, BET_AMOUNT_MAX])(
+        'leaves out all amounts, but keeps the bets, when one amount is %i',
+        tooBig => {
+          const betAmounts: BetAmount = new Map([
+            [1, 1000],
+            [2, tooBig],
+          ]);
+          const result = makeBetURL(8500, bets, betAmounts, true);
+          expect(result).toBe(makeBetURL(8500, bets));
+          expect(result).toContain('&b=');
+          expect(result).not.toContain('&a=');
+        },
+      );
+
+      it('still hashes when the other bets simply have no amount', () => {
+        const betAmounts: BetAmount = new Map([
+          [1, BET_AMOUNT_DEFAULT],
+          [2, 1000],
+        ]);
+        expect(makeBetURL(8500, bets, betAmounts, true)).toContain('&a=');
+      });
     });
   });
 

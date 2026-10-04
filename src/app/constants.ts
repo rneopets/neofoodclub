@@ -1806,6 +1806,12 @@ export const BET_AMOUNT_DEFAULT = -1000;
 export const BET_AMOUNT_MIN = 1;
 /** Maximum bet cap (NP) */
 export const BET_AMOUNT_MAX = 500_000;
+/**
+ * Largest bet amount an amounts hash (the `a=` URL fragment) can represent. Amounts above
+ * this are valid bets, they just can't go in a URL. Mirrors `BET_AMOUNT_HASH_MAX` in
+ * neofoodclub.rs.
+ */
+export const BET_AMOUNT_HASH_MAX = 70_303;
 
 // Default RoundData object to avoid undefined values
 export const defaultRoundData: RoundData = {

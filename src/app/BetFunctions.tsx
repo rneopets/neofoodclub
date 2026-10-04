@@ -51,6 +51,7 @@ import SettingsBox from './components/ui/SettingsBox';
 import {
   ARENA_NAMES,
   BET_AMOUNT_DEFAULT,
+  BET_AMOUNT_HASH_MAX,
   BET_AMOUNT_MIN,
   PIRATE_NAMES,
   SHORTHAND_PIRATE_NAMES,
@@ -97,6 +98,7 @@ import {
 } from './util';
 import { DUPLICATE_BET_COLOR_PALETTE } from './utils/duplicateBetColors';
 import { computeBetSetIdentity, computeDuplicateSetGroupColors } from './utils/duplicateSetColors';
+import { canHashBetAmounts } from './wasmMath';
 
 import { Tooltip } from '@/components/ui/tooltip';
 
@@ -577,14 +579,27 @@ export const BetCopyButtons = React.memo(
       return useWebDomain ? `${window.location.origin}${url}` : url;
     }, [tableExportDisabled, currentSelectedRound, bets, useWebDomain]);
 
+    // Amounts over BET_AMOUNT_HASH_MAX can't be put in a URL, so there is no URL with amounts
+    const amountsHashable = useMemo(
+      () => canHashBetAmounts(Array.from(betAmounts.values())),
+      [betAmounts],
+    );
+
     // Create memoized URL with bet amounts
     const betUrlWithAmounts = useMemo(() => {
-      if (tableExportDisabled) {
+      if (tableExportDisabled || !amountsHashable) {
         return '';
       }
       const url = makeBetURL(currentSelectedRound, bets, betAmounts, true);
       return useWebDomain ? `${window.location.origin}${url}` : url;
-    }, [tableExportDisabled, currentSelectedRound, bets, betAmounts, useWebDomain]);
+    }, [
+      tableExportDisabled,
+      amountsHashable,
+      currentSelectedRound,
+      bets,
+      betAmounts,
+      useWebDomain,
+    ]);
 
     const { copy: copyMarkdown } = useClipboard({ value: markdownTable || '' });
     const { copy: copyHtml } = useClipboard({ value: htmlTable || '' });
@@ -673,10 +688,14 @@ export const BetCopyButtons = React.memo(
           />
           <CopyIconButton
             icon={FaSackDollar}
-            label="Copy Bet URL with amounts (or drag to share)"
+            label={
+              amountsHashable
+                ? 'Copy Bet URL with amounts (or drag to share)'
+                : `Amounts over ${BET_AMOUNT_HASH_MAX.toLocaleString('en-US')} can't be put in a URL`
+            }
             onClick={handleCopyUrlWithAmounts}
             ariaLabel="Copy Bet URL with amounts"
-            disabled={!anyBetAmountsExist(betAmounts)}
+            disabled={!anyBetAmountsExist(betAmounts) || !amountsHashable}
             testId="copy-bet-url-with-amounts-button"
             isActive={copiedButton === 'urlWithAmounts'}
             draggable

@@ -1,5 +1,7 @@
 import type { PayoutTables } from '../types';
 
+import { BET_AMOUNT_HASH_MAX } from './constants';
+
 export type WasmModule = typeof import('@wasm/neofoodclub_wasm.js');
 
 let wasmModule: WasmModule | null = null;
@@ -130,8 +132,17 @@ export function wasmAmountsHashToBetAmounts(hash: string, betAmountDefault: numb
 }
 
 /**
+ * Whether every amount fits in an amounts hash (is at most `BET_AMOUNT_HASH_MAX`). Unset
+ * amounts (`< 1`, including the `BET_AMOUNT_DEFAULT` sentinel) always fit.
+ */
+export function canHashBetAmounts(amounts: number[]): boolean {
+  return amounts.every(v => v <= BET_AMOUNT_HASH_MAX);
+}
+
+/**
  * Wraps `computeBetAmountsToAmountsHash`. Any amount `< 1` (including the
- * app's own `BET_AMOUNT_DEFAULT` sentinel) encodes as "no amount set".
+ * app's own `BET_AMOUNT_DEFAULT` sentinel) encodes as "no amount set". Throws if an
+ * amount is above `BET_AMOUNT_HASH_MAX`; check with `canHashBetAmounts` first.
  */
 export function wasmBetAmountsToAmountsHash(amounts: number[]): string {
   const bigints = BigInt64Array.from(amounts.map(v => BigInt(Math.trunc(v))));
