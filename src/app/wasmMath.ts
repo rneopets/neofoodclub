@@ -83,14 +83,14 @@ export function wasmPayoutTables(
   return result as PayoutTables;
 }
 
-/** Wraps `computePirateBinary`. */
+/** Wraps `computePirateBit`. */
 export function wasmPirateBinary(arenaIndex: number, pirateIndex: number): number {
-  return getWasm().computePirateBinary(arenaIndex, pirateIndex);
+  return getWasm().computePirateBit(arenaIndex, pirateIndex);
 }
 
-/** Wraps `computePiratesBinary`. */
+/** Wraps `computeIndicesToBinary`. */
 export function wasmPiratesBinary(pirates: number[]): number {
-  return getWasm().computePiratesBinary(Uint8Array.from(pirates));
+  return getWasm().computeIndicesToBinary(Uint8Array.from(pirates));
 }
 
 /** Wraps `computeBinaryToPirates`. */
@@ -109,9 +109,9 @@ export function wasmBetsHashToIndices(hash: string): number[] {
   return Array.from(getWasm().computeBetsHashToIndices(hash));
 }
 
-/** Wraps `computeBetsIndicesToHash` (flattened n*5 pirate indices in). */
+/** Wraps `computeBetIndicesToBetsHash` (flattened n*5 pirate indices in). */
 export function wasmBetsIndicesToHash(flatIndices: number[]): string {
-  return getWasm().computeBetsIndicesToHash(Uint8Array.from(flatIndices));
+  return getWasm().computeBetIndicesToBetsHash(Uint8Array.from(flatIndices));
 }
 
 // The wasm boundary represents "no amount set" as a BigInt64Array (i64) with
