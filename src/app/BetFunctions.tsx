@@ -732,9 +732,6 @@ export const BetCopyButtons = React.memo(
 
 BetCopyButtons.displayName = 'BetCopyButtons';
 
-// red tooltip, for labels that explain why something is unavailable
-const WARNING_TOOLTIP_PROPS = { bg: 'red.solid', color: 'red.contrast' } as const;
-
 const CopyIconButton = React.memo(
   ({
     icon: MainIcon,
@@ -755,18 +752,18 @@ const CopyIconButton = React.memo(
     disabled: boolean;
     testId: string;
     isActive: boolean;
-    /** Shows the tooltip in red, for when the label explains why the button is unavailable. */
+    /** Shows the icon in red: the button is unavailable because of something the user can change. */
     warning?: boolean;
     draggable?: boolean;
     onDragStart?: (e: React.DragEvent<HTMLButtonElement>) => void;
   }) => (
-    <Tooltip content={label} openDelay={600} contentProps={warning ? WARNING_TOOLTIP_PROPS : {}}>
+    <Tooltip content={label} openDelay={600}>
       <IconButton
         onClick={onClick}
         aria-label={ariaLabel}
         disabled={disabled}
         data-testid={testId}
-        colorPalette={isActive ? 'nfc-green' : 'gray'}
+        colorPalette={isActive ? 'nfc-green' : warning ? 'red' : 'gray'}
         draggable={draggable && !disabled}
         onDragStart={draggable && !disabled ? onDragStart : undefined}
       >
