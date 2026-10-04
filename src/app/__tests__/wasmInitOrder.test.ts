@@ -72,6 +72,7 @@ describe('bet URL parsing vs. wasm init ordering', () => {
       );
       const wasmBetsIndicesToHash = (): string => (requireReady(), '');
       const wasmBetAmountsToAmountsHash = (): string => (requireReady(), '');
+      const canHashBetAmounts = (): boolean => true;
 
       return {
         initWasmMath: vi.fn(),
@@ -79,6 +80,7 @@ describe('bet URL parsing vs. wasm init ordering', () => {
         wasmAmountsHashToBetAmounts,
         wasmBetsIndicesToHash,
         wasmBetAmountsToAmountsHash,
+        canHashBetAmounts,
       };
     });
   });

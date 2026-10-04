@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { render, screen, fireEvent, createMockDataTransfer } from '../../test/utils';
 import { BetCopyButtons } from '../BetFunctions';
+import { BET_AMOUNT_HASH_MAX } from '../constants';
 import { BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID } from '../dragSource';
 import {
   useSelectedRound,
@@ -115,6 +116,30 @@ describe('BetCopyButtons', () => {
     const htmlCall = dataTransfer.setData.mock.calls.find(call => call[0] === 'text/html');
     expect(htmlCall?.[1]).toContain(`<a href="${expectedUrl}">My Set</a>`);
     expect(dataTransfer.setData).toHaveBeenCalledWith(BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID);
+  });
+
+  it('enables the URL with amounts button when every amount fits in a hash', () => {
+    mockUseOptimizedBetAmountsForIndex.mockReturnValue(new Map([[1, BET_AMOUNT_HASH_MAX]]));
+
+    render(<BetCopyButtons index={0} />);
+
+    expect(screen.getByTestId('copy-bet-url-with-amounts-button')).toBeEnabled();
+  });
+
+  it('disables the URL with amounts button, and does not drag, when an amount is over the hash max', () => {
+    mockUseOptimizedBetAmountsForIndex.mockReturnValue(new Map([[1, BET_AMOUNT_HASH_MAX + 1]]));
+
+    render(<BetCopyButtons index={0} />);
+
+    const button = screen.getByTestId('copy-bet-url-with-amounts-button');
+    expect(button).toBeDisabled();
+
+    const dataTransfer = createMockDataTransfer();
+    fireEvent.dragStart(button, { dataTransfer });
+    expect(dataTransfer.setData).not.toHaveBeenCalled();
+
+    // the plain bet URL is unaffected
+    expect(screen.getByTestId('copy-bet-url-button')).toBeEnabled();
   });
 
   it('does not setData when button is disabled (no bets)', () => {

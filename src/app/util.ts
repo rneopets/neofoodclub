@@ -27,6 +27,7 @@ import {
   wasmBetAmountsToAmountsHash,
   wasmBetsHashToIndices,
   wasmBetsIndicesToHash,
+  canHashBetAmounts,
 } from './wasmMath';
 
 type RoundDataState = Pick<RoundState, 'roundData'>;
@@ -356,8 +357,12 @@ export function makeBetURL(
   if (anyBets && includeBetAmounts && anyBetAmountsExist(betAmounts) && betAmounts) {
     // Extract bet amount values using Array.from
     const betAmountsValues = Array.from(betAmounts.values());
-    const a = makeBetAmountsUrl(betAmountsValues);
-    url += `&a=${a}`;
+    // An amount over BET_AMOUNT_HASH_MAX can't be hashed. Leave the amounts out of the URL
+    // entirely (rather than send a wrong or partial hash); the bets still go in.
+    if (canHashBetAmounts(betAmountsValues)) {
+      const a = makeBetAmountsUrl(betAmountsValues);
+      url += `&a=${a}`;
+    }
   }
 
   return url;
