@@ -696,6 +696,7 @@ export const BetCopyButtons = React.memo(
             onClick={handleCopyUrlWithAmounts}
             ariaLabel="Copy Bet URL with amounts"
             disabled={!anyBetAmountsExist(betAmounts) || !amountsHashable}
+            warning={!amountsHashable}
             testId="copy-bet-url-with-amounts-button"
             isActive={copiedButton === 'urlWithAmounts'}
             draggable
@@ -740,6 +741,7 @@ const CopyIconButton = React.memo(
     disabled,
     testId,
     isActive,
+    warning = false,
     draggable = false,
     onDragStart,
   }: {
@@ -750,6 +752,8 @@ const CopyIconButton = React.memo(
     disabled: boolean;
     testId: string;
     isActive: boolean;
+    /** Shows the icon in red: the button is unavailable because of something the user can change. */
+    warning?: boolean;
     draggable?: boolean;
     onDragStart?: (e: React.DragEvent<HTMLButtonElement>) => void;
   }) => (
@@ -759,7 +763,7 @@ const CopyIconButton = React.memo(
         aria-label={ariaLabel}
         disabled={disabled}
         data-testid={testId}
-        colorPalette={isActive ? 'nfc-green' : 'gray'}
+        colorPalette={isActive ? 'nfc-green' : warning ? 'red' : 'gray'}
         draggable={draggable && !disabled}
         onDragStart={draggable && !disabled ? onDragStart : undefined}
       >
