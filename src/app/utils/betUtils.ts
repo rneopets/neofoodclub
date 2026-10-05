@@ -4,74 +4,18 @@ import type { RoundData } from '../../types';
  * Utility functions for bet operations
  */
 
-/**
- * Generates a bet link URL
- * @param bet The bet to generate a link for
- * @param betAmount The amount of the bet
- * @param betOdds The odds of the bet
- * @param betPayoffs The payoffs of the bet
- * @param pirates The pirates data
- * @returns The URL for placing the bet
- */
-export function generateBetLinkUrl(
-  bet: number[],
-  betAmount: number,
-  betOdds: number,
-  betPayoffs: number,
-  pirates: number[][],
-): string {
-  let urlString = 'https://www.neopets.com/pirates/process_foodclub.phtml?';
-
-  // Add winners
-  for (let i = 0; i < 5; i++) {
-    if (bet[i] !== 0) {
-      // @ts-expect-error - guaranteed to be defined
-      urlString += `winner${i + 1}=${pirates[i][bet[i] - 1]}&`;
-    }
-  }
-
-  // Add matches
-  for (let i = 0; i < 5; i++) {
-    if (bet[i] !== 0) {
-      urlString += `matches[]=${i + 1}&`;
-    }
-  }
-
-  // Add bet info
-  urlString += `bet_amount=${betAmount}&`;
-  urlString += `total_odds=${betOdds}&`;
-  urlString += `winnings=${betPayoffs}&`;
-  urlString += 'type=bet';
-
-  return urlString;
-}
+export const NEOPETS_BET_PAGE = 'https://www.neopets.com/pirates/foodclub.phtml?tab=bet';
 
 /**
- * Opens the bet link in a new tab
- * @param url The URL to open
+ * Generates a link to the Neopets bet page carrying a bet set in the URL fragment.
+ *
+ * Neopets no longer accepts bets through a URL, so the fragment is only read by the
+ * neofoodclub userscript, which fills the form from it.
+ * @param betPath The output of makeBetURL, e.g. `/#round=1234&b=abc&a=def`
+ * @returns The URL of the Neopets bet page with the bet set as the fragment
  */
-export function openBetLinkInNewTab(url: string): void {
-  // Detect if the user is on desktop or mobile
-  const isDesktop = !/Mobi|Android/i.test(navigator.userAgent);
-
-  // Detect if the user is on macOS
-  const isMac = /Mac/i.test(navigator.userAgent);
-
-  if (isDesktop) {
-    // Use metaKey for MacOS, ctrlKey for Windows/Linux
-    const e = new MouseEvent('click', {
-      ctrlKey: !isMac, // ctrlKey for Windows/Linux
-      metaKey: isMac, // metaKey for MacOS
-    });
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.dispatchEvent(e);
-  } else {
-    // For mobile devices, fallback to window.open
-    window.open(url, '_blank');
-  }
+export function generateBetLinkUrl(betPath: string): string {
+  return `${NEOPETS_BET_PAGE}${betPath.replace(/^\//, '')}`;
 }
 
 /**
