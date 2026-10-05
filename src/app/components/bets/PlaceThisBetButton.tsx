@@ -5,7 +5,6 @@ import { FaExternalLinkAlt } from 'react-icons/fa';
 import { useIsRoundOver } from '../../hooks/useIsRoundOver';
 import { computePiratesBinary } from '../../maths';
 import {
-  useAllBetAmounts,
   useAllBets,
   useBetAmount,
   useBetBinaries,
@@ -55,16 +54,12 @@ const ActivePlaceBetButton = React.memo((): React.ReactElement => {
   const round = useSelectedRound();
   const currentBet = useCurrentBet();
   const allBets = useAllBets();
-  const allBetAmounts = useAllBetAmounts();
 
-  // the link carries the whole bet set, the neofoodclub userscript on the Neopets side
-  // fills in the next bet from it
+  // the link carries the whole bet set, without amounts (the userscript on the Neopets side
+  // works out the amount itself) and the neofoodclub userscript fills in the next bet from it
   const href = useMemo(
-    () =>
-      generateBetLinkUrl(
-        makeBetURL(round, allBets.get(currentBet), allBetAmounts.get(currentBet), true),
-      ),
-    [round, currentBet, allBets, allBetAmounts],
+    () => generateBetLinkUrl(makeBetURL(round, allBets.get(currentBet))),
+    [round, currentBet, allBets],
   );
 
   return (

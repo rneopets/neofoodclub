@@ -12,7 +12,6 @@ const state = vi.hoisted(() => ({
   binaries: new Map<number, number>(),
   // bet set 1 holds one bet: arena 1 pirate 1 and arena 3 pirate 3
   allBets: new Map([[1, new Map([[1, [1, 0, 3, 0, 0]]])]]),
-  allBetAmounts: new Map([[1, new Map([[1, 5000]])]]),
 }));
 
 vi.mock('../../../hooks/useIsRoundOver', () => ({
@@ -23,7 +22,6 @@ vi.mock('../../../stores', () => ({
   useSelectedRound: (): number => 10014,
   useCurrentBet: (): number => 1,
   useAllBets: (): typeof state.allBets => state.allBets,
-  useAllBetAmounts: (): typeof state.allBetAmounts => state.allBetAmounts,
   useBetAmount: (): number => state.betAmount,
   useBetBinaries: (): typeof state.binaries => state.binaries,
 }));
@@ -39,18 +37,13 @@ describe('PlaceThisBetButton', () => {
     render(<PlaceThisBetButton bet={[1, 0, 3, 0, 0]} betNum={1} />);
 
     const link = screen.getByRole('link', { name: /place bet!/i });
-    const expectedFragment = makeBetURL(
-      ROUND,
-      state.allBets.get(1),
-      state.allBetAmounts.get(1),
-      true,
-    ).replace(/^\//, '');
+    const expectedFragment = makeBetURL(ROUND, state.allBets.get(1)).replace(/^\//, '');
 
     expect(link).toHaveAttribute(
       'href',
       `https://www.neopets.com/pirates/foodclub.phtml?tab=bet${expectedFragment}`,
     );
-    expect(link.getAttribute('href')).toMatch(/#round=10014&b=[a-y]+&a=[a-zA-Z]+$/);
+    expect(link.getAttribute('href')).toMatch(/#round=10014&b=[a-y]+$/);
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
