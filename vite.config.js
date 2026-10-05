@@ -51,6 +51,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
+        // A new service worker takes over as soon as it has installed. Without this, it waits until
+        // every tab of the site is closed, and until then the site keeps serving the old version
+        // (a normal refresh doesn't change that), old links and all.
+        skipWaiting: true,
+        clientsClaim: true,
         // The userscript has to come from the network when someone clicks its install link.
         // A userscript manager (Tampermonkey etc.) only takes over a *.user.js response it sees on
         // the network, so don't precache it, and don't answer navigations to it with index.html.

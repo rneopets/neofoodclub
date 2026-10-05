@@ -18,13 +18,16 @@ window.ENV = {
   VITE_GIT_COMMIT_SHA: import.meta.env.VITE_GIT_COMMIT_SHA,
 };
 
-// Register service worker without automatic updates
+// Register the service worker. A new version activates by itself (see skipWaiting in
+// vite.config.js), but a page that is already open keeps the version it loaded until it is
+// refreshed, so nothing reloads under anyone.
 if ('serviceWorker' in navigator) {
   registerSW({
     immediate: true,
     onNeedRefresh() {
-      // Log that a new version is available, but don't force refresh
-      console.log('New app version available. Will be applied on next page refresh.');
+      console.log(
+        'New app version available. It will be used the next time the page is refreshed.',
+      );
     },
     onOfflineReady() {
       console.log('App ready to work offline');

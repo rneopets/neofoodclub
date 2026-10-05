@@ -25,3 +25,14 @@ describe('service worker and the userscript install link', () => {
     expect(pattern.test('/some/other/path')).toBe(false);
   });
 });
+
+// Without these a new service worker waits until every tab of the site is closed, so the site
+// keeps serving its old version (old links and all) to anyone who just refreshes.
+describe('service worker updates', () => {
+  it('activates a new service worker as soon as it has installed', () => {
+    const workbox = /workbox:\s*\{([\s\S]*?)\n {6}\},/.exec(CONFIG)?.[1] ?? '';
+
+    expect(workbox).toMatch(/skipWaiting:\s*true/);
+    expect(workbox).toMatch(/clientsClaim:\s*true/);
+  });
+});
