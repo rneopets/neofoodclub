@@ -10,7 +10,7 @@ export const NEOPETS_BET_PAGE = 'https://www.neopets.com/pirates/foodclub.phtml?
  * Generates a link to the Neopets bet page carrying a bet set in the URL fragment.
  *
  * Neopets no longer accepts bets through a URL, so the fragment is only read by the
- * neofoodclub userscript, which fills the form from it.
+ * neofoodclub userscript, which shows the bets on that page so they can be placed there.
  * @param betPath The output of makeBetURL, e.g. `/#round=1234&b=abc&a=def`
  * @returns The URL of the Neopets bet page with the bet set as the fragment
  */

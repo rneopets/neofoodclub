@@ -55,8 +55,8 @@ const ActivePlaceBetButton = React.memo((): React.ReactElement => {
   const currentBet = useCurrentBet();
   const allBets = useAllBets();
 
-  // the link carries the whole bet set, without amounts (the userscript on the Neopets side
-  // works out the amount itself) and the neofoodclub userscript fills in the next bet from it
+  // the link carries the whole bet set, without amounts. The neofoodclub userscript on the
+  // Neopets side reads the bets from it and works out the amounts itself
   const href = useMemo(
     () => generateBetLinkUrl(makeBetURL(round, allBets.get(currentBet))),
     [round, currentBet, allBets],

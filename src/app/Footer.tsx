@@ -23,6 +23,7 @@ import {
   FaGithub,
   FaGlobe,
   FaPenToSquare,
+  FaPuzzlePiece,
   FaTrophy,
 } from 'react-icons/fa6';
 
@@ -31,6 +32,7 @@ import { useHelpGuide } from './components/help/HelpGuideProvider';
 import { GitCommit } from './components/ui/GitCommit';
 import NeopointIcon from './images/np-icon.svg';
 import { useSelectedRound, useCurrentBet, useAllBets, useAllBetAmounts } from './stores';
+import { useUserscriptModalStore } from './stores/userscriptModalStore';
 import { makeBetURL } from './util';
 
 interface LogoProps {
@@ -91,6 +93,7 @@ type FooterProps = BoxProps;
 
 const Footer: React.FC<FooterProps> = props => {
   const { openHelpGuide } = useHelpGuide();
+  const openUserscriptModal = useUserscriptModalStore(state => state.open);
   const [isDevModeOpen, setIsDevModeOpen] = React.useState(false);
   const [, setClickCount] = React.useState(0);
   const [rotation, setRotation] = React.useState(0);
@@ -247,6 +250,15 @@ const Footer: React.FC<FooterProps> = props => {
                 <Badge colorPalette="cyan" variant="subtle" size="sm" rounded="full">
                   New
                 </Badge>
+              </FooterLink>
+              <FooterLink
+                as="button"
+                type="button"
+                icon={FaPuzzlePiece}
+                onClick={openUserscriptModal}
+                data-testid="userscript-footer-link"
+              >
+                Bet Userscript
               </FooterLink>
               <FooterLink
                 icon={FaClockRotateLeft}
