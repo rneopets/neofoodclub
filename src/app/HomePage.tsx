@@ -3,7 +3,9 @@ import React from 'react';
 
 import DragDropTipBanner from './components/DragDropTipBanner';
 import { HelpGuideProvider } from './components/help/HelpGuideProvider';
+import { UserscriptModal } from './components/modals/UserscriptModal';
 import TopProgressBar from './components/ui/TopProgressBar';
+import UserscriptBanner from './components/UserscriptBanner';
 import EditBets from './components/views/EditBets';
 import Footer from './Footer';
 import Header from './Header';
@@ -14,11 +16,13 @@ const HomePage = React.memo((): React.ReactElement => (
     <Header />
 
     <Box pt="7rem" w="100%" maxW="100%">
+      <UserscriptBanner />
       <DragDropTipBanner />
       <EditBets />
     </Box>
 
     <Footer />
+    <UserscriptModal />
   </HelpGuideProvider>
 ));
 

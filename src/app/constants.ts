@@ -1822,3 +1822,9 @@ export const defaultRoundData: RoundData = {
   foods: [],
   winners: [],
 };
+
+/**
+ * Where the neofoodclub userscript is served from (public/scripts/neofoodclub.user.js).
+ * Relative on purpose, so install links work on preview and local builds too.
+ */
+export const USERSCRIPT_URL = '/scripts/neofoodclub.user.js';

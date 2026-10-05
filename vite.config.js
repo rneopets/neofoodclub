@@ -51,6 +51,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
+        // The userscript has to come from the network when someone clicks its install link.
+        // A userscript manager (Tampermonkey etc.) only takes over a *.user.js response it sees on
+        // the network, so don't precache it, and don't answer navigations to it with index.html.
+        globIgnores: ['**/*.user.js'],
+        navigateFallbackDenylist: [/\.user\.js$/],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),

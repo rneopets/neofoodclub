@@ -4,6 +4,7 @@ import * as React from 'react';
 import { GlossaryFormula, seeGlossary } from '../components/help/glossaryContentHelpers';
 import { GlossaryRef } from '../components/help/GlossaryRef';
 import { HelpOddsTimelineExample } from '../components/help/HelpOddsTimelineExample';
+import { USERSCRIPT_URL } from '../constants';
 
 export interface GlossaryEntry {
   id: string;
@@ -371,6 +372,25 @@ export const HELP_FAQ_ENTRIES: FaqEntry[] = [
     question: "I'm new. Do I need math?",
     answer:
       "If you can count to ten you have enough for Food Club basics. Easiest path: copy one person's full ten-bet set each day. Do not mix bets from different posters or use only part of a set. Lower your bet amount per line if the set feels too risky.",
+  },
+  {
+    id: 'place-bets-userscript',
+    question: 'How do I place bets from NeoFoodClub?',
+    answer: (
+      <>
+        Neopets no longer takes bets from a link, so the Place bet! buttons open the Food Club bet
+        page with your set in the link, and the{' '}
+        <Link href={USERSCRIPT_URL} target="_blank" rel="noopener noreferrer">
+          NeoFoodClub userscript
+        </Link>{' '}
+        shows your set there. Every Place bet! button opens the same link, since it carries your
+        whole set, so you only need to use one. You need a userscript manager such as Tampermonkey
+        or Violentmonkey. The script lists every bet in your set on the bet page, with a button for
+        each one that selects its pirates and fills in your max bet. It only places a bet when you
+        press Place a Bet, or when you turn on its Place bets setting and click a bet's button. Use
+        the Bet Userscript link in the footer for the details.
+      </>
+    ),
   },
   {
     id: 'food-adjustments-faq',
