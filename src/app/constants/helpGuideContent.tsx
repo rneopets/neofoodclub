@@ -17,7 +17,7 @@ export interface FaqEntry {
   answer: React.ReactNode;
 }
 
-const FOOD_CLUB_BET_PAGE = 'https://www.neopets.com/pirates/foodclub.phtml?type=bet';
+const FOOD_CLUB_BET_PAGE = 'https://www.neopets.com/pirates/foodclub.phtml?tab=bet';
 
 /** Food Club glossary. Keep sorted A-Z by `term` when adding or editing entries. */
 export const HELP_GLOSSARY_ENTRIES: GlossaryEntry[] = [

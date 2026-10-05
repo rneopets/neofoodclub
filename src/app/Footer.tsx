@@ -202,7 +202,7 @@ const Footer: React.FC<FooterProps> = props => {
               <ListHeader>Food Club Links</ListHeader>
               <FooterLink
                 icon={FaPenToSquare}
-                href="https://www.neopets.com/pirates/foodclub.phtml?type=bet"
+                href="https://www.neopets.com/pirates/foodclub.phtml?tab=bet"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -210,7 +210,7 @@ const Footer: React.FC<FooterProps> = props => {
               </FooterLink>
               <FooterLink
                 icon={FaClipboardList}
-                href="https://www.neopets.com/pirates/foodclub.phtml?type=current_bets"
+                href="https://www.neopets.com/pirates/foodclub.phtml?tab=current"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -218,7 +218,7 @@ const Footer: React.FC<FooterProps> = props => {
               </FooterLink>
               <FooterLink
                 icon={FaCoins}
-                href="https://www.neopets.com/pirates/foodclub.phtml?type=collect"
+                href="https://www.neopets.com/pirates/foodclub.phtml?tab=collect"
                 target="_blank"
                 rel="noopener noreferrer"
               >

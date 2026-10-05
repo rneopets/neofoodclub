@@ -1,11 +1,19 @@
 import { Badge, Button, ButtonProps } from '@chakra-ui/react';
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 
 import { useIsRoundOver } from '../../hooks/useIsRoundOver';
 import { computePiratesBinary } from '../../maths';
-import { useBetOdds, useBetPayoffs, useBetAmount, usePirates, useBetBinaries } from '../../stores';
-import { generateBetLinkUrl, openBetLinkInNewTab } from '../../utils/betUtils';
+import {
+  useAllBetAmounts,
+  useAllBets,
+  useBetAmount,
+  useBetBinaries,
+  useCurrentBet,
+  useSelectedRound,
+} from '../../stores';
+import { makeBetURL } from '../../util';
+import { generateBetLinkUrl } from '../../utils/betUtils';
 import {
   computeDuplicateBetGroupColors,
   DUPLICATE_BET_COLOR_PALETTE,
@@ -41,65 +49,38 @@ interface PlaceThisBetButtonProps {
   betNum: number;
 }
 
-interface ActivePlaceBetButtonProps {
-  bet: number[];
-  betAmount: number;
-  betNum: number;
-  betOdds: ReturnType<typeof useBetOdds>;
-  betPayoffs: ReturnType<typeof useBetPayoffs>;
-  pirates: ReturnType<typeof usePirates>;
-}
+const ActivePlaceBetButton = React.memo((): React.ReactElement => {
+  const [clicked, setClicked] = useState<boolean>(false);
 
-const ActivePlaceBetButton = React.memo(
-  ({
-    bet,
-    betAmount,
-    betNum,
-    betOdds,
-    betPayoffs,
-    pirates,
-  }: ActivePlaceBetButtonProps): React.ReactElement => {
-    const [clicked, setClicked] = useState<boolean>(false);
+  const round = useSelectedRound();
+  const currentBet = useCurrentBet();
+  const allBets = useAllBets();
+  const allBetAmounts = useAllBetAmounts();
 
-    const generateBetLink = useCallback((): void => {
-      const url = generateBetLinkUrl(
-        bet,
-        betAmount,
-        betOdds.get(betNum) || 0,
-        betPayoffs.get(betNum) || 0,
-        pirates,
-      );
+  // the link carries the whole bet set, the neofoodclub userscript on the Neopets side
+  // fills in the next bet from it
+  const href = useMemo(
+    () =>
+      generateBetLinkUrl(
+        makeBetURL(round, allBets.get(currentBet), allBetAmounts.get(currentBet), true),
+      ),
+    [round, currentBet, allBets, allBetAmounts],
+  );
 
-      openBetLinkInNewTab(url);
-    }, [bet, betAmount, betOdds, betPayoffs, betNum, pirates]);
-
-    const placeBet = useCallback(() => {
-      generateBetLink();
-      setClicked(true);
-    }, [generateBetLink]);
-
-    return (
-      <BetButton
-        onClick={placeBet}
-        colorPalette="nfc-green"
-        variant="surface"
-        opacity={clicked ? 0.5 : 1}
-      >
+  return (
+    <BetButton asChild colorPalette="nfc-green" variant="surface" opacity={clicked ? 0.5 : 1}>
+      <a href={href} target="_blank" rel="noopener noreferrer" onClick={() => setClicked(true)}>
         {clicked ? 'Bet placed!' : 'Place bet!'} <FaExternalLinkAlt />
-      </BetButton>
-    );
-  },
-);
+      </a>
+    </BetButton>
+  );
+});
 
 ActivePlaceBetButton.displayName = 'ActivePlaceBetButton';
 
 const PlaceThisBetButton = React.memo(
   (props: PlaceThisBetButtonProps): React.ReactElement => {
     const { bet, betNum } = props;
-    const pirates = usePirates();
-
-    const betOdds = useBetOdds();
-    const betPayoffs = useBetPayoffs();
 
     const betAmount = useBetAmount(betNum);
     const betBinariesMap = useBetBinaries();
@@ -158,17 +139,7 @@ const PlaceThisBetButton = React.memo(
       );
     }
 
-    return (
-      <ActivePlaceBetButton
-        key={`${bet.join(',')}:${betAmount}`}
-        bet={bet}
-        betAmount={betAmount}
-        betNum={betNum}
-        betOdds={betOdds}
-        betPayoffs={betPayoffs}
-        pirates={pirates}
-      />
-    );
+    return <ActivePlaceBetButton key={`${bet.join(',')}:${betAmount}`} />;
   },
   (prevProps, nextProps) =>
     prevProps.betNum === nextProps.betNum &&
