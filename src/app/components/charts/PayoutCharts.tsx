@@ -19,12 +19,7 @@ import {
   useWinningBetBinary,
   useTotalBetAmounts,
 } from '../../stores';
-import {
-  amountAbbreviation,
-  displayAsPercent,
-  displayAsPercentSmart,
-  getMaxSmartPercentDecimals,
-} from '../../util';
+import { amountAbbreviation, displayAsPercent, getMaxSmartPercentDecimals } from '../../util';
 import AnimatedNumber from '../ui/AnimatedNumber';
 import TextTooltip from '../ui/TextTooltip';
 
@@ -375,7 +370,7 @@ const PayoutCharts: React.FC = React.memo(() => {
                     persistKey={`${persistPrefix}-cumulative`}
                   />
                 }
-                content={displayAsPercentSmart(dataObj.cumulative || 0)}
+                content={displayAsPercent(dataObj.cumulative || 0)}
               />
             </Table.Cell>
             <Table.Cell textAlign="end">
@@ -387,7 +382,7 @@ const PayoutCharts: React.FC = React.memo(() => {
                     persistKey={`${persistPrefix}-tail`}
                   />
                 }
-                content={displayAsPercentSmart(dataObj.tail || 0)}
+                content={displayAsPercent(dataObj.tail || 0)}
               />
             </Table.Cell>
           </Table.Row>
