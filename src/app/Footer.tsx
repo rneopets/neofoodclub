@@ -258,7 +258,10 @@ const Footer: React.FC<FooterProps> = props => {
                 onClick={openUserscriptModal}
                 data-testid="userscript-footer-link"
               >
-                Bet Userscript
+                Bet Userscript{' '}
+                <Badge colorPalette="cyan" variant="subtle" size="sm" rounded="full">
+                  New
+                </Badge>
               </FooterLink>
               <FooterLink
                 icon={FaClockRotateLeft}
