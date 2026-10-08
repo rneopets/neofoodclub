@@ -112,6 +112,8 @@ const Footer: React.FC<FooterProps> = props => {
     return host === 'neofood.club' || host === 'www.neofood.club';
   }, []);
 
+  const currentYear = new Date().getFullYear();
+
   const classicHref = React.useMemo(() => {
     const baseUrl = 'https://foodclub.neocities.org';
 
@@ -314,7 +316,8 @@ const Footer: React.FC<FooterProps> = props => {
             Website, design, and code &copy; neofood.club
             <br />
             This is an unofficial Neopets fansite with no affiliation/endorsement with Neopets.
-            <br /> Images/Names &copy; Neopets, Inc. All rights reserved. Used With Permission.
+            <br /> Images/Names &copy; 2000-{currentYear} Neopets, Inc. All rights reserved. Used
+            With Permission.
           </Text>
           <Center mt={3}>
             <GitCommit />
