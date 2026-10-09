@@ -1,6 +1,7 @@
 import { Box } from '@chakra-ui/react';
 import React from 'react';
 
+import CertifiedFansiteBanner from './components/CertifiedFansiteBanner';
 import DragDropTipBanner from './components/DragDropTipBanner';
 import { HelpGuideProvider } from './components/help/HelpGuideProvider';
 import { UserscriptModal } from './components/modals/UserscriptModal';
@@ -16,6 +17,7 @@ const HomePage = React.memo((): React.ReactElement => (
     <Header />
 
     <Box pt="7rem" w="100%" maxW="100%">
+      <CertifiedFansiteBanner />
       <UserscriptBanner />
       <DragDropTipBanner />
       <EditBets />
