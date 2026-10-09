@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         neofoodclub
 // @namespace    https://neofood.club/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Place your NeoFoodClub bets on the Neopets Food Club page, one click per bet
 // @author       diceroll123
 // @match        https://www.neopets.com/pirates/foodclub.phtml*
@@ -88,6 +88,7 @@
 #nfc-panel .nfc-odds,#nfc-panel .nfc-amount{white-space:nowrap;text-align:right}
 #nfc-panel .nfc-place{box-sizing:border-box;width:100%;margin:0;padding-left:0;padding-right:0;text-align:center;white-space:nowrap;cursor:pointer}
 #nfc-panel .nfc-place[disabled]{opacity:.5;cursor:not-allowed}
+#nfc-panel .nfc-place.nfc-done{filter:brightness(.6)}
 #nfc-panel .nfc-footer{margin:8px 0 0;padding-top:8px;border-top:1px solid #2D3748;color:#CBD5E0}
 @media (max-width:600px){#nfc-panel .nfc-row{grid-template-columns:2em minmax(0,1fr) auto auto;row-gap:6px}#nfc-panel .nfc-place{grid-column:1/-1}}`;
 
@@ -96,6 +97,8 @@
     placed: 0, // bets we saw get placed, a floor for the page's own count
     busy: false, // a place bet request is out
     picked: -1, // the bet that was selected by hand, or by its button
+    submitting: -1, // the bet whose button pressed Place a Bet, until the request starts
+    done: new Set(), // the bets placed with their button
   };
 
   const undo = []; // what start() set up, for stop()
@@ -354,6 +357,7 @@
       return;
     }
 
+    state.submitting = -1;
     const { form, bet, described } = usable;
     const { maxBet, maxWin } = formState(form);
     fillPicks(form, bet);
@@ -365,6 +369,7 @@
 
     if (isPlacing()) {
       // the page's own handler does the rest: token, checks, the request and its popups
+      state.submitting = index;
       byId('fc-bet-submit')?.click();
     } else {
       markPicked(index);
@@ -385,6 +390,7 @@
 
     state.link = link;
     state.picked = -1;
+    state.done.clear();
     try {
       // so a reload keeps the bets, like a link would
       const round = link.round ? `round=${link.round}&` : '';
@@ -419,6 +425,8 @@
 
       const form = getForm();
       const base = state.link && form ? betsPlaced(form) : state.placed;
+      const submitted = state.submitting;
+      state.submitting = -1;
       state.busy = true;
       render();
 
@@ -430,6 +438,9 @@
             .then(data => {
               if (response.ok && data && !data.error && data.success !== false) {
                 state.placed = base + 1;
+                if (submitted >= 0) {
+                  state.done.add(submitted);
+                }
               }
             }),
         )
@@ -570,6 +581,7 @@
         : '-',
     );
     setText(button, buttonLabel(index));
+    button.classList.toggle('nfc-done', isPlacing() && state.done.has(index));
     button.disabled = state.busy || Boolean(view.blocked) || !valid;
   }
 
@@ -669,6 +681,7 @@
     const onHashChange = () => {
       state.link = parseHash(window.location.hash);
       state.picked = -1;
+      state.done.clear();
       byId(PANEL_ID)?.remove();
       render();
     };
