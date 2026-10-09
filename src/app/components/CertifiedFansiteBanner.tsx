@@ -18,11 +18,16 @@ const fireConfetti = (): void => {
 
 export default React.memo(function CertifiedFansiteBanner(): React.ReactElement {
   return (
-    <Box bgColor="yellow.solid" color="yellow.contrast" p={4} data-testid="certified-fansite-banner">
+    <Box
+      bgColor="yellow.solid"
+      color="yellow.contrast"
+      p={4}
+      data-testid="certified-fansite-banner"
+    >
       <Flex align="center" justify="space-between" wrap="wrap" gap={4}>
         <Flex align="center" gap={2}>
           <FaCertificate />
-          <Text>NeoFoodClub is now a certified Neopets fansite!</Text>
+          <Text>As of October 8th, NeoFoodClub is a certified Neopets fansite!</Text>
         </Flex>
         <Button size="sm" colorPalette="gray" variant="solid" onClick={fireConfetti}>
           Yay!
