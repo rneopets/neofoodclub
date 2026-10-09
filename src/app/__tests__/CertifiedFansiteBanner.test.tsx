@@ -19,13 +19,15 @@ describe('CertifiedFansiteBanner', () => {
     expect(screen.getAllByRole('button')).toHaveLength(1);
   });
 
-  it('fires confetti from the bottom left and right when clicking Yay!', () => {
+  it('fires confetti from all four corners when clicking Yay!', () => {
     render(<CertifiedFansiteBanner />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Yay!' }));
 
-    expect(confetti).toHaveBeenCalledTimes(2);
+    expect(confetti).toHaveBeenCalledTimes(4);
     expect(confetti).toHaveBeenCalledWith(expect.objectContaining({ origin: { x: 0, y: 1 } }));
     expect(confetti).toHaveBeenCalledWith(expect.objectContaining({ origin: { x: 1, y: 1 } }));
+    expect(confetti).toHaveBeenCalledWith(expect.objectContaining({ origin: { x: 0, y: 0 } }));
+    expect(confetti).toHaveBeenCalledWith(expect.objectContaining({ origin: { x: 1, y: 0 } }));
   });
 });
