@@ -1,3 +1,5 @@
+import { scan, setOptions } from 'react-scan';
+
 const REACT_SCAN_ENABLED_KEY = 'nfcReactScanEnabled';
 
 export interface ReactScanRuntimeOptions {
@@ -8,11 +10,6 @@ export interface ReactScanRuntimeOptions {
   animationSpeed?: 'slow' | 'fast' | 'off';
   dangerouslyForceRunInProduction?: boolean;
 }
-
-type ReactScanModule = typeof import('react-scan');
-
-let reactScanModule: ReactScanModule | null = null;
-let reactScanLoadPromise: Promise<ReactScanModule> | null = null;
 
 function isReactScanDisabled(): boolean {
   return import.meta.env.DISABLE_REACT_SCAN === 'true';
@@ -29,21 +26,6 @@ function buildReactScanOptions(enabled: boolean): ReactScanRuntimeOptions {
     animationSpeed: 'fast',
     dangerouslyForceRunInProduction: true,
   };
-}
-
-function loadReactScanModule(): Promise<ReactScanModule> {
-  if (reactScanModule) {
-    return Promise.resolve(reactScanModule);
-  }
-
-  if (!reactScanLoadPromise) {
-    reactScanLoadPromise = import('react-scan').then(module => {
-      reactScanModule = module;
-      return module;
-    });
-  }
-
-  return reactScanLoadPromise;
 }
 
 export function getReactScanEnabled(): boolean {
@@ -70,7 +52,7 @@ export function getReactScanEnabled(): boolean {
   return false;
 }
 
-export async function setReactScanEnabled(enabled: boolean): Promise<void> {
+export function setReactScanEnabled(enabled: boolean): void {
   if (isReactScanDisabled()) {
     return;
   }
@@ -82,14 +64,11 @@ export async function setReactScanEnabled(enabled: boolean): Promise<void> {
   const options = buildReactScanOptions(enabled);
 
   if (enabled) {
-    const { scan } = await loadReactScanModule();
     scan(options);
     return;
   }
 
-  if (reactScanModule) {
-    reactScanModule.setOptions({ enabled: false, showToolbar: false });
-  }
+  setOptions({ enabled: false, showToolbar: false });
 
   try {
     const legacyKey = 'react-scan-options';
@@ -105,11 +84,10 @@ export async function setReactScanEnabled(enabled: boolean): Promise<void> {
   }
 }
 
-export async function initReactScanIfEnabled(): Promise<void> {
+export function initReactScanIfEnabled(): void {
   if (isReactScanDisabled() || !getReactScanEnabled()) {
     return;
   }
 
-  const { scan } = await loadReactScanModule();
   scan(buildReactScanOptions(true));
 }

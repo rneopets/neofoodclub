@@ -50,7 +50,7 @@ export const DevModeDrawer: React.FC<DevModeDrawerProps> = ({ isOpen, onClose })
   const handleReactScanToggle = React.useCallback((): void => {
     const nextEnabled = !isReactScanEnabled;
     setIsReactScanEnabled(nextEnabled);
-    void setReactScanEnabled(nextEnabled);
+    setReactScanEnabled(nextEnabled);
   }, [isReactScanEnabled]);
 
   return (
