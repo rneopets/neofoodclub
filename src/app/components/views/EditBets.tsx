@@ -13,15 +13,7 @@ import {
   VStack,
   useBreakpointValue,
 } from '@chakra-ui/react';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  Suspense,
-  useTransition,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { FaPenToSquare, FaGear } from 'react-icons/fa6';
 import Cookies from 'universal-cookie';
 
@@ -34,8 +26,11 @@ import {
   useTableMode,
   useViewMode,
 } from '../../stores';
+import BetAmountsSettings from '../bets/BetAmountsSettings';
+import PayoutCharts from '../charts/PayoutCharts';
 import DropDownTable from '../tables/DropDownTable';
 import NormalTable from '../tables/NormalTable';
+import PayoutTable from '../tables/PayoutTable';
 import BetGenerationMaxBetToggle from '../TableSettings/BetGenerationMaxBetToggle';
 import BetSetPosition from '../TableSettings/BetSetPosition';
 import ColorModeToggle from '../TableSettings/ColorModeToggle';
@@ -44,15 +39,11 @@ import Extras from '../TableSettings/Extras';
 import LogitModelToggle from '../TableSettings/LogitModelToggle';
 import StickyPlaceBetButtonsToggle from '../TableSettings/StickyPlaceBetButtonsToggle';
 import TableModes from '../TableSettings/TableModes';
+import TimelineContent from '../timeline/TimelineContent';
 
 import BetSetsPanel from './BetSetsPanel';
 
 import { useColorModeValue } from '@/components/ui/color-mode';
-
-const BetAmountsSettings = React.lazy(() => import('../bets/BetAmountsSettings'));
-const PayoutCharts = React.lazy(() => import('../charts/PayoutCharts'));
-const PayoutTable = React.lazy(() => import('../tables/PayoutTable'));
-const TimelineContent = React.lazy(() => import('../timeline/TimelineContent'));
 
 interface PirateTableProps {
   [key: string]: unknown; // Allow other props like m, px, etc.
@@ -94,12 +85,10 @@ const PirateTable = React.memo((props: PirateTableProps): React.ReactElement => 
               <Drawer.CloseTrigger asChild>
                 <CloseButton size="sm" />
               </Drawer.CloseTrigger>
-              <Suspense fallback={null}>
-                <TimelineContent
-                  arenaId={selectedTimeline.arenaId}
-                  pirateIndex={selectedTimeline.pirateIndex}
-                />
-              </Suspense>
+              <TimelineContent
+                arenaId={selectedTimeline.arenaId}
+                pirateIndex={selectedTimeline.pirateIndex}
+              />
             </Drawer.Content>
           </Drawer.Positioner>
         </Portal>
@@ -241,34 +230,30 @@ export default React.memo(function EditBets(): React.ReactElement {
           Updating…
         </Box>
       ) : null}
-      <Suspense fallback={null}>
-        <BetAmountsSettings />
-      </Suspense>
+      <BetAmountsSettings />
     </>
   ) : null;
 
   const payoutContent = anyBets ? (
     <VStack align="stretch" gap={0} w="full">
-      <Suspense fallback={null}>
-        <>
-          <ScrollArea.Root width="full">
-            <ScrollArea.Viewport>
-              <ScrollArea.Content py={4}>
-                <PayoutTable />
-              </ScrollArea.Content>
-            </ScrollArea.Viewport>
-            <ScrollArea.Scrollbar orientation="horizontal" />
-          </ScrollArea.Root>
-          <ScrollArea.Root width="full">
-            <ScrollArea.Viewport>
-              <ScrollArea.Content>
-                <PayoutCharts />
-              </ScrollArea.Content>
-            </ScrollArea.Viewport>
-            <ScrollArea.Scrollbar orientation="horizontal" />
-          </ScrollArea.Root>
-        </>
-      </Suspense>
+      <>
+        <ScrollArea.Root width="full">
+          <ScrollArea.Viewport>
+            <ScrollArea.Content py={4}>
+              <PayoutTable />
+            </ScrollArea.Content>
+          </ScrollArea.Viewport>
+          <ScrollArea.Scrollbar orientation="horizontal" />
+        </ScrollArea.Root>
+        <ScrollArea.Root width="full">
+          <ScrollArea.Viewport>
+            <ScrollArea.Content>
+              <PayoutCharts />
+            </ScrollArea.Content>
+          </ScrollArea.Viewport>
+          <ScrollArea.Scrollbar orientation="horizontal" />
+        </ScrollArea.Root>
+      </>
     </VStack>
   ) : null;
 

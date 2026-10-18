@@ -17,6 +17,11 @@ import {
 import * as React from 'react';
 import { FaCode, FaDownload } from 'react-icons/fa';
 import type { HighlighterGeneric } from 'shiki';
+import { createHighlighterCore } from 'shiki/core';
+import { createOnigurumaEngine } from 'shiki/engine/oniguruma';
+import json from 'shiki/langs/json.mjs';
+import githubDark from 'shiki/themes/github-dark.mjs';
+import wasm from 'shiki/wasm';
 
 import { defaultRoundData } from '../../constants';
 import { useCurrentRound, useRoundStore } from '../../stores';
@@ -29,18 +34,11 @@ import { RoundData } from '@/types';
 // `shiki` package) so the bundler only includes the json language and
 // github-dark theme instead of every language/theme shiki ships.
 const shikiAdapter = createShikiAdapter<HighlighterGeneric<'json', 'github-dark'>>({
-  async load() {
-    const [{ createHighlighterCore }, { createOnigurumaEngine }, json, githubDark] =
-      await Promise.all([
-        import('shiki/core'),
-        import('shiki/engine/oniguruma'),
-        import('shiki/langs/json.mjs'),
-        import('shiki/themes/github-dark.mjs'),
-      ]);
+  load() {
     return createHighlighterCore({
-      langs: [json.default],
-      themes: [githubDark.default],
-      engine: createOnigurumaEngine(import('shiki/wasm')),
+      langs: [json],
+      themes: [githubDark],
+      engine: createOnigurumaEngine(wasm),
     }) as Promise<HighlighterGeneric<'json', 'github-dark'>>;
   },
   theme: 'github-dark',

@@ -14,7 +14,7 @@ function App(): JSX.Element {
   }, [initialize]);
 
   useEffect(() => {
-    void initReactScanIfEnabled();
+    initReactScanIfEnabled();
   }, []);
 
   return (

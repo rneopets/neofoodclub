@@ -13,6 +13,9 @@ expect.extend(jestDomMatchers);
 // Load the wasm math core before any test runs (mirrors src/index.jsx).
 await initWasmMath();
 
+// react-scan is a dev tool whose import chain doesn't load under Node, and no test needs it.
+vi.mock('react-scan', () => ({ scan: vi.fn(), setOptions: vi.fn() }));
+
 // Clean up after each test
 afterEach(() => {
   cleanup();
