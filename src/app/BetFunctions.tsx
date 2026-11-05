@@ -46,6 +46,7 @@ import { PayoutData, RoundData, RoundState, RoundCalculationResult } from '../ty
 import { Bet, BetAmount } from '../types/bets';
 
 import PirateSelect from './components/bets/PirateSelect';
+import SetPreview from './components/bets/SetPreview';
 import AnimatedNumber from './components/ui/AnimatedNumber';
 import SettingsBox from './components/ui/SettingsBox';
 import {
@@ -59,6 +60,7 @@ import {
 import { BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID } from './dragSource';
 import { useBetManagement } from './hooks/useBetManagement';
 import { useIsRoundOver } from './hooks/useIsRoundOver';
+import { useSetPreview } from './hooks/useSetPreview';
 import { makeEmpty, computeBinaryToPirates, calculatePayoutTables } from './maths';
 import {
   useSelectedRound,
@@ -196,6 +198,8 @@ const BuildSetMenu = React.memo(
 
     const buildButtonEnabled =
       countNonZeroElements(pirateIndices) >= min && countNonZeroElements(pirateIndices) <= max;
+
+    const preview = useSetPreview(mode, pirateIndices, open && buildButtonEnabled);
 
     const handleChange = useCallback((arenaIndex: number, pirateIndex: number) => {
       setPirateIndices(prevIndices => {
@@ -358,6 +362,9 @@ const BuildSetMenu = React.memo(
                       );
                     })}
                   </Wrap>
+                  <Box mt={4}>
+                    <SetPreview summary={preview} />
+                  </Box>
                 </Dialog.Body>
                 <Dialog.Footer>
                   <Flex width="2xl">
