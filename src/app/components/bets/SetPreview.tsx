@@ -27,7 +27,11 @@ const SetPreview = ({ summary }: { summary: SetPreviewSummary | null }): React.R
   return (
     <VStack gap={2} data-testid="set-preview">
       <HStack wrap="wrap" justify="center">
-        <Badge variant="surface" data-testid="preview-bust">
+        <Badge
+          variant="surface"
+          {...(summary.bustRate > 0.99 ? { colorPalette: 'nfc-red' } : {})}
+          data-testid="preview-bust"
+        >
           <FaSkull />
           Bust: {pct(summary.bustRate)}
         </Badge>
