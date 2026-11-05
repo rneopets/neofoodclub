@@ -26,11 +26,7 @@ const SetPreview = ({ summary }: { summary: SetPreviewSummary | null }): React.R
         <Badge variant="surface" data-testid="preview-partial">
           Partial: {pct(summary.partialRate)}
         </Badge>
-        <Badge
-          variant="surface"
-          colorPalette={er !== null && er < 1 ? 'nfc-red' : 'nfc-teal'}
-          data-testid="preview-er"
-        >
+        <Badge variant="surface" data-testid="preview-er">
           ER: {er === null ? '-' : er.toFixed(3)}
         </Badge>
       </HStack>
