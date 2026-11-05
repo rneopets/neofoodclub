@@ -1,5 +1,12 @@
 import { Badge, HStack, Text, VStack } from '@chakra-ui/react';
 import React from 'react';
+import {
+  FaBullseye,
+  FaCircleHalfStroke,
+  FaScaleBalanced,
+  FaSkull,
+  FaTrophy,
+} from 'react-icons/fa6';
 
 import { displayAsPercent } from '../../util';
 import type { SetPreviewSummary } from '../../utils/setPreview';
@@ -21,9 +28,11 @@ const SetPreview = ({ summary }: { summary: SetPreviewSummary | null }): React.R
     <VStack gap={2} data-testid="set-preview">
       <HStack wrap="wrap" justify="center">
         <Badge variant="surface" data-testid="preview-bust">
+          <FaSkull />
           Bust: {pct(summary.bustRate)}
         </Badge>
         <Badge variant="surface" data-testid="preview-partial">
+          <FaCircleHalfStroke />
           Partial: {pct(summary.partialRate)}
         </Badge>
         <Badge
@@ -31,21 +40,29 @@ const SetPreview = ({ summary }: { summary: SetPreviewSummary | null }): React.R
           {...(er !== null && er < 1 ? { colorPalette: 'nfc-red' } : {})}
           data-testid="preview-er"
         >
+          <FaScaleBalanced />
           ER: {er === null ? '-' : er.toFixed(3)}
         </Badge>
       </HStack>
       {likelyWinner && (
-        <Text fontSize="sm" data-testid="preview-likely">
-          Most likely winner: {likelyWinner.units.toFixed(0)} units ({pct(likelyWinner.probability)}
-          ){likelyWinner.np !== null && ` / ${likelyWinner.np.toLocaleString()} NP`}
-        </Text>
+        <HStack gap={1.5} fontSize="sm" data-testid="preview-likely">
+          <FaBullseye />
+          <Text>
+            Most likely winner: {likelyWinner.units.toFixed(0)} units (
+            {pct(likelyWinner.probability)})
+            {likelyWinner.np !== null && ` / ${likelyWinner.np.toLocaleString()} NP`}
+          </Text>
+        </HStack>
       )}
       {highestOutcome && (
-        <Text fontSize="sm" data-testid="preview-highest">
-          Highest outcome: {highestOutcome.units.toFixed(0)} units (
-          {pct(highestOutcome.probability)})
-          {highestOutcome.np !== null && ` / ${highestOutcome.np.toLocaleString()} NP`}
-        </Text>
+        <HStack gap={1.5} fontSize="sm" data-testid="preview-highest">
+          <FaTrophy />
+          <Text>
+            Highest outcome: {highestOutcome.units.toFixed(0)} units (
+            {pct(highestOutcome.probability)})
+            {highestOutcome.np !== null && ` / ${highestOutcome.np.toLocaleString()} NP`}
+          </Text>
+        </HStack>
       )}
     </VStack>
   );
