@@ -11,7 +11,7 @@ import {
 import { displayAsPercent } from '../../util';
 import type { SetPreviewSummary } from '../../utils/setPreview';
 
-const pct = (v: number): string => displayAsPercent(v, 1);
+const pct = (v: number): string => displayAsPercent(v, 3);
 
 const SetPreview = ({ summary }: { summary: SetPreviewSummary | null }): React.ReactElement => {
   if (!summary) {
