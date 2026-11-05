@@ -36,8 +36,8 @@ const SetPreview = ({ summary }: { summary: SetPreviewSummary | null }): React.R
       </HStack>
       {likelyWinner && (
         <Text fontSize="sm" data-testid="preview-likely">
-          Most likely winner: bet #{likelyWinner.betIndex} ({pct(likelyWinner.probability)}),{' '}
-          {likelyWinner.units.toFixed(0)} units
+          Most likely winner: {likelyWinner.units.toFixed(0)} units (
+          {pct(likelyWinner.probability)})
           {likelyWinner.np !== null && ` / ${likelyWinner.np.toLocaleString()} NP`}
         </Text>
       )}
