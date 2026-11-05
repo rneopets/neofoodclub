@@ -5,7 +5,7 @@
   "packageManager": "bun@1.4.4",
   "homepage": "/",
   "dependencies": {
-    "@chakra-ui/react": "3.37.0",
+    "@chakra-ui/react": "3.38.0",
     "@emotion/react": "^11.14.0",
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.4.9",
