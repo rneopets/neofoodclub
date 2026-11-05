@@ -40,6 +40,10 @@ vi.mock('../hooks/useBetManagement', (): { useBetManagement: () => BetManagement
   }),
 }));
 
+vi.mock('../hooks/useSetPreview', (): { useSetPreview: () => null } => ({
+  useSetPreview: (): null => null,
+}));
+
 vi.mock('../hooks/useIsRoundOver', (): { useIsRoundOver: () => boolean } => ({
   useIsRoundOver: (): boolean => isRoundOver,
 }));

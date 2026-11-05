@@ -41,7 +41,7 @@ import { useDuplicateBets } from './useDuplicateBets';
 // generated bet's amount to a flat `maxBet`, ignoring the wasm engine's default
 // odds-based cap (min(maxBet, ceil(1_000_000 / odds))). "Capped" mode is a no-op
 // here since the wasm engine already returns odds-capped amounts.
-function applyBetGenerationMaxBetMode(
+export function applyBetGenerationMaxBetMode(
   bets: Bet,
   betAmounts: BetAmount,
   maxBet: number,
