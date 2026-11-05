@@ -14,6 +14,12 @@
       "matchPackageNames": ["typescript"],
       "allowedVersions": "<6.1.0",
       "description": "Pin typescript below 6.1.0 until @typescript-eslint supports the new major (TS 7 dropped APIs such as ts.Extension and the downlevelIteration compiler option that typescript-eslint and this repo's tsconfig currently rely on)."
+    },
+    {
+      "matchDepNames": ["ubuntu"],
+      "matchManagers": ["github-actions"],
+      "allowedVersions": "<26",
+      "description": "Hold the GitHub runner at ubuntu 24.04 until Playwright supports Ubuntu 26.04 (install-deps falls back to 24.04 packages, so WebKit fails with missing libicu*.so.74 and libxml2.so.2)."
     }
   ]
 }
