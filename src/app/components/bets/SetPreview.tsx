@@ -31,10 +31,12 @@ const SetPreview = ({ summary }: { summary: SetPreviewSummary | null }): React.R
           <FaSkull />
           Bust: {pct(summary.bustRate)}
         </Badge>
-        <Badge variant="surface" data-testid="preview-partial">
-          <FaCircleHalfStroke />
-          Partial: {pct(summary.partialRate)}
-        </Badge>
+        {summary.partialRate > 0 && (
+          <Badge variant="surface" data-testid="preview-partial">
+            <FaCircleHalfStroke />
+            Partial: {pct(summary.partialRate)}
+          </Badge>
+        )}
         <Badge
           variant="surface"
           {...(er !== null && er < 1 ? { colorPalette: 'nfc-red' } : {})}
