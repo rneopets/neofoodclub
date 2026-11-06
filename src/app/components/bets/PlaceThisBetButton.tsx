@@ -2,6 +2,7 @@ import { Badge, Button, ButtonProps } from '@chakra-ui/react';
 import React, { useState, useMemo } from 'react';
 import { FaExternalLinkAlt } from 'react-icons/fa';
 
+import { BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID } from '../../dragSource';
 import { useIsRoundOver } from '../../hooks/useIsRoundOver';
 import { computePiratesBinary } from '../../maths';
 import {
@@ -64,7 +65,13 @@ const ActivePlaceBetButton = React.memo((): React.ReactElement => {
 
   return (
     <BetButton asChild colorPalette="nfc-green" variant="surface" opacity={clicked ? 0.5 : 1}>
-      <a href={href} target="_blank" rel="noopener noreferrer" onClick={() => setClicked(true)}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => setClicked(true)}
+        onDragStart={e => e.dataTransfer.setData(BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID)}
+      >
         {clicked ? 'Bet placed!' : 'Place bet!'} <FaExternalLinkAlt />
       </a>
     </BetButton>
