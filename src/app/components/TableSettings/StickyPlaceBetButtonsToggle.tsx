@@ -18,7 +18,7 @@ const StickyPlaceBetButtonsToggle = memo(() => {
     setStickyPlaceBetButtons(newValue);
   }, [stickyPlaceBetButtons, cookies, setStickyPlaceBetButtons]);
 
-  const tooltipLabel = 'Sticky Place Bet Buttons';
+  const tooltipLabel = 'Sticky Bet Page Buttons';
 
   return (
     <SettingsSwitch
@@ -27,7 +27,7 @@ const StickyPlaceBetButtonsToggle = memo(() => {
       colorPalette="nfc-blue"
       checked={stickyPlaceBetButtons ?? false}
       onChange={persistStickyPlaceBetButtonsPreference}
-      tooltipText="Keep the Submit column pinned to the right edge of the table while scrolling horizontally."
+      tooltipText="Keep the Bet page column pinned to the right edge of the table while scrolling horizontally."
     />
   );
 });

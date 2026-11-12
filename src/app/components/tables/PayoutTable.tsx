@@ -505,7 +505,7 @@ const PayoutTable = React.memo((): React.ReactElement => {
           <Table.ColumnHeader minW="5rem">Hidden</Table.ColumnHeader>
           <Table.ColumnHeader minW="5rem">Harpoon</Table.ColumnHeader>
           <Table.ColumnHeader {...(stickyPlaceBetButtons ? stickySubmitHeaderProps : {})}>
-            Submit
+            Bet page
           </Table.ColumnHeader>
         </Table.Row>
       </Table.Header>
