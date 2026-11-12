@@ -156,7 +156,7 @@ export const HELP_GLOSSARY_ENTRIES: GlossaryEntry[] = [
     id: 'nfc',
     term: 'NeoFoodClub (NFC)',
     definition:
-      'The site you are currently reading. Build Food Club bets, share sets by URL, and place bets faster.',
+      'The site you are currently reading. Build Food Club bets, share sets by URL, and send them to the Neopets bet page faster.',
   },
   {
     id: 'ne',
@@ -375,15 +375,15 @@ export const HELP_FAQ_ENTRIES: FaqEntry[] = [
   },
   {
     id: 'place-bets-userscript',
-    question: 'How do I place bets from NeoFoodClub?',
+    question: 'How do I bet with NeoFoodClub?',
     answer: (
       <>
-        Neopets no longer takes bets from a link, so the Place bet! buttons open the Food Club bet
-        page with your set in the link, and the{' '}
+        Neopets no longer takes bets from a link, so the Open bet page buttons open the Food Club
+        bet page with your set in the link, and the{' '}
         <Link href={USERSCRIPT_URL} target="_blank" rel="noopener noreferrer">
           NeoFoodClub userscript
         </Link>{' '}
-        shows your set there. Every Place bet! button opens the same link, since it carries your
+        shows your set there. Every Open bet page button opens the same link, since it carries your
         whole set, so you only need to use one. You need a userscript manager such as Tampermonkey
         or Violentmonkey. The script lists every bet in your set on the bet page, with a button for
         each one that selects its pirates and fills in your max bet. It only places a bet when you

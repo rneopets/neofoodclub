@@ -19,7 +19,7 @@ import {
   DUPLICATE_BET_COLOR_PALETTE,
 } from '../../utils/duplicateBetColors';
 
-// this element is the "Place Bet" button inside the PayoutTable
+// this element is the "Open bet page" button inside the PayoutTable
 
 interface BetButtonProps extends ButtonProps {
   children: React.ReactNode;
@@ -72,7 +72,7 @@ const ActivePlaceBetButton = React.memo((): React.ReactElement => {
         onClick={() => setClicked(true)}
         onDragStart={e => e.dataTransfer.setData(BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID)}
       >
-        {clicked ? 'Bet placed!' : 'Place bet!'} <FaExternalLinkAlt />
+        {clicked ? 'Bet page opened!' : 'Open bet page'} <FaExternalLinkAlt />
       </a>
     </BetButton>
   );
@@ -136,7 +136,7 @@ const PlaceThisBetButton = React.memo(
     if (hasDuplicates) {
       return (
         <BetButton colorPalette="nfc-green" variant="surface" disabled>
-          Place bet! <FaExternalLinkAlt />
+          Open bet page <FaExternalLinkAlt />
         </BetButton>
       );
     }

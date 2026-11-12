@@ -36,7 +36,7 @@ describe('PlaceThisBetButton', () => {
   it('is a link to the Neopets bet page carrying the bet set', () => {
     render(<PlaceThisBetButton bet={[1, 0, 3, 0, 0]} betNum={1} />);
 
-    const link = screen.getByRole('link', { name: /place bet!/i });
+    const link = screen.getByRole('link', { name: /open bet page/i });
     const expectedFragment = makeBetURL(ROUND, state.allBets.get(1)).replace(/^\//, '');
 
     expect(link).toHaveAttribute(
@@ -48,15 +48,15 @@ describe('PlaceThisBetButton', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
-  it('says "Bet placed!" after the link is clicked', () => {
+  it('says "Bet page opened!" after the link is clicked', () => {
     render(<PlaceThisBetButton bet={[1, 0, 3, 0, 0]} betNum={1} />);
 
-    const link = screen.getByRole('link', { name: /place bet!/i });
+    const link = screen.getByRole('link', { name: /open bet page/i });
     // keep the click from navigating jsdom
     link.addEventListener('click', event => event.preventDefault());
     fireEvent.click(link);
 
-    expect(screen.getByRole('link', { name: /bet placed!/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /bet page opened!/i })).toBeInTheDocument();
   });
 
   it('is not a link when the round is over', () => {

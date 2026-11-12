@@ -44,7 +44,9 @@ describe('UserscriptBanner', () => {
     const modal = await screen.findByTestId('userscript-modal');
     expect(modal).toBeInTheDocument();
     expect(useUserscriptModalStore.getState().isOpen).toBe(true);
-    expect(within(modal).getByText(/every place bet! button opens the same link/i)).toBeVisible();
+    expect(
+      within(modal).getByText(/every open bet page button opens the same link/i),
+    ).toBeVisible();
     expect(within(modal).getByText(/click a bet's row instead/i)).toBeVisible();
     expect(within(modal).getByText(/place to paste a/i)).toBeVisible();
     expect(within(modal).getByText(/off by default/i)).toBeVisible();
