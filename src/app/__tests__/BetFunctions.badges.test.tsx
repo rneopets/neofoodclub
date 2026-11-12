@@ -248,8 +248,14 @@ describe('BetBadges (AnimatedNumber)', () => {
 
       // Chakra v3 puts palette colors in CSS custom properties (emotion-hashed class
       // names, so nothing to match on className) - read them off the computed style.
+      // jsdom resolves var() references, so compare against the named color's own
+      // resolved token rather than a literal var() string.
+      const cssVar = (el: HTMLElement, name: string): string =>
+        window.getComputedStyle(el).getPropertyValue(name);
       const paletteVar = (el: HTMLElement, token: string): string =>
-        window.getComputedStyle(el).getPropertyValue(`--chakra-colors-color-palette-${token}`);
+        cssVar(el, `--chakra-colors-color-palette-${token}`);
+      const colorVar = (el: HTMLElement, color: string, token: string): string =>
+        cssVar(el, `--chakra-colors-${color}-${token}`);
 
       // The circle shows the group number (first duplicate group = 1) and uses
       // the first palette color, matching the in-set duplicate-bet circles.
@@ -258,12 +264,14 @@ describe('BetBadges (AnimatedNumber)', () => {
         const outer = badge as HTMLElement;
 
         // The badge is orange (warning), not red - duplicate sets don't invalidate.
-        expect(paletteVar(outer, 'fg')).toBe('var(--chakra-colors-nfc-orange-fg)');
+        expect(paletteVar(outer, 'solid')).not.toBe('');
+        expect(paletteVar(outer, 'solid')).toBe(colorVar(outer, 'nfc-orange', 'solid'));
+        expect(paletteVar(outer, 'solid')).not.toBe(colorVar(outer, 'nfc-red', 'solid'));
 
         const circle = outer.querySelector('.chakra-badge') as HTMLElement;
         expect(circle).not.toBeNull();
         expect(circle.textContent).toBe('1');
-        expect(paletteVar(circle, 'solid')).toBe(`var(--chakra-colors-${expectedColor}-solid)`);
+        expect(paletteVar(circle, 'solid')).toBe(colorVar(circle, expectedColor, 'solid'));
       }
 
       expect(container.textContent).toContain('Duplicate set');
