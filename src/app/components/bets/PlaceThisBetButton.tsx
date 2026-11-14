@@ -5,13 +5,7 @@ import { FaExternalLinkAlt } from 'react-icons/fa';
 import { BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID } from '../../dragSource';
 import { useIsRoundOver } from '../../hooks/useIsRoundOver';
 import { computePiratesBinary } from '../../maths';
-import {
-  useAllBets,
-  useBetAmount,
-  useBetBinaries,
-  useCurrentBet,
-  useSelectedRound,
-} from '../../stores';
+import { useAllBets, useBetBinaries, useCurrentBet, useSelectedRound } from '../../stores';
 import { makeBetURL } from '../../util';
 import { generateBetLinkUrl } from '../../utils/betUtils';
 import {
@@ -19,7 +13,7 @@ import {
   DUPLICATE_BET_COLOR_PALETTE,
 } from '../../utils/duplicateBetColors';
 
-// this element is the "Place Bet" button inside the PayoutTable
+// this element is the "Open bet page" button inside the PayoutTable
 
 interface BetButtonProps extends ButtonProps {
   children: React.ReactNode;
@@ -72,7 +66,7 @@ const ActivePlaceBetButton = React.memo((): React.ReactElement => {
         onClick={() => setClicked(true)}
         onDragStart={e => e.dataTransfer.setData(BET_DRAG_SOURCE_TYPE, TAB_INSTANCE_ID)}
       >
-        {clicked ? 'Bet placed!' : 'Place bet!'} <FaExternalLinkAlt />
+        {clicked ? 'Bet page opened!' : 'Open bet page'} <FaExternalLinkAlt />
       </a>
     </BetButton>
   );
@@ -82,9 +76,8 @@ ActivePlaceBetButton.displayName = 'ActivePlaceBetButton';
 
 const PlaceThisBetButton = React.memo(
   (props: PlaceThisBetButtonProps): React.ReactElement => {
-    const { bet, betNum } = props;
+    const { bet } = props;
 
-    const betAmount = useBetAmount(betNum);
     const betBinariesMap = useBetBinaries();
     const duplicateColors = useMemo(
       () => computeDuplicateBetGroupColors(betBinariesMap),
@@ -129,19 +122,15 @@ const PlaceThisBetButton = React.memo(
       );
     }
 
-    if (betAmount < 1) {
-      return <ErrorBetButton>Invalid bet amount!</ErrorBetButton>;
-    }
-
     if (hasDuplicates) {
       return (
         <BetButton colorPalette="nfc-green" variant="surface" disabled>
-          Place bet! <FaExternalLinkAlt />
+          Open bet page <FaExternalLinkAlt />
         </BetButton>
       );
     }
 
-    return <ActivePlaceBetButton key={`${bet.join(',')}:${betAmount}`} />;
+    return <ActivePlaceBetButton key={bet.join(',')} />;
   },
   (prevProps, nextProps) =>
     prevProps.betNum === nextProps.betNum &&

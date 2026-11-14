@@ -30,14 +30,14 @@ export const UserscriptModal: React.FC = () => {
             <Dialog.Body>
               <Stack gap={4}>
                 <Text>
-                  Neopets no longer accepts bets from a link, so the Place bet! buttons here now
+                  Neopets no longer accepts bets from a link, so the Open bet page buttons here now
                   open the Food Club bet page with your bet set in the link. The userscript reads
                   the bets from that link and shows them on the Neopets page, where you can place
                   each one.
                 </Text>
                 <Text>
-                  Every Place bet! button opens the same link, because the link carries your whole
-                  bet set, not just that row&apos;s bet. You only need to use one of them.
+                  Every Open bet page button opens the same link, because the link carries your
+                  whole bet set, not just that row&apos;s bet. You only need to use one of them.
                 </Text>
 
                 <Heading size="sm">What it does</Heading>
@@ -102,8 +102,8 @@ export const UserscriptModal: React.FC = () => {
                   <br />
                   2. Open the script below. Your userscript manager will offer to install it.
                   <br />
-                  3. Click a Place bet! button here to open the Neopets bet page, then place your
-                  bets there with the buttons in the NeoFoodClub box.
+                  3. Click an Open bet page button here to open the Neopets bet page, then place
+                  your bets there with the buttons in the NeoFoodClub box.
                 </Text>
                 <Button asChild alignSelf="flex-start" colorPalette="nfc-green" variant="surface">
                   <a href={USERSCRIPT_URL} target="_blank" rel="noopener noreferrer">

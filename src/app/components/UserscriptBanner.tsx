@@ -5,7 +5,7 @@ import { FaCircleInfo, FaDownload, FaPuzzlePiece } from 'react-icons/fa6';
 import { USERSCRIPT_URL } from '../constants';
 import { useUserscriptModalStore } from '../stores/userscriptModalStore';
 
-// not dismissable on purpose: placing bets from NeoFoodClub links needs the userscript
+// not dismissable on purpose: betting from NeoFoodClub links needs the userscript
 export default React.memo(function UserscriptBanner(): React.ReactElement {
   const open = useUserscriptModalStore(state => state.open);
 
@@ -14,7 +14,7 @@ export default React.memo(function UserscriptBanner(): React.ReactElement {
       <Flex align="center" justify="space-between" wrap="wrap" gap={4}>
         <Flex align="center" gap={2}>
           <FaPuzzlePiece />
-          <Text>Placing bets from NeoFoodClub links now needs a userscript.</Text>
+          <Text>Betting from NeoFoodClub links now needs a userscript.</Text>
         </Flex>
         <Flex align="center" gap={2}>
           <Button size="sm" colorPalette="blue" variant="solid" onClick={open}>
