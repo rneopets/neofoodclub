@@ -443,6 +443,20 @@ export const HELP_FAQ_ENTRIES: FaqEntry[] = [
     ),
   },
   {
+    id: 'round-change-lag',
+    question: 'Why did Food Club lag at round change?',
+    answer: (
+      <>
+        This has been fixed since October 1, 2026. TNT never explained what happened, so this is an
+        educated guess. Winning pirates are known right away, but working out every user&apos;s
+        winnings takes a bit longer. That slow step probably held up the round change and made the
+        round time creep up. It looks like the slow part was split off, so it now takes as long as
+        it needs without delaying the next round.
+        {seeGlossary('Round')}
+      </>
+    ),
+  },
+  {
     id: 'why-odds-change',
     question: 'Why do odds change?',
     answer: (
