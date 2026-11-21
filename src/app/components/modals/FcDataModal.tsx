@@ -392,6 +392,8 @@ function FcDataReturnDistributionSection({
 }
 
 function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.JSX.Element {
+  const newestFirst = React.useMemo(() => [...months].reverse(), [months]);
+
   return (
     <SectionCard title="Per-Month Breakdown" icon={FaCalendarDays}>
       <Box maxH="280px" overflowY="auto">
@@ -408,7 +410,7 @@ function FcDataMonthlyTable({ months }: { months: FcDataMonthStats[] }): React.J
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {months.map(month => (
+            {newestFirst.map(month => (
               <Table.Row key={month.monthKey}>
                 <Table.Cell>{month.label}</Table.Cell>
                 <Table.Cell textAlign="right">{month.roundsPlayed.toLocaleString()}</Table.Cell>
