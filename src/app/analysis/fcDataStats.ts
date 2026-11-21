@@ -165,13 +165,9 @@ function isBustproof(lines: number[][]): boolean {
  * - `tenbet`: 10 or more lines, and some arena holds one fixed nonzero
  *   position across every line (one "anchor" pirate present in every line),
  *   while other arenas vary (matches `is_tenbet` in the engine).
- * - `other`: none of the above, or too few lines to tell (single-line bets).
+ * - `other`: none of the above (e.g. a single line that skips an arena).
  */
 function classifyBetShape(lines: number[][]): FcDataBetShapeBucket {
-  if (lines.length <= 1) {
-    return 'other';
-  }
-
   const positionsByArena = Array.from(
     { length: 5 },
     (_unused, arena) =>
@@ -179,6 +175,7 @@ function classifyBetShape(lines: number[][]): FcDataBetShapeBucket {
   );
 
   if (
+    lines.length >= 2 &&
     positionsByArena.every(positions => positions.size <= 1) &&
     lines.some(line => line.every(position => position > 0))
   ) {

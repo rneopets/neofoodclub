@@ -515,6 +515,13 @@ describe('computeBetShapeCounts', () => {
     });
   });
 
+  it('classifies a single full 5-arena line as crazy, not gambit', () => {
+    const rows = [makeRow(1, 10, new Date(2024, 0, 1), makeBetUrl(1, [[1, 2, 3, 4, 1]]))];
+    const counts = computeBetShapeCounts(rows);
+    expect(counts.crazyShaped).toBe(1);
+    expect(counts.gambitShaped).toBe(0);
+  });
+
   it('classifies single-line bets as other, not gambit', () => {
     const rows = [makeRow(1, 10, new Date(2024, 0, 1), makeBetUrl(1, [[1, 0, 0, 0, 0]]))];
     expect(computeBetShapeCounts(rows).other).toBe(1);
