@@ -644,9 +644,10 @@ function FcDataBetShapesSection({
     <SectionCard title="Bet Shapes" icon={FaShapes}>
       <FcDataBetShapesChart shapes={shapes} />
       <Text fontSize="xs" color="fg.muted" fontStyle="italic">
-        Gambit-shaped: every line is a subset of one fixed 5-pirate combo. Bustproof-shaped: some
-        arena has all 4 of its pirates covered. Crazy-shaped: every line picks a pirate in all 5
-        arenas. Tenbet-shaped: one pirate is held fixed across every line while the rest vary.
+        Gambit-shaped: every line is a subset of one full 5-pirate line. Bustproof-shaped: the lines
+        can't bust (every possible outcome is won by some line). Crazy-shaped: every line picks a
+        pirate in all 5 arenas. Tenbet-shaped: one pirate is held fixed across every line while the
+        rest vary.
       </Text>
     </SectionCard>
   );
