@@ -126,7 +126,7 @@ export type FcDataBetShapeBucket = 'gambit' | 'bustproof' | 'crazy' | 'tenbet' |
 export interface FcDataBetShapeCounts {
   /** Every active line's picks are a subset of one fixed 5-pirate combo (see `classifyBetShape`). */
   gambitShaped: number;
-  /** Some arena has all 4 of its pirates covered across the lines. */
+  /** The lines can't bust: every possible round outcome is won by some line. */
   bustproofShaped: number;
   /** Every line picks a pirate in all 5 arenas (no arena skipped). */
   crazyShaped: number;
@@ -140,15 +140,31 @@ export interface FcDataBetShapeCounts {
  * Classifies a round's decoded bet lines by structure, checked in order:
  * - `gambit`: every arena has at most one distinct nonzero position across
  *   all lines (every line is a subset of one fixed 5-pirate combo).
- * - `bustproof`: some arena has all 4 of its pirates covered across the
- *   lines (matches `make_bustproof_bets` in the neofoodclub engine, which
- *   fully covers one or more "positive" arenas so that arena can't bust).
+ * - `bustproof`: the lines can't bust - every one of the 4^5 possible
+ *   outcomes is won by at least one line (matches `is_bustproof` in the
+ *   neofoodclub engine, which checks for a zero-bust chance).
  * - `crazy`: every line picks a pirate in all 5 arenas, no arena skipped
  *   (matches `make_crazy_bets`'s "randomly-selected, full-arena bets").
  * - `tenbet`: some arena holds one fixed nonzero position across every
  *   line (one "anchor" pirate present in every line), while other arenas vary.
  * - `other`: none of the above, or too few lines to tell (single-line bets).
  */
+function isBustproof(lines: number[][]): boolean {
+  // A line wins an outcome when each of its picked pirates is that arena's winner.
+  for (let outcome = 0; outcome < 1024; outcome++) {
+    const won = lines.some(line =>
+      line.every((position, arena) => {
+        const winner = ((outcome >> (arena * 2)) & 3) + 1;
+        return position === 0 || position === winner;
+      }),
+    );
+    if (!won) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function classifyBetShape(lines: number[][]): FcDataBetShapeBucket {
   if (lines.length <= 1) {
     return 'other';
@@ -164,7 +180,7 @@ function classifyBetShape(lines: number[][]): FcDataBetShapeBucket {
     return 'gambit';
   }
 
-  if (positionsByArena.some(positions => positions.size === 4)) {
+  if (isBustproof(lines)) {
     return 'bustproof';
   }
 
