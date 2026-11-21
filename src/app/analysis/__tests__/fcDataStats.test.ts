@@ -392,7 +392,7 @@ describe('computeBetShapeCounts', () => {
   it('classifies a gambit-shaped bet: every arena has at most one distinct position across lines', () => {
     const url = makeBetUrl(1, [
       [1, 2, 0, 0, 0],
-      [1, 2, 3, 0, 0],
+      [1, 2, 3, 4, 1],
     ]);
     const rows = [makeRow(1, 10, new Date(2024, 0, 1), url)];
     expect(computeBetShapeCounts(rows)).toEqual({
@@ -446,7 +446,25 @@ describe('computeBetShapeCounts', () => {
     const rows = [makeRow(1, 10, new Date(2024, 0, 1), url)];
     const counts = computeBetShapeCounts(rows);
     expect(counts.bustproofShaped).toBe(0);
-    expect(counts.tenbetShaped).toBe(1);
+    expect(counts.other).toBe(1);
+  });
+
+  it('does not call a set gambit unless one line is the full 5-pirate combo', () => {
+    const url = makeBetUrl(1, [
+      [1, 2, 0, 0, 0],
+      [1, 2, 3, 0, 0],
+    ]);
+    const rows = [makeRow(1, 10, new Date(2024, 0, 1), url)];
+    expect(computeBetShapeCounts(rows).gambitShaped).toBe(0);
+  });
+
+  it('does not call fewer than 10 lines tenbet', () => {
+    const url = makeBetUrl(1, [
+      [1, 2, 0, 0, 0],
+      [1, 3, 0, 0, 0],
+    ]);
+    const rows = [makeRow(1, 10, new Date(2024, 0, 1), url)];
+    expect(computeBetShapeCounts(rows).tenbetShaped).toBe(0);
   });
 
   it('classifies a crazy-shaped bet: every line picks a pirate in all 5 arenas', () => {
@@ -466,10 +484,10 @@ describe('computeBetShapeCounts', () => {
   });
 
   it('classifies a tenbet-shaped bet: one arena position fixed, others vary', () => {
-    const url = makeBetUrl(1, [
-      [1, 2, 0, 0, 0],
-      [1, 3, 0, 0, 0],
-    ]);
+    const url = makeBetUrl(
+      1,
+      Array.from({ length: 10 }, (_unused, i) => [1, (i % 4) + 1, i < 5 ? 0 : 2, 0, 0]),
+    );
     const rows = [makeRow(1, 10, new Date(2024, 0, 1), url)];
     expect(computeBetShapeCounts(rows)).toEqual({
       gambitShaped: 0,

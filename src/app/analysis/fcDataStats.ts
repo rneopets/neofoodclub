@@ -130,25 +130,12 @@ export interface FcDataBetShapeCounts {
   bustproofShaped: number;
   /** Every line picks a pirate in all 5 arenas (no arena skipped). */
   crazyShaped: number;
-  /** One (arena, pirate) pair is held fixed across every active line. */
+  /** All 10 lines share one (arena, pirate) pair (see `classifyBetShape`). */
   tenbetShaped: number;
   other: number;
   total: number;
 }
 
-/**
- * Classifies a round's decoded bet lines by structure, checked in order:
- * - `gambit`: every arena has at most one distinct nonzero position across
- *   all lines (every line is a subset of one fixed 5-pirate combo).
- * - `bustproof`: the lines can't bust - every one of the 4^5 possible
- *   outcomes is won by at least one line (matches `is_bustproof` in the
- *   neofoodclub engine, which checks for a zero-bust chance).
- * - `crazy`: every line picks a pirate in all 5 arenas, no arena skipped
- *   (matches `make_crazy_bets`'s "randomly-selected, full-arena bets").
- * - `tenbet`: some arena holds one fixed nonzero position across every
- *   line (one "anchor" pirate present in every line), while other arenas vary.
- * - `other`: none of the above, or too few lines to tell (single-line bets).
- */
 function isBustproof(lines: number[][]): boolean {
   // A line wins an outcome when each of its picked pirates is that arena's winner.
   for (let outcome = 0; outcome < 1024; outcome++) {
@@ -165,6 +152,21 @@ function isBustproof(lines: number[][]): boolean {
   return true;
 }
 
+/**
+ * Classifies a round's decoded bet lines by structure, checked in order:
+ * - `gambit`: every arena has at most one distinct nonzero position across
+ *   all lines, and at least one line is the full 5-pirate combo (every line
+ *   is a subset of it; matches `is_gambit` in the engine).
+ * - `bustproof`: the lines can't bust - every one of the 4^5 possible
+ *   outcomes is won by at least one line (matches `is_bustproof` in the
+ *   neofoodclub engine, which checks for a zero-bust chance).
+ * - `crazy`: every line picks a pirate in all 5 arenas, no arena skipped
+ *   (matches `make_crazy_bets`'s "randomly-selected, full-arena bets").
+ * - `tenbet`: 10 or more lines, and some arena holds one fixed nonzero
+ *   position across every line (one "anchor" pirate present in every line),
+ *   while other arenas vary (matches `is_tenbet` in the engine).
+ * - `other`: none of the above, or too few lines to tell (single-line bets).
+ */
 function classifyBetShape(lines: number[][]): FcDataBetShapeBucket {
   if (lines.length <= 1) {
     return 'other';
@@ -176,7 +178,10 @@ function classifyBetShape(lines: number[][]): FcDataBetShapeBucket {
       new Set(lines.map(line => line[arena]).filter((p): p is number => !!p && p > 0)),
   );
 
-  if (positionsByArena.every(positions => positions.size <= 1)) {
+  if (
+    positionsByArena.every(positions => positions.size <= 1) &&
+    lines.some(line => line.every(position => position > 0))
+  ) {
     return 'gambit';
   }
 
@@ -188,7 +193,8 @@ function classifyBetShape(lines: number[][]): FcDataBetShapeBucket {
     return 'crazy';
   }
 
-  for (let arena = 0; arena < 5; arena++) {
+  // The engine only calls a set tenbet when it has all 10 bets.
+  for (let arena = 0; arena < 5 && lines.length >= 10; arena++) {
     const first = lines[0]![arena]!;
     if (first > 0 && lines.every(line => line[arena] === first)) {
       return 'tenbet';
