@@ -74,7 +74,7 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/culori": "^4.0.1",
     "@types/node": "26.6.10",
-    "@types/react": "19.3.1",
+    "@types/react": "19.3.3",
     "@types/react-dom": "19.3.0",
     "@typescript-eslint/eslint-plugin": "^8.37.0",
     "@typescript-eslint/parser": "^8.37.0",
